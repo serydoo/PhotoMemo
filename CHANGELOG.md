@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.3 (85) Multilingual Memory Expression And Delivery Clarity - 2026-08-19
+
+- Added a four-language localization architecture for Simplified Chinese, English, Japanese, and Korean, with Interface Language kept independent from Preset Output Language.
+- Added semantic time and narrative formatting for age, duration, countdown, dates, and anchor expressions, while keeping legacy output APIs behind explicit-language adapters.
+- Localized the active App, Share Extension, Widget, macOS, accessibility, Settings, Configuration Center, Task/Processing, and Recent Updates surfaces with resource parity checks.
+- Kept empty resolved content from becoming a blank successful result, clarified batch attention states, and made processing notifications open the related status and task.
+- Preserved local processing, original-photo protection, Apple Photos ownership, and the existing Renderer, Live Photo, EXIF, Export, and PhotoKit boundaries.
+
+This is a multilingual expression and delivery-clarity maintenance update. JPEG, HEIC, Live Photo, EXIF, and Batch Export media regression was intentionally skipped for this source candidate; TestFlight, App Store, and production certification remain separate states.
+
 ## 2.1.2 (86) User Delivery Reliability Maintenance - 2026-08-18
 
 - Prevented a photo with no meaningful resolved content from entering Renderer or Export as a blank successful result; that photo now becomes an actionable task failure while other photos continue.

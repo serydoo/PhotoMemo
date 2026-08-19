@@ -1,5 +1,17 @@
 # MemoMark Handoff
 
+## 2026-08-19 MemoMark 2.1.3 (85) 整理接续点
+
+- 本轮以 2026-08-14 的 `2.1.2 (85)` 同步节点和基线 `2dc0f21` 为范围起点，当前版本字段按用户要求统一为 `2.1.3 (85)`。
+- 本轮完成多语言表达架构、四语言资源与 active UI 收口、Legacy Output 语言隔离、用户交付结果修正，以及应用内 Recent Updates 和四份发布材料整理。
+- 当前保留连续脏工作区，不执行 Git 提交或远程推送；生成的 Xcode Cloud manifest、xcuserdata、`.DS_Store` 和脚本缓存仅作为可恢复本地清理对象，私人研究、设备数据、DerivedData 和诊断产物继续保留。
+- 媒体回归按用户明确决定跳过，不能把该范围写成已认证；TestFlight、App Store、生产认证和未完成的母语/长文本人工验收仍是独立状态。
+- 聚焦本地化/版本/输出语言测试通过：目标结果包为 `/tmp/MemoMark213Focused-20260819.xcresult`，机器可读汇总报告 `45 passed / 0 failed / 0 skipped`。
+- iOS 真机构建通过，产物为 `/tmp/MemoMark213Device-20260819/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`；App、Share Extension、Widget Extension 均核验为 `2.1.3 (85)`。
+- macOS `PhotoMemo`、独立 `PhotoMemoShareExtension`、独立 `PhotoMemoWidgetExtension` 三个 scheme 均通过，分别使用 `/tmp/MemoMark213Mac-20260819`、`/tmp/MemoMark213Share-20260819`、`/tmp/MemoMark213Widget-20260819` DerivedData。
+- 已将 `com.serydoo.PhotoMemo.iOS` 覆盖安装并启动于已连接的 iPhone 17 Pro Max（`iPhone7` / `863C2747-6742-5E93-B715-6F89DBF90B31`），设备应用列表显示 `时光记 2.1.3 (85)`；保留原有应用数据，未卸载、未清空。
+- 构建仅保留既有 macOS 部署目标、CLGeocoder、actor-isolation 和 App Intents 处理器提示；没有新增编译错误。生成的 Xcode Cloud manifest、xcuserdata、`.DS_Store` 和脚本缓存待本轮末尾以可恢复方式移至临时清理目录。
+
 ## 2026-08-18 MemoMark 2.1.2 (86) 同步整理接续点
 
 - 上一次已推送基点为 `2dc0f21`（当前 `HEAD` 与 `origin/main` 一致，上一版本 `2.1.2 (85)`）；本轮 marketing version 保持 `2.1.2`，构建号已按要求顺延为 `86`。

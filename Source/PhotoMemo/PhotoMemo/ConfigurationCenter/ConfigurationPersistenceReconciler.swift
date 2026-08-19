@@ -235,7 +235,6 @@ struct ConfigurationPersistenceReconciler {
             editingState.selectedStorageOption
         updatedPreset.logoMode =
             logoMode ?? preset.logoMode
-        updatedPreset.language = MemoMarkLanguage.stored
         updatedPreset.usesCustomMemoryWriteText =
             editingState.usesCustomMemoryWriteText
         updatedPreset.customMemoryWriteText =

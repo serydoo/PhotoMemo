@@ -4,6 +4,7 @@ import SwiftUI
 struct ConfigurationCenterRegionComposerSection:
     View {
 
+    let language: MemoMarkLanguage
     let region: CardRegion
     let configurationOptions: [IOSRegionConfigurationOption]
     @Binding var selectedConfigurationID: String
@@ -19,6 +20,7 @@ struct ConfigurationCenterRegionComposerSection:
 
     var body: some View {
         IOSRegionComposer(
+            language: language,
             region: region,
             configurationOptions:
                 configurationOptions,

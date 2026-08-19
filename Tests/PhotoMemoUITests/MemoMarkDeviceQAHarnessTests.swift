@@ -27,6 +27,102 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         add(screenshot)
     }
 
+    func testInterfaceLanguageMatrixJapaneseAndKorean() throws {
+        launchHostAndWait()
+        openSettingsFromHome()
+
+        restoreSimplifiedChineseInterfaceIfNeeded()
+
+        selectInterfaceLanguage(
+            option: "日本語",
+            sectionTitle: "界面"
+        )
+        XCTAssertTrue(
+            application.navigationBars["設定"].waitForExistence(timeout: 20)
+                || application.staticTexts["設定"].waitForExistence(timeout: 5),
+            "The Settings surface did not switch to Japanese."
+        )
+        attachCurrentScreenshot(named: "qa-interface-japanese-settings")
+
+        selectInterfaceLanguage(
+            option: "한국어",
+            sectionTitle: "インターフェース"
+        )
+        XCTAssertTrue(
+            application.navigationBars["설정"].waitForExistence(timeout: 20)
+                || application.staticTexts["설정"].waitForExistence(timeout: 5),
+            "The Settings surface did not switch to Korean."
+        )
+        attachCurrentScreenshot(named: "qa-interface-korean-settings")
+
+        // Restore the known pre-test interface preference without changing
+        // any Preset, task, or PhotoKit state.
+        selectInterfaceLanguage(
+            option: "简体中文",
+            sectionTitle: "인터페이스"
+        )
+        XCTAssertTrue(
+            application.navigationBars["设置"].waitForExistence(timeout: 20)
+                || application.staticTexts["设置"].waitForExistence(timeout: 5),
+            "The Settings surface did not restore Simplified Chinese."
+        )
+        attachCurrentScreenshot(named: "qa-interface-chinese-restored")
+    }
+
+    func testTaskPageJapaneseInterfaceSurface() throws {
+        launchHostAndWait()
+        openSettingsFromHome()
+        restoreSimplifiedChineseInterfaceIfNeeded()
+
+        selectInterfaceLanguage(
+            option: "日本語",
+            sectionTitle: "界面"
+        )
+        XCTAssertTrue(
+            application.navigationBars["設定"].waitForExistence(timeout: 20)
+                || application.staticTexts["設定"].waitForExistence(timeout: 5),
+            "The Settings surface did not switch to Japanese before opening Task."
+        )
+
+        let doneButton = application.navigationBars["設定"].buttons.firstMatch
+        XCTAssertTrue(
+            doneButton.waitForExistence(timeout: 20),
+            "The Japanese Settings surface did not expose its Done action."
+        )
+        doneButton.tap()
+
+        let taskTab = application.buttons["checklist"]
+        XCTAssertTrue(
+            taskTab.waitForExistence(timeout: 20),
+            "The iOS host did not expose the Task tab after closing Settings."
+        )
+        taskTab.tap()
+
+        XCTAssertTrue(
+            application.staticTexts["進行状況"].waitForExistence(timeout: 20),
+            "The Task page did not expose its Japanese page title."
+        )
+        attachCurrentScreenshot(named: "qa-task-japanese-interface")
+
+        // Return the interface preference to the known Chinese baseline.
+        let homeTab = application.buttons["house.fill"]
+        XCTAssertTrue(
+            homeTab.waitForExistence(timeout: 20),
+            "The Japanese Task page did not expose the Home tab."
+        )
+        homeTab.tap()
+        openSettingsFromHome()
+        selectInterfaceLanguage(
+            option: "简体中文",
+            sectionTitle: "インターフェース"
+        )
+        XCTAssertTrue(
+            application.navigationBars["设置"].waitForExistence(timeout: 20)
+                || application.staticTexts["设置"].waitForExistence(timeout: 5),
+            "The interface language could not be restored after the Japanese Task check."
+        )
+    }
+
     func testConfigurationCenterIsReachable() throws {
         launchHostAndWait()
 
@@ -1339,6 +1435,117 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             ),
             "PhotoMemoiOS did not reach the foreground within the device QA timeout."
         )
+    }
+
+    private func openSettingsFromHome() {
+        if application.navigationBars["设置"].exists
+            || application.navigationBars["設定"].exists
+            || application.navigationBars["설정"].exists
+            || application.navigationBars["Settings"].exists {
+            return
+        }
+
+        let homeTab = application.buttons["house.fill"]
+        if homeTab.waitForExistence(timeout: 10), !homeTab.isSelected {
+            homeTab.tap()
+        }
+
+        let settingsLabels = [
+            "打开设置",
+            "設定を開く",
+            "설정 열기",
+            "Open Settings"
+        ]
+        var didOpenSettings = false
+        for label in settingsLabels {
+            let settingsButton = application.buttons[label]
+            if settingsButton.waitForExistence(timeout: 3) {
+                settingsButton.tap()
+                didOpenSettings = true
+                break
+            }
+        }
+        XCTAssertTrue(
+            didOpenSettings,
+            "The home surface did not expose a localized Settings action."
+        )
+        XCTAssertTrue(
+            application.navigationBars["设置"].waitForExistence(timeout: 20)
+                || application.navigationBars["設定"].waitForExistence(timeout: 5)
+                || application.navigationBars["설정"].waitForExistence(timeout: 5)
+                || application.navigationBars["Settings"].waitForExistence(timeout: 5),
+            "The iOS host did not reach a localized Settings surface from Home."
+        )
+    }
+
+    private func restoreSimplifiedChineseInterfaceIfNeeded() {
+        if application.navigationBars["设置"].exists {
+            return
+        }
+
+        if application.navigationBars["設定"].exists {
+            selectInterfaceLanguage(
+                option: "简体中文",
+                sectionTitle: "インターフェース"
+            )
+        } else if application.navigationBars["설정"].exists {
+            selectInterfaceLanguage(
+                option: "简体中文",
+                sectionTitle: "인터페이스"
+            )
+        } else if application.navigationBars["Settings"].exists {
+            selectInterfaceLanguage(
+                option: "简体中文",
+                sectionTitle: "Interface"
+            )
+        }
+
+        XCTAssertTrue(
+            application.navigationBars["设置"].waitForExistence(timeout: 20)
+                || application.staticTexts["设置"].waitForExistence(timeout: 5),
+            "The interface language could not be normalized to Simplified Chinese."
+        )
+    }
+
+    private func selectInterfaceLanguage(
+        option: String,
+        sectionTitle: String
+    ) {
+        let section = application.buttons[sectionTitle]
+        XCTAssertTrue(
+            section.waitForExistence(timeout: 20),
+            "The interface-language Settings section was not exposed: \(sectionTitle)"
+        )
+
+        if !application.buttons[option].exists
+            && !application.segmentedControls.buttons[option].exists
+            && !application.staticTexts[option].exists {
+            section.tap()
+        }
+
+        let optionButton: XCUIElement
+        if application.buttons[option].exists {
+            optionButton = application.buttons[option].firstMatch
+        } else if application.segmentedControls.buttons[option].exists {
+            optionButton = application.segmentedControls.buttons[option].firstMatch
+        } else {
+            optionButton = application.staticTexts[option].firstMatch
+        }
+        XCTAssertTrue(
+            optionButton.waitForExistence(timeout: 20),
+            "The interface-language option was not exposed: \(option)"
+        )
+        optionButton.tap()
+
+        // AppStorage updates the interface language in place. The next
+        // localized section lookup provides the settling point.
+    }
+
+    private func attachCurrentScreenshot(named name: String) {
+        let screenshot = XCTAttachment(screenshot: application.screenshot())
+        screenshot.name = name
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
     }
 
     private func preparedInputPhotoGridImages() -> XCUIElementQuery {

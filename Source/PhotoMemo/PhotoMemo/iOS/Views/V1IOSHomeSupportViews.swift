@@ -9,15 +9,28 @@ enum V1IOSHomeActivityState: Equatable {
 
     case failed
 
-    var statusText: String {
+    func statusText(language: MemoMarkLanguage) -> String {
         switch self {
         case .processing:
-            return "进行中"
+            return language.localized(
+                key: "home.activity.status.processing",
+                fallback: "Processing"
+            )
         case .completed:
-            return "已完成"
+            return language.localized(
+                key: "home.activity.status.completed",
+                fallback: "Completed"
+            )
         case .failed:
-            return "失败"
+            return language.localized(
+                key: "home.activity.status.failed",
+                fallback: "Failed"
+            )
         }
+    }
+
+    var statusText: String {
+        statusText(language: .interfaceStored)
     }
 }
 
@@ -37,19 +50,43 @@ struct V1IOSHomeActivityProjection: Equatable {
 
     let updatedAt: Date
 
-    var countText: String {
-        let baseText =
-            "任务 \(currentPosition) / \(totalCount) 张"
+    func countText(language: MemoMarkLanguage) -> String {
+        let key = queuedJobCount > 0
+            ? "home.activity.count.queued_format"
+            : "home.activity.count.format"
+        let fallback = queuedJobCount > 0
+            ? "Task %d / %d photos · %d more queued"
+            : "Task %d / %d photos"
+        let format = language.localized(key: key, fallback: fallback)
 
-        guard queuedJobCount > 0 else {
-            return baseText
+        if queuedJobCount > 0 {
+            return String(
+                format: format,
+                locale: language.locale,
+                currentPosition,
+                totalCount,
+                queuedJobCount
+            )
         }
 
-        return "\(baseText) · 后续 \(queuedJobCount) 个"
+        return String(
+            format: format,
+            locale: language.locale,
+            currentPosition,
+            totalCount
+        )
+    }
+
+    var countText: String {
+        countText(language: .interfaceStored)
+    }
+
+    func statusText(language: MemoMarkLanguage) -> String {
+        state.statusText(language: language)
     }
 
     var statusText: String {
-        state.statusText
+        statusText(language: .interfaceStored)
     }
 
     var lifecycleID: String {
@@ -165,36 +202,80 @@ struct V1IOSHomeQuickAction:
     let compactDetail: String
     let systemImage: String
 
-    static let defaultActions: [Self] = [
+    static func defaultActions(
+        language: MemoMarkLanguage = .interfaceStored
+    ) -> [Self] {
+        [
         .init(
             id: .processPhotos,
-            title: "处理照片",
-            subtitle: "需要时可在时光记中选择照片；日常记录请从 Apple Photos 分享",
-            compactDetail: "备用选图",
+            title: language.localized(
+                key: "legacy.home.quick.process.title",
+                fallback: "Process Photos"
+            ),
+            subtitle: language.localized(
+                key: "legacy.home.quick.process.subtitle",
+                fallback: "Choose photos in MemoMark when needed; share daily memories from Apple Photos"
+            ),
+            compactDetail: language.localized(
+                key: "legacy.home.quick.process.detail",
+                fallback: "Choose Photos"
+            ),
             systemImage: MemoMarkSymbol.applePhotos.name
         ),
         .init(
             id: .configurationCenter,
-            title: "配置中心",
-            subtitle: "继续查看当前生效配置",
-            compactDetail: "查看当前配置",
+            title: language.localized(
+                key: "legacy.home.quick.configuration.title",
+                fallback: "Configuration Center"
+            ),
+            subtitle: language.localized(
+                key: "legacy.home.quick.configuration.subtitle",
+                fallback: "View the configuration currently in use"
+            ),
+            compactDetail: language.localized(
+                key: "legacy.home.quick.configuration.detail",
+                fallback: "View Configuration"
+            ),
             systemImage: MemoMarkSymbol.configurationCenter.name
         ),
         .init(
             id: .timeAnchor,
-            title: "时间锚点",
-            subtitle: "查看记忆对象与生效锚点",
-            compactDetail: "切换生效锚点",
+            title: language.localized(
+                key: "legacy.home.quick.anchor.title",
+                fallback: "Time Anchor"
+            ),
+            subtitle: language.localized(
+                key: "legacy.home.quick.anchor.subtitle",
+                fallback: "View the Memory Subject and active anchor"
+            ),
+            compactDetail: language.localized(
+                key: "legacy.home.quick.anchor.detail",
+                fallback: "Change Anchor"
+            ),
             systemImage: MemoMarkSymbol.timeAnchor.name
         ),
         .init(
             id: .usageGuide,
-            title: "使用说明",
-            subtitle: "查看 Apple Photos 使用流程与说明",
-            compactDetail: "查看使用流程",
+            title: language.localized(
+                key: "legacy.home.quick.guide.title",
+                fallback: "Usage Guide"
+            ),
+            subtitle: language.localized(
+                key: "legacy.home.quick.guide.subtitle",
+                fallback: "View the Apple Photos workflow and guidance"
+            ),
+            compactDetail: language.localized(
+                key: "legacy.home.quick.guide.detail",
+                fallback: "View Guide"
+            ),
             systemImage: "book.pages"
         )
-    ]
+        ]
+    }
+
+    static var defaultActions: [Self] {
+        defaultActions(language: .interfaceStored)
+    }
 }
 
 struct V1IOSHomeRecentProcessingPresentation:
@@ -216,6 +297,16 @@ struct V1IOSHomeRecentProcessingPresentation:
     let updatedAtValue: String
 
     let recoveryMessage: String?
+
+    let viewAllTitle: String
+
+    let statusLabel: String
+
+    let sourceLabel: String
+
+    let updatedLabel: String
+
+    let updatedDetail: String
 }
 
 enum V1IOSHomeRecentProcessingPresenter {
@@ -225,7 +316,8 @@ enum V1IOSHomeRecentProcessingPresenter {
             PhotoMemoiOSQueueDiagnosticsHeaderProjection,
         snapshot:
             PhotoMemoBackgroundJobSnapshot?,
-        recoveryMessage: String?
+        recoveryMessage: String?,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> V1IOSHomeRecentProcessingPresentation {
 
         V1IOSHomeRecentProcessingPresentation(
@@ -238,28 +330,71 @@ enum V1IOSHomeRecentProcessingPresenter {
             tint:
                 header.tint,
             statusValue:
-                snapshot?
-                .feedbackState
-                .displayTitle
+                snapshot.map {
+                    localizedFeedbackState(
+                        $0.feedbackState,
+                        language: language
+                    )
+                }
                 ?? (
                     recoveryMessage == nil
-                    ? "等待下一次分享"
-                    : "需要恢复"
+                    ? language.localized(
+                        key: "legacy.home.recent.waiting",
+                        fallback: "Waiting for the next share"
+                    )
+                    : language.localized(
+                        key: "legacy.home.recent.recovery",
+                        fallback: "Needs recovery"
+                    )
                 ),
-            sourceValue:
-                snapshot?
-                .launchSource
-                .displayTitle
-                ?? "Apple Photos 分享",
+            sourceValue: snapshot.map {
+                localizedLaunchSource(
+                    $0.launchSource,
+                    language: language
+                )
+            }
+            ?? language.localized(
+                key: "legacy.home.recent.source.apple_photos",
+                fallback: "Apple Photos Share"
+            ),
             updatedAtValue:
                 snapshot.map {
                     formattedUpdatedAt(
-                        $0.updatedAt
+                        $0.updatedAt,
+                        language: language
                     )
                 }
-                ?? "暂无",
+                ?? language.localized(
+                    key: "legacy.home.recent.empty_date",
+                    fallback: "No recent update"
+                ),
             recoveryMessage:
-                recoveryMessage
+                recoveryMessage,
+            viewAllTitle:
+                language.localized(
+                    key: "legacy.home.recent.view_all",
+                    fallback: "View All"
+                ),
+            statusLabel:
+                language.localized(
+                    key: "legacy.home.recent.status_label",
+                    fallback: "Status"
+                ),
+            sourceLabel:
+                language.localized(
+                    key: "legacy.home.recent.source_label",
+                    fallback: "Source"
+                ),
+            updatedLabel:
+                language.localized(
+                    key: "legacy.home.recent.updated_label",
+                    fallback: "Last Updated"
+                ),
+            updatedDetail:
+                language.localized(
+                    key: "legacy.home.recent.updated_detail",
+                    fallback: "Keeps the latest background progress time"
+                )
         )
     }
 }
@@ -267,14 +402,43 @@ enum V1IOSHomeRecentProcessingPresenter {
 private extension V1IOSHomeRecentProcessingPresenter {
 
     static func formattedUpdatedAt(
-        _ date: Date
+        _ date: Date,
+        language: MemoMarkLanguage
     ) -> String {
 
-        V1UserFacingDateFormatter.dateTime(date)
+        let formatter = DateFormatter()
+        formatter.locale = language.locale
+        formatter.dateFormat = language.localized(
+            key: "legacy.home.recent.updated_date_format",
+            fallback: "MMM d, HH:mm"
+        )
+        return formatter.string(from: date)
+    }
+
+    static func localizedFeedbackState(
+        _ state: PhotoMemoBackgroundFeedbackState,
+        language: MemoMarkLanguage
+    ) -> String {
+        language.localized(
+            key: "legacy.home.recent.feedback.\(state.rawValue)",
+            fallback: state.displayTitle
+        )
+    }
+
+    static func localizedLaunchSource(
+        _ source: BatchJobLaunchSource,
+        language: MemoMarkLanguage
+    ) -> String {
+        language.localized(
+            key: "legacy.home.recent.source.\(source.rawValue)",
+            fallback: source.displayTitle
+        )
     }
 }
 
 struct V1IOSHomeQuickActionsContent: View {
+
+    let language: MemoMarkLanguage = .interfaceStored
 
     let openPhotoPicker: () -> Void
 
@@ -301,7 +465,9 @@ struct V1IOSHomeQuickActionsContent: View {
             spacing: 8
         ) {
             ForEach(
-                V1IOSHomeQuickAction.defaultActions
+                V1IOSHomeQuickAction.defaultActions(
+                    language: language
+                )
             ) { action in
                 V1IOSHomeActionTileButton(
                     title: action.title,
@@ -363,7 +529,7 @@ struct V1IOSHomeRecentProcessingContent: View {
 
                 Spacer(minLength: 0)
 
-                Button("查看全部") {
+                Button(presentation.viewAllTitle) {
                     openStatus()
                 }
                 .buttonStyle(.plain)
@@ -394,7 +560,7 @@ struct V1IOSHomeRecentProcessingContent: View {
     @ViewBuilder
     private var facts: some View {
         V1IOSHomeSemanticRow(
-            title: "状态",
+            title: presentation.statusLabel,
             value: presentation.statusValue,
             detail: presentation.headline,
             systemImage:
@@ -402,7 +568,7 @@ struct V1IOSHomeRecentProcessingContent: View {
         )
 
         V1IOSHomeSemanticRow(
-            title: "来源",
+            title: presentation.sourceLabel,
             value: presentation.sourceValue,
             detail: presentation.subheadline,
             systemImage:
@@ -410,9 +576,9 @@ struct V1IOSHomeRecentProcessingContent: View {
         )
 
         V1IOSHomeSemanticRow(
-            title: "最近更新",
+            title: presentation.updatedLabel,
             value: presentation.updatedAtValue,
-            detail: "保留最近一次后台进度时间",
+            detail: presentation.updatedDetail,
             systemImage:
                 "clock.arrow.circlepath",
             showsDivider: false

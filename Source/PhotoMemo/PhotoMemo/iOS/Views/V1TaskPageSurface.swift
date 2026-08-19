@@ -25,6 +25,10 @@ struct V1TaskPageSurface: View {
     let onRetryFailedTasks: () -> Void
     let onDismissKeyboard: () -> Void
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     @State
     private var isRecentTasksSheetPresented = false
 
@@ -39,7 +43,8 @@ struct V1TaskPageSurface: View {
                 overview: taskOverview,
                 recentJobs: recentJobSummaries,
                 fallbackConfigurationName:
-                    fallbackConfigurationName
+                    fallbackConfigurationName,
+                language: interfaceLanguage
             )
     }
 
@@ -97,8 +102,14 @@ struct V1TaskPageSurface: View {
 
     private var pageHeader: some View {
         V1PageHeader(
-            "进展",
-            subtitle: "从 Apple Photos 分享后，可以在这里看到是否已经完成。"
+            interfaceLanguage.localized(
+                key: "task.page.title",
+                fallback: "进展"
+            ),
+            subtitle: interfaceLanguage.localized(
+                key: "task.page.subtitle",
+                fallback: "从 Apple Photos 分享后，可以在这里看到是否已经完成。"
+            )
         )
     }
 
@@ -118,8 +129,14 @@ struct V1TaskPageSurface: View {
 
     private var waitingTaskCard: some View {
         V1TitledSectionCard(
-            title: "准备好了",
-            subtitle: "从 Apple Photos 分享照片后，可以在这里看到是否已经完成。"
+            title: interfaceLanguage.localized(
+                key: "task.waiting.card.title",
+                fallback: "准备好了"
+            ),
+            subtitle: interfaceLanguage.localized(
+                key: "task.waiting.card.subtitle",
+                fallback: "从 Apple Photos 分享照片后，可以在这里看到是否已经完成。"
+            )
         ) {
             HStack(spacing: 12) {
                 Image(systemName: "photo.badge.plus")
@@ -134,10 +151,20 @@ struct V1TaskPageSurface: View {
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("准备就绪")
+                    Text(
+                        interfaceLanguage.localized(
+                            key: "task.waiting.ready",
+                            fallback: "准备就绪"
+                        )
+                    )
                         .font(.subheadline.weight(.semibold))
 
-                    Text("从 Apple Photos 分享照片，即可开始生成。")
+                    Text(
+                        interfaceLanguage.localized(
+                            key: "task.waiting.detail",
+                            fallback: "从 Apple Photos 分享照片，即可开始生成。"
+                        )
+                    )
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -151,8 +178,14 @@ struct V1TaskPageSurface: View {
 
     private var processingTaskCard: some View {
         V1TitledSectionCard(
-            title: "正在处理",
-            subtitle: "完成后会自动保存到 Apple Photos。"
+            title: interfaceLanguage.localized(
+                key: "task.processing.title",
+                fallback: "正在处理"
+            ),
+            subtitle: interfaceLanguage.localized(
+                key: "task.processing.subtitle",
+                fallback: "完成后会自动保存到 Apple Photos。"
+            )
         ) {
             taskStatusPill(
                 title: presentation.currentTask.statusText,
@@ -169,8 +202,14 @@ struct V1TaskPageSurface: View {
 
     private var completedResultCard: some View {
         V1TitledSectionCard(
-            title: "刚刚完成",
-            subtitle: "已生成并保存到 Apple Photos。"
+            title: interfaceLanguage.localized(
+                key: "task.completed.title",
+                fallback: "刚刚完成"
+            ),
+            subtitle: interfaceLanguage.localized(
+                key: "task.completed.subtitle",
+                fallback: "已生成并保存到 Apple Photos。"
+            )
         ) {
             taskStatusPill(
                 title: presentation.currentTask.statusText,
@@ -187,7 +226,10 @@ struct V1TaskPageSurface: View {
 
     private var needsAttentionTaskCard: some View {
         V1TitledSectionCard(
-            title: "需要处理",
+            title: interfaceLanguage.localized(
+                key: "task.attention.title",
+                fallback: "需要处理"
+            ),
             subtitle: presentation.currentTask.detailText
         ) {
             taskStatusPill(
@@ -203,12 +245,18 @@ struct V1TaskPageSurface: View {
 
             if presentation.currentTask.canRetryFailures {
                 Button(
-                    "再次尝试",
+                    interfaceLanguage.localized(
+                        key: "task.retry",
+                        fallback: "再次尝试"
+                    ),
                     action: onRetryFailedTasks
                 )
                 .buttonStyle(.borderedProminent)
                 .accessibilityHint(
-                    "重新处理这次失败的照片"
+                    interfaceLanguage.localized(
+                        key: "task.retry.hint",
+                        fallback: "重新处理这次失败的照片"
+                    )
                 )
             }
         }
@@ -352,7 +400,10 @@ struct V1TaskPageSurface: View {
                 Text(
                     presentation.currentTask.progressText
                     ?? presentation.currentTask.itemCountText
-                    ?? "等待照片进入处理"
+                    ?? interfaceLanguage.localized(
+                        key: "task.progress.waiting",
+                        fallback: "等待照片进入处理"
+                    )
                 )
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.primary)
@@ -366,23 +417,41 @@ struct V1TaskPageSurface: View {
                 ProgressView(value: progressFraction)
                     .progressViewStyle(.linear)
                     .tint(presentation.currentTask.tint.color)
-                    .accessibilityLabel("当前任务进度")
+                    .accessibilityLabel(
+                        interfaceLanguage.localized(
+                            key: "task.progress.accessibility",
+                            fallback: "当前任务进度"
+                        )
+                    )
                     .accessibilityValue(
                         presentation.currentTask.progressText
                         ?? presentation.currentTask.itemCountText
-                        ?? "处理中"
+                        ?? interfaceLanguage.localized(
+                            key: "task.progress.processing",
+                            fallback: "处理中"
+                        )
                     )
             } else {
                 ProgressView()
                     .progressViewStyle(.linear)
                     .tint(presentation.currentTask.tint.color)
-                    .accessibilityLabel("当前任务正在处理")
+                    .accessibilityLabel(
+                        interfaceLanguage.localized(
+                            key: "task.processing.accessibility",
+                            fallback: "当前任务正在处理"
+                        )
+                    )
             }
         }
     }
 
     private var pipelineDetailsDisclosure: some View {
-        DisclosureGroup("本次进展") {
+        DisclosureGroup(
+            interfaceLanguage.localized(
+                key: "task.pipeline.title",
+                fallback: "本次进展"
+            )
+        ) {
             pipelineRows
                 .padding(.top, 8)
         }
@@ -476,13 +545,22 @@ struct V1TaskPageSurface: View {
 
     private var recentTasksSection: some View {
         V1TitledSectionCard(
-            title: "最近保存",
-            subtitle: "最近完成的回忆会在这里出现。",
+            title: interfaceLanguage.localized(
+                key: "task.recent.title",
+                fallback: "最近保存"
+            ),
+            subtitle: interfaceLanguage.localized(
+                key: "task.recent.subtitle",
+                fallback: "最近完成的回忆会在这里出现。"
+            ),
             trailingAccessory: {
                 if presentation.historyRows.count > 2 {
                     V1CardHeaderIconButton(
                         systemImage: "ellipsis",
-                        accessibilityLabel: "查看更多最近保存的回忆"
+                        accessibilityLabel: interfaceLanguage.localized(
+                            key: "task.recent.more",
+                            fallback: "查看更多最近保存的回忆"
+                        )
                     ) {
                         isRecentTasksSheetPresented = true
                     }
@@ -519,11 +597,21 @@ struct V1TaskPageSurface: View {
                     .listRowSeparator(.visible)
             }
             .listStyle(.plain)
-            .navigationTitle("最近保存的回忆")
+            .navigationTitle(
+                interfaceLanguage.localized(
+                    key: "task.recent.sheet.title",
+                    fallback: "最近保存的回忆"
+                )
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("完成") {
+                    Button(
+                        interfaceLanguage.localized(
+                            key: "common.done",
+                            fallback: "完成"
+                        )
+                    ) {
                         isRecentTasksSheetPresented = false
                     }
                 }
@@ -545,9 +633,19 @@ struct V1TaskPageSurface: View {
                 )
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("还没有保存的回忆")
+                Text(
+                    interfaceLanguage.localized(
+                        key: "task.recent.empty.title",
+                        fallback: "还没有保存的回忆"
+                    )
+                )
                     .font(.subheadline.weight(.semibold))
-                Text("从 Apple Photos 分享照片后，这里会显示最近保存的回忆。")
+                Text(
+                    interfaceLanguage.localized(
+                        key: "task.recent.empty.detail",
+                        fallback: "从 Apple Photos 分享照片后，这里会显示最近保存的回忆。"
+                    )
+                )
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -597,8 +695,11 @@ struct V1TaskPageSurface: View {
                         presentation
                         .currentTask
                         .photoLibraryLink?
-                        .actionTitle
-                        ?? "打开照片 App"
+                        .actionTitle(language: interfaceLanguage)
+                        ?? interfaceLanguage.localized(
+                            key: "task.photoLibrary.open",
+                            fallback: "打开照片 App"
+                        )
                     )
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
@@ -610,8 +711,11 @@ struct V1TaskPageSurface: View {
                         presentation
                         .currentTask
                         .photoLibraryLink?
-                        .saveDestinationText
-                        ?? "已保存到系统图库"
+                        .saveDestinationText(language: interfaceLanguage)
+                        ?? interfaceLanguage.localized(
+                            key: "task.photoLibrary.saved",
+                            fallback: "已保存到系统图库"
+                        )
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -649,8 +753,11 @@ struct V1TaskPageSurface: View {
             presentation
             .currentTask
             .photoLibraryLink?
-            .accessibilityHint
-            ?? "打开照片 App 查看已保存的回忆"
+            .accessibilityHint(language: interfaceLanguage)
+            ?? interfaceLanguage.localized(
+                key: "task.photoLibrary.hint",
+                fallback: "打开照片 App 查看已保存的回忆"
+            )
         )
     }
 
@@ -743,6 +850,10 @@ struct V1TaskPageSurface: View {
 
 private struct V1TaskLocalThumbnail: View {
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     let sourceURL: URL?
     let symbolName: String
     let tint: PhotoMemoiOSQueueDiagnosticsTint
@@ -809,8 +920,17 @@ private struct V1TaskLocalThumbnail: View {
         }
         .accessibilityLabel(
             itemCount > 1
-                ? "共 \(itemCount) 张照片，显示第一张已保存结果作为封面"
-                : "照片缩略图"
+                ? interfaceLanguage.localized(
+                    key: "task.thumbnail.multiple",
+                    fallback: "共 %@ 张照片，显示第一张已保存结果作为封面"
+                ).replacingOccurrences(
+                    of: "%@",
+                    with: String(itemCount)
+                )
+                : interfaceLanguage.localized(
+                    key: "task.thumbnail.single",
+                    fallback: "照片缩略图"
+                )
         )
     }
 

@@ -271,9 +271,9 @@ enum MemoryAnchorExpressionResolver {
         switch anchorType {
         case .birthday:
             if relativeSnapshot.isOnAnchorDay {
-                return language == .english
-                    ? "day of birth"
-                    : "出生当天"
+                return MemoryNarrativeFormatter.birthDayLabel(
+                    language: language
+                )
             }
             return relativeSnapshot.ageText(language: language)
         case .relationship,
@@ -299,6 +299,41 @@ enum MemoryAnchorExpressionResolver {
             Bool = false,
         language: MemoMarkLanguage = .simplifiedChinese
     ) -> String {
+        let resolvedStyle =
+            MemoryAnchorExpressionStyle
+            .resolvedStyle(
+                for: anchorType,
+                candidate: expressionStyle
+            )
+
+        if resolvedStyle.isCanonicalNatural {
+            return narrativeText(
+                subjectText: subjectText,
+                anchorTitle: anchorTitle,
+                anchorType: anchorType,
+                relativeSnapshot: relativeSnapshot,
+                annualOccurrence: annualOccurrence,
+                prefersAnnualOccurrence: prefersAnnualOccurrence,
+                language: language
+            )
+        }
+
+        // The legacy style matrix is currently localized only for Chinese and
+        // English. A Japanese/Korean request must never fall through to the
+        // historical Chinese branch, so use the canonical Narrative strategy
+        // until those style-specific phrases are migrated.
+        if language == .japanese || language == .korean {
+            return narrativeText(
+                subjectText: subjectText,
+                anchorTitle: anchorTitle,
+                anchorType: anchorType,
+                relativeSnapshot: relativeSnapshot,
+                annualOccurrence: annualOccurrence,
+                prefersAnnualOccurrence: prefersAnnualOccurrence,
+                language: language
+            )
+        }
+
         if language == .english {
             return englishRenderedText(
                 subjectText: subjectText,
@@ -311,12 +346,6 @@ enum MemoryAnchorExpressionResolver {
             )
         }
 
-        let resolvedStyle =
-            MemoryAnchorExpressionStyle
-            .resolvedStyle(
-                for: anchorType,
-                candidate: expressionStyle
-            )
         let resolvedSubject =
             normalizedText(subjectText)
             ?? normalizedText(anchorTitle)
@@ -542,6 +571,69 @@ enum MemoryAnchorExpressionResolver {
 }
 
 private extension MemoryAnchorExpressionResolver {
+
+    static func narrativeText(
+        subjectText: String,
+        anchorTitle: String,
+        anchorType: AnchorType,
+        relativeSnapshot: MemoryAnchorRelativeSnapshot,
+        annualOccurrence: MemoryAnchorAnnualOccurrence?,
+        prefersAnnualOccurrence: Bool,
+        language: MemoMarkLanguage
+    ) -> String {
+
+        let occurrence: MemoryNarrativeOccurrence
+        if relativeSnapshot.isFutureRelative {
+            occurrence = .countdown
+        } else if prefersAnnualOccurrence,
+                  annualOccurrence != nil {
+            occurrence = .anniversary
+        } else if relativeSnapshot.isOnAnchorDay {
+            occurrence = anchorType == .birthday
+                ? .birthDay
+                : .anchorDay
+        } else {
+            occurrence = .elapsed
+        }
+
+        return MemoryNarrativeFormatter.format(
+            context: MemoryNarrativeContext(
+                anchorType: anchorType,
+                subjectDisplayName: subjectText,
+                anchorTitle: anchorTitle,
+                occurrence: occurrence,
+                ageComponents:
+                    anchorType == .birthday
+                    ? MemoryAgeComponents(
+                        years: relativeSnapshot.years,
+                        months: relativeSnapshot.months,
+                        days: relativeSnapshot.days
+                    )
+                    : nil,
+                durationComponents:
+                    MemoryDurationComponents(
+                        years: relativeSnapshot.years,
+                        months: relativeSnapshot.months,
+                        days: relativeSnapshot.days,
+                        totalDays: relativeSnapshot.totalDays
+                    ),
+                countdownComponents:
+                    occurrence == .countdown
+                    ? MemoryCountdownComponents(
+                        totalDays: relativeSnapshot.totalDays
+                    )
+                    : nil,
+                annualOccurrence: annualOccurrence,
+                expressionStyle:
+                    MemoryAnchorExpressionStyle.resolvedStyle(
+                        for: anchorType,
+                        candidate: nil
+                    ),
+                language: language,
+                formattingMode: .legacyCompatible
+            )
+        )
+    }
 
     static func englishRenderedText(
         subjectText: String,

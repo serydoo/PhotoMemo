@@ -24,7 +24,7 @@ enum ConfigurationSnapshotBuilder {
     static func build(
         from subject: MemorySubject,
         smartModuleCarrierRegion: CardRegion = .slotD,
-        language: MemoMarkLanguage = .stored
+        language: MemoMarkLanguage = .defaultOutputLanguage
     ) -> ConfigurationSnapshot {
         ConfigurationSnapshot(
             subjectID: subject.id,

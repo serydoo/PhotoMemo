@@ -10,13 +10,37 @@ struct BirthdayAgeExpressionProvider:
         anchor: MemoryAnchor,
         context: MemoryExpressionContext
     ) -> String {
-        if semanticResult.relativeSnapshot.isOnAnchorDay {
-            return context.language == .english
-                ? "\(subjectText) arrived in the world today"
-                : "\(subjectText)今天来到这个世界啦！"
-        }
+        let snapshot = semanticResult.relativeSnapshot
+        let ageComponents = MemoryAgeComponents(
+            years: snapshot.years,
+            months: snapshot.months,
+            days: snapshot.days
+        )
 
-        return "今天\(subjectText)\(semanticResult.displayText)"
+        return MemoryNarrativeFormatter.format(
+            context: MemoryNarrativeContext(
+                anchorType: .birthday,
+                subjectDisplayName: subjectText,
+                anchorTitle: anchor.title,
+                occurrence: semanticResult.narrativeOccurrence,
+                ageComponents: ageComponents,
+                durationComponents: MemoryDurationComponents(
+                    years: snapshot.years,
+                    months: snapshot.months,
+                    days: snapshot.days,
+                    totalDays: snapshot.totalDays
+                ),
+                countdownComponents: semanticResult.kind == .countdown
+                    ? MemoryCountdownComponents(
+                        totalDays: snapshot.totalDays
+                    )
+                    : nil,
+                expressionStyle: .birthdayNatural,
+                captureDate: context.captureDate,
+                language: context.language,
+                formattingMode: .legacyCompatible
+            )
+        )
     }
 }
 #endif

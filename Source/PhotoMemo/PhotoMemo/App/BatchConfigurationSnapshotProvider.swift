@@ -253,7 +253,7 @@ struct BatchConfigurationSnapshotProvider {
         timeDisplayConfiguration:
             ExpressionModuleConfiguration? = nil,
         mediaOutputModeRawValue: String? = nil,
-        language: MemoMarkLanguage = .stored
+        language: MemoMarkLanguage = .defaultOutputLanguage
     ) -> BatchConfigurationSnapshot {
         let resolvedAnchor =
             resolvedAnchor(

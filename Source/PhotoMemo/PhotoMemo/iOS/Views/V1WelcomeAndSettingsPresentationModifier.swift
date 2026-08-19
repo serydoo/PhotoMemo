@@ -15,6 +15,7 @@ struct V1WelcomeAndSettingsPresentationModifier<SettingsContent: View>:
         content
             .sheet(isPresented: binding(\.showsWelcomePage)) {
                 V1FirstRunConfigurationSheet(
+                    language: .interfaceStored,
                     onSave: initializeFirstConfiguration,
                     onDefer: completeWelcomeFlow
                 )
@@ -36,7 +37,10 @@ struct V1WelcomeAndSettingsPresentationModifier<SettingsContent: View>:
                     settingsContent
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
-                                Button("完成") {
+                                Button(MemoMarkLanguage.interfaceStored.localized(
+                                    key: "common.done",
+                                    fallback: "完成"
+                                )) {
                                     flowState = V1EntryFlowCoordinator
                                         .closeSettingsPage(from: flowState)
                                 }
@@ -46,16 +50,28 @@ struct V1WelcomeAndSettingsPresentationModifier<SettingsContent: View>:
                 }
             }
             .alert(
-                "请先完成配置",
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "welcome.configuration_required.title",
+                    fallback: "请先完成配置"
+                ),
                 isPresented: $showsConfigurationRequiredAlert
             ) {
-                Button("去配置中心") {
+                Button(MemoMarkLanguage.interfaceStored.localized(
+                    key: "welcome.configuration_required.open",
+                    fallback: "去配置中心"
+                )) {
                     flowState = V1EntryFlowCoordinator
                         .openEditorTab(from: flowState)
                 }
-                Button("稍后", role: .cancel) {}
+                Button(MemoMarkLanguage.interfaceStored.localized(
+                    key: "welcome.configuration_required.later",
+                    fallback: "稍后"
+                ), role: .cancel) {}
             } message: {
-                Text("首次处理前，请先在配置中心保存当前记忆对象的配置。输出部分默认会按系统推荐走；如果你改了输出设置，保存后也会一并写回当前配置。")
+                Text(MemoMarkLanguage.interfaceStored.localized(
+                    key: "welcome.configuration_required.message",
+                    fallback: "首次处理前，请先在配置中心保存当前记忆对象的配置。输出部分默认会按系统推荐走；如果你改了输出设置，保存后也会一并写回当前配置。"
+                ))
             }
     }
 }

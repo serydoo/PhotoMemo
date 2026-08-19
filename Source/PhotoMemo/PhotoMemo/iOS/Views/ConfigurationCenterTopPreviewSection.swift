@@ -5,6 +5,13 @@ struct ConfigurationCenterTopPreviewSection<
     ProfilePresetControl: View
 >: View {
 
+    @AppStorage(
+        MemoMarkLanguage.interfacePreferenceStorageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var interfaceLanguagePreferenceRawValue =
+        MemoMarkInterfaceLanguagePreference.system.rawValue
+
     @ObservedObject
     var session: ConfigurationSession
 
@@ -134,7 +141,12 @@ struct ConfigurationCenterTopPreviewSection<
                         }
                     }
 
-                    Text("调整记忆表达，并实时确认最终卡片。")
+                    Text(
+                        interfaceLocalized(
+                            "configuration.preview.statement",
+                            fallback: "Adjust the memory expression and confirm the final card in real time."
+                        )
+                    )
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -146,14 +158,20 @@ struct ConfigurationCenterTopPreviewSection<
                     HStack(spacing: 8) {
                         if showsNavigatorButton {
                             topIconButton(
-                                title: "配置导航",
+                                title: interfaceLocalized(
+                                    "configuration.preview.navigator",
+                                    fallback: "配置导航"
+                                ),
                                 systemImage: MemoMarkSymbol.module.name,
                                 action: onOpenNavigator
                             )
                         }
 
                         topIconButton(
-                            title: "设置",
+                            title: interfaceLocalized(
+                                "configuration.preview.settings",
+                                fallback: "设置"
+                            ),
                             systemImage: "slider.horizontal.3",
                             action: onOpenSettings
                         )
@@ -169,7 +187,7 @@ struct ConfigurationCenterTopPreviewSection<
     }
 
     private var productTitle: some View {
-        Text("时光记")
+        Text("MemoMark")
             .font(.largeTitle.weight(.bold))
             .foregroundStyle(.primary)
     }
@@ -184,7 +202,10 @@ struct ConfigurationCenterTopPreviewSection<
 
             if isRenamingProfile {
                 TextField(
-                    "配置名称",
+                    interfaceLocalized(
+                        "configuration.preview.configuration_name",
+                        fallback: "配置名称"
+                    ),
                     text: profileTitle
                 )
                 .textFieldStyle(.plain)
@@ -259,7 +280,12 @@ struct ConfigurationCenterTopPreviewSection<
 
     private var profileTitleBlock: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("当前生效配置")
+            Text(
+                interfaceLocalized(
+                    "configuration.preview.active_configuration",
+                    fallback: "Active Configuration"
+                )
+            )
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
@@ -284,7 +310,12 @@ struct ConfigurationCenterTopPreviewSection<
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
-            .help("重命名")
+            .help(
+                interfaceLocalized(
+                    "configuration.preview.rename",
+                    fallback: "重命名"
+                )
+            )
 
             Button(action: onResetPreset) {
                 Image(systemName: "arrow.counterclockwise")
@@ -293,7 +324,12 @@ struct ConfigurationCenterTopPreviewSection<
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
-            .help("重置")
+            .help(
+                interfaceLocalized(
+                    "configuration.preview.reset",
+                    fallback: "重置"
+                )
+            )
         }
     }
 
@@ -308,7 +344,13 @@ struct ConfigurationCenterTopPreviewSection<
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 8) {
-                Label("切换即生效", systemImage: "arrow.left.arrow.right")
+            Label(
+                interfaceLocalized(
+                    "configuration.preview.switch_applies",
+                    fallback: "Switching applies immediately"
+                ),
+                systemImage: "arrow.left.arrow.right"
+            )
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.primary.opacity(0.78))
                     .padding(.horizontal, 10)
@@ -328,17 +370,32 @@ struct ConfigurationCenterTopPreviewSection<
     private var compactCardPreview: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text("记忆卡片预览")
+                Text(
+                    interfaceLocalized(
+                        "configuration.preview.card_title",
+                        fallback: "Memory Card Preview"
+                    )
+                )
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("当前生效配置")
+                Text(
+                    interfaceLocalized(
+                        "configuration.preview.active_configuration",
+                        fallback: "Active Configuration"
+                    )
+                )
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
 
                 Spacer(minLength: 0)
 
-                Text("保持 renderer 比例锁定，仅放大观察尺寸")
+                Text(
+                    interfaceLocalized(
+                        "configuration.preview.renderer_hint",
+                        fallback: "Renderer proportions stay locked; only the viewing size changes"
+                    )
+                )
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -439,10 +496,29 @@ struct ConfigurationCenterTopPreviewSection<
         .padding(.horizontal, 2)
     }
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        MemoMarkInterfaceLanguagePreference(
+            rawValue: interfaceLanguagePreferenceRawValue
+        )?.resolvedLanguage ?? .interfaceStored
+    }
+
+    private func interfaceLocalized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage.localized(
+            key: key,
+            fallback: fallback
+        )
+    }
+
     private var profileFactsWide: some View {
         HStack(alignment: .center, spacing: 8) {
             profileInlineFact(
-                title: "对象",
+                title: interfaceLocalized(
+                    "configuration.preview.subject",
+                    fallback: "对象"
+                ),
                 value: currentSubjectTitle,
                 systemImage: MemoMarkSymbol.memorySubject.name
             )
@@ -452,7 +528,10 @@ struct ConfigurationCenterTopPreviewSection<
                 .frame(width: 0.5, height: 16)
 
             profileInlineFact(
-                title: "锚点",
+                title: interfaceLocalized(
+                    "configuration.preview.anchor",
+                    fallback: "锚点"
+                ),
                 value: currentAnchorTitle,
                 systemImage: MemoMarkSymbol.timeAnchor.name
             )
@@ -462,7 +541,10 @@ struct ConfigurationCenterTopPreviewSection<
                 .frame(width: 0.5, height: 16)
 
             profileInlineFact(
-                title: "边框",
+                title: interfaceLocalized(
+                    "configuration.preview.border",
+                    fallback: "边框"
+                ),
                 value: currentBorderStyleName,
                 systemImage: MemoMarkSymbol.configuration.name
             )
@@ -472,19 +554,28 @@ struct ConfigurationCenterTopPreviewSection<
     private var profileFactsCompact: some View {
         VStack(alignment: .leading, spacing: 8) {
             profileInlineFact(
-                title: "对象",
+                title: interfaceLocalized(
+                    "configuration.preview.subject",
+                    fallback: "对象"
+                ),
                 value: currentSubjectTitle,
                 systemImage: MemoMarkSymbol.memorySubject.name
             )
 
             profileInlineFact(
-                title: "锚点",
+                title: interfaceLocalized(
+                    "configuration.preview.anchor",
+                    fallback: "锚点"
+                ),
                 value: currentAnchorTitle,
                 systemImage: MemoMarkSymbol.timeAnchor.name
             )
 
             profileInlineFact(
-                title: "边框",
+                title: interfaceLocalized(
+                    "configuration.preview.border",
+                    fallback: "边框"
+                ),
                 value: currentBorderStyleName,
                 systemImage: MemoMarkSymbol.configuration.name
             )
@@ -527,7 +618,10 @@ struct ConfigurationCenterTopPreviewSection<
             ) ?? ""
 
         return title.isEmpty
-            ? "时间锚点"
+            ? MemoMarkLanguage.interfaceStored.localized(
+                key: "configuration.preview.time_anchor",
+                fallback: "时间锚点"
+            )
             : title
     }
 
@@ -537,7 +631,12 @@ struct ConfigurationCenterTopPreviewSection<
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            Text("保存为当前配置与新建配置保留在下方操作区，这里只负责查看、切换与重命名。")
+            Text(
+                interfaceLocalized(
+                    "configuration.preview.footer_hint",
+                    fallback: "Save as Current Configuration and New Configuration stay in the action area below. This area is for viewing, switching, and renaming."
+                )
+            )
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -565,25 +664,37 @@ struct ConfigurationCenterTopPreviewSection<
         HStack(spacing: 0) {
             regionStripButton(
                 .slotA,
-                title: "记录",
+                title: interfaceLocalized(
+                    "configuration.preview.record",
+                    fallback: "记录"
+                ),
                 systemImage: MemoMarkSymbol.configuration.name
             )
 
             regionStripButton(
                 .slotB,
-                title: "时间线",
+                title: interfaceLocalized(
+                    "configuration.preview.timeline",
+                    fallback: "时间线"
+                ),
                 systemImage: MemoMarkSymbol.timeAnchor.name
             )
 
             regionStripButton(
                 .slotC,
-                title: "拍摄参数",
+                title: interfaceLocalized(
+                    "configuration.preview.capture",
+                    fallback: "拍摄参数"
+                ),
                 systemImage: MemoMarkSymbol.photoMetadata.name
             )
 
             regionStripButton(
                 .slotD,
-                title: "记忆",
+                title: interfaceLocalized(
+                    "configuration.preview.memory",
+                    fallback: "记忆"
+                ),
                 systemImage: MemoMarkSymbol.memoryContent.name
             )
         }
@@ -593,25 +704,37 @@ struct ConfigurationCenterTopPreviewSection<
         HStack(spacing: 0) {
             regionStripButton(
                 .slotA,
-                title: "记录",
+                title: interfaceLocalized(
+                    "configuration.preview.record",
+                    fallback: "记录"
+                ),
                 systemImage: MemoMarkSymbol.configuration.name
             )
 
             regionStripButton(
                 .slotB,
-                title: "时间",
+                title: interfaceLocalized(
+                    "configuration.preview.time",
+                    fallback: "时间"
+                ),
                 systemImage: MemoMarkSymbol.timeAnchor.name
             )
 
             regionStripButton(
                 .slotC,
-                title: "参数",
+                title: interfaceLocalized(
+                    "configuration.preview.parameters",
+                    fallback: "参数"
+                ),
                 systemImage: MemoMarkSymbol.photoMetadata.name
             )
 
             regionStripButton(
                 .slotD,
-                title: "记忆",
+                title: interfaceLocalized(
+                    "configuration.preview.memory",
+                    fallback: "记忆"
+                ),
                 systemImage: MemoMarkSymbol.memoryContent.name
             )
         }

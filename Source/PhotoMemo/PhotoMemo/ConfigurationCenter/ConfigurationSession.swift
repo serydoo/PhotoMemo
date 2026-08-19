@@ -78,15 +78,30 @@ final class ConfigurationSession: ObservableObject {
 
     var language: MemoMarkLanguage {
         get {
-            MemoMarkLanguage.stored
+            presetOutputLanguage
         }
         set {
-            MemoMarkLanguage.persist(newValue)
+            presetOutputLanguage = newValue
             objectWillChange.send()
         }
     }
 
-    var languagePreference: MemoMarkLanguagePreference {
+    var presetOutputLanguage: MemoMarkLanguage {
+        get {
+            editingState.selectedMemoryPresetOutputLanguage
+        }
+        set {
+            editingState.selectedMemoryPresetOutputLanguage = newValue
+            objectWillChange.send()
+        }
+    }
+
+    var defaultOutputLanguage: MemoMarkLanguage {
+        MemoMarkLanguage.defaultOutputLanguage
+    }
+
+    var defaultOutputLanguagePreference:
+        MemoMarkLanguagePreference {
         get {
             MemoMarkLanguage.preference
         }
@@ -98,8 +113,21 @@ final class ConfigurationSession: ObservableObject {
                 MemoMarkLanguage.persist(.simplifiedChinese)
             case .english:
                 MemoMarkLanguage.persist(.english)
+            case .japanese:
+                MemoMarkLanguage.persist(.japanese)
+            case .korean:
+                MemoMarkLanguage.persist(.korean)
             }
             objectWillChange.send()
+        }
+    }
+
+    var languagePreference: MemoMarkLanguagePreference {
+        get {
+            defaultOutputLanguagePreference
+        }
+        set {
+            defaultOutputLanguagePreference = newValue
         }
     }
 
@@ -501,7 +529,10 @@ private extension ConfigurationSession {
                 editingState.state.selectedMemoryPreset?.summary
                 ?? "当前区域组合",
             regionTemplateIDs:
-                editingState.currentRegionTemplateIDs
+                editingState.currentRegionTemplateIDs,
+            language:
+                editingState.state.selectedMemoryPreset?.language
+                ?? MemoMarkLanguage.defaultOutputLanguage
         )
         let snapshot = persistenceReconciler
             .configurationSnapshot(

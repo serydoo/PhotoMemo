@@ -47,7 +47,8 @@ struct MemoryVariableProvider {
                 snapshot: snapshot
             )
             ? formatBabyAge(
-                from: snapshot
+                from: snapshot,
+                language: context.outputLanguage
             )
             : ""
 
@@ -121,39 +122,23 @@ private extension MemoryVariableProvider {
     }
 
     func formatBabyAge(
-        from snapshot:
-            MemoryAnchorRelativeSnapshot
+        from snapshot: MemoryAnchorRelativeSnapshot,
+        language: MemoMarkLanguage
     ) -> String {
         if snapshot.isOnAnchorDay {
-            return "出生当天"
+            return MemoryNarrativeFormatter.birthDayLabel(
+                language: language
+            )
         }
 
-        if snapshot.years > 0 {
-            return [
-                "\(snapshot.years)岁",
-                snapshot.months > 0
-                    ? "\(snapshot.months)个月"
-                    : nil,
-                snapshot.days > 0
-                    ? "\(snapshot.days)天"
-                    : nil
-            ]
-            .compactMap { $0 }
-            .joined()
-        }
-
-        if snapshot.months > 0 {
-            return [
-                "\(snapshot.months)个月",
-                snapshot.days > 0
-                    ? "\(snapshot.days)天"
-                    : nil
-            ]
-            .compactMap { $0 }
-            .joined()
-        }
-
-        return "\(snapshot.days)天"
+        return MemoryAgeFormatter.format(
+            MemoryAgeComponents(
+                years: snapshot.years,
+                months: snapshot.months,
+                days: snapshot.days
+            ),
+            language: language
+        )
     }
 
     func memorySummary(
@@ -177,7 +162,9 @@ private extension MemoryVariableProvider {
                 expressionStyle:
                     anchor.expressionStyle,
                 relativeSnapshot:
-                    snapshot
+                    snapshot,
+                language:
+                    context.outputLanguage
             )
     }
 }

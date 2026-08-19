@@ -6,8 +6,9 @@ import UIKit
 
 struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
-    @Environment(\.locale)
-    private var locale
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
 
     @AppStorage("photomemo.v1.applePhotosGuideDismissed")
     private var hasDismissedApplePhotosGuide = false
@@ -66,7 +67,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
         )
-        .navigationTitle("首页")
+        .navigationTitle(localized("home.title"))
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             processPhotoFooter
@@ -96,8 +97,14 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
     private var applePhotosEntrySection: some View {
         V1TitledSectionCard(
-            title: "从 Apple Photos 开始",
-            subtitle: "在系统相册选好照片，分享给时光记。",
+            title: interfaceLanguage.localized(
+                key: "home.apple_photos.title",
+                fallback: "从 Apple Photos 开始"
+            ),
+            subtitle: interfaceLanguage.localized(
+                key: "home.apple_photos.subtitle",
+                fallback: "在系统相册选好照片，分享给时光记。"
+            ),
             trailingAccessory: {
                 Button(action: dismissApplePhotosGuide) {
                     Image(systemName: "xmark")
@@ -107,8 +114,8 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("关闭首次使用说明")
-                .accessibilityHint("关闭后，仍可在设置的使用流程中查看")
+                .accessibilityLabel(localized("home.apple_photos.close"))
+                .accessibilityHint(localized("home.apple_photos.close_hint"))
             }
         ) {
             VStack(alignment: .leading, spacing: 12) {
@@ -139,7 +146,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                 }
 
                 Button(action: onOpenWorkflowGuide) {
-                    Text("查看分享方法")
+                    Text(localized("home.apple_photos.share_guide"))
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.82)
@@ -160,12 +167,12 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     private var applePhotosWorkflowSteps:
         [V1WelcomePresentation.WorkflowStep] {
         V1WelcomePresentation.workflowSteps(
-            for: MemoMarkLanguage.resolved(from: locale)
+            for: interfaceLanguage
         )
     }
 
     private var applePhotosWorkflowIntroduction: String {
-        MemoMarkLanguage.resolved(from: locale).localized(
+        interfaceLanguage.localized(
             key: "welcome.workflow.introduction",
             fallback: "日常记录从 Apple Photos 开始：选择照片，分享给时光记，完成后再回到相册查看。"
         )
@@ -176,7 +183,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var nextShareConfigurationText: String {
-        let language = MemoMarkLanguage.resolved(from: locale)
+        let language = interfaceLanguage
 
         guard isConfigurationReady,
               let selectedMemoryPresetID,
@@ -193,7 +200,11 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             key: "home.next_share.configuration_format",
             fallback: "下一次从 Apple Photos 分享时，将使用当前配置“%@”。"
         )
-        return String(format: format, locale: locale, preset.title)
+        return String(format: format, locale: language.locale, preset.title)
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
     }
 
     @ViewBuilder
@@ -252,7 +263,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
         VStack(alignment: .leading, spacing: 7) {
             brandTitle
 
-            Text("让照片记得，它在人生里的位置。")
+            Text(localized("home.brand.tagline"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -279,7 +290,12 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var productTitle: some View {
-        Text("时光记")
+        Text(
+            interfaceLanguage.localized(
+                key: "welcome.title",
+                fallback: "MemoMark"
+            )
+        )
             .font(.title2.weight(.bold))
             .foregroundStyle(.primary)
     }
@@ -307,7 +323,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                 )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("打开设置")
+        .accessibilityLabel(localized("home.settings.accessibility"))
     }
 
     private var adaptiveHeaderPills: some View {
@@ -327,21 +343,27 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
     private var privacyHeaderPill: some View {
         V1HomeHeaderPill(
             systemImage: MemoMarkSymbol.privacy.name,
-            title: "本地优先"
+            title: interfaceLanguage.localized(
+                key: "settings.overview.tag.local_first",
+                fallback: "Local First"
+            )
         )
     }
 
     private var applePhotosHeaderPill: some View {
         V1HomeHeaderPill(
             systemImage: MemoMarkSymbol.applePhotos.name,
-            title: "Apple Photos"
+            title: interfaceLanguage.localized(
+                key: "home.apple_photos.brand",
+                fallback: "Apple Photos"
+            )
         )
     }
 
     private var profileSection: some View {
         V1TitledSectionSurface(
-            title: "记忆对象",
-            subtitle: "回忆正围绕谁展开。"
+            title: "home.profile.title",
+            subtitle: "home.profile.subtitle"
         ) {
             V1IOSSubjectHomeEntryContent(
                 subjectSummary: subjectSummary,
@@ -393,12 +415,12 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 
     private var currentPresetSection: some View {
         V1TitledSectionSurface(
-            title: "我的预设",
-            subtitle: "下一次分享，照片会怎样呈现。",
+            title: "home.presets.title",
+            subtitle: "home.presets.subtitle",
             trailingAccessory: {
                 V1CardHeaderIconButton(
                     systemImage: "ellipsis",
-                    accessibilityLabel: "管理本地备份",
+                    accessibilityLabel: localized("home.presets.manage"),
                     action: onOpenLocalConfigurationLibrary
                 )
             }
@@ -442,7 +464,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                 if isEditingMemoryPresetTitle {
                     HStack(spacing: 8) {
                         TextField(
-                            "配置名称",
+                            localized("home.preset.configuration_name"),
                             text: memoryPresetTitleDraft
                         )
                         .textFieldStyle(.plain)
@@ -454,7 +476,7 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                             onCommitMemoryPresetTitle()
                         }
 
-                        Button("完成") {
+                        Button(localized("common.done")) {
                             onCommitMemoryPresetTitle()
                         }
                         .buttonStyle(.plain)
@@ -476,15 +498,15 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
                             )
                             .stroke(ConfigurationUI.faintHairline)
                         )
-                        .accessibilityLabel("完成名称编辑")
+                        .accessibilityLabel(localized("home.preset.done_editing"))
                     }
                     .padding(.horizontal, 4)
                     .padding(.top, 2)
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("右上角可管理本地备份。")
-                    Text("配置内可保存、删除或重命名；勾选切换当前配置。")
+                    Text(localized("home.presets.manage_hint"))
+                    Text(localized("home.presets.edit_hint"))
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -500,8 +522,8 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             Button(action: onOpenPhotoPicker) {
                 Label(
                     isConfigurationReady
-                    ? "App 内选择照片"
-                    : "先完成配置",
+                    ? localized("home.process.choose_photo")
+                    : localized("home.process.configure_first"),
                     systemImage: "photo.on.rectangle"
                 )
                 .font(.caption.weight(.semibold))
@@ -512,8 +534,8 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
             .buttonStyle(V1CompactPrimaryActionButtonStyle())
             .accessibilityLabel(
                 isConfigurationReady
-                ? "App 内选择照片"
-                : "先完成配置"
+                ? localized("home.process.choose_photo")
+                : localized("home.process.configure_first")
             )
         }
         .frame(maxWidth: .infinity)
@@ -528,6 +550,10 @@ struct V1HomePageSurface<ProfileTrackingBackground: View>: View {
 }
 
 private struct V1IOSHomeActivityCard: View {
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
 
     @Environment(\.accessibilityReduceMotion)
     private var accessibilityReduceMotion
@@ -549,7 +575,7 @@ private struct V1IOSHomeActivityCard: View {
         Group {
             if isMounted {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("当前任务")
+                    Text(localized("home.activity.title"))
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.primary)
 
@@ -597,7 +623,11 @@ private struct V1IOSHomeActivityCard: View {
                         "\(projection.countText)，\(projection.statusText)"
                     )
                     .accessibilityValue(
-                        "进度 \(progressPercentText)"
+                        String(
+                            format: localized("home.activity.progress"),
+                            locale: interfaceLanguage.locale,
+                            progressPercentText
+                        )
                     )
                 }
                 .opacity(isVisible ? 1 : 0)
@@ -640,6 +670,10 @@ private struct V1IOSHomeActivityCard: View {
 
     private var progressPercentText: String {
         "\(Int((projection.progressFraction * 100).rounded()))%"
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
     }
 
     @MainActor
@@ -721,6 +755,10 @@ private struct V1IOSHomeActivityCard: View {
 
 private struct V1HomeMemoryPresetRow: View {
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
@@ -745,31 +783,35 @@ private struct V1HomeMemoryPresetRow: View {
                 Button(role: .destructive) {
                     showsDeleteConfirmation = true
                 } label: {
-                    Label("删除", systemImage: "trash")
+                    Label(localized("home.preset.delete"), systemImage: "trash")
                 }
                 .tint(.red)
-                .accessibilityLabel("删除配置")
+                .accessibilityLabel(localized("home.preset.delete_accessibility"))
 
                 Button(action: onSave) {
                     Label(
-                        "保存",
+                        localized("home.preset.save"),
                         systemImage: MemoMarkSymbol.localStorage.name
                     )
                 }
                 .tint(.blue)
                 .disabled(isSaveDisabled)
-                .accessibilityLabel("保存配置到本地库")
+                .accessibilityLabel(localized("home.preset.save_accessibility"))
             }
             .alert(
-                "删除“\(preset.title)”配置？",
+                String(
+                    format: localized("home.preset.delete_confirmation"),
+                    locale: interfaceLanguage.locale,
+                    preset.title
+                ),
                 isPresented: $showsDeleteConfirmation
             ) {
-                Button("取消", role: .cancel) {}
-                Button("删除配置", role: .destructive) {
+                Button(localized("home.preset.cancel"), role: .cancel) {}
+                Button(localized("home.preset.delete"), role: .destructive) {
                     onDelete()
                 }
             } message: {
-                Text("本地配置库中的备份会保留。此操作无法撤销。")
+                Text(localized("home.preset.delete_message"))
             }
     }
 
@@ -858,13 +900,13 @@ private struct V1HomeMemoryPresetRow: View {
             Menu {
                 if isSelected {
                     Button(action: onRename) {
-                        Label("重命名", systemImage: "pencil")
+                        Label(localized("home.preset.rename"), systemImage: "pencil")
                     }
                 }
 
                 Button(action: onSave) {
                     Label(
-                        "保存",
+                        localized("home.preset.save"),
                         systemImage: MemoMarkSymbol.localStorage.name
                     )
                 }
@@ -873,7 +915,7 @@ private struct V1HomeMemoryPresetRow: View {
                 Button(role: .destructive) {
                     showsDeleteConfirmation = true
                 } label: {
-                    Label("删除", systemImage: "trash")
+                    Label(localized("home.preset.delete"), systemImage: "trash")
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
@@ -884,7 +926,7 @@ private struct V1HomeMemoryPresetRow: View {
                         Rectangle().inset(by: -7)
                     )
             }
-            .accessibilityLabel("更多配置操作")
+            .accessibilityLabel(localized("home.preset.more_actions"))
 
             Image(
                 systemName:
@@ -938,7 +980,12 @@ private struct V1HomeMemoryPresetRow: View {
             .stroke(anchorTint.opacity(0.12))
         )
         .accessibilityLabel(
-            "\(anchorType.displayName)，Logo 标识：\(preset.logoMode.title)"
+            String(
+                format: localized("home.preset.identity_format"),
+                locale: interfaceLanguage.locale,
+                anchorType.localizedDisplayName(for: interfaceLanguage),
+                localizedLogoTitle
+            )
         )
     }
 
@@ -1011,20 +1058,39 @@ private struct V1HomeMemoryPresetRow: View {
             return .blue
         }
     }
+
+    private var localizedLogoTitle: String {
+        switch preset.logoMode {
+        case .appleMini:
+            return localized("home.logo.apple")
+        case .customUpload:
+            return localized("home.logo.custom")
+        case .subjectAvatar:
+            return localized("home.logo.avatar")
+        }
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
+    }
 }
 
 private struct V1HomeEmptyPresetRow: View {
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
 
     var body: some View {
         HStack(spacing: 12) {
             V1HomeConfigurationGlyph()
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("当前对象还没有配置")
+                Text(localized("home.empty.title"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("请先在配置中心保存一次完整配置，之后才能开始处理照片。输出部分如果不自定义，会继续按默认规则走。")
+                Text(localized("home.empty.detail"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1046,6 +1112,10 @@ private struct V1HomeEmptyPresetRow: View {
             )
             .stroke(ConfigurationUI.faintHairline)
         )
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
     }
 }
 
@@ -1137,21 +1207,25 @@ private struct V1HomeHeaderPill: View {
 
 private struct V1HomeWorkflowReminderCard: View {
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("怎么记录")
+            Text(localized("home.workflow.title"))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
             Text(
-                "从 Apple Photos 选择照片并分享给时光记；时光记会按当前预设在本地处理，完成后将新照片保存回 Apple Photos。"
+                localized("home.workflow.detail")
             )
             .font(.caption)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
 
             Text(
-                "PS：也可以使用下方“App 内选择照片”；日常记录仍建议从 Apple Photos 分享。"
+                localized("home.workflow.note")
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -1174,6 +1248,10 @@ private struct V1HomeWorkflowReminderCard: View {
             .stroke(ConfigurationUI.faintHairline)
         )
         .accessibilityElement(children: .combine)
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
     }
 }
 #endif

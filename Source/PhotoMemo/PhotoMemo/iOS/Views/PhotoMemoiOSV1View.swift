@@ -209,10 +209,16 @@ struct PhotoMemoiOSV1View: View {
     private var hasSeenWelcome = false
 
     private let currentBorderStyleName =
-        "基础白"
+        MemoMarkLanguage.interfaceStored.localized(
+            key: "configuration.preview.basic_white",
+            fallback: "基础白"
+        )
 
     private let currentBorderStyleDescription =
-        "Classic White 当前唯一公开边框，预览与生成保持同一套锁定规范。"
+        MemoMarkLanguage.interfaceStored.localized(
+            key: "configuration.preview.basic_white.description",
+            fallback: "Classic White 当前唯一公开边框，预览与生成保持同一套锁定规范。"
+        )
 
     private let previewCompositionEngine =
         V1PreviewCompositionEngine()
@@ -689,29 +695,51 @@ struct PhotoMemoiOSV1View: View {
                 subjectName:
                     session.state.selectedSubject?
                     .identity.displayName
-                    ?? "全部记忆对象",
+                    ?? MemoMarkLanguage.interfaceStored.localized(
+                        key: "configuration.subjects.all",
+                        fallback: "全部记忆对象"
+                    ),
                 onRefresh: refreshLocalConfigurationLibrary,
                 onRestore: restoreLocalConfigurationBackup,
                 onDelete: deleteLocalConfigurationBackup
             )
         )
         .alert(
-            "有未保存的修改",
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "configuration.unsaved_switch.title",
+                fallback: "有未保存的修改"
+            ),
             isPresented:
                 $rootPresentationState
                 .switchPresentation
                 .showsUnsavedPresetSwitchAlert
         ) {
-            Button("保存并切换") {
+            Button(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "common.save_and_switch",
+                    fallback: "保存并切换"
+                )
+            ) {
                 saveCurrentConfigurationThenActivatePendingPreset()
             }
-            Button("取消", role: .cancel) {
+            Button(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "common.cancel",
+                    fallback: "取消"
+                ),
+                role: .cancel
+            ) {
                 rootPresentationState
                     .switchPresentation
                     .pendingMemoryPresetActivation = nil
             }
         } message: {
-            Text("请先保存当前配置，再切换到另一条配置，避免丢失刚刚的修改。")
+            Text(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "configuration.unsaved_switch.message",
+                    fallback: "请先保存当前配置，再切换到另一条配置，避免丢失刚刚的修改。"
+                )
+            )
         }
         .task {
             await loadAlbumOptions()
@@ -1359,7 +1387,10 @@ struct PhotoMemoiOSV1View: View {
     ) async {
         guard let configurationDeletionRuntimeCoordinator else {
             presentHomeConfigurationActionFeedback(
-                "当前配置库不可用，请稍后重试。"
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "configuration.library.unavailable",
+                    fallback: "当前配置库不可用，请稍后重试。"
+                )
             )
             return
         }
@@ -1374,7 +1405,14 @@ struct PhotoMemoiOSV1View: View {
             bootstrapDrafts()
             activeConfigurationStatus = .saved
             presentHomeConfigurationActionFeedback(
-                "已删除“\(durableResult.deletedPreset.title)”。本地备份仍会保留。",
+                String(
+                    format: MemoMarkLanguage.interfaceStored.localized(
+                        key: "configuration.deleted_format",
+                        fallback: "已删除“%@”。本地备份仍会保留。"
+                    ),
+                    locale: MemoMarkLanguage.interfaceStored.locale,
+                    durableResult.deletedPreset.title
+                ),
                 isBlocking: false
             )
         case .rejected(let message):
@@ -1748,7 +1786,10 @@ struct PhotoMemoiOSV1View: View {
                 activeConfigurationStatus = .failure(
                     message:
                         (error as? PhotoMemoError)?.message
-                        ?? "记忆对象保存失败，请重试。"
+                        ?? MemoMarkLanguage.interfaceStored.localized(
+                            key: "subject.save_failed",
+                            fallback: "记忆对象保存失败，请重试。"
+                        )
                 )
             }
         }
@@ -2717,7 +2758,8 @@ struct PhotoMemoiOSV1View: View {
                 processingDiagnosticsSnapshot:
                     processingDiagnosticsSnapshot,
                 events:
-                    shareDiagnosticEvents
+                    shareDiagnosticEvents,
+                language: .interfaceStored
             )
     }
 
@@ -2882,8 +2924,14 @@ struct PhotoMemoiOSV1View: View {
         let existingPreset = session.state.selectedMemoryPreset
             ?? session.state.memoryPresets.first
         let preset = MemoryPreset(
-            title: "生日回顾",
-            summary: "以生日为时间起点，自然回顾照片拍摄时的年龄。",
+            title: MemoMarkLanguage.interfaceStored.localized(
+                key: "welcome.default_preset.title",
+                fallback: "生日回顾"
+            ),
+            summary: MemoMarkLanguage.interfaceStored.localized(
+                key: "welcome.default_preset.summary",
+                fallback: "以生日为时间起点，自然回顾照片拍摄时的年龄。"
+            ),
             regionTemplateIDs:
                 existingPreset?.regionTemplateIDs ?? [:],
             selectedSubjectID: subject.id,
@@ -3016,18 +3064,32 @@ struct PhotoMemoiOSV1View: View {
         switch result.status {
         case .configurationSaveFailed:
             presentHomeConfigurationActionFeedback(
-                "当前配置没有保存成功，请稍后重试。"
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "configuration.save_failed",
+                    fallback: "当前配置没有保存成功，请稍后重试。"
+                )
             )
             return
         case .noSupportedPhotos:
             presentHomeConfigurationActionFeedback(
-                "没有找到可处理的照片，请确认照片已从 iCloud 下载完成。"
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "photo.no_supported",
+                    fallback: "没有找到可处理的照片，请确认照片已从 iCloud 下载完成。"
+                )
             )
             break
         case .submitted:
             if result.failedCount > 0 {
                 presentHomeConfigurationActionFeedback(
-                    "已接收 \(result.submittedItems.count) 张，另有 \(result.failedCount) 张无法读取，请确认原图已下载完成。",
+                    String(
+                        format: MemoMarkLanguage.interfaceStored.localized(
+                            key: "photo.submitted_format",
+                            fallback: "已接收 %lld 张，另有 %lld 张无法读取，请确认原图已下载完成。"
+                        ),
+                        locale: MemoMarkLanguage.interfaceStored.locale,
+                        result.submittedItems.count,
+                        result.failedCount
+                    ),
                     isBlocking: false
                 )
             }

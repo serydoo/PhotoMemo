@@ -191,7 +191,10 @@ private extension PhotoMemoShareExtensionViewController {
 
         let summaryCard =
             makeTitledSectionContainer(
-                title: "本次分享",
+                title: localized(
+                    "share.summary.title",
+                    fallback: "This Share"
+                ),
                 contentView:
                     makeInnerCardContainer(
                         contentView: makeSummaryStack()
@@ -378,7 +381,10 @@ private extension PhotoMemoShareExtensionViewController {
         brandLabel.textColor =
             .tertiaryLabel
         brandLabel.text =
-            "时光记"
+            localized(
+                "share.brand",
+                fallback: "MemoMark"
+            )
         brandLabel.textAlignment = .center
         brandLabel.adjustsFontForContentSizeCategory = true
         brandLabel.accessibilityTraits =
@@ -430,7 +436,10 @@ private extension PhotoMemoShareExtensionViewController {
         statusTitleLabel.adjustsFontForContentSizeCategory = true
         statusTitleLabel.accessibilityTraits = .header
         statusTitleLabel.text =
-            "处理状态"
+            localized(
+                "share.status.title",
+                fallback: "Processing Status"
+            )
 
         statusStageLabel.font =
             UIFontMetrics(forTextStyle: .subheadline)
@@ -467,8 +476,8 @@ private extension PhotoMemoShareExtensionViewController {
         processingChecklistStack.addArrangedSubview(
             makeProcessingChecklistRow(
                 symbolName: "photo.stack.fill",
-                title: MemoMarkLanguage.interfaceStored.localized(
-                    key: "原图保持不变",
+                title: localized(
+                    "share.checklist.original_unchanged",
                     fallback: "Original stays unchanged"
                 )
             )
@@ -476,8 +485,8 @@ private extension PhotoMemoShareExtensionViewController {
         processingChecklistStack.addArrangedSubview(
             makeProcessingChecklistRow(
                 symbolName: "doc.badge.gearshape",
-                title: MemoMarkLanguage.interfaceStored.localized(
-                    key: "保留拍摄信息",
+                title: localized(
+                    "share.checklist.capture_preserved",
                     fallback: "Capture information preserved"
                 )
             )
@@ -485,8 +494,8 @@ private extension PhotoMemoShareExtensionViewController {
         processingChecklistStack.addArrangedSubview(
             makeProcessingChecklistRow(
                 symbolName: "arrow.right.circle.fill",
-                title: MemoMarkLanguage.interfaceStored.localized(
-                    key: "后台继续处理",
+                title: localized(
+                    "share.checklist.background_processing",
                     fallback: "Continues in the background"
                 )
             )
@@ -494,8 +503,8 @@ private extension PhotoMemoShareExtensionViewController {
         processingChecklistStack.addArrangedSubview(
             makeProcessingChecklistRow(
                 symbolName: "bell.fill",
-                title: MemoMarkLanguage.interfaceStored.localized(
-                    key: "完成后发送通知",
+                title: localized(
+                    "share.checklist.notification",
                     fallback: "Notification when complete"
                 )
             )
@@ -606,10 +615,10 @@ private extension PhotoMemoShareExtensionViewController {
             .secondaryLabel
         previewCaptionLabel.numberOfLines = 0
         previewCaptionLabel.adjustsFontForContentSizeCategory = true
-        previewCaptionLabel.text =
-            MemoMarkLanguage.interfaceStored == .english
-            ? "The receiving status for each photo appears here."
-            : "每张照片的接收状态会显示在这里。"
+        previewCaptionLabel.text = localized(
+            "share.preview.caption.processing",
+            fallback: "The receiving status for each photo appears here."
+        )
     }
 
     func configureFooterLabel() {
@@ -690,7 +699,10 @@ private extension PhotoMemoShareExtensionViewController {
         headerLabel.font =
             MemoMarkDesignTokens.Typography.sectionTitle.uiFont()
         headerLabel.text =
-            "处理队列"
+            localized(
+                "share.preview.title",
+                fallback: "Processing Queue"
+            )
 
         let imageContainer =
             UIView()
@@ -779,21 +791,24 @@ private extension PhotoMemoShareExtensionViewController {
         stack.spacing = 12
         stack.addArrangedSubview(
             makeSummaryRow(
-                title: "照片",
+                title: localized("share.summary.photo", fallback: "Photos"),
                 valueLabel: sharedCountValueLabel,
                 addsDivider: true
             )
         )
         stack.addArrangedSubview(
             makeSummaryRow(
-                title: "配置",
+                title: localized(
+                    "share.summary.configuration",
+                    fallback: "Configuration"
+                ),
                 valueLabel: currentStyleValueLabel,
                 addsDivider: true
             )
         )
         stack.addArrangedSubview(
             makeSummaryRow(
-                title: "相册",
+                title: localized("share.summary.album", fallback: "Album"),
                 valueLabel: outputValueLabel,
                 addsDivider: false
             )
@@ -902,7 +917,10 @@ private extension PhotoMemoShareExtensionViewController {
             MemoMarkDesignTokens.Layout.brandLineSpacing
         quoteLabel.attributedText =
             NSAttributedString(
-                string: "今天的照片，\n也是未来的回忆。",
+                string: localized(
+                    "share.quote",
+                    fallback: "Today's photos,\nalso tomorrow's memories."
+                ),
                 attributes: [
                     .font:
                         MemoMarkDesignTokens
@@ -1203,8 +1221,15 @@ private extension PhotoMemoShareExtensionViewController {
 
         sharedCountValueLabel.text =
             sharedPhotoCount > 0
-            ? "\(sharedPhotoCount) 张"
-            : "未识别到可处理照片"
+            ? formatted(
+                "share.summary.photo_count_format",
+                fallback: "%lld photos",
+                Int64(sharedPhotoCount)
+            )
+            : localized(
+                "share.no_processable_photos",
+                fallback: "No processable photos"
+            )
 
         previewSectionView?.isHidden = true
         firstPreviewTask?.cancel()
@@ -1237,9 +1262,15 @@ private extension PhotoMemoShareExtensionViewController {
                 summary.outputTitle
         } else {
             currentStyleValueLabel.text =
-                "需要先保存配置"
+                localized(
+                    "share.summary.configuration_required",
+                    fallback: "Save a configuration first"
+                )
             outputValueLabel.text =
-                "打开时光记，在配置中心保存后再回来分享"
+                localized(
+                    "share.summary.configuration_required_detail",
+                    fallback: "Open MemoMark, save a configuration, then share again."
+                )
         }
     }
 
@@ -1358,8 +1389,10 @@ private extension PhotoMemoShareExtensionViewController {
                             )
                     } else {
                         cancelExtension(
-                            message:
-                                "请先打开时光记保存当前配置，再重新分享照片。"
+                            message: localized(
+                                "share.summary.configuration_required_detail",
+                                fallback: "Open MemoMark, save a configuration, then share again."
+                            )
                         )
                     }
                 }
@@ -1371,8 +1404,9 @@ private extension PhotoMemoShareExtensionViewController {
                     message:
                         PhotoMemoShareExtensionError
                         .noSupportedImages
-                        .errorDescription
-                        ?? "没有可处理的照片。"
+                        .localizedDescription(
+                            for: .interfaceStored
+                        )
                 )
                 return
             }
@@ -1391,8 +1425,15 @@ private extension PhotoMemoShareExtensionViewController {
                 cancelExtension(
                     message:
                         intakeService.maxSupportedPhotoCount == 0
-                        ? "免费成长记录已完成，请打开时光记了解 MemoMark+。"
-                        : "一次最多处理 \(intakeService.maxSupportedPhotoCount) 张照片。请回到 Apple Photos 分批分享。"
+                        ? localized(
+                            "share.status.message.free_records_completed",
+                            fallback: "Open MemoMark to learn about MemoMark+."
+                        )
+                        : formatted(
+                            "share.status.message.batch_too_large",
+                            fallback: "You can share up to %lld photos at a time.",
+                            Int64(intakeService.maxSupportedPhotoCount)
+                        )
                 )
                 return
             }
@@ -1463,7 +1504,10 @@ private extension PhotoMemoShareExtensionViewController {
                             for: result
                         )
                     footerLabel.text =
-                        "其余情况会在时光记中继续说明。"
+                        localized(
+                            "share.success.remaining_note",
+                            fallback: "MemoMark will explain any remaining items."
+                        )
                 }
             }
         )
@@ -1567,6 +1611,28 @@ private extension PhotoMemoShareExtensionViewController {
              .handoffFailed:
             return false
         }
+    }
+
+    func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: key,
+            fallback: fallback
+        )
+    }
+
+    func formatted(
+        _ key: String,
+        fallback: String,
+        _ arguments: CVarArg...
+    ) -> String {
+        String(
+            format: localized(key, fallback: fallback),
+            locale: MemoMarkLanguage.interfaceStored.locale,
+            arguments: arguments
+        )
     }
 
 }

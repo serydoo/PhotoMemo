@@ -12,7 +12,8 @@ final class AnchorEngine {
 
     func build(
         from anchor: Anchor,
-        photoDate: Date
+        photoDate: Date,
+        outputLanguage: MemoMarkLanguage = .simplifiedChinese
     ) -> AnchorResult {
         let isAnchorCalendarDay =
             calendar.isDate(
@@ -28,7 +29,8 @@ final class AnchorEngine {
 
             return buildFutureResult(
                 from: anchor,
-                photoDate: photoDate
+                photoDate: photoDate,
+                outputLanguage: outputLanguage
             )
         }
 
@@ -36,7 +38,8 @@ final class AnchorEngine {
 
             return buildPastCountdownResult(
                 from: anchor,
-                photoDate: photoDate
+                photoDate: photoDate,
+                outputLanguage: outputLanguage
             )
         }
 
@@ -46,37 +49,62 @@ final class AnchorEngine {
         )
 
         let durationText =
-            durationText(from: metrics)
+            durationText(
+                from: metrics,
+                language: outputLanguage
+            )
 
         let ageText =
             isBirthdayAnchorDay
-            ? "出生当天"
-            : ageText(from: metrics)
+            ? MemoryNarrativeFormatter.birthDayLabel(
+                language: outputLanguage
+            )
+            : ageText(
+                from: metrics,
+                language: outputLanguage
+            )
 
         let elapsedText =
             isBirthdayAnchorDay
-            ? "出生当天"
-            : elapsedText(from: metrics.totalDays)
+            ? MemoryNarrativeFormatter.birthDayLabel(
+                language: outputLanguage
+            )
+            : elapsedText(
+                from: metrics.totalDays,
+                language: outputLanguage
+            )
 
         let resolvedDurationText =
             isBirthdayAnchorDay
-            ? "出生当天"
+            ? MemoryNarrativeFormatter.birthDayLabel(
+                language: outputLanguage
+            )
             : durationText
 
         let dayIndexText =
-            dayIndexText(from: metrics.totalDays)
+            dayIndexText(
+                from: metrics.totalDays,
+                language: outputLanguage
+            )
 
         let weekText =
-            weekText(from: metrics.totalDays)
+            weekText(
+                from: metrics.totalDays,
+                language: outputLanguage
+            )
 
         let monthAgeText =
-            monthAgeText(from: metrics)
+            monthAgeText(
+                from: metrics,
+                language: outputLanguage
+            )
 
         let milestoneText =
             milestoneText(
                 anchor: anchor,
                 metrics: metrics,
-                isFutureRelative: false
+                isFutureRelative: false,
+                language: outputLanguage
             )
 
         switch anchor.type {
@@ -90,6 +118,15 @@ final class AnchorEngine {
                 ? "记忆对象"
                 : anchor.title
 
+            let summaryText = narrativeText(
+                anchor: anchor,
+                metrics: metrics,
+                occurrence: isBirthdayAnchorDay
+                    ? .birthDay
+                    : .elapsed,
+                outputLanguage: outputLanguage
+            )
+
             return AnchorResult(
                 title: anchor.title,
                 isFutureRelative: false,
@@ -99,14 +136,15 @@ final class AnchorEngine {
                     : ageText,
                 secondaryText:
                     resolvedDurationText.isEmpty
-                    ? formattedDateTime(anchor.date)
+                    ? formattedDateTime(
+                        anchor.date,
+                        language: outputLanguage
+                    )
                     : resolvedDurationText,
                 summaryText:
-                    isBirthdayAnchorDay
-                    ? "\(resolvedSubject)今天来到这个世界啦！"
-                    : anchor.title.isEmpty
-                        ? ageText
-                        : "\(anchor.title)今天\(ageText)啦！",
+                    summaryText.isEmpty
+                    ? resolvedSubject
+                    : summaryText,
                 ageText: ageText,
                 durationText: resolvedDurationText,
                 countdownText: "",
@@ -129,15 +167,26 @@ final class AnchorEngine {
              .custom,
              .exam:
 
+            let summaryText = narrativeText(
+                anchor: anchor,
+                metrics: metrics,
+                occurrence: .elapsed,
+                outputLanguage: outputLanguage
+            )
+
             return AnchorResult(
                 title: anchor.title,
                 isFutureRelative: false,
                 primaryText: durationText,
-                secondaryText: formattedDateTime(anchor.date),
+                secondaryText:
+                    formattedDateTime(
+                        anchor.date,
+                        language: outputLanguage
+                    ),
                 summaryText:
-                    anchor.title.isEmpty
+                    summaryText.isEmpty
                     ? durationText
-                    : "\(anchor.title)\(durationText)",
+                    : summaryText,
                 ageText: ageText,
                 durationText: durationText,
                 countdownText: "",
@@ -162,7 +211,8 @@ private extension AnchorEngine {
 
     func buildFutureResult(
         from anchor: Anchor,
-        photoDate: Date
+        photoDate: Date,
+        outputLanguage: MemoMarkLanguage
     ) -> AnchorResult {
 
         let metrics = metrics(
@@ -171,25 +221,42 @@ private extension AnchorEngine {
         )
 
         let countdownValue =
-            rawDayText(from: metrics.totalDays)
+            rawDayText(
+                from: metrics.totalDays,
+                language: outputLanguage
+            )
 
         let primary =
             countdownValue.isEmpty
-            ? "0天"
+            ? rawDayText(from: 0, language: outputLanguage)
             : countdownValue
 
         let countdownText =
-            countdownText(from: metrics.totalDays)
+            countdownText(
+                from: metrics.totalDays,
+                language: outputLanguage
+            )
+
+        let summaryText = narrativeText(
+            anchor: anchor,
+            metrics: metrics,
+            occurrence: .countdown,
+            outputLanguage: outputLanguage
+        )
 
         return AnchorResult(
             title: anchor.title,
             isFutureRelative: true,
             primaryText: primary,
-            secondaryText: formattedDateTime(anchor.date),
+            secondaryText:
+                formattedDateTime(
+                    anchor.date,
+                    language: outputLanguage
+                ),
             summaryText:
-                anchor.title.isEmpty
+                summaryText.isEmpty
                 ? countdownText
-                : "\(anchor.title)\(countdownText)",
+                : summaryText,
             ageText: "",
             durationText: primary,
             countdownText: countdownText,
@@ -201,7 +268,8 @@ private extension AnchorEngine {
                 milestoneText(
                     anchor: anchor,
                     metrics: metrics,
-                    isFutureRelative: true
+                    isFutureRelative: true,
+                    language: outputLanguage
                 ),
             years: metrics.years,
             months: metrics.months,
@@ -215,7 +283,8 @@ private extension AnchorEngine {
 
     func buildPastCountdownResult(
         from anchor: Anchor,
-        photoDate: Date
+        photoDate: Date,
+        outputLanguage: MemoMarkLanguage
     ) -> AnchorResult {
 
         let metrics = metrics(
@@ -224,45 +293,81 @@ private extension AnchorEngine {
         )
 
         let elapsedValue =
-            rawDayText(from: metrics.totalDays)
+            rawDayText(
+                from: metrics.totalDays,
+                language: outputLanguage
+            )
 
         let primary =
             elapsedValue.isEmpty
-            ? "0天"
+            ? rawDayText(from: 0, language: outputLanguage)
             : elapsedValue
 
         let durationText =
-            durationText(from: metrics)
+            durationText(
+                from: metrics,
+                language: outputLanguage
+            )
 
         let ageText =
-            ageText(from: metrics)
+            ageText(
+                from: metrics,
+                language: outputLanguage
+            )
 
         let elapsedText =
-            elapsedText(from: metrics.totalDays)
+            elapsedText(
+                from: metrics.totalDays,
+                language: outputLanguage
+            )
+
+        let summaryText = narrativeText(
+            anchor: anchor,
+            metrics: metrics,
+            occurrence: .elapsed,
+            outputLanguage: outputLanguage
+        )
 
         return AnchorResult(
             title: anchor.title,
             isFutureRelative: false,
             primaryText: primary,
-            secondaryText: formattedDateTime(anchor.date),
+            secondaryText:
+                formattedDateTime(
+                    anchor.date,
+                    language: outputLanguage
+                ),
             summaryText:
-                anchor.title.isEmpty
+                summaryText.isEmpty
                 ? elapsedText
-                : "\(anchor.title)\(elapsedText)",
+                : summaryText,
             ageText: ageText,
             durationText: durationText.isEmpty
                 ? primary
                 : durationText,
             countdownText: "",
             elapsedText: elapsedText,
-            dayIndexText: dayIndexText(from: metrics.totalDays),
-            weekText: weekText(from: metrics.totalDays),
-            monthAgeText: monthAgeText(from: metrics),
+            dayIndexText:
+                dayIndexText(
+                    from: metrics.totalDays,
+                    language: outputLanguage
+                ),
+            weekText:
+                weekText(
+                    from: metrics.totalDays,
+                    language: outputLanguage
+                ),
+            monthAgeText:
+                monthAgeText(
+                    from: metrics,
+                    language: outputLanguage
+                ),
             milestoneText:
                 milestoneText(
                     anchor: anchor,
                     metrics: metrics,
-                    isFutureRelative: false
+                    isFutureRelative: false,
+                    language: outputLanguage
                 ),
             years: metrics.years,
             months: metrics.months,
@@ -275,15 +380,15 @@ private extension AnchorEngine {
     }
 
     private func formattedDateTime(
-        _ date: Date
+        _ date: Date,
+        language: MemoMarkLanguage
     ) -> String {
 
         let formatter = DateFormatter()
-        formatter.locale = MemoMarkLanguage.stored.locale
-        formatter.dateFormat =
-            MemoMarkLanguage.stored == .english
-            ? "MMM d, yyyy HH:mm"
-            : "yyyy.MM.dd HH:mm"
+        formatter.locale = language.locale
+        formatter.setLocalizedDateFormatFromTemplate(
+            "yMdjm"
+        )
 
         return formatter.string(from: date)
     }
@@ -342,101 +447,85 @@ private extension AnchorEngine {
     }
 
     private func ageText(
-        from metrics: AnchorMetrics
+        from metrics: AnchorMetrics,
+        language: MemoMarkLanguage
     ) -> String {
-
-        if metrics.years > 0 {
-            return [
-                "\(metrics.years)岁",
-                metrics.months > 0
-                    ? "\(metrics.months)个月"
-                    : nil,
-                metrics.days > 0
-                    ? "\(metrics.days)天"
-                    : nil
-            ]
-            .compactMap { $0 }
-            .joined()
-        }
-
-        if metrics.months > 0 {
-            return [
-                "\(metrics.months)个月",
-                metrics.days > 0
-                    ? "\(metrics.days)天"
-                    : nil
-            ]
-            .compactMap { $0 }
-            .joined()
-        }
-
-        return "\(max(metrics.days, 0))天"
+        MemoryAgeFormatter.format(
+            MemoryAgeComponents(
+                years: metrics.years,
+                months: metrics.months,
+                days: metrics.days
+            ),
+            language: language
+        )
     }
 
     private func monthAgeText(
-        from metrics: AnchorMetrics
+        from metrics: AnchorMetrics,
+        language: MemoMarkLanguage
     ) -> String {
-
-        "\(max(metrics.years * 12 + metrics.months, 0))个月"
+        MemoryMonthAgeFormatter.format(
+            totalMonths:
+                metrics.years * 12 + metrics.months,
+            language: language
+        )
     }
 
     private func elapsedText(
-        from totalDays: Int
+        from totalDays: Int,
+        language: MemoMarkLanguage
     ) -> String {
-
-        "已过\(max(totalDays, 0))天"
+        MemoryElapsedFormatter.format(
+            totalDays: totalDays,
+            language: language
+        )
     }
 
     private func countdownText(
-        from totalDays: Int
+        from totalDays: Int,
+        language: MemoMarkLanguage
     ) -> String {
-
-        "还有\(max(totalDays, 0))天"
+        MemoryCountdownPhraseFormatter.format(
+            totalDays: totalDays,
+            language: language
+        )
     }
 
     private func rawDayText(
-        from totalDays: Int
+        from totalDays: Int,
+        language: MemoMarkLanguage
     ) -> String {
-
-        "\(max(totalDays, 0))天"
+        MemoryCountdownFormatter.format(
+            MemoryCountdownComponents(totalDays: totalDays),
+            language: language
+        )
     }
 
     private func dayIndexText(
-        from totalDays: Int
+        from totalDays: Int,
+        language: MemoMarkLanguage
     ) -> String {
-
-        "第\(max(totalDays, 1))天"
+        MemoryDayIndexFormatter.format(
+            totalDays: totalDays,
+            language: language
+        )
     }
 
     private func weekText(
-        from totalDays: Int
+        from totalDays: Int,
+        language: MemoMarkLanguage
     ) -> String {
-
-        let safeTotalDays =
-            max(totalDays, 0)
-
-        let weeks =
-            safeTotalDays / 7
-
-        let days =
-            safeTotalDays % 7
-
-        if weeks == 0,
-           days == 0 {
-            return "0周"
-        }
-
-        if days == 0 {
-            return "\(weeks)周"
-        }
-
-        return "\(weeks)周\(days)天"
+        MemoryWeekFormatter.format(
+            totalDays: totalDays,
+            language: language
+        )
     }
 
     private func milestoneText(
         anchor: Anchor,
         metrics: AnchorMetrics,
-        isFutureRelative: Bool
+        isFutureRelative: Bool,
+        language: MemoMarkLanguage
     ) -> String {
 
         let totalDays =
@@ -447,18 +536,27 @@ private extension AnchorEngine {
             if metrics.years > 0,
                metrics.months == 0,
                metrics.days == 0 {
-                return countdownText(from: totalDays)
+                return countdownText(
+                    from: totalDays,
+                    language: language
+                )
             }
 
             if metrics.years == 0,
                metrics.months > 0,
                metrics.days == 0,
                futureMonthMilestones.contains(metrics.months) {
-                return countdownText(from: totalDays)
+                return countdownText(
+                    from: totalDays,
+                    language: language
+                )
             }
 
             if futureDayMilestones.contains(totalDays) {
-                return countdownText(from: totalDays)
+                return countdownText(
+                    from: totalDays,
+                    language: language
+                )
             }
 
             return ""
@@ -467,41 +565,59 @@ private extension AnchorEngine {
         if anchor.type == .birthday {
 
             if totalDays == 7 {
-                return "满7天"
+                return MemoryMilestoneFormatter.birthdaySevenDays(
+                    language: language
+                )
             }
 
             if metrics.years == 0,
                metrics.months == 1,
                metrics.days == 0 {
-                return "满月"
+                return MemoryMilestoneFormatter.birthdayMonth(
+                    language: language
+                )
             }
 
             if totalDays == 100 {
-                return "百天"
+                return MemoryMilestoneFormatter.birthdayHundredDays(
+                    language: language
+                )
             }
 
             if metrics.years == 0,
                metrics.days == 0,
                birthdayMonthMilestones.contains(metrics.months) {
-                return "\(metrics.months)个月"
+                return MemoryMilestoneFormatter.month(
+                    metrics.months,
+                    language: language
+                )
             }
         }
 
         if metrics.years > 0,
            metrics.months == 0,
            metrics.days == 0 {
-            return "\(metrics.years)周年"
+            return MemoryMilestoneFormatter.anniversary(
+                metrics.years,
+                language: language
+            )
         }
 
         if totalDays > 0,
            genericDayMilestones.contains(totalDays) {
-            return "\(totalDays)天"
+            return MemoryMilestoneFormatter.day(
+                totalDays,
+                language: language
+            )
         }
 
         if metrics.years == 0,
            metrics.days == 0,
            genericMonthMilestones.contains(metrics.months) {
-            return "\(metrics.months)个月"
+            return MemoryMilestoneFormatter.month(
+                metrics.months,
+                language: language
+            )
         }
 
         return ""
@@ -509,36 +625,83 @@ private extension AnchorEngine {
 
     private func durationText(
         from metrics: AnchorMetrics,
-        includeTime: Bool = false
+        includeTime: Bool = false,
+        language: MemoMarkLanguage
     ) -> String {
 
-        var parts = [
-            metrics.years > 0 ? "\(metrics.years)年" : nil,
-            metrics.months > 0 ? "\(metrics.months)个月" : nil,
-            metrics.days > 0 ? "\(metrics.days)天" : nil
-        ]
-        .compactMap { $0 }
+        var value = MemoryDurationFormatter.format(
+            MemoryDurationComponents(
+                years: metrics.years,
+                months: metrics.months,
+                days: metrics.days,
+                totalDays: metrics.totalDays
+            ),
+            language: language
+        )
 
-        if includeTime || parts.isEmpty {
-
-            if !includeTime {
-                return "0天"
-            }
+        if includeTime {
+            var parts = [value]
 
             if metrics.hours > 0 {
-                parts.append("\(metrics.hours)小时")
+                parts.append("\(metrics.hours)h")
             }
 
             if metrics.minutes > 0 {
-                parts.append("\(metrics.minutes)分钟")
+                parts.append("\(metrics.minutes)m")
             }
 
-            if parts.isEmpty || metrics.seconds > 0 {
-                parts.append("\(metrics.seconds)秒")
+            if metrics.seconds > 0 {
+                parts.append("\(metrics.seconds)s")
             }
+
+            value = parts.joined(separator: " ")
         }
 
-        return parts.joined()
+        return value
+    }
+
+    private func narrativeText(
+        anchor: Anchor,
+        metrics: AnchorMetrics,
+        occurrence: MemoryNarrativeOccurrence,
+        outputLanguage: MemoMarkLanguage
+    ) -> String {
+
+        MemoryNarrativeFormatter.format(
+            context: MemoryNarrativeContext(
+                anchorType: anchor.type,
+                subjectDisplayName:
+                    anchor.title.isEmpty
+                    ? "记忆对象"
+                    : anchor.title,
+                anchorTitle: anchor.title,
+                occurrence: occurrence,
+                ageComponents:
+                    anchor.type == .birthday
+                    ? MemoryAgeComponents(
+                        years: metrics.years,
+                        months: metrics.months,
+                        days: metrics.days
+                    )
+                    : nil,
+                durationComponents:
+                    MemoryDurationComponents(
+                        years: metrics.years,
+                        months: metrics.months,
+                        days: metrics.days,
+                        totalDays: metrics.totalDays
+                    ),
+                countdownComponents:
+                    occurrence == .countdown
+                    ? MemoryCountdownComponents(
+                        totalDays: metrics.totalDays
+                    )
+                    : nil,
+                expressionStyle: anchor.expressionStyle,
+                language: outputLanguage,
+                formattingMode: .legacyCompatible
+            )
+        )
     }
 
     var futureDayMilestones: Set<Int> {

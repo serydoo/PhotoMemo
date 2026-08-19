@@ -13,12 +13,15 @@ struct MemoryContext {
 
     let subjectText: String?
 
+    let outputLanguage: MemoMarkLanguage
+
     init(
         metadata: PhotoMetadata,
         anchor: Anchor? = nil,
         anchorResult: AnchorResult? = nil,
         story: String = "",
-        subjectText: String? = nil
+        subjectText: String? = nil,
+        outputLanguage: MemoMarkLanguage = .simplifiedChinese
     ) {
         self.metadata = metadata
         self.anchor = anchor
@@ -26,6 +29,7 @@ struct MemoryContext {
         self.story = story
         self.subjectText =
             subjectText
+        self.outputLanguage = outputLanguage
     }
 
     var photoDate: Date? {

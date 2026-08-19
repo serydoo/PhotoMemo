@@ -46,6 +46,22 @@ struct PhotoMemoiOSQueueDiagnosticsHeaderProjection:
 
     let tint:
         PhotoMemoiOSQueueDiagnosticsTint
+
+    let isRecovery: Bool
+
+    init(
+        headline: String,
+        subheadline: String,
+        symbolName: String,
+        tint: PhotoMemoiOSQueueDiagnosticsTint,
+        isRecovery: Bool = false
+    ) {
+        self.headline = headline
+        self.subheadline = subheadline
+        self.symbolName = symbolName
+        self.tint = tint
+        self.isRecovery = isRecovery
+    }
 }
 
 struct PhotoMemoiOSQueuePipelineStepProjection:
@@ -110,7 +126,8 @@ enum PhotoMemoiOSQueueDiagnosticsProjectionEngine {
         processingDiagnosticsSnapshot:
             PhotoMemoiOSProcessingDiagnosticsSnapshot,
         events:
-            [PhotoMemoShareDiagnosticEvent]
+            [PhotoMemoShareDiagnosticEvent],
+        language: MemoMarkLanguage = .simplifiedChinese
     ) -> PhotoMemoiOSQueueDiagnosticsHeaderProjection {
 
         if let backgroundSnapshot,
@@ -120,7 +137,8 @@ enum PhotoMemoiOSQueueDiagnosticsProjectionEngine {
            ) {
             let progressProjection =
                 progressProjection(
-                    for: backgroundSnapshot
+                    for: backgroundSnapshot,
+                    language: language
                 )
 
             return PhotoMemoiOSQueueDiagnosticsHeaderProjection(
@@ -141,23 +159,35 @@ enum PhotoMemoiOSQueueDiagnosticsProjectionEngine {
                 .hasCorruptedPersistence {
                 return PhotoMemoiOSQueueDiagnosticsHeaderProjection(
                     headline:
-                        "共享进度记录需要恢复",
+                        language.localized(
+                            key: "task.diagnostics.recovery_headline",
+                            fallback: "Shared progress needs recovery"
+                        ),
                     subheadline:
                         processingDiagnosticsSnapshot
                         .recoveryMessage
-                        ?? "共享一次照片后，这里会显示接收、入队和进度创建结果。",
+                        ?? language.localized(
+                            key: "task.diagnostics.recovery_subheadline",
+                            fallback: "Share a photo once to create a new local progress record."
+                        ),
                     symbolName:
                         "exclamationmark.triangle.fill",
-                    tint:
-                        .orange
+                    tint: .orange,
+                    isRecovery: true
                 )
             }
 
             return PhotoMemoiOSQueueDiagnosticsHeaderProjection(
                 headline:
-                    "等待下一次分享",
+                    language.localized(
+                        key: "task.diagnostics.waiting_headline",
+                        fallback: "Waiting for the next share"
+                    ),
                 subheadline:
-                    "分享一次照片后，这里会显示接收、入队和进度创建结果。",
+                    language.localized(
+                        key: "task.diagnostics.waiting_subheadline",
+                        fallback: "Share a photo once to see intake, queue, and progress results here."
+                    ),
                 symbolName:
                     "square.stack.3d.down.forward",
                 tint:
@@ -169,13 +199,15 @@ enum PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             headline:
                 diagnosticsHeadline(
                     latestEvent: latestEvent,
-                    events: events
+                    events: events,
+                    language: language
                 ),
             subheadline:
                 diagnosticsSubheadline(
                     processingDiagnosticsSnapshot:
                         processingDiagnosticsSnapshot,
-                    events: events
+                    events: events,
+                    language: language
                 ),
             symbolName:
                 diagnosticsSymbolName(
@@ -196,7 +228,9 @@ enum PhotoMemoiOSQueueDiagnosticsProjectionEngine {
 
     static func progressProjection(
         for snapshot:
-            PhotoMemoBackgroundJobSnapshot
+            PhotoMemoBackgroundJobSnapshot,
+        language:
+            MemoMarkLanguage = .simplifiedChinese
     ) -> PhotoMemoiOSQueueProgressProjection {
 
         let clampedProgress =
@@ -210,7 +244,10 @@ enum PhotoMemoiOSQueueDiagnosticsProjectionEngine {
 
         return PhotoMemoiOSQueueProgressProjection(
             title:
-                progressTitle(snapshot),
+                progressTitle(
+                    snapshot,
+                    language: language
+                ),
             symbolName:
                 progressSymbolName(snapshot),
             tint:
@@ -231,7 +268,8 @@ enum PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             pipelineSteps:
                 snapshot.pipelineSteps.map {
                     pipelineStepProjection(
-                        for: $0
+                        for: $0,
+                        language: language
                     )
                 }
         )
@@ -239,7 +277,9 @@ enum PhotoMemoiOSQueueDiagnosticsProjectionEngine {
 
     static func eventDisplayProjections(
         from events:
-            [PhotoMemoShareDiagnosticEvent]
+            [PhotoMemoShareDiagnosticEvent],
+        language:
+            MemoMarkLanguage = .simplifiedChinese
     ) -> [PhotoMemoiOSQueueDiagnosticEventProjection] {
 
         var seenKeys = Set<String>()
@@ -249,7 +289,8 @@ enum PhotoMemoiOSQueueDiagnosticsProjectionEngine {
             .compactMap { event in
                 guard let title =
                     diagnosticDisplayTitle(
-                        for: event
+                        for: event,
+                        language: language
                     )
                 else {
                     return nil
@@ -257,7 +298,8 @@ enum PhotoMemoiOSQueueDiagnosticsProjectionEngine {
 
                 let message =
                     diagnosticDisplayMessage(
-                        for: event
+                        for: event,
+                        language: language
                     )
                 let dedupeKey =
                     "\(title)|\(message)"
@@ -313,7 +355,9 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
         latestEvent:
             PhotoMemoShareDiagnosticEvent,
         events:
-            [PhotoMemoShareDiagnosticEvent]
+            [PhotoMemoShareDiagnosticEvent],
+        language:
+            MemoMarkLanguage = .simplifiedChinese
     ) -> String {
 
         if containsStage(
@@ -327,44 +371,64 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
                 ],
                 in: events
            ) {
-            return "正在准备 iCloud 原图"
+            return language.localized(
+                key: "task.diagnostics.headline.preparing_original",
+                fallback: "Preparing the iCloud original"
+            )
         }
 
         if containsStage(
             .appEnqueueCreated,
             in: events
         ) {
-            return "照片已进入处理队列"
+            return language.localized(
+                key: "task.diagnostics.headline.queued",
+                fallback: "Photo added to the processing queue"
+            )
         }
 
         if containsStage(
             .extensionSourceReady,
             in: events
         ) {
-            return "原图可用，正在交给时光记"
+            return language.localized(
+                key: "task.diagnostics.headline.original_ready",
+                fallback: "Original ready for MemoMark"
+            )
         }
 
         if containsStage(
             .appOpenURLShare,
             in: events
         ) {
-            return "时光记已被唤起"
+            return language.localized(
+                key: "task.diagnostics.headline.app_awakened",
+                fallback: "MemoMark was opened"
+            )
         }
 
         if isFailureStage(
             latestEvent.stage
         ) {
-            return "这次分享需要查看"
+            return language.localized(
+                key: "task.diagnostics.headline.needs_review",
+                fallback: "This share needs your attention"
+            )
         }
 
-        return "正在交给时光记"
+        return language.localized(
+            key: "task.diagnostics.headline.handoff",
+            fallback: "Handing the photo to MemoMark"
+        )
     }
 
     static func diagnosticsSubheadline(
         processingDiagnosticsSnapshot:
             PhotoMemoiOSProcessingDiagnosticsSnapshot,
         events:
-            [PhotoMemoShareDiagnosticEvent]
+            [PhotoMemoShareDiagnosticEvent],
+        language:
+            MemoMarkLanguage = .simplifiedChinese
     ) -> String {
 
         guard !events.isEmpty else {
@@ -374,14 +438,20 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
                 return recoveryMessage
             }
 
-            return "分享一次照片后，这里会显示接收、入队和进度创建结果。"
+            return language.localized(
+                key: "task.diagnostics.detail.empty",
+                fallback: "Share a photo once to see intake, queue, and progress results here."
+            )
         }
 
         if containsStage(
             .appRequestDropped,
             in: events
         ) {
-            return "重复或失效的照片已跳过，原图不会被修改。"
+            return language.localized(
+                key: "task.diagnostics.detail.duplicate",
+                fallback: "Duplicate or invalid photos were skipped; originals are unchanged."
+            )
         }
 
         if containsStage(
@@ -395,7 +465,10 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
                 ],
                 in: events
            ) {
-            return "已向系统请求原图数据，等 iCloud 缓存到本地后继续。"
+            return language.localized(
+                key: "task.diagnostics.detail.preparing_original",
+                fallback: "The system is preparing the original from iCloud."
+            )
         }
 
         if containsStage(
@@ -406,7 +479,10 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
                 .appEnqueueCreated,
                 in: events
            ) {
-            return "原图已经可读取，正在交给时光记主程序。"
+            return language.localized(
+                key: "task.diagnostics.detail.original_ready",
+                fallback: "The original is ready and is being handed to MemoMark."
+            )
         }
 
         if containsAnyStage(
@@ -420,17 +496,26 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
                 .appEnqueueCreated,
                 in: events
            ) {
-            return "原图已经接收，等待时光记接力处理。"
+            return language.localized(
+                key: "task.diagnostics.detail.handoff_waiting",
+                fallback: "The original was received and is waiting for MemoMark to continue."
+            )
         }
 
         if containsStage(
             .appEnqueueCreated,
             in: events
         ) {
-            return "照片已经进入后台队列，完成后会写回系统相册。"
+            return language.localized(
+                key: "task.diagnostics.detail.queued",
+                fallback: "The photo is in the background queue and will be saved to Apple Photos when complete."
+            )
         }
 
-        return "时光记正在接收这次分享。"
+        return language.localized(
+            key: "task.diagnostics.detail.receiving",
+            fallback: "MemoMark is receiving this share."
+        )
     }
 
     static func diagnosticsSymbolName(
@@ -525,23 +610,42 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
 
     static func progressTitle(
         _ snapshot:
-            PhotoMemoBackgroundJobSnapshot
+            PhotoMemoBackgroundJobSnapshot,
+        language:
+            MemoMarkLanguage = .simplifiedChinese
     ) -> String {
 
+        let key: String
+        let fallback: String
         switch snapshot.feedbackState {
         case .preparing:
-            return "\(snapshot.title) 准备中"
+            key = "task.diagnostics.progress.preparing_format"
+            fallback = "%@ Preparing"
         case .processing:
-            return "\(snapshot.title) 处理中"
+            key = "task.diagnostics.progress.processing_format"
+            fallback = "%@ Processing"
         case .completed:
-            return "\(snapshot.title) 已完成"
+            key = "task.diagnostics.progress.completed_format"
+            fallback = "%@ Completed"
         case .partialSuccess:
-            return "\(snapshot.title) 部分完成"
+            key = "task.diagnostics.progress.partial_success_format"
+            fallback = "%@ Partially completed"
         case .needsAttention:
-            return "\(snapshot.title) 需处理"
+            key = "task.diagnostics.progress.needs_attention_format"
+            fallback = "%@ Needs attention"
         case .unsupported:
-            return "\(snapshot.title) 暂不支持"
+            key = "task.diagnostics.progress.unsupported_format"
+            fallback = "%@ Unsupported"
         }
+
+        return String(
+            format: language.localized(
+                key: key,
+                fallback: fallback
+            ),
+            locale: language.locale,
+            snapshot.title
+        )
     }
 
     static func progressSymbolName(
@@ -582,11 +686,17 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
 
     static func pipelineStepProjection(
         for step:
-            PhotoMemoBackgroundPipelineStep
+            PhotoMemoBackgroundPipelineStep,
+        language:
+            MemoMarkLanguage = .simplifiedChinese
     ) -> PhotoMemoiOSQueuePipelineStepProjection {
 
         PhotoMemoiOSQueuePipelineStepProjection(
-            title: step.title,
+            title:
+                localizedPipelineStepTitle(
+                    step.title,
+                    language: language
+                ),
             symbolName:
                 pipelineSymbolName(
                     for: step.state
@@ -638,72 +748,126 @@ private extension PhotoMemoiOSQueueDiagnosticsProjectionEngine {
 
     static func diagnosticDisplayTitle(
         for event:
-            PhotoMemoShareDiagnosticEvent
+            PhotoMemoShareDiagnosticEvent,
+        language:
+            MemoMarkLanguage = .simplifiedChinese
     ) -> String? {
 
+        let key: String
         switch event.stage {
         case .extensionRequestPersisted,
              .extensionPersisted:
-            return "照片已接收"
+            key = "task.diagnostics.event.title.received"
         case .extensionSourcePrepare:
-            return "准备 iCloud 原图"
+            key = "task.diagnostics.event.title.preparing_original"
         case .extensionSourceReady:
-            return "原图可读取"
+            key = "task.diagnostics.event.title.original_ready"
         case .extensionSourceUnavailable:
-            return "原图暂时不可读取"
+            key = "task.diagnostics.event.title.original_unavailable"
         case .extensionHandoffUnconfirmed,
              .extensionHandoffFailed:
-            return "等待时光记接手"
+            key = "task.diagnostics.event.title.handoff_waiting"
         case .appDrain:
-            return "检查待处理照片"
+            key = "task.diagnostics.event.title.draining"
         case .appRequestValidated:
-            return "照片检查完成"
+            key = "task.diagnostics.event.title.validated"
         case .appEnqueueCreated:
-            return "进入处理队列"
+            key = "task.diagnostics.event.title.queued"
         case .appRequestDropped:
-            return "已跳过重复照片"
+            key = "task.diagnostics.event.title.duplicate"
         case .liveActivityRequestCreated:
-            return "系统进度已显示"
+            key = "task.diagnostics.event.title.live_activity"
         case .liveActivityPayloadTerminal:
-            return "处理完成"
+            key = "task.diagnostics.event.title.completed"
         default:
             return nil
         }
+
+        return language.localized(
+            key: key,
+            fallback: event.message
+        )
     }
 
     static func diagnosticDisplayMessage(
         for event:
-            PhotoMemoShareDiagnosticEvent
+            PhotoMemoShareDiagnosticEvent,
+        language:
+            MemoMarkLanguage = .simplifiedChinese
     ) -> String {
 
+        let key: String
+        let fallback: String
         switch event.stage {
         case .extensionRequestPersisted,
              .extensionPersisted:
-            return "原图已暂存，时光记会按当前配置继续处理。"
+            key = "task.diagnostics.event.message.received"
+            fallback = "The original was staged and MemoMark will continue with the current configuration."
         case .extensionSourcePrepare:
-            return "正在向系统请求原图数据，等待 iCloud 缓存到本地。"
+            key = "task.diagnostics.event.message.preparing_original"
+            fallback = "The system is preparing the original from iCloud."
         case .extensionSourceReady:
-            return "原图已经可读取，正在继续交给时光记。"
+            key = "task.diagnostics.event.message.original_ready"
+            fallback = "The original is ready and is being handed to MemoMark."
         case .extensionSourceUnavailable:
-            return "系统暂时没有提供完整原图，请稍后重试或先在相册打开原图。"
+            key = "task.diagnostics.event.message.original_unavailable"
+            fallback = "The system has not provided the complete original yet. Try again later or open it in Photos first."
         case .extensionHandoffUnconfirmed,
              .extensionHandoffFailed:
-            return "照片已接收，如未自动切换，可手动打开时光记继续。"
+            key = "task.diagnostics.event.message.handoff_waiting"
+            fallback = "The photo was received. If MemoMark did not open automatically, open it to continue."
         case .appDrain:
-            return "正在读取刚接收的照片。"
+            key = "task.diagnostics.event.message.draining"
+            fallback = "MemoMark is reading the received photo."
         case .appRequestValidated:
-            return "照片可处理，准备加入后台队列。"
+            key = "task.diagnostics.event.message.validated"
+            fallback = "The photo is ready to process and will be added to the background queue."
         case .appEnqueueCreated:
-            return "照片会按当前默认风格生成并保存。"
+            key = "task.diagnostics.event.message.queued"
+            fallback = "The photo will be created and saved with the current default configuration."
         case .appRequestDropped:
-            return "同一张照片已经在队列中，本次不会重复生成。"
+            key = "task.diagnostics.event.message.duplicate"
+            fallback = "The same photo is already in the queue, so it will not be created again."
         case .liveActivityRequestCreated:
-            return "可以在系统进度区域查看处理状态。"
+            key = "task.diagnostics.event.message.live_activity"
+            fallback = "You can view processing status in the system progress area."
         case .liveActivityPayloadTerminal:
-            return "已完成处理，结果会出现在目标相册。"
+            key = "task.diagnostics.event.message.completed"
+            fallback = "Processing is complete and the result will appear in the target album."
         default:
             return event.message
         }
+
+        return language.localized(
+            key: key,
+            fallback: fallback
+        )
+    }
+
+    static func localizedPipelineStepTitle(
+        _ title: String,
+        language: MemoMarkLanguage
+    ) -> String {
+        let key: String
+        switch title {
+        case "接收照片":
+            key = "task.diagnostics.pipeline.receive"
+        case "读取信息":
+            key = "task.diagnostics.pipeline.read_metadata"
+        case "生成卡片":
+            key = "task.diagnostics.pipeline.create_card"
+        case "写入图库":
+            key = "task.diagnostics.pipeline.save_photo"
+        case "完成":
+            key = "task.diagnostics.pipeline.completed"
+        default:
+            return title
+        }
+
+        return language.localized(
+            key: key,
+            fallback: title
+        )
     }
 
     static func containsStage(

@@ -226,7 +226,12 @@ struct MemorySubjectEditorView: View {
                 Text("对象名称不能为空")
                     .font(.caption)
                     .foregroundStyle(.red)
-                    .accessibilityLabel("对象名称不能为空")
+                    .accessibilityLabel(Text(
+                        MemoMarkLanguage.interfaceStored.localized(
+                            key: "accessibility.object_name_required",
+                            fallback: "Object name is required"
+                        )
+                    ))
             }
         }
     }
@@ -282,7 +287,12 @@ struct MemorySubjectEditorView: View {
                 .accessibilityLabel(
                     hasAvatar ? "编辑对象头像" : "添加对象照片"
                 )
-                .accessibilityHint("从照片中选择，然后缩放和移动裁切范围")
+                .accessibilityHint(Text(
+                    MemoMarkLanguage.interfaceStored.localized(
+                        key: "accessibility.choose_crop",
+                        fallback: "Choose a photo, then zoom and move the crop area"
+                    )
+                ))
 
                 if hasAvatar {
                     Button(role: .destructive) {
@@ -307,7 +317,12 @@ struct MemorySubjectEditorView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("删除对象头像")
+                    .accessibilityLabel(Text(
+                        MemoMarkLanguage.interfaceStored.localized(
+                            key: "accessibility.delete_avatar",
+                            fallback: "Delete object avatar"
+                        )
+                    ))
                     .offset(x: 14, y: -14)
                     .disabled(isOptimizingAvatar)
                 }
@@ -502,7 +517,15 @@ struct MemorySubjectEditorView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("清除\(title)")
+                .accessibilityLabel(Text(
+                    String(
+                        format: MemoMarkLanguage.interfaceStored.localized(
+                            key: "accessibility.clear_format",
+                            fallback: "Clear %@"
+                        ),
+                        title
+                    )
+                ))
             }
         }
         .padding(.horizontal, 12)
@@ -1769,7 +1792,12 @@ private struct CompactAnchorDatePicker: View {
         }
         .frame(height: Self.wheelHeight)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("锚点日期")
+        .accessibilityLabel(Text(
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "accessibility.anchor_date",
+                fallback: "Anchor date"
+            )
+        ))
 #else
         DatePicker(
             "日期",
@@ -1937,7 +1965,12 @@ private struct SubjectTimeAnchorRow: View {
                         height: ConfigurationUI.minimumInteractiveHeight
                     )
             }
-            .accessibilityLabel("时间锚点操作")
+            .accessibilityLabel(Text(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "accessibility.anchor_actions",
+                    fallback: "Time anchor actions"
+                )
+            ))
 
         }
         .padding(.horizontal, 12)

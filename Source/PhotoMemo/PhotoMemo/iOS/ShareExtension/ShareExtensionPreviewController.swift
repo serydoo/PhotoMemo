@@ -72,8 +72,14 @@ final class ShareExtensionPreviewController: NSObject {
         guard !providers.isEmpty else {
             setCaption(
                 sharedPhotoCount > 0
-                ? "这次会按相同风格处理 \(sharedPhotoCount) 张照片。"
-                : "未识别到可处理照片。"
+                ? localized(
+                    "share.preview.caption.multiple",
+                    fallback: "Swipe to review the photos. They will all use the same configuration."
+                )
+                : localized(
+                    "share.preview.caption.empty",
+                    fallback: "No processable photos were found."
+                )
             )
             resetCards()
             return
@@ -91,14 +97,25 @@ final class ShareExtensionPreviewController: NSObject {
         applyImages(images)
 
         if showsProcessingLegend() {
-            setCaption(Self.processingLegendText)
+            setCaption(
+                localized(
+                    "share.preview.caption.processing",
+                    fallback: "The receiving status for each photo appears here."
+                )
+            )
         } else if sharedPhotoCount > 1 {
             setCaption(
-                "左右滑动查看待处理照片，所有照片会使用相同风格处理。"
+                localized(
+                    "share.preview.caption.multiple",
+                    fallback: "Swipe to review the photos. They will all use the same configuration."
+                )
             )
         } else {
             setCaption(
-                "将按当前默认风格处理这张照片。"
+                localized(
+                    "share.preview.caption.single",
+                    fallback: "This photo will use the current configuration."
+                )
             )
         }
     }
@@ -142,7 +159,11 @@ final class ShareExtensionPreviewController: NSObject {
             let task = tasks.indices.contains(index) ? tasks[index] : nil
             let phase = task?.phase ?? .queued
             if statusTitleLabels.indices.contains(index) {
-                statusTitleLabels[index].text = "第 \(index + 1) 张照片"
+                statusTitleLabels[index].text = formatted(
+                    "share.preview.photo_index",
+                    fallback: "Photo %lld",
+                    Int64(index + 1)
+                )
             }
             if statusDetailLabels.indices.contains(index) {
                 statusDetailLabels[index].text = statusDetailText(
@@ -158,7 +179,11 @@ final class ShareExtensionPreviewController: NSObject {
         for (index, badge) in statusBadgeViews.enumerated() {
             let phase = phases.indices.contains(index) ? phases[index] : .queued
             if statusTitleLabels.indices.contains(index) {
-                statusTitleLabels[index].text = "第 \(index + 1) 张照片"
+                statusTitleLabels[index].text = formatted(
+                    "share.preview.photo_index",
+                    fallback: "Photo %lld",
+                    Int64(index + 1)
+                )
             }
             if statusDetailLabels.indices.contains(index) {
                 statusDetailLabels[index].text = statusDetailText(
@@ -177,11 +202,6 @@ final class ShareExtensionPreviewController: NSObject {
         }
         rebuildLayout()
     }
-
-    static let processingLegendText =
-        MemoMarkLanguage.interfaceStored == .english
-        ? "The receiving status for each photo appears here."
-        : "每张照片的接收状态会显示在这里。"
 
     var cardCount: Int { statusBadgeViews.count }
 
@@ -216,14 +236,21 @@ final class ShareExtensionPreviewController: NSObject {
         titleLabel.font = .preferredFont(forTextStyle: .subheadline)
         titleLabel.textColor = .label
         titleLabel.numberOfLines = 1
-        titleLabel.text = "第 \(index + 1) 张照片"
+        titleLabel.text = formatted(
+            "share.preview.photo_index",
+            fallback: "Photo %lld",
+            Int64(index + 1)
+        )
 
         let detailLabel = UILabel()
         detailLabel.translatesAutoresizingMaskIntoConstraints = false
         detailLabel.font = .preferredFont(forTextStyle: .caption1)
         detailLabel.textColor = .secondaryLabel
         detailLabel.numberOfLines = 1
-        detailLabel.text = "等待时光记接手"
+        detailLabel.text = localized(
+            "share.preview.detail.queued",
+            fallback: "Waiting for MemoMark"
+        )
 
         let textStack = UIStackView(arrangedSubviews: [titleLabel, detailLabel])
         textStack.translatesAutoresizingMaskIntoConstraints = false
@@ -301,13 +328,32 @@ final class ShareExtensionPreviewController: NSObject {
             return statusMessage
         }
         switch phase {
-        case .queued: return "等待时光记接手"
-        case .completed: return "已保存到系统图库"
-        case .failed: return "需要回到时光记查看"
-        case .cancelled: return "已取消"
+        case .queued:
+            return localized(
+                "share.preview.detail.queued",
+                fallback: "Waiting for MemoMark"
+            )
+        case .completed:
+            return localized(
+                "share.preview.detail.completed",
+                fallback: "Saved to Photos"
+            )
+        case .failed:
+            return localized(
+                "share.preview.detail.failed",
+                fallback: "Open MemoMark to review"
+            )
+        case .cancelled:
+            return localized(
+                "share.preview.detail.cancelled",
+                fallback: "Cancelled"
+            )
         case .importing, .metadataReady, .previewReady, .waitingForExport,
              .exporting, .savingToPhotoLibrary:
-            return phase.displayTitle
+            return localized(
+                "share.preview.detail.processing",
+                fallback: phase.displayTitle
+            )
         }
     }
 
@@ -346,14 +392,40 @@ final class ShareExtensionPreviewController: NSObject {
 
     private func statusAccessibilityLabel(for phase: BatchTaskPhase) -> String {
         switch phase {
-        case .queued: return "等待处理"
-        case .completed: return "处理完成"
-        case .failed: return "处理失败"
-        case .cancelled: return "已取消"
+        case .queued:
+            return localized("share.preview.detail.queued", fallback: "Waiting for MemoMark")
+        case .completed:
+            return localized("share.preview.detail.completed", fallback: "Saved to Photos")
+        case .failed:
+            return localized("share.preview.detail.failed", fallback: "Open MemoMark to review")
+        case .cancelled:
+            return localized("share.preview.detail.cancelled", fallback: "Cancelled")
         case .importing, .metadataReady, .previewReady, .waitingForExport,
              .exporting, .savingToPhotoLibrary:
-            return "正在处理"
+            return localized("share.preview.detail.processing", fallback: "Processing")
         }
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: key,
+            fallback: fallback
+        )
+    }
+
+    private func formatted(
+        _ key: String,
+        fallback: String,
+        _ arguments: CVarArg...
+    ) -> String {
+        String(
+            format: localized(key, fallback: fallback),
+            locale: MemoMarkLanguage.interfaceStored.locale,
+            arguments: arguments
+        )
     }
 
     @objc

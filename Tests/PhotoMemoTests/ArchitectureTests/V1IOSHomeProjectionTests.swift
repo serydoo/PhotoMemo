@@ -297,8 +297,28 @@ struct V1IOSHomeProjectionTests {
                     savedAt: Date(timeIntervalSince1970: 0),
                     timeZone: TimeZone(secondsFromGMT: 0)!,
                     language: .english
-                )
+            )
             == "Saved Jan 1, 00:00"
+        )
+
+        #expect(
+            V1IOSHomeProjection
+                .savedStatusValue(
+                    savedAt: Date(timeIntervalSince1970: 0),
+                    timeZone: TimeZone(secondsFromGMT: 0)!,
+                    language: .japanese
+                )
+            == "1月1日 00:00に保存"
+        )
+
+        #expect(
+            V1IOSHomeProjection
+                .savedStatusValue(
+                    savedAt: Date(timeIntervalSince1970: 0),
+                    timeZone: TimeZone(secondsFromGMT: 0)!,
+                    language: .korean
+                )
+            == "1월 1일 00:00 저장"
         )
     }
 }

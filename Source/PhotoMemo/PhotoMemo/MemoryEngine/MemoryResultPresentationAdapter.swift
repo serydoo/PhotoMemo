@@ -57,25 +57,46 @@ private extension MemoryResultPresentationAdapter {
             )
         }
 
-        return MemoryAnchorExpressionResolver
-            .renderedText(
-                subjectText:
-                    subjectStrategy
-                    .resolveSubjectText(
-                        from: context.subject
-                    ),
+        let anchorType = anchor.anchorType ?? .birthday
+        let subjectText = subjectStrategy.resolveSubjectText(
+            from: context.subject
+        )
+        let resolvedStyle = MemoryAnchorExpressionStyle.resolvedStyle(
+            for: anchorType,
+            candidate: anchor.expressionStyle
+        )
+
+        guard resolvedStyle.isCanonicalNatural else {
+            return MemoryAnchorExpressionResolver
+                .renderedText(
+                    subjectText: subjectText,
+                    anchorTitle: anchor.title,
+                    anchorType: anchorType,
+                    expressionStyle: anchor.expressionStyle,
+                    relativeSnapshot: anchorResult.elapsed.relativeSnapshot,
+                    language: context.language
+                )
+        }
+
+        return MemoryNarrativeFormatter.format(
+            context: MemoryNarrativeContext(
+                anchorType: anchorType,
+                subjectDisplayName: subjectText,
                 anchorTitle: anchor.title,
-                anchorType:
-                    anchor.anchorType
-                    ?? .birthday,
-                expressionStyle:
-                    anchor.expressionStyle,
-                relativeSnapshot:
-                    anchorResult
-                    .elapsed
-                    .relativeSnapshot,
-                language: context.language
+                occurrence: anchorResult.narrativeOccurrence(
+                    anchorType: anchorType
+                ),
+                ageComponents: anchorResult.ageComponents(
+                    anchorType: anchorType
+                ),
+                durationComponents: anchorResult.durationComponents,
+                countdownComponents: anchorResult.countdownComponents,
+                expressionStyle: resolvedStyle,
+                captureDate: result.captureDate,
+                language: context.language,
+                formattingMode: .legacyCompatible
             )
+        )
     }
 
     func fallbackRenderedText(
@@ -114,6 +135,57 @@ private extension MemoryResultPresentationAdapter {
         }
 
         return subjectName
+    }
+}
+
+private extension MemoryAnchorResult {
+
+    func narrativeOccurrence(
+        anchorType: AnchorType
+    ) -> MemoryNarrativeOccurrence {
+        switch direction {
+        case .beforeAnchor:
+            return .countdown
+        case .onAnchor:
+            return anchorType == .birthday
+                ? .birthDay
+                : .anchorDay
+        case .afterAnchor:
+            return .elapsed
+        }
+    }
+
+    func ageComponents(
+        anchorType: AnchorType
+    ) -> MemoryAgeComponents? {
+        guard anchorType == .birthday else {
+            return nil
+        }
+
+        return MemoryAgeComponents(
+            years: elapsed.years,
+            months: elapsed.months,
+            days: elapsed.days
+        )
+    }
+
+    var durationComponents: MemoryDurationComponents {
+        MemoryDurationComponents(
+            years: elapsed.years,
+            months: elapsed.months,
+            days: elapsed.days,
+            totalDays: elapsed.totalDays
+        )
+    }
+
+    var countdownComponents: MemoryCountdownComponents? {
+        guard direction == .beforeAnchor else {
+            return nil
+        }
+
+        return MemoryCountdownComponents(
+            totalDays: elapsed.totalDays
+        )
     }
 }
 #endif

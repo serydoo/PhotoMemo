@@ -187,6 +187,7 @@ struct ConfigurationCenterMemoryWritePanel: View {
 struct ConfigurationCenterOutputSelectionPanel:
     View {
 
+    let language: MemoMarkLanguage
     let model: ConfigurationCenterOutputSelectionPanelModel
 
     @Binding
@@ -196,20 +197,23 @@ struct ConfigurationCenterOutputSelectionPanel:
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("输出区现在只保留最终结果、保存去向、元数据保留和相册说明写入这 4 件事。中间格式细项先不展开，默认沿用当前本地安全链路。")
+            Text(language.localized(
+                key: "configuration.output.description",
+                fallback: "输出区现在只保留最终结果、保存去向、元数据保留和相册说明写入这 4 件事。中间格式细项先不展开，默认沿用当前本地安全链路。"
+            ))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             outputInfoCard(
-                title: "输出结果",
+                title: language.localized(key: "configuration.output.result", fallback: "输出结果"),
                 value: model.presentation.outputTitle,
                 note: model.presentation.outputNote,
                 systemImage: "photo"
             )
 
             outputInfoCard(
-                title: "元数据保留",
+                title: language.localized(key: "configuration.output.metadata", fallback: "元数据保留"),
                 value: model.presentation.metadataTitle,
                 note: model.presentation.metadataNote,
                 systemImage: "info.circle"
@@ -217,14 +221,14 @@ struct ConfigurationCenterOutputSelectionPanel:
 
             VStack(alignment: .leading, spacing: 10) {
                 outputInfoHeader(
-                    title: "图片存放地点",
+                    title: language.localized(key: "configuration.output.storage", fallback: "图片存放地点"),
                     value:
                         storageOption.title,
                     systemImage: "folder"
                 )
 
                 Picker(
-                    "存放地点",
+                    language.localized(key: "configuration.output.storage_picker", fallback: "存放地点"),
                     selection: $storageOption
                 ) {
                     ForEach(ConfigurationStorageOption.allCases) { option in
@@ -244,7 +248,7 @@ struct ConfigurationCenterOutputSelectionPanel:
 
             VStack(alignment: .leading, spacing: 10) {
                 outputInfoHeader(
-                    title: "相册说明写入",
+                    title: language.localized(key: "configuration.output.album_write", fallback: "相册说明写入"),
                     value:
                         model.presentation.memoryWriteTitle,
                     systemImage: "text.badge.checkmark"

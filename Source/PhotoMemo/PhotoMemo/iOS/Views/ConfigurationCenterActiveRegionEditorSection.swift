@@ -3,17 +3,20 @@ import SwiftUI
 
 struct ConfigurationCenterActiveRegionEditorSection<Content: View>: View {
 
+    let language: MemoMarkLanguage
     let title: String
     let systemImage: String
     let selectedRegion: CardRegion
     @ViewBuilder var content: Content
 
     init(
+        language: MemoMarkLanguage,
         title: String,
         systemImage: String,
         selectedRegion: CardRegion,
         @ViewBuilder content: () -> Content
     ) {
+        self.language = language
         self.title = title
         self.systemImage = systemImage
         self.selectedRegion = selectedRegion
@@ -33,7 +36,10 @@ struct ConfigurationCenterActiveRegionEditorSection<Content: View>: View {
 
                 Spacer(minLength: 0)
 
-                Text("随预览实时刷新")
+                Text(language.localized(
+                    key: "configuration.editor.live_refresh",
+                    fallback: "随预览实时刷新"
+                ))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

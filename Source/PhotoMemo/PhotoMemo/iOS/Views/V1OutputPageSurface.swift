@@ -4,6 +4,10 @@ import UIKit
 
 struct V1OutputPageSurface: View {
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     @Binding
     var outputTarget: V1IOSOutputTarget
 
@@ -85,8 +89,8 @@ struct V1OutputPageSurface: View {
 
     private var pageHeader: some View {
         V1PageHeader(
-            "保存这段回忆",
-            subtitle: "决定新照片如何留下，也选择它回到哪里。"
+            "output.page.title",
+            subtitle: "output.page.subtitle"
         )
     }
 
@@ -108,6 +112,10 @@ struct V1OutputPageSurface: View {
 }
 
 private struct V1OutputSaveConfigurationButton: View {
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
 
     let isSaving: Bool
     let configurationStatus: V1ConfigurationStatus
@@ -139,22 +147,26 @@ private struct V1OutputSaveConfigurationButton: View {
 
     private var title: String {
         if isSaving {
-            return "正在保存"
+            return localized("output.save.saving")
         }
 
         switch configurationStatus {
         case .saved:
-            return "已保存"
+            return localized("output.save.saved")
         case .savedWithWarning:
-            return "再次保存"
+            return localized("output.save.warning")
         case .failure:
-            return "重新保存"
+            return localized("output.save.retry")
         case .idle,
              .dirty,
              .saving,
              .subjectSynced:
-            return "保存这些设置"
+            return localized("output.save.action")
         }
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
     }
 
     private var systemImage: String {
@@ -235,6 +247,10 @@ private struct V1OutputSaveButtonStyle: ButtonStyle {
 
 private struct V1OutputResultSection: View {
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
@@ -243,8 +259,8 @@ private struct V1OutputResultSection: View {
 
     var body: some View {
         V1TitledSectionCard(
-            title: "新照片",
-            subtitle: "选择照片形式与需要保留的信息。"
+            title: "output.result.title",
+            subtitle: "output.result.subtitle"
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 mediaModePicker
@@ -255,18 +271,18 @@ private struct V1OutputResultSection: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 V1OutputRetentionRow(
-                    title: "保留拍摄信息",
-                    subtitle: "新照片会带上能够保留的拍摄信息。"
+                    title: localized("output.result.capture_info.title"),
+                    subtitle: localized("output.result.capture_info.subtitle")
                 )
 
                 V1OutputDashedDivider()
 
                 V1OutputRetentionRow(
-                    title: "保留 Live Photo",
+                    title: localized("output.result.live_photo.title"),
                     subtitle:
                         mediaOutputMode == .originalFormat
-                        ? "原格式会保留动态效果。"
-                        : "静态图片只留下单张图片。"
+                        ? localized("output.result.live_photo.original")
+                        : localized("output.result.live_photo.static")
                 )
             }
         }
@@ -275,16 +291,22 @@ private struct V1OutputResultSection: View {
     @ViewBuilder
     private var mediaModePicker: some View {
         if dynamicTypeSize.isAccessibilitySize {
-            Picker("照片形式", selection: $mediaOutputMode) {
+            Picker(
+                localized("output.result.photo_format"),
+                selection: $mediaOutputMode
+            ) {
                 ForEach(V1MediaOutputMode.allCases) { mode in
-                    Text(mode.title).tag(mode)
+                    Text(mode.localizedTitle(for: interfaceLanguage)).tag(mode)
                 }
             }
             .pickerStyle(.menu)
         } else {
-            Picker("照片形式", selection: $mediaOutputMode) {
+            Picker(
+                localized("output.result.photo_format"),
+                selection: $mediaOutputMode
+            ) {
                 ForEach(V1MediaOutputMode.allCases) { mode in
-                    Text(mode.title).tag(mode)
+                    Text(mode.localizedTitle(for: interfaceLanguage)).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
@@ -294,14 +316,22 @@ private struct V1OutputResultSection: View {
     private var mediaOutputSummary: String {
         switch mediaOutputMode {
         case .originalFormat:
-            return "普通照片照常保留；Live Photo 会带着动态效果一起留下。"
+            return localized("output.result.summary.original")
         case .staticImage:
-            return "普通照片照常保留；Live Photo 会留下加边框后的静态图片。"
+            return localized("output.result.summary.static")
         }
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
     }
 }
 
 private struct V1OutputPhotoDescriptionSection: View {
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
 
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
@@ -371,9 +401,7 @@ private struct V1OutputPhotoDescriptionSection: View {
                     )
                 }
 
-                Text(
-                    "图库中的照片说明显示和搜索能力，可能随 iOS 版本有所不同。"
-                )
+                Text(localized("output.memory_write.system_note"))
                 .font(.caption)
                 .foregroundStyle(Color.primary.opacity(0.72))
                 .fixedSize(horizontal: false, vertical: true)
@@ -388,6 +416,10 @@ private struct V1OutputPhotoDescriptionSection: View {
                 value: usesCustomMemoryWriteText
             )
         }
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
     }
 }
 
@@ -416,6 +448,10 @@ private struct V1OutputDashedDivider: View {
 
 private struct V1OutputSection: View {
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
@@ -439,8 +475,8 @@ private struct V1OutputSection: View {
 
     var body: some View {
         V1TitledSectionCard(
-            title: "回到哪里",
-            subtitle: "以后保存都会默认使用这里。"
+            title: "output.destination.title",
+            subtitle: "output.destination.subtitle"
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 adaptiveOutputTargetPicker
@@ -459,7 +495,7 @@ private struct V1OutputSection: View {
     private var adaptiveOutputTargetPicker: some View {
         if dynamicTypeSize.isAccessibilitySize {
             Picker(
-                "回到哪里",
+                localized("output.destination.title"),
                 selection: presentedOutputTargetBinding
             ) {
                 outputTargetOptions
@@ -468,7 +504,7 @@ private struct V1OutputSection: View {
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         } else {
             Picker(
-                "回到哪里",
+                localized("output.destination.title"),
                 selection: presentedOutputTargetBinding
             ) {
                 outputTargetOptions
@@ -481,7 +517,7 @@ private struct V1OutputSection: View {
     private var outputTargetOptions: some View {
         ForEach(selectableOutputTargets) { target in
             Label(
-                target.title,
+                target.localizedTitle(for: interfaceLanguage),
                 systemImage: target.symbolName
             )
             .tag(target)
@@ -508,13 +544,13 @@ private struct V1OutputSection: View {
 
         case .existingAlbum:
             VStack(alignment: .leading, spacing: 7) {
-                Text("选择已有相册")
+                Text(localized("output.destination.existing.title"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 
                 existingAlbumControlRow
 
-                Text("读取当前系统相册，只显示可直接加入结果图的相册。")
+                Text(localized("output.destination.existing.detail"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -524,7 +560,10 @@ private struct V1OutputSection: View {
 
         case .newAlbum:
             VStack(alignment: .leading, spacing: 6) {
-                TextField("相册名称", text: $newAlbumName)
+                TextField(
+                    localized("output.destination.new.placeholder"),
+                    text: $newAlbumName
+                )
                     .textFieldStyle(.plain)
                     .font(.subheadline)
                     .lineLimit(1)
@@ -532,7 +571,7 @@ private struct V1OutputSection: View {
                     .focused($isNewAlbumNameFocused)
                     .configurationFieldChrome(isActive: true)
 
-                Text("保存配置时创建相册；后续自动存入这个已有相册。")
+                Text(localized("output.destination.new.detail"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -546,11 +585,11 @@ private struct V1OutputSection: View {
     private var existingAlbumControlRow: some View {
         HStack(alignment: .center, spacing: 8) {
             Picker(
-                "已有相册",
+                localized("output.destination.existing.picker"),
                 selection: $selectedExistingAlbumIdentifier
             ) {
                 if availableAlbums.isEmpty {
-                    Text("暂无可用相册").tag("")
+                    Text(localized("output.destination.existing.empty")).tag("")
                 } else {
                     ForEach(availableAlbums) { album in
                         Text(album.title).tag(album.id)
@@ -588,17 +627,20 @@ private struct V1OutputSection: View {
             .disabled(isLoadingAlbums)
             .accessibilityLabel(
                 isLoadingAlbums
-                ? "正在刷新相册"
-                : "刷新相册"
+                ? localized("output.destination.refreshing")
+                : localized("output.destination.refresh")
             )
-            .accessibilityHint("重新读取可用于保存结果的系统相册")
+            .accessibilityHint(localized("output.destination.refresh.hint"))
         }
     }
 
     @ViewBuilder
     private var albumStatusView: some View {
         if isLoadingAlbums {
-            Label("正在读取系统相册", systemImage: "photo.on.rectangle")
+            Label(
+                localized("output.destination.loading"),
+                systemImage: "photo.on.rectangle"
+            )
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         } else if !albumStatusMessage.isEmpty {
@@ -607,6 +649,10 @@ private struct V1OutputSection: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
     }
 }
 
@@ -649,7 +695,36 @@ private struct V1OutputRetentionLabel: View {
     }
 }
 
+private extension V1MediaOutputMode {
+
+    func localizedTitle(for language: MemoMarkLanguage) -> String {
+        let key: String
+        switch self {
+        case .originalFormat:
+            key = "output.result.mode.original"
+        case .staticImage:
+            key = "output.result.mode.static"
+        }
+        return language.localized(key: key, fallback: title)
+    }
+}
+
 private extension V1IOSOutputTarget {
+
+    func localizedTitle(for language: MemoMarkLanguage) -> String {
+        let key: String
+        switch self {
+        case .automatic:
+            key = "output.destination.target.automatic"
+        case .applePhotos:
+            key = "output.destination.target.apple_photos"
+        case .existingAlbum:
+            key = "output.destination.target.existing_album"
+        case .newAlbum:
+            key = "output.destination.target.new_album"
+        }
+        return language.localized(key: key, fallback: title)
+    }
 
     var symbolName: String {
         switch self {

@@ -19,6 +19,7 @@ struct ConfigurationCenterDetailPanelSection: View {
         )
     }
 
+    let language: MemoMarkLanguage
     let title: String
     let systemImage: String
     let content: Content
@@ -46,6 +47,7 @@ struct ConfigurationCenterDetailPanelSection: View {
                 onOpenMemoryModule
             ):
                 ConfigurationCenterOutputSelectionPanel(
+                    language: language,
                     model: model,
                     storageOption: storageOption,
                     onOpenMemoryModule:

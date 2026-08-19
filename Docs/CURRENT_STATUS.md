@@ -1,5 +1,17 @@
 # MemoMark Current Status
 
+## 2026-08-19 MemoMark 2.1.3 (85) 多语言与项目整理候选
+
+- 本轮以 2026-08-14 `2.1.2 (85)` 同步节点、基线提交 `2dc0f21` 为范围起点，整理到 2026-08-19 当前工作树；版本字段按用户要求统一为 marketing version `2.1.3`、build `85`。
+- 正式整理范围包括：Interface Language / Preset Output Language 生命周期隔离；时间与记忆叙事 Formatter；Legacy Output 显式语言 Adapter；简体中文、English、日本語、한국어资源与主 App/Share/Widget/macOS/Accessibility active surface；空结果、批量结果、通知直达任务和恢复提示。
+- 应用内 Recent Updates 已更新为本轮共同事实源，四语言资源保持 key parity；`CHANGELOG.md`、README、发布目录、HANDOFF 与四份 `2026-08-19-2.1.3-*` 材料已同步。
+- 本轮不改变 Renderer、CanonicalGeometry、Memory Engine 语义所有权、Live Photo Pipeline、EXIF、Export、PhotoKit 权限或 Share 数据流边界。
+- 用户已明确跳过 JPEG、HEIC、Live Photo、EXIF、Batch Export 媒体回归；该范围记录为本轮未执行/不认证，不作为当前版本构建阻塞。
+- 聚焦本地化/版本/输出语言测试通过：`45 passed / 0 failed / 0 skipped`，结果包为 `/tmp/MemoMark213Focused-20260819.xcresult`；覆盖资源 parity、active UI、四语言 formatter/narrative、Legacy Output、Release Notes 和 Interface/Output Language 隔离。
+- iOS 真机构建通过，产物 `/tmp/MemoMark213Device-20260819/Build/Products/Debug-iphoneos/PhotoMemoiOS.app` 的 App、Share Extension、Widget Extension 均为 `2.1.3 (85)`。macOS `PhotoMemo`、独立 Share Extension、独立 Widget Extension scheme 也全部通过，DerivedData 分别为 `/tmp/MemoMark213Mac-20260819`、`/tmp/MemoMark213Share-20260819`、`/tmp/MemoMark213Widget-20260819`。
+- 已将 `com.serydoo.PhotoMemo.iOS` 原地覆盖安装并启动于 iPhone 17 Pro Max（`iPhone7` / `863C2747-6742-5E93-B715-6F89DBF90B31`）；设备应用列表核验为 `时光记 2.1.3 (85)`，既有应用数据保留。
+- 构建警告均为既有 macOS 部署目标、CLGeocoder、actor-isolation、App Intents 处理器或多 destination 选择提示；本轮未见编译错误。当前状态：`Version Locked; Device Build Installed; Release Evidence Open`。不执行 Git 提交、远程推送、TestFlight 上传或 App Store 提交。
+
 ## 2026-08-18 MemoMark 2.1.2 (86) User Delivery Reliability Sync Preparation
 
 - 本轮同步整理从上一次已推送基点 `2dc0f21` 开始；当前 `HEAD` 与 `origin/main` 均为该基点，目标 marketing version 保持 `2.1.2`，构建号从已推送的 `85` 顺延为 `86`。
@@ -24070,3 +24082,429 @@ CLGeocoder SDK deprecation warnings remain unrelated.
   `/tmp/PhotoMemoRound74Run/round74-qa-output-live-photo-recheck/MemoMarkDeviceQA.xcresult`.
   The detailed output inventory is at
   `/tmp/PhotoMemoRound74Attachments/2A05FF59-95EB-4D4A-9B32-651B4DED3026.json`.
+
+## 2026-08-18 Localization Architecture Phase 2A
+
+- Closed the first language-ownership slice without entering the Formatter,
+  Share Extension localization, or `ja`/`ko` resource phases. `MemoMarkLanguage`
+  now models `zh-Hans`, `en`, `ja`, and `ko`, with explicit interface-language,
+  default-output-language, and Preset-output-language paths; unknown language
+  resolution remains English.
+- `ConfigurationSession`, `ConfigurationPersistenceReconciler`,
+  `ConfigurationSnapshotBuilder`, `BatchConfigurationSnapshotProvider`, and
+  compatibility projection now preserve the selected Preset/configuration
+  language instead of rewriting it from the stored default. The iOS
+  Configuration Center output picker is bound to the selected Preset.
+- Added `OutputLanguageIsolationTests` covering interface-language changes,
+  Preset editing, persistence, and frozen snapshots. The focused suite passed
+  5/5. macOS `PhotoMemo`, iOS `PhotoMemoiOS`, `PhotoMemoShareExtension`, and
+  `PhotoMemoWidgetExtension` debug builds also passed with code signing
+  disabled. Existing actor-isolation warnings remain outside this slice.
+- The known legacy `AnchorEngine` and shared legacy snapshot paths that still
+  use default/interface language remain intentionally untouched for the next
+  Formatter and Share migration phases; no claim of complete Japanese/Korean
+  output localization is made by this milestone.
+
+## 2026-08-18 Localization Architecture Phase 3A
+
+- Added the semantic time-expression layer in
+  `MemoryTimeFormatters.swift`: `MemoryAgeFormatter`,
+  `MemoryDurationFormatter`, `MemoryCountdownFormatter`, and
+  `MemoryDateFormatter` consume explicit semantic components plus an explicit
+  `MemoMarkLanguage`. The basic formatters return value fragments only; they
+  do not generate subjects, narrative sentences, or read interface/default
+  language state.
+- The existing `MemoryAnchorRelativeSnapshot` compatibility surface now
+  delegates age, duration, and countdown values to the new Formatter layer for
+  all four supported languages. `AnchorEngine`, Narrative, Renderer, Share
+  data flow, Live Photo, EXIF, and Export ownership were not changed.
+- Added RED/GREEN coverage for component clamping, Chinese/English/Japanese/
+  Korean age and duration forms, countdown value fragments, explicit output
+  locale/time zone date formatting, and legacy snapshot adapters. The focused
+  `MemoryTimeFormatterTests` plus `MemoryAnchorTextFormatterTests` run passed
+  17/17.
+- macOS `PhotoMemo`, iOS `PhotoMemoiOS`, `PhotoMemoShareExtension`, and
+  `PhotoMemoWidgetExtension` unsigned Debug builds passed with isolated
+  DerivedData. Existing Xcode Beta actor-isolation and platform-deprecation
+  warnings remain outside this slice. Full image-format, Live Photo, EXIF,
+  batch, physical-device, and four-language UI acceptance remain open for
+  later phases.
+
+## 2026-08-18 Localization Architecture Phase 3B
+
+- Added the progressive Memory Narrative layer in
+  `MemoryNarrativeFormatter.swift`. `MemoryNarrativeContext` carries explicit
+  occurrence semantics (`birthDay`, `anchorDay`, `elapsed`, `countdown`, and
+  `anniversary`) plus structured age, duration, countdown, and annual-
+  occurrence values. Narrative formatting does not infer meaning from
+  `days == 0` and does not recalculate time values.
+- Added separate zh-Hans, English, Japanese, and Korean narrative strategies.
+  Strategies reuse the Phase 3A value formatters; the dispatcher only selects
+  a language strategy, while language-specific grammar stays in its own type.
+  The canonical path is explicit-output-language only and does not read
+  `.stored`, `.interfaceStored`, `UserDefaults`, or `Locale.current`.
+- Migrated natural-expression projection through the Narrative adapter in
+  `MemoryResultPresentationAdapter`, `ConfiguredAnchorExpressionProvider`,
+  and `BirthdayAgeExpressionProvider`. A bounded `legacyCompatible` mode keeps
+  established production text contracts stable while old callers are
+  progressively moved to canonical Narrative output.
+- Legacy narrative sources remain intentionally available: `AnchorEngine`,
+  `MemoryAnchorExpressionResolver` for non-natural/compatibility styles,
+  `MemoryAnchorVariableTextFormatter`, `MemoryVariableProvider`, and the
+  compatibility `MemorySemanticResult.displayText` projection. These were not
+  deleted or treated as completed migration. Renderer geometry, Live Photo,
+  EXIF, Export, PhotoKit, Share data flow, UI resources, and `ja`/`ko` lproj
+  files were not changed in this phase.
+- Added four-language `MemoryNarrativeFormatterTests`, including interface
+  language mutation with an explicit Japanese output language. The focused
+  Narrative, time-formatter, anchor-text, Memory Engine contract, and output
+  isolation suites passed. `git diff --check` passed; unsigned macOS, iOS,
+  Share Extension, and Widget Debug builds were run with isolated DerivedData.
+  Physical-device language matrix and JPEG/HEIC/Live Photo/EXIF/batch image
+  regression remain later verification work.
+
+## 2026-08-18 Localization Architecture Phase 3C
+
+- Closed the real-photo-output portion of the legacy language migration without
+  deleting the established Legacy API surface. `AnchorEngine.build` now accepts
+  an explicit `outputLanguage`; `RecordCardBuildService` passes the frozen
+  `BatchConfigurationSnapshot.language`, and `MemoryContext` carries the same
+  output-language ownership into `MemoryVariableProvider`.
+- Added `MemoryMilestoneFormatter` and routed zero-day, birthday milestone,
+  anniversary, month, and generic day compatibility values through explicit
+  zh-Hans/English/Japanese/Korean formatters. `CardVariableProvider` now uses
+  the Preset language for total-day and raw-day fallbacks, and its precedence is
+  resolved `MemoryResult` projection first, legacy `AnchorResult` projection
+  second only when no resolved semantic result is available.
+- `MemoryAnchorExpressionResolver` and
+  `MemoryAnchorVariableTextFormatter` now delegate covered legacy natural
+  values to the Phase 3A/3B formatter layers. Japanese and Korean requests for
+  not-yet-style-localized legacy expression styles use the canonical Narrative
+  strategy instead of falling through to historical Chinese text. The old
+  style matrix and public compatibility APIs remain available for progressive
+  migration.
+- `MemorySemanticResult.displayText` is explicitly documented as a
+  compatibility-only, presentation-derived value. New production output must
+  use semantic fields plus Time/Narrative Formatter layers; no output path in
+  the audited Engine/Memory/Card/RecordCard build chain reads
+  `MemoMarkLanguage.stored`, `MemoMarkLanguage.interfaceStored`,
+  `UserDefaults`, or `Locale.current`.
+- Static scan found no `MemoMarkLanguage.stored` references in the current app
+  source. Remaining `interfaceStored` references are confined to UI, Settings,
+  diagnostics, and Share UI surfaces; they are interface-language consumers,
+  not photo-output language sources. The remaining non-natural English/Chinese
+  compatibility branches are explicit-language fallbacks and are bounded for
+  future style-specific Narrative localization.
+- Added `LegacyOutputLocalizationTests` for Japanese Preset output with the
+  interface/default language boundary, four-language natural legacy output,
+  milestone output, and Japanese/Korean non-natural-style fallback behavior.
+  The selected final regression result was 35 passed, 0 failed, 0 skipped.
+- Four unsigned Debug build slices completed with isolated DerivedData and
+  products present: macOS `PhotoMemo`, iOS Simulator `PhotoMemoiOS`,
+  `PhotoMemoShareExtension`, and `PhotoMemoWidgetExtension`. Existing Xcode
+  Beta platform-deprecation and actor-isolation warnings remain outside this
+  slice. `git diff --check` passed.
+- Phase 3C did not modify Renderer geometry, CanonicalGeometry, Live Photo,
+  EXIF, Export, PhotoKit, Share data flow, UI resources, or `ja`/`ko` lproj
+  resources. The output-language ownership and expression-layer foundation is
+  ready for Phase 4 UI/Share/resource localization; physical-device language
+  acceptance and JPEG/HEIC/Live Photo/EXIF/batch image regression remain open.
+
+## 2026-08-18 Localization Architecture Phase 4A Checkpoint
+
+- Added the four-language UI terminology baseline at
+  `Docs/Guidelines/MEMOMARK_LOCALIZATION_TERMINOLOGY.md`. The current table
+  fixes the user-facing meanings of Memory, Memory Subject, Time Anchor,
+  Configuration, Preset, Expression, Output, Memory Card, Share, Processing,
+  Album, Photo, Live Photo, and the Interface/Output Language distinction.
+- Added `LocalizationResourceParityTests`. The contract currently verifies
+  four-way key parity, exact current resource count, duplicate keys, empty
+  values, direct Bundle resolution for all four lproj folders, explicit
+  Japanese/Korean terminology values, and Xcode Variant Group membership.
+- Added `ja.lproj/Localizable.strings` and `ko.lproj/Localizable.strings`, and
+  registered both in the Xcode `Localizable.strings` variant group. Current
+  source counts are `en=699`, `zh-Hans=699`, `ja=699`, `ko=699`; each has 699
+  unique non-empty entries. The built macOS app contains all four lproj
+  folders.
+- Resourceized the Configuration Center top preview surface for its statement,
+  active-configuration label, switch state, preview title, Renderer viewing
+  hint, footer hint, Time Anchor fallback, and Basic White border label. The
+  product name remains the nonlocalized `MemoMark` brand string.
+- Extended `OutputLanguageIsolationTests` with the Configuration Center
+  preview contract: Interface Language set to Simplified Chinese does not
+  change a Japanese Preset preview, which remains Japanese.
+- Focused result after the Phase 4A resource/UI slice: 10 localization and
+  output-isolation tests passed, 0 failed, 0 skipped. The unsigned macOS
+  `PhotoMemo` Debug build passed with existing platform-deprecation and
+  actor-isolation warnings; `git diff --check` passed.
+- This is a Phase 4A checkpoint, not completion certification. Many older
+  App/Share/commerce/diagnostic values in the new ja/ko files still use the
+  English baseline while their ownership and key parity are stabilized. The
+  remaining Phase 4A work is bounded main-App UI migration and translation
+  quality review before the separate Phase 4B Share Extension, Widget,
+  macOS, and accessibility pass.
+
+## 2026-08-18 Localization Architecture Phase 4A Surface Slices
+
+- Closed the Settings source audit for the current surface: its primary UI
+  already resolves through the explicit `interfaceLanguage` helper. The
+  remaining fixed literals are the `MemoMark+` brand and an existing
+  Localizable `Done` key, so neither was mechanically converted into a new
+  resource key. Japanese and Korean values were added for the core Settings
+  path and covered by a resource contract.
+- Resourceized the next bounded Main App surfaces with explicit Interface
+  Language injection: Configuration Center summary, sidebar, insertable
+  module library, active-region editor hints, output selection labels,
+  output-language explanation, preset menu, and configuration navigation.
+  The Configuration Center preview's generated memory text remains owned by
+  the Preset Output Language path.
+- Resourceized the first-run configuration sheet and the configuration-
+  required recovery alert. Subject names remain user content; the default
+  birthday and expression-style examples are now localized UI preview values.
+  Processing-status navigation, retry, queue, focus, and recent-failure
+  labels were also moved to explicit interface-language resources.
+- The four resource files now contain `817` unique non-empty keys each. The
+  focused localization and output-isolation run completed with `15 passed,
+  0 failed, 0 skipped`; `git diff --check` passed. Existing macOS 27
+  deprecation and actor-isolation warnings remain in unrelated legacy code.
+- A current static scan reports only 5 direct literal candidates in Settings,
+  10 in Configuration Center, 1 in Welcome, 10 in the selected processing
+  and task surfaces, and 1 in MemoMark+; these include brand, structural, or
+  already-localized-key forms and are not equivalent to missing resources.
+  The wider App scan still shows English-baseline resource values in older
+  Settings/Commerce/Share/diagnostic namespaces. Phase 4A is therefore still
+  open: remaining Main App key migration and Japanese/Korean language QA are
+  required before claiming full Main App localization. Share Extension,
+  Widget, independent macOS UI, accessibility QA, and full scheme matrix
+  builds remain out of scope for this checkpoint.
+
+## 2026-08-18 Localization Architecture Phase 4A Finalize
+
+- Completed the active Main App localization closeout for the current iOS
+  surfaces: Task, Empty/Recovery, Processing/Diagnostics, Settings,
+  Configuration Center, Welcome, and MemoMark+ purchase flow. The remaining
+  direct UI literals are classified as Brand (`MemoMark`, `MemoMark+`), Apple
+  or technical product names, Symbol/Layout, interpolated values, user/mock
+  content, or intentionally blank navigation titles. Active Localizable UI
+  literal count is `0`; Settings Expression Guide's final `Done` action now
+  resolves through `common.done`.
+- Added the active usage audit at
+  `Tests/PhotoMemoTests/ArchitectureTests/ActiveLocalizationUsageAuditTests.swift`.
+  It audits source-referenced keys rather than namespace totals and keeps
+  `home.apple_photos.brand` plus other intentional product/version names in an
+  explicit English whitelist. Current metrics are: `active=516`,
+  `audited=516`, `ja fallback=0`, `ko fallback=0`, missing keys `0`, and
+  orphan/unused keys `561` (reported only; not deleted).
+- The four resource files are now fully aligned at `1,077` unique, non-empty
+  keys each (`en`, `zh-Hans`, `ja`, `ko`); duplicate keys are `0`, and the
+  Xcode Variant Group contains both new language folders. Japanese and Korean
+  active values have no non-whitelisted English baseline fallback.
+- The final focused localization run passed `16/16`, `0` failed, `0` skipped:
+  `LocalizationResourceParityTests`, `ActiveLocalizationUsageAuditTests`,
+  and `OutputLanguageIsolationTests`. It covers resource parity, active-key
+  fallback/missing-key detection, Interface/Output Language separation,
+  Preset/session/snapshot persistence, and Japanese/Korean language resolving.
+- Final unsigned Debug builds passed for all requested schemes with isolated
+  DerivedData: macOS `PhotoMemo`, iOS `PhotoMemoiOS`,
+  `PhotoMemoShareExtension`, and `PhotoMemoWidgetExtension`. Existing
+  platform-deprecation and actor-isolation warnings remain, but no build
+  failure or localization-resource error was introduced by this slice.
+- `git diff --check` passed. No Renderer geometry, CanonicalGeometry, Live
+  Photo pipeline, EXIF, Export, PhotoKit, or Share data-flow changes were
+  made in this finalize slice. Phase 4A Main App localization satisfies its
+  engineering completion gate and is safe to proceed to Phase 4B; native
+  speaker review, Dynamic Type/truncation checks, physical-device language
+  matrix, and JPEG/HEIC/Live Photo/EXIF/batch image regression remain manual
+  acceptance work and are not certified by these builds/tests.
+
+## 2026-08-18 Localization Architecture Phase 4B Cross-Target Interface Localization
+
+- Extended the existing four-language Interface Localization infrastructure to
+  the Share Extension, Widget/Live Activity presentation, active macOS
+  Configuration Center surfaces, and accessibility labels/hints. The Share
+  data flow, persisted processing payloads, Preset Output Language ownership,
+  and generated Memory Output path were preserved.
+- Share Extension visible copy now resolves through explicit `share.*`
+  resources and the Interface Language boundary. The old bilingual helper and
+  `interfaceStored == .english` UI branches were removed from the migrated
+  surface. Widget processing status copy now uses explicit `widget.*` keys and
+  Interface Language; dynamic queue/pipeline status values remain persisted
+  processing payload data rather than new Memory Output text.
+- Added explicit resources for the active macOS-only Configuration Center
+  strings and accessibility copy, including avatar editing, object-name
+  validation, anchor controls, and dynamic custom-field labels. The four
+  language files now contain `1,197` unique, non-empty keys each; duplicate
+  keys remain `0`.
+- Added
+  `Tests/PhotoMemoTests/ArchitectureTests/CrossTargetLocalizationTests.swift`
+  for Share, Widget, macOS, accessibility, target resource membership, and
+  four-language value contracts. The final focused run passed `23/23`, with
+  `0` failures and `0` skips. `LocalizationResourceParityTests` and
+  `OutputLanguageIsolationTests` remain included in that run.
+- Final unsigned Debug builds passed with isolated DerivedData for iOS
+  `PhotoMemoiOS` (`/tmp/PhotoMemoPhase4BiOSBuild2`), macOS `PhotoMemo`
+  (`/tmp/PhotoMemoPhase4BMacBuild3`), Share Extension
+  (`/tmp/PhotoMemoPhase4BShareBuildFinal`), and Widget Extension
+  (`/tmp/PhotoMemoPhase4BWidgetBuildFinal`). The iOS product and both
+  extension products contain `en`, `zh-Hans`, `ja`, and `ko` resource
+  bundles. Existing deprecation and actor-isolation warnings remain; no
+  localization compile or resource-copy failure was observed.
+- `git diff --check` passed. This slice did not modify Memory Engine semantic
+  architecture, Time/Narrative Formatter ownership, Renderer geometry,
+  CanonicalGeometry, Live Photo, EXIF, Export, PhotoKit, or Share data flow.
+  Physical-device language matrix testing, native Japanese/Korean review,
+  VoiceOver and Dynamic Type visual acceptance, and JPEG/HEIC/Live Photo/EXIF/
+  batch image regression remain manual QA and are not certified by this
+  engineering checkpoint.
+
+## 2026-08-18 Phase 4B iPhone 17 Pro Max Device QA Handoff
+
+- Built the `PhotoMemoiOS` Debug scheme for the paired physical device
+  `iPhone7` (model `iPhone 17 Pro Max`) with the existing Apple Development
+  signing configuration and isolated DerivedData at
+  `/tmp/PhotoMemoDeviceBuild`.
+- Installed bundle `com.serydoo.PhotoMemo.iOS` successfully and launched it
+  successfully on the device. The installation preserved the existing app
+  container; no uninstall, reset, or data-clearing operation was performed.
+- This is a device QA handoff, not a certification result. Manual checks for
+  the four-language UI/output matrix, Share Extension, Widget/Live Activity,
+  VoiceOver, Dynamic Type, photo permissions, and JPEG/HEIC/Live Photo/EXIF/
+  batch export remain with the developer on the device.
+
+## 2026-08-19 Phase 4B Language QA Round 2
+
+- Re-ran the focused localization and presentation suite on macOS with an
+  isolated DerivedData/result bundle at
+  `/tmp/PhotoMemoLocalizationRound2Retry-20260819`. The run passed `47/47`
+  tests with `0` failures and `0` skips, covering resource parity,
+  cross-target resources, Output Language isolation, home projections, recent
+  processing presentation, and the Settings task presenter. `git diff
+  --check` passed. The first attempt used an incorrectly duplicated project
+  path and did not enter compilation; the retry used the canonical project
+  path and is the valid result.
+- Physical-device launch-argument checks on the paired iPhone 17 Pro Max
+  confirmed that `zh-Hans`, `en`, `ja`, and `ko` switch the App Interface
+  Language while the active Preset preview remains in its persisted
+  `zh-Hans` Output Language. This confirms the intended Interface/Output
+  isolation, but does not yet certify the physical `English + Japanese` and
+  `Japanese + Korean` output combinations because the device's active Preset
+  was not overwritten for this read-only QA pass.
+- Confirmed active UI localization gap: the home current-task card derives
+  count and status text from hard-coded Chinese in
+  `iOS/Views/V1IOSHomeSupportViews.swift`, so the English device screenshot
+  still shows `任务 1 / 1 张` and `已完成`. The existing tests validate the
+  projection values but do not parameterize them by Interface Language.
+- Confirmed locale fallback gap: `V1IOSHomeProjection.savedStatusValue` only
+  has explicit Simplified Chinese and English branches; Japanese and Korean
+  enter the default branch using the English locale and `Saved %@` fallback.
+  The Japanese and Korean device screenshots visibly show the English saved
+  date form.
+- Observed layout risk: the English home action button is ellipsized as
+  `Choose Photos in MemoM...`. This is a physical-device localization/layout
+  issue requiring Dynamic Type and long-string review, not a resource-parity
+  failure.
+- Source audit also found additional Chinese derived task/progress strings in
+  `iOS/Views/V1SettingsPagePresenter.swift`. These are recorded as a follow-up
+  active-surface risk and still need locale-specific presenter coverage and a
+  physical Task/Processing screen check.
+- No application source, Renderer geometry, CanonicalGeometry, Live Photo,
+  EXIF, Export, PhotoKit, Share data-flow, or device durable configuration was
+  changed during this QA round. Phase 4B language QA remains open until the
+  confirmed gaps are corrected and the physical-language matrix is rerun.
+
+## 2026-08-19 Phase 4B Home and Task Localization Fix Round
+
+- Added explicit Interface Language formatting for the Home Activity projection
+  count and status values. The compatibility properties remain available, but
+  the production Home surface now resolves them from `interfaceStored` through
+  the explicit language formatter path.
+- Updated Home preset saved-time formatting to use per-language date and status
+  resources. Japanese and Korean no longer use the English `Saved %@` fallback.
+- Migrated the active Task/Processing presenter surface from hard-coded Chinese
+  derived copy to explicit Interface Language resources, including task status,
+  progress counts, pipeline step labels, template display, overview units, and
+  Apple Photos destination actions. User-provided album and configuration names
+  remain unchanged.
+- Added four-language regression coverage for Home Activity values, Home saved
+  timestamps, Task waiting/overview presentation, and Apple Photos action copy.
+  The final focused Home/Task suite passed `27/27` with `0` failures and
+  `0` skips.
+- After adding the new Task/Home resource keys, all four Localizable.strings
+  files contain `1,235` non-empty keys with parity and no duplicate keys. The
+  focused resource, active-surface, cross-target, and Output Language isolation
+  suite passed `25/25` with `0` failures and `0` skips.
+- The signed `PhotoMemoiOS` device build succeeded at
+  `/tmp/PhotoMemoLocalizationDevice-20260819`, was installed and launched on
+  the paired physical `iPhone7` (iPhone 17 Pro Max), and produced the read-only
+  screenshot `/tmp/PhotoMemo-device-localization-fixed-launch.png`. Existing
+  device data and output configuration were preserved; no new photo-processing
+  task was created for this language-only verification.
+- `git diff --check` passed. Remaining certification gaps are the full physical
+  four-language UI/output matrix, Japanese/Korean native-language review,
+  Dynamic Type and long-string visual QA, and JPEG/HEIC/Live Photo/EXIF/batch
+  regression. This round did not modify Renderer geometry, CanonicalGeometry,
+  Live Photo, EXIF, Export, PhotoKit, or Share data flow.
+
+## 2026-08-19 Legacy Output Closure And Device Evidence Round
+
+- Closed the previously identified Home compatibility paths: quick-action and
+  recent-processing presentation now use explicit Interface Language resources;
+  queue recovery state is represented by `isRecovery` instead of inspecting
+  localized headline wording; production callers pass `interfaceStored`
+  explicitly.
+- Extended the queue diagnostics presentation adapter so its event headlines,
+  detail messages, progress titles, pipeline labels, and recovery/waiting copy
+  resolve through the explicit Interface Language. The four resource files now
+  contain `1,341` non-empty keys each with matching key sets and no duplicate
+  keys. `git diff --check` and Swift parse checks pass.
+- The physical Japanese Task/Processing screenshot confirmed Japanese page
+  chrome, status, completion action, explanatory copy, and bottom navigation.
+  Chinese strings visible in that screenshot are existing user-provided preset
+  and configuration names, not UI fallback. The Japanese/Korean Settings
+  language-matrix UI test also passed and restored the device interface to
+  Simplified Chinese.
+- A fresh rebuild after the queue-diagnostics changes is currently blocked by
+  Xcode beta Swift frontend workers reporting `exit code 0` with no diagnostic
+  output while compiling existing shared files such as
+  `ProductionDiagnosticEvent.swift` and `BatchNotificationService.swift`.
+  Multiple isolated DerivedData and single-worker/batch-mode retries reproduced
+  the tool failure; this is not recorded as an application build pass.
+- The previously installed device build and the earlier Japanese Task/Settings
+  UI evidence remain valid for the code that was installed at that time, but
+  they do not certify the latest uninstalled queue-diagnostics resource changes.
+  JPEG, HEIC, Live Photo, EXIF, Batch Export, Dynamic Type, and the four physical
+  Interface/Output Language combinations remain open until a successful current
+  build can be installed and the corresponding readback/visual checks run.
+
+## 2026-08-19 Legacy Closure Current-Build Revalidation
+
+- Rebuilt the current source with stable Xcode 26.6 (`/Applications/Xcode.app`)
+  for the signed `PhotoMemoiOS` device destination. The build succeeded and the
+  resulting app was installed in place on the paired `iPhone7` (iPhone 17 Pro
+  Max), preserving the existing app data, Photos data, and output destination.
+- Ran the current installed build on the physical device with
+  `MemoMarkDeviceQA`. Both selected UI tests passed: the Japanese/Korean
+  Interface Language matrix and the Japanese Task/Processing surface. Result:
+  `2/2 passed`, `0` failures. The test restored the Interface Language to
+  Simplified Chinese after completion.
+- Exported and inspected the current physical screenshots. Japanese Settings,
+  Korean Settings, and Japanese Task/Processing show localized navigation,
+  controls, status, completion, destination action, and explanatory copy. No
+  default-size truncation was observed. Chinese names visible in the Task card
+  are persisted user/preset content and are not Interface Language fallback.
+- Stable macOS, Share Extension, and Widget build invocations produced the
+  current corresponding products in isolated DerivedData directories. Xcode's
+  SwiftBuild worker did not cleanly return from the post-product command phase
+  for these invocations, so they are recorded as artifact-generation evidence,
+  not clean process-exit certification. No compile error was emitted.
+- Repeated static closure checks pass: all four Localizable.strings files have
+  `1,341` keys, key parity and duplicate-key checks pass, the known legacy Home
+  and queue-output literal scan returns no matches, and `git diff --check`
+  passes. The focused stable macOS suite passed `34/34` with `0` failures.
+- The remaining language-scope items are the physical output-language
+  combinations (`zh-Hans + zh-Hans`, `zh-Hans + en`, `en + ja`, `ja + ko`),
+  native Japanese and Korean sign-off, and Dynamic Type/long-string visual
+  checks. The user explicitly chose to skip the JPEG, HEIC, Live Photo, EXIF,
+  and Batch Export regression in this round; that media scope is therefore
+  closed as intentionally skipped, not certified by execution. No production
+  certification claim is made by this round.

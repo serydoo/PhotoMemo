@@ -27,17 +27,20 @@ enum V1IOSHomeProjection {
 
     static func subjectSummary(
         subject: MemorySubject?,
-        selectedAnchorTitle: String?
+        selectedAnchorTitle: String?,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> V1IOSHomeSubjectSummaryProjection {
 
         let title =
             subjectTitle(
-                subject
+                subject,
+                language: language
             )
 
         let subtitle =
             normalizedSubjectSubtitle(
-                subject
+                subject,
+                language: language
             )
 
         let anchorTitle =
@@ -45,7 +48,8 @@ enum V1IOSHomeProjection {
                 subject?
                 .primaryTimeAnchor?
                 .title
-                ?? selectedAnchorTitle
+                ?? selectedAnchorTitle,
+                language: language
             )
 
         return V1IOSHomeSubjectSummaryProjection(
@@ -59,7 +63,8 @@ enum V1IOSHomeProjection {
         outputTarget: V1IOSOutputTarget,
         selectedExistingAlbumTitle: String,
         newAlbumName: String,
-        writesMemoryDescription: Bool
+        writesMemoryDescription: Bool,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> V1IOSHomeOutputSummaryProjection {
 
         V1IOSHomeOutputSummaryProjection(
@@ -69,18 +74,34 @@ enum V1IOSHomeProjection {
                     outputTarget: outputTarget,
                     selectedExistingAlbumTitle:
                         selectedExistingAlbumTitle,
-                    newAlbumName: newAlbumName
+                    newAlbumName: newAlbumName,
+                    language: language
                 ),
             memoryWriteLabel:
                 writesMemoryDescription
-                ? "写入说明已开启"
-                : "写入说明已关闭",
+                ? language.localized(
+                    key: "legacy.home.output.memory_write.enabled",
+                    fallback: "Photo description enabled"
+                )
+                : language.localized(
+                    key: "legacy.home.output.memory_write.disabled",
+                    fallback: "Photo description disabled"
+                ),
             targetNote:
-                outputTarget.note,
+                localizedOutputTargetNote(
+                    outputTarget,
+                    language: language
+                ),
             memoryWriteDetail:
                 writesMemoryDescription
-                ? "生成结果会附带当前记忆说明。"
-                : "生成结果不会额外写入说明文本。"
+                ? language.localized(
+                    key: "legacy.home.output.memory_write.detail.enabled",
+                    fallback: "The result will include the current Memory Expression."
+                )
+                : language.localized(
+                    key: "legacy.home.output.memory_write.detail.disabled",
+                    fallback: "The result will not include additional description text."
+                )
         )
     }
 
@@ -90,7 +111,8 @@ enum V1IOSHomeProjection {
         presetSummary: String,
         activeConfigurationStatus:
             V1ConfigurationStatus,
-        isApplied: Bool
+        isApplied: Bool,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> V1IOSHomePresetSummaryProjection {
 
         return V1IOSHomePresetSummaryProjection(
@@ -98,42 +120,67 @@ enum V1IOSHomeProjection {
                 normalizedOptionalText(
                     presetTitle
                 )
-                ?? "记忆预设",
+                ?? language.localized(
+                    key: "legacy.home.preset.title",
+                    fallback: "Memory Preset"
+                ),
             subtitle:
                 normalizedOptionalText(
                     configurationLabel
                 )
-                ?? "当前生效配置",
+                ?? language.localized(
+                    key: "legacy.home.preset.subtitle",
+                    fallback: "Active Configuration"
+                ),
             detail:
                 normalizedOptionalText(
                     presetSummary
                 )
-                ?? "当前生效配置摘要",
+                ?? language.localized(
+                    key: "legacy.home.preset.detail",
+                    fallback: "Active configuration summary"
+                ),
             statusLabel:
                 isApplied
-                ? V1ConfigurationStatus
-                    .saved
-                    .message(for: .preset)
-                : activeConfigurationStatus
-                    .message(for: .preset),
+                ? language.localized(
+                    key: "legacy.home.preset.status.applied",
+                    fallback: "Applied"
+                )
+                : language.localized(
+                    key: "legacy.home.preset.status.pending",
+                    fallback: "Changes not saved"
+                ),
             emphasizesAppliedState:
                 isApplied
         )
     }
 
     static func emptyPresetSummary(
-        configurationLabel: String
+        configurationLabel: String,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> V1IOSHomePresetSummaryProjection {
 
         V1IOSHomePresetSummaryProjection(
-            title: "当前对象还没有配置",
+            title: language.localized(
+                key: "legacy.home.preset.empty.title",
+                fallback: "This subject has no configuration yet"
+            ),
             subtitle:
                 normalizedOptionalText(
                     configurationLabel
                 )
-                ?? "当前生效配置",
-            detail: "请先到配置中心底部新建配置，之后这里就能直接下拉切换。",
-            statusLabel: "等待配置",
+                ?? language.localized(
+                    key: "legacy.home.preset.subtitle",
+                    fallback: "Active Configuration"
+                ),
+            detail: language.localized(
+                key: "legacy.home.preset.empty.detail",
+                fallback: "Create a configuration at the bottom of Configuration Center, then select it here."
+            ),
+            statusLabel: language.localized(
+                key: "legacy.home.preset.status.waiting",
+                fallback: "Waiting for configuration"
+            ),
             emphasizesAppliedState: false
         )
     }
@@ -147,10 +194,7 @@ enum V1IOSHomeProjection {
         guard let savedAt else {
             return language.localized(
                 key: "home.preset.not_saved",
-                fallback:
-                    language == .simplifiedChinese
-                    ? "尚未保存"
-                    : "Not saved"
+                fallback: "Not saved"
             )
         }
 
@@ -164,54 +208,38 @@ enum V1IOSHomeProjection {
             )
 
         guard
-            let month = components.month,
-            let day = components.day,
-            let hour = components.hour,
-            let minute = components.minute
+            components.month != nil,
+            components.day != nil,
+            components.hour != nil,
+            components.minute != nil
         else {
             return language.localized(
                 key: "home.preset.not_saved",
-                fallback:
-                    language == .simplifiedChinese
-                    ? "尚未保存"
-                    : "Not saved"
+                fallback: "Not saved"
             )
         }
 
-        switch language {
-        case .simplifiedChinese:
-            let format = language.localized(
-                key: "home.preset.saved_status_format",
-                fallback: "%d月%d日 %02d:%02d 保存"
-            )
-            return String(
-                format: format,
-                locale: language.locale,
-                month,
-                day,
-                hour,
-                minute
-            )
-
-        case .english:
-            let formatter = DateFormatter()
-            formatter.locale = language.locale
-            formatter.timeZone = timeZone
-            formatter.dateFormat = "MMM d, HH:mm"
-            let format = language.localized(
-                key: "home.preset.saved_status_format",
-                fallback: "Saved %@"
-            )
-            return String(
-                format: format,
-                locale: language.locale,
-                formatter.string(from: savedAt)
-            )
-        }
+        let formatter = DateFormatter()
+        formatter.locale = language.locale
+        formatter.timeZone = timeZone
+        formatter.dateFormat = language.localized(
+            key: "home.preset.saved_date_format",
+            fallback: "MMM d, HH:mm"
+        )
+        let format = language.localized(
+            key: "home.preset.saved_status_format",
+            fallback: "Saved %@"
+        )
+        return String(
+            format: format,
+            locale: language.locale,
+            formatter.string(from: savedAt)
+        )
     }
 
     static func subjectTitle(
-        _ subject: MemorySubject?
+        _ subject: MemorySubject?,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> String {
 
         let displayName =
@@ -238,11 +266,15 @@ enum V1IOSHomeProjection {
             return shortName
         }
 
-        return "记忆对象"
+        return language.localized(
+            key: "legacy.home.subject.title",
+            fallback: "Memory Subject"
+        )
     }
 
     private static func normalizedSubjectSubtitle(
-        _ subject: MemorySubject?
+        _ subject: MemorySubject?,
+        language: MemoMarkLanguage
     ) -> String {
 
         let relationshipLabel =
@@ -257,11 +289,15 @@ enum V1IOSHomeProjection {
             return relationshipLabel
         }
 
-        return "补充主角信息"
+        return language.localized(
+            key: "legacy.home.subject.subtitle",
+            fallback: "Add subject details"
+        )
     }
 
     private static func normalizedAnchorTitle(
-        _ selectedAnchorTitle: String?
+        _ selectedAnchorTitle: String?,
+        language: MemoMarkLanguage
     ) -> String {
 
         let trimmed =
@@ -274,20 +310,30 @@ enum V1IOSHomeProjection {
             return trimmed
         }
 
-        return "未设置"
+        return language.localized(
+            key: "legacy.home.subject.anchor.unset",
+            fallback: "Not set"
+        )
     }
 
     private static func normalizedOutputDetail(
         outputTarget: V1IOSOutputTarget,
         selectedExistingAlbumTitle: String,
-        newAlbumName: String
+        newAlbumName: String,
+        language: MemoMarkLanguage
     ) -> String {
 
         switch outputTarget {
         case .automatic:
-            return "系统图库 + 时光记相册"
+            return language.localized(
+                key: "legacy.home.output.detail.automatic",
+                fallback: "Apple Photos Library + MemoMark album"
+            )
         case .applePhotos:
-            return "仅写入系统图库"
+            return language.localized(
+                key: "legacy.home.output.detail.apple_photos",
+                fallback: "Apple Photos Library only"
+            )
         case .existingAlbum:
             let trimmed =
                 selectedExistingAlbumTitle
@@ -296,7 +342,10 @@ enum V1IOSHomeProjection {
                 )
 
             return trimmed.isEmpty
-                ? "尚未选择相册"
+                ? language.localized(
+                    key: "legacy.home.output.detail.existing_empty",
+                    fallback: "No album selected"
+                )
                 : trimmed
         case .newAlbum:
             let trimmed =
@@ -306,9 +355,22 @@ enum V1IOSHomeProjection {
                 )
 
             return trimmed.isEmpty
-                ? "保存时创建相册"
+                ? language.localized(
+                    key: "legacy.home.output.detail.new_empty",
+                    fallback: "Create album when saving"
+                )
                 : trimmed
         }
+    }
+
+    private static func localizedOutputTargetNote(
+        _ outputTarget: V1IOSOutputTarget,
+        language: MemoMarkLanguage
+    ) -> String {
+        language.localized(
+            key: "legacy.home.output.note.\(outputTarget.rawValue)",
+            fallback: outputTarget.note
+        )
     }
 
     private static func normalizedOptionalText(

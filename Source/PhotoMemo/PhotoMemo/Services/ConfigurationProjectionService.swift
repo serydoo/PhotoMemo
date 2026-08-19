@@ -27,6 +27,32 @@ struct ConfigurationSnapshotProjectionInput {
     let shouldWritePhotoDescription: Bool
     let photoDescriptionOverride: String
     let mediaOutputMode: V1MediaOutputMode
+    let outputLanguage: MemoMarkLanguage
+
+    init(
+        selectedTemplate: Template?,
+        selectedBadge: Badge?,
+        anchors: [Anchor],
+        selectedAnchorIDString: String,
+        selectedAlbumIdentifier: String,
+        shouldWritePhotoDescription: Bool,
+        photoDescriptionOverride: String,
+        mediaOutputMode: V1MediaOutputMode,
+        outputLanguage: MemoMarkLanguage =
+            .defaultOutputLanguage
+    ) {
+        self.selectedTemplate = selectedTemplate
+        self.selectedBadge = selectedBadge
+        self.anchors = anchors
+        self.selectedAnchorIDString = selectedAnchorIDString
+        self.selectedAlbumIdentifier = selectedAlbumIdentifier
+        self.shouldWritePhotoDescription =
+            shouldWritePhotoDescription
+        self.photoDescriptionOverride =
+            photoDescriptionOverride
+        self.mediaOutputMode = mediaOutputMode
+        self.outputLanguage = outputLanguage
+    }
 }
 
 @MainActor
@@ -75,7 +101,8 @@ struct ConfigurationProjectionService {
             timeDisplayConfiguration:
                 legacyStore.loadTimeDisplayConfiguration(),
             mediaOutputModeRawValue:
-                input.mediaOutputMode.rawValue
+                input.mediaOutputMode.rawValue,
+            language: input.outputLanguage
         )
         guard let durableAggregate,
               let configurationID =
@@ -205,7 +232,8 @@ struct ConfigurationProjectionService {
             customMemoryWriteText:
                 configuration.editor.memoryCopy.customText,
             savedOutputConfiguration:
-                legacyOutputConfiguration(configuration.output)
+                legacyOutputConfiguration(configuration.output),
+            language: configuration.language
         )
     }
 

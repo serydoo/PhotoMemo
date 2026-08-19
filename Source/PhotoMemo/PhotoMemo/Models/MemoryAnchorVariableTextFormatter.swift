@@ -8,12 +8,17 @@ enum MemoryAnchorVariableTextFormatter {
         language: MemoMarkLanguage
     ) -> String {
         if elapsed.relativeSnapshot.isOnAnchorDay {
-            return language == .english
-                ? "day of birth"
-                : "出生当天"
+            return MemoryNarrativeFormatter.birthDayLabel(
+                language: language
+            )
         }
 
-        return elapsed.relativeSnapshot.ageText(
+        return MemoryAgeFormatter.format(
+            MemoryAgeComponents(
+                years: elapsed.years,
+                months: elapsed.months,
+                days: elapsed.days
+            ),
             language: language
         )
     }
@@ -23,11 +28,11 @@ enum MemoryAnchorVariableTextFormatter {
         language: MemoMarkLanguage
     ) -> String {
 
-        let elapsed =
-            anchorResult.elapsed
+        let elapsed = anchorResult.elapsed
 
         if elapsed.isFutureRelative {
-            return elapsed.relativeSnapshot.countdownText(
+            return MemoryCountdownPhraseFormatter.format(
+                totalDays: elapsed.totalDays,
                 language: language
             )
         }
@@ -76,8 +81,13 @@ enum MemoryAnchorVariableTextFormatter {
         from elapsed: MemoryElapsedTime,
         language: MemoMarkLanguage
     ) -> String {
-
-        elapsed.relativeSnapshot.durationText(
+        MemoryDurationFormatter.format(
+            MemoryDurationComponents(
+                years: elapsed.years,
+                months: elapsed.months,
+                days: elapsed.days,
+                totalDays: elapsed.totalDays
+            ),
             language: language
         )
     }
@@ -86,94 +96,50 @@ enum MemoryAnchorVariableTextFormatter {
         from totalDays: Int,
         language: MemoMarkLanguage
     ) -> String {
-
-        let safeTotalDays =
-            max(totalDays, 0)
-
-        switch language {
-        case .simplifiedChinese:
-            return "\(safeTotalDays)天"
-        case .english:
-            return "\(safeTotalDays) \(englishUnit("day", value: safeTotalDays))"
-        }
+        MemoryCountdownFormatter.format(
+            MemoryCountdownComponents(totalDays: totalDays),
+            language: language
+        )
     }
 
     static func elapsedText(
         from totalDays: Int,
         language: MemoMarkLanguage
     ) -> String {
-
-        switch language {
-        case .simplifiedChinese:
-            return "已过\(max(totalDays, 0))天"
-        case .english:
-            return "\(rawDayText(from: totalDays, language: language)) elapsed"
-        }
+        MemoryElapsedFormatter.format(
+            totalDays: totalDays,
+            language: language
+        )
     }
 
     static func dayIndexText(
         from totalDays: Int,
         language: MemoMarkLanguage
     ) -> String {
-
-        let dayIndex =
-            max(totalDays, 1)
-
-        switch language {
-        case .simplifiedChinese:
-            return "第\(dayIndex)天"
-        case .english:
-            return "Day \(dayIndex)"
-        }
+        MemoryDayIndexFormatter.format(
+            totalDays: totalDays,
+            language: language
+        )
     }
 
     static func weekText(
         from totalDays: Int,
         language: MemoMarkLanguage
     ) -> String {
-
-        let safeTotalDays =
-            max(totalDays, 0)
-        let weeks =
-            safeTotalDays / 7
-        let days =
-            safeTotalDays % 7
-
-        switch language {
-        case .simplifiedChinese:
-            if weeks == 0,
-               days == 0 {
-                return "0周"
-            }
-
-            if days == 0 {
-                return "\(weeks)周"
-            }
-
-            return "\(weeks)周\(days)天"
-        case .english:
-            if days == 0 {
-                return "\(weeks) \(englishUnit("week", value: weeks))"
-            }
-
-            return "\(weeks) \(englishUnit("week", value: weeks)) \(days) \(englishUnit("day", value: days))"
-        }
+        MemoryWeekFormatter.format(
+            totalDays: totalDays,
+            language: language
+        )
     }
 
     static func monthAgeText(
         from totalMonths: Int,
         language: MemoMarkLanguage
     ) -> String {
-
-        let safeTotalMonths =
-            max(totalMonths, 0)
-
-        switch language {
-        case .simplifiedChinese:
-            return "\(safeTotalMonths)个月"
-        case .english:
-            return "\(safeTotalMonths) \(englishUnit("month", value: safeTotalMonths))"
-        }
+        MemoryMonthAgeFormatter.format(
+            totalMonths: totalMonths,
+            language: language
+        )
     }
 }
 
@@ -188,16 +154,6 @@ private extension MemoryAnchorVariableTextFormatter {
                 in: .whitespacesAndNewlines
             ).isEmpty
         } ?? ""
-    }
-
-    static func englishUnit(
-        _ singular: String,
-        value: Int
-    ) -> String {
-
-        value == 1
-            ? singular
-            : "\(singular)s"
     }
 }
 #endif
