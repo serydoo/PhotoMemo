@@ -4,6 +4,7 @@ import UIKit
 
 struct ConfigurationCenterSummarySection: View {
 
+    let language: MemoMarkLanguage
     let subject: MemorySubject?
     let selectedRegion: CardRegion
     let currentBorderStyleName: String
@@ -47,7 +48,7 @@ struct ConfigurationCenterSummarySection: View {
             y: 4
         )
         .overlay(alignment: .topLeading) {
-            Text("当前生效配置")
+            Text(localized("configuration.summary.current", fallback: "当前生效配置"))
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 10)
@@ -77,11 +78,11 @@ struct ConfigurationCenterSummarySection: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("摘要面板")
+                    Text(localized("configuration.summary.title", fallback: "摘要面板"))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
 
-                    Text("先确认对象、锚点与展示方式，再进入下方区域继续细化。")
+                    Text(localized("configuration.summary.detail", fallback: "先确认对象、锚点与展示方式，再进入下方区域继续细化。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -95,7 +96,7 @@ struct ConfigurationCenterSummarySection: View {
     private var groupedRowsPanel: some View {
         VStack(spacing: 0) {
             summaryRow(
-                title: "记忆对象",
+                title: localized("configuration.summary.subject", fallback: "记忆对象"),
                 systemImage: MemoMarkSymbol.memorySubject.name,
                 detail: subjectIdentityDetail
             ) {
@@ -109,14 +110,14 @@ struct ConfigurationCenterSummarySection: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(
                             subject?.identity.displayName
-                            ?? "记忆对象"
+                            ?? localized("configuration.summary.unselected_subject", fallback: "未选择对象")
                         )
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.primary)
 
                         Text(
                             subject?.relationship.label
-                            ?? "未选择对象"
+                            ?? localized("configuration.summary.unselected_subject", fallback: "未选择对象")
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -125,7 +126,7 @@ struct ConfigurationCenterSummarySection: View {
             } trailing: {
                 summaryDisclosureButton(
                     title: subjectAnchorCountTitle,
-                    subtitle: "对象详情",
+                    subtitle: localized("configuration.summary.object_detail", fallback: "对象详情"),
                     action: onOpenSubject
                 )
             }
@@ -133,24 +134,24 @@ struct ConfigurationCenterSummarySection: View {
             summaryDivider
 
             summaryRow(
-                title: "当前生效锚点",
+                title: localized("configuration.summary.current_anchor", fallback: "当前生效锚点"),
                 systemImage: MemoMarkSymbol.timeAnchor.name,
                 detail: timeAnchorDetail
             ) {
                 Text(
                     subject?.primaryTimeAnchor?.title
-                    ?? "未选择锚点"
+                    ?? localized("configuration.summary.unselected_anchor", fallback: "未选择锚点")
                 )
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.primary)
             } trailing: {
                 if availableTimeAnchors.isEmpty {
-                    Text("暂无")
+                    Text(localized("configuration.summary.no_content", fallback: "暂无"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 } else {
                     Picker(
-                        "时间锚点",
+                        localized("configuration.preview.time_anchor", fallback: "时间锚点"),
                         selection: selectedTimeAnchorID
                     ) {
                         ForEach(availableTimeAnchors) { anchor in
@@ -161,7 +162,7 @@ struct ConfigurationCenterSummarySection: View {
                     .pickerStyle(.menu)
                     .labelsHidden()
                     .controlSize(.small)
-                    .accessibilityLabel("选择当前时间锚点")
+                    .accessibilityLabel(localized("configuration.summary.choose_anchor", fallback: "选择当前时间锚点"))
                 }
             }
 
@@ -188,13 +189,13 @@ struct ConfigurationCenterSummarySection: View {
                 .pickerStyle(.menu)
                 .labelsHidden()
                 .controlSize(.small)
-                .accessibilityLabel("选择位置显示方式")
+                .accessibilityLabel(localized("configuration.summary.choose_location", fallback: "选择位置显示方式"))
             }
 
             summaryDivider
 
             summaryRow(
-                title: "记忆表达",
+                title: localized("configuration.summary.memory_expression", fallback: "记忆表达"),
                 systemImage: MemoMarkSymbol.memoryContent.name,
                 detail: memoryDisplayDetail
             ) {
@@ -203,12 +204,12 @@ struct ConfigurationCenterSummarySection: View {
                     .foregroundStyle(Color.primary)
             } trailing: {
                 if availableMemoryDisplayStyles.isEmpty {
-                    Text("暂无")
+                    Text(localized("configuration.summary.no_content", fallback: "暂无"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                 } else {
                     Picker(
-                        "记忆表达",
+                        localized("configuration.summary.memory_expression", fallback: "记忆表达"),
                         selection: selectedMemoryDisplayStyle
                     ) {
                         ForEach(
@@ -222,30 +223,30 @@ struct ConfigurationCenterSummarySection: View {
                     .pickerStyle(.menu)
                     .labelsHidden()
                     .controlSize(.small)
-                    .accessibilityLabel("选择记忆表达方式")
+                    .accessibilityLabel(localized("configuration.summary.choose_expression", fallback: "选择记忆表达方式"))
                 }
             }
 
             summaryDivider
 
             summaryRow(
-                title: "边框样式",
+                title: localized("configuration.summary.border_style", fallback: "边框样式"),
                 systemImage: MemoMarkSymbol.configuration.name,
-                detail: "当前使用基础白。"
+                detail: localized("configuration.summary.border_detail", fallback: "当前使用基础白。")
             ) {
                 Text(currentBorderStyleName)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.primary)
             } trailing: {
-                summaryStatusBadge("当前版本")
+                summaryStatusBadge(localized("configuration.summary.current_version", fallback: "当前版本"))
             }
 
             summaryDivider
 
             summaryRow(
-                title: "四个区域",
+                title: localized("configuration.summary.regions", fallback: "四个区域"),
                 systemImage: MemoMarkSymbol.module.name,
-                detail: "点击对应区域，直接跳到当前生效配置的编辑位置。"
+                detail: localized("configuration.summary.regions_detail", fallback: "点击对应区域，直接跳到当前生效配置的编辑位置。")
             ) {
                 HStack(spacing: 8) {
                     ForEach(CardRegion.memoryCardRegions, id: \.self) { region in
@@ -302,18 +303,29 @@ struct ConfigurationCenterSummarySection: View {
     private var subjectIdentityDetail: String {
         let anchorCount =
             subject?.timeAnchors.count ?? 0
-        return "当前记忆对象已配置 \(anchorCount) 个时间锚点，可继续进入对象页维护头像、名称与关系。"
+        return formatted(
+            "configuration.summary.subject_identity_format",
+            fallback: "当前记忆对象已配置 %lld 个时间锚点，可继续进入对象页维护头像、名称与关系。",
+            Int64(anchorCount)
+        )
     }
 
     private var subjectAnchorCountTitle: String {
         let anchorCount =
             subject?.timeAnchors.count ?? 0
-        return "\(anchorCount) 个锚点"
+        return formatted(
+            "configuration.summary.anchor_count_format",
+            fallback: "%lld 个锚点",
+            Int64(anchorCount)
+        )
     }
 
     private var timeAnchorDetail: String {
         guard let subject else {
-            return "先选择一个记忆对象，再切换当前生效锚点。"
+            return localized(
+                "configuration.summary.choose_subject_first",
+                fallback: "先选择一个记忆对象，再切换当前生效锚点。"
+            )
         }
 
         let count = subject.timeAnchors.count
@@ -324,10 +336,35 @@ struct ConfigurationCenterSummarySection: View {
             )
 
         if let note, !note.isEmpty {
-            return "当前记忆对象共有 \(count) 个锚点，当前说明：\(note)"
+            return formatted(
+                "configuration.summary.anchor_note_format",
+                fallback: "当前记忆对象共有 %lld 个锚点，当前说明：%@",
+                Int64(count),
+                note
+            )
         }
 
-        return "当前记忆对象共有 \(count) 个锚点，可直接在这里切换当前生效锚点。"
+        return formatted(
+            "configuration.summary.anchor_switch_detail_format",
+            fallback: "当前记忆对象共有 %lld 个锚点，可直接在这里切换当前生效锚点。",
+            Int64(count)
+        )
+    }
+
+    private func localized(_ key: String, fallback: String) -> String {
+        language.localized(key: key, fallback: fallback)
+    }
+
+    private func formatted(
+        _ key: String,
+        fallback: String,
+        _ arguments: CVarArg...
+    ) -> String {
+        String(
+            format: localized(key, fallback: fallback),
+            locale: language.locale,
+            arguments: arguments
+        )
     }
 
     private var memoryDisplayValue: String {

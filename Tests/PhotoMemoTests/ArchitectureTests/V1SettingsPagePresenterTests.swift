@@ -6,6 +6,62 @@ import Testing
 @Suite("V1 settings page presenter")
 struct V1SettingsPagePresenterTests {
 
+    @Test("task presentation uses the explicit interface language")
+    func presentationUsesExplicitInterfaceLanguage() {
+        let header = PhotoMemoiOSQueueDiagnosticsHeaderProjection(
+            headline: "Waiting",
+            subheadline: "Waiting",
+            symbolName: "clock",
+            tint: .secondary
+        )
+        let expected: [
+            (MemoMarkLanguage, String, String, String)
+        ] = [
+            (.simplifiedChinese, "等待中", "等待从 Apple Photos 分享照片", "进行中"),
+            (.english, "Waiting", "Waiting for a photo shared from Apple Photos", "Processing"),
+            (.japanese, "待機中", "Apple Photosから共有された写真を待っています", "処理中"),
+            (.korean, "대기 중", "Apple Photos에서 공유한 사진을 기다리는 중", "처리 중")
+        ]
+
+        for (language, status, subtitle, overviewTitle) in expected {
+            let presentation = V1SettingsPagePresenter.presentation(
+                header: header,
+                snapshot: nil,
+                recoveryMessage: nil,
+                events: [],
+                overview: PhotoMemoBackgroundTaskOverview(
+                    activeJobCount: 1,
+                    completedPhotoCount: 0,
+                    failedPhotoCount: 0,
+                    todayProcessingCount: 0
+                ),
+                language: language
+            )
+
+            #expect(presentation.currentTask.statusText == status)
+            #expect(presentation.currentTask.subtitleText == subtitle)
+            #expect(presentation.overviewItems[0].title == overviewTitle)
+        }
+    }
+
+    @Test("photo library task actions use the explicit interface language")
+    func photoLibraryActionsUseExplicitInterfaceLanguage() {
+        let link = V1TaskPhotoLibraryLink(
+            albumName: "最近的日子",
+            assetIdentifier: "asset-id"
+        )
+
+        #expect(link.actionTitle(language: .japanese) == "写真を開く")
+        #expect(
+            link.saveDestinationText(language: .japanese)
+            == "「最近的日子」に保存"
+        )
+        #expect(
+            link.accessibilityHint(language: .korean)
+            == "사진을 열어 ‘最近的日子’을(를) 확인하세요."
+        )
+    }
+
     @Test("builds a current-task card from the active snapshot and derives compact history rows from diagnostics events")
     func presentationReflectsActiveSnapshotAndHistoryRows() {
         let snapshot =
@@ -134,7 +190,8 @@ struct V1SettingsPagePresenterTests {
                 headline: "共享进度记录需要恢复",
                 subheadline: "重新分享后会生成新的本地记录。",
                 symbolName: "exclamationmark.triangle.fill",
-                tint: .orange
+                tint: .orange,
+                isRecovery: true
             )
         let events = [
             PhotoMemoShareDiagnosticEvent(

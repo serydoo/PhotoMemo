@@ -34,6 +34,32 @@ struct MemoryAnchorTextFormatterTests {
         )
     }
 
+    @Test("Routes relative snapshots through the four-language formatter layer")
+    func routesRelativeSnapshotsThroughAllSupportedLanguages() {
+        let snapshot = MemoryAnchorRelativeSnapshot(
+            years: 1,
+            months: 3,
+            days: 2,
+            totalDays: 487,
+            isFutureRelative: false
+        )
+
+        #expect(snapshot.ageText(language: .simplifiedChinese) == "1岁3个月2天")
+        #expect(snapshot.ageText(language: .english) == "1 year, 3 months, and 2 days")
+        #expect(snapshot.ageText(language: .japanese) == "1歳3か月2日")
+        #expect(snapshot.ageText(language: .korean) == "1년 3개월 2일")
+
+        #expect(snapshot.durationText(language: .simplifiedChinese) == "1年3个月2天")
+        #expect(snapshot.durationText(language: .english) == "1 year, 3 months, and 2 days")
+        #expect(snapshot.durationText(language: .japanese) == "1年3か月2日")
+        #expect(snapshot.durationText(language: .korean) == "1년 3개월 2일")
+
+        #expect(snapshot.countdownValueText(language: .simplifiedChinese) == "487天")
+        #expect(snapshot.countdownValueText(language: .english) == "487 days")
+        #expect(snapshot.countdownValueText(language: .japanese) == "487日")
+        #expect(snapshot.countdownValueText(language: .korean) == "487일")
+    }
+
     @Test("Uses natural English phrasing for generated memory sentences")
     func usesNaturalEnglishPhrasing() {
         let elapsed = MemoryAnchorRelativeSnapshot(

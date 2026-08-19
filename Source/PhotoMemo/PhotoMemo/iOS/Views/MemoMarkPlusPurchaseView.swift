@@ -231,11 +231,17 @@ struct MemoMarkPlusPurchaseView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else if store.purchaseState == .restoring {
-                Text("正在恢复购买…")
+                Text(localized(
+                    "commerce.purchase.restoring",
+                    fallback: "正在恢复购买…"
+                ))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else if store.purchaseState == .redeeming {
-                Text("正在打开兑换页面…")
+                Text(localized(
+                    "commerce.purchase.redeeming",
+                    fallback: "正在打开兑换页面…"
+                ))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

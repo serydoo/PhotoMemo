@@ -578,7 +578,9 @@ extension SettingsService {
                         shouldWritePhotoDescription,
                     photoDescriptionOverride:
                         photoDescriptionOverride,
-                    mediaOutputMode: mediaOutputMode
+                    mediaOutputMode: mediaOutputMode,
+                    outputLanguage:
+                        activeConfigurationOutputLanguage
                 ),
                 durableAggregate:
                     configurationLibraryStore
@@ -598,6 +600,26 @@ extension SettingsService {
 
     var normalizedSelectedAlbumIdentifier: String {
         normalizedAlbumIdentifier(selectedAlbumIdentifier)
+    }
+
+    private var activeConfigurationOutputLanguage:
+        MemoMarkLanguage {
+        guard
+            let aggregate = configurationLibraryStore
+                .recoveredAggregate,
+            let subjectID = aggregate.activeSubjectID,
+            let configurationID = aggregate.activeConfigurationID,
+            let subjectRecord = aggregate.subjects.first(
+                where: { $0.subject.id == subjectID }
+            ),
+            let configuration = subjectRecord.configurations.first(
+                where: { $0.id == configurationID }
+            )
+        else {
+            return .defaultOutputLanguage
+        }
+
+        return configuration.language
     }
 
     func normalizedAlbumIdentifier(

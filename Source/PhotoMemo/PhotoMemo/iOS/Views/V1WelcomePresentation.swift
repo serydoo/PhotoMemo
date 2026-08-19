@@ -318,6 +318,7 @@ struct V1FirstRunConfigurationSheet: View {
     @State private var errorMessage: String?
     @State private var showsNameRequiredAlert = false
 
+    let language: MemoMarkLanguage
     let onSave: (String, Date) async -> Bool
     let onDefer: () -> Void
 
@@ -340,10 +341,16 @@ struct V1FirstRunConfigurationSheet: View {
                             .font(.title2.weight(.semibold))
                             .foregroundStyle(.blue)
 
-                        Text("从一个人和一个重要时刻开始。")
+                        Text(language.localized(
+                            key: "welcome.first_run.intro_title",
+                            fallback: "从一个人和一个重要时刻开始。"
+                        ))
                             .font(.title2.weight(.semibold))
 
-                        Text("告诉时光记这段回忆围绕谁，以及哪个重要日子最重要。")
+                        Text(language.localized(
+                            key: "welcome.first_run.intro_detail",
+                            fallback: "告诉时光记这段回忆围绕谁，以及哪个重要日子最重要。"
+                        ))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -353,46 +360,94 @@ struct V1FirstRunConfigurationSheet: View {
 
                 Section {
                     TextField(
-                        "例如：小宝、妈妈、团团",
+                        language.localized(
+                            key: "welcome.first_run.subject_placeholder",
+                            fallback: "例如：小宝、妈妈、团团"
+                        ),
                         text: $subjectName
                     )
-                    .accessibilityLabel("对象名称，必填")
+                    .accessibilityLabel(language.localized(
+                        key: "welcome.first_run.subject_accessibility",
+                        fallback: "对象名称，必填"
+                    ))
                     .textInputAutocapitalization(.never)
 
-                    Text("这个名字会陪着这段回忆一起被记住。")
+                    Text(language.localized(
+                        key: "welcome.first_run.subject_detail",
+                        fallback: "这个名字会陪着这段回忆一起被记住。"
+                    ))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } header: {
                     HStack(spacing: 2) {
-                        Text("对象名称")
+                        Text(language.localized(
+                            key: "welcome.first_run.subject_label",
+                            fallback: "对象名称"
+                        ))
                         Text("*")
                             .foregroundStyle(.red)
                     }
                 }
 
-                Section("重要日期") {
+                Section(language.localized(
+                    key: "welcome.first_run.important_date",
+                    fallback: "重要日期"
+                )) {
                     DatePicker(
-                        "选择日期",
+                        language.localized(
+                            key: "welcome.first_run.date_picker",
+                            fallback: "选择日期"
+                        ),
                         selection: $birthday,
                         in: ...Date(),
                         displayedComponents: .date
                     )
 
-                    LabeledContent("时间锚点", value: "生日")
-                    LabeledContent("表达语气", value: "自然")
+                    LabeledContent(
+                        language.localized(
+                            key: "welcome.first_run.time_anchor",
+                            fallback: "时间锚点"
+                        ),
+                        value: language.localized(
+                            key: "welcome.first_run.birth_anchor",
+                            fallback: "生日"
+                        )
+                    )
+                    LabeledContent(
+                        language.localized(
+                            key: "welcome.first_run.expression_style",
+                            fallback: "表达语气"
+                        ),
+                        value: language.localized(
+                            key: "welcome.first_run.natural_style",
+                            fallback: "自然"
+                        )
+                    )
                 }
 
-                Section("接下来会发生") {
+                Section(language.localized(
+                    key: "welcome.first_run.next",
+                    fallback: "接下来会发生"
+                )) {
                     Label(
-                        "按这个重要时刻呈现时间变化",
+                        language.localized(
+                            key: "welcome.first_run.next_time",
+                            fallback: "按这个重要时刻呈现时间变化"
+                        ),
                         systemImage: "rectangle.and.text.magnifyingglass"
                     )
                     Label(
-                        "自动保存到 Apple Photos",
+                        language.localized(
+                            key: "welcome.first_run.next_save",
+                            fallback: "自动保存到 Apple Photos"
+                        ),
                         systemImage: "photo.on.rectangle"
                     )
                     Label(
-                        "保留原图，另存一张新照片",
+                        language.localized(
+                            key: "welcome.first_run.next_original",
+                            fallback: "保留原图，另存一张新照片"
+                        ),
                         systemImage: "photo.stack"
                     )
                 }
@@ -414,7 +469,17 @@ struct V1FirstRunConfigurationSheet: View {
                             if isSaving {
                                 ProgressView()
                             }
-                            Text(isSaving ? "正在保存" : "完成设置")
+                            Text(
+                                isSaving
+                                ? language.localized(
+                                    key: "welcome.first_run.saving",
+                                    fallback: "正在保存"
+                                )
+                                : language.localized(
+                                    key: "welcome.first_run.complete",
+                                    fallback: "完成设置"
+                                )
+                            )
                                 .fontWeight(.semibold)
                             Spacer()
                         }
@@ -423,22 +488,37 @@ struct V1FirstRunConfigurationSheet: View {
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle("首次配置")
+            .navigationTitle(language.localized(
+                key: "welcome.navigation_title",
+                fallback: "首次配置"
+            ))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("稍后设置", action: onDefer)
+                    Button(
+                        language.localized(
+                            key: "welcome.first_run.defer",
+                            fallback: "稍后设置"
+                        ),
+                        action: onDefer
+                    )
                         .disabled(isSaving)
                 }
             }
             .interactiveDismissDisabled(isSaving)
             .alert(
-                "填写对象名称",
+                language.localized(
+                    key: "welcome.first_run.name_required_title",
+                    fallback: "填写对象名称"
+                ),
                 isPresented: $showsNameRequiredAlert
             ) {
-                Button("好", role: .cancel) {}
+                Button(language.localized(key: "common.ok", fallback: "好"), role: .cancel) {}
             } message: {
-                Text("对象名称是完成首次配置的必填信息。")
+                Text(language.localized(
+                    key: "welcome.first_run.name_required_message",
+                    fallback: "对象名称是完成首次配置的必填信息。"
+                ))
             }
         }
     }
@@ -450,7 +530,10 @@ struct V1FirstRunConfigurationSheet: View {
         }
 
         guard isFirstRunConfigurationReady else {
-            errorMessage = "请选择有效的重要日期。"
+            errorMessage = language.localized(
+                key: "welcome.first_run.invalid_date",
+                fallback: "请选择有效的重要日期。"
+            )
             return
         }
 
@@ -461,7 +544,10 @@ struct V1FirstRunConfigurationSheet: View {
             await MainActor.run {
                 isSaving = false
                 if !succeeded {
-                    errorMessage = "配置没有保存成功，请稍后重试。"
+                    errorMessage = language.localized(
+                        key: "welcome.first_run.save_failed",
+                        fallback: "配置没有保存成功，请稍后重试。"
+                    )
                 }
             }
         }

@@ -145,6 +145,9 @@ extension PhotoMetadata {
 
             case (.english, .square):
                 return "Square"
+
+            default:
+                return displayValue(for: .english)
             }
         }
     }

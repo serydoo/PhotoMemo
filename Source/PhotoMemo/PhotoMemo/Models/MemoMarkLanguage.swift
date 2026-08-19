@@ -4,6 +4,8 @@ enum MemoMarkLanguage: String, Codable, CaseIterable, Hashable {
 
     case simplifiedChinese = "zh-Hans"
     case english = "en"
+    case japanese = "ja"
+    case korean = "ko"
 
     static let storageKey = "photomemo.language"
     static let preferenceStorageKey = "photomemo.language.preference"
@@ -24,9 +26,9 @@ enum MemoMarkLanguage: String, Codable, CaseIterable, Hashable {
             .sharedUserDefaults
             .string(forKey: storageKey),
            let language = Self(rawValue: rawValue) {
-            return language == .simplifiedChinese
-                ? .simplifiedChinese
-                : .english
+            return MemoMarkLanguagePreference(
+                rawValue: language.rawValue
+            ) ?? .english
         }
 
         return .system
@@ -34,6 +36,10 @@ enum MemoMarkLanguage: String, Codable, CaseIterable, Hashable {
 
     static var stored: Self {
         preference.resolvedLanguage
+    }
+
+    static var defaultOutputLanguage: Self {
+        stored
     }
 
     static var interfacePreference:
@@ -89,6 +95,10 @@ enum MemoMarkLanguage: String, Codable, CaseIterable, Hashable {
             return "简体中文"
         case .english:
             return "English"
+        case .japanese:
+            return "日本語"
+        case .korean:
+            return "한국어"
         }
     }
 
@@ -98,10 +108,14 @@ enum MemoMarkLanguage: String, Codable, CaseIterable, Hashable {
             return Locale(identifier: "zh_CN")
         case .english:
             return Locale(identifier: "en_US")
+        case .japanese:
+            return Locale(identifier: "ja_JP")
+        case .korean:
+            return Locale(identifier: "ko_KR")
         }
     }
 
-    func localized(
+    nonisolated func localized(
         key: String,
         fallback: String
     ) -> String {
@@ -124,11 +138,25 @@ enum MemoMarkLanguage: String, Codable, CaseIterable, Hashable {
     static func resolved(
         from locale: Locale
     ) -> Self {
-        let language = locale.language
-        return language.languageCode?.identifier.lowercased() == "zh"
-            && language.script?.identifier.lowercased() == "hans"
-            ? Self.simplifiedChinese
-            : Self.english
+        let code = locale.language.languageCode?.identifier
+            .lowercased()
+        let script = locale.language.script?.identifier
+            .lowercased()
+
+        switch code {
+        case "zh":
+            return script == "hant"
+                ? .english
+                : .simplifiedChinese
+        case "en":
+            return .english
+        case "ja":
+            return .japanese
+        case "ko":
+            return .korean
+        default:
+            return .english
+        }
     }
 
     static func isSupported(
@@ -140,7 +168,10 @@ enum MemoMarkLanguage: String, Codable, CaseIterable, Hashable {
         if code == "ar" || code == "he" {
             return layoutDirectionSupport
         }
-        return code == "zh" || code == "en"
+        return code == "zh"
+            || code == "en"
+            || code == "ja"
+            || code == "ko"
     }
 }
 
@@ -149,6 +180,8 @@ enum MemoMarkLanguagePreference: String, Codable, CaseIterable, Hashable {
     case system
     case simplifiedChinese = "zh-Hans"
     case english = "en"
+    case japanese = "ja"
+    case korean = "ko"
 
     var resolvedLanguage: MemoMarkLanguage {
         switch self {
@@ -162,6 +195,10 @@ enum MemoMarkLanguagePreference: String, Codable, CaseIterable, Hashable {
             return .simplifiedChinese
         case .english:
             return .english
+        case .japanese:
+            return .japanese
+        case .korean:
+            return .korean
         }
     }
 
@@ -173,6 +210,10 @@ enum MemoMarkLanguagePreference: String, Codable, CaseIterable, Hashable {
             return MemoMarkLanguage.simplifiedChinese.displayTitle
         case .english:
             return MemoMarkLanguage.english.displayTitle
+        case .japanese:
+            return MemoMarkLanguage.japanese.displayTitle
+        case .korean:
+            return MemoMarkLanguage.korean.displayTitle
         }
     }
 }
@@ -183,6 +224,8 @@ enum MemoMarkInterfaceLanguagePreference:
     case system
     case simplifiedChinese = "zh-Hans"
     case english = "en"
+    case japanese = "ja"
+    case korean = "ko"
 
     var resolvedLanguage: MemoMarkLanguage {
         switch self {
@@ -196,6 +239,10 @@ enum MemoMarkInterfaceLanguagePreference:
             return .simplifiedChinese
         case .english:
             return .english
+        case .japanese:
+            return .japanese
+        case .korean:
+            return .korean
         }
     }
 
@@ -207,6 +254,10 @@ enum MemoMarkInterfaceLanguagePreference:
             return MemoMarkLanguage.simplifiedChinese.displayTitle
         case .english:
             return MemoMarkLanguage.english.displayTitle
+        case .japanese:
+            return MemoMarkLanguage.japanese.displayTitle
+        case .korean:
+            return MemoMarkLanguage.korean.displayTitle
         }
     }
 }

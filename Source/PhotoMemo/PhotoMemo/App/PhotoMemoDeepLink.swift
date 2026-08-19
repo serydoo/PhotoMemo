@@ -6,7 +6,7 @@ enum PhotoMemoDeepLink: Equatable {
 
     case processing(jobID: UUID)
 
-    init?(
+    nonisolated init?(
         url: URL
     ) {
 
@@ -57,7 +57,7 @@ enum PhotoMemoDeepLink: Equatable {
         }
     }
 
-    var url: URL {
+    nonisolated var url: URL {
 
         switch self {
 
@@ -76,12 +76,12 @@ enum PhotoMemoDeepLink: Equatable {
 
 extension Notification.Name {
 
-    static let photoMemoNotificationOpened = Notification.Name(
+    nonisolated static let photoMemoNotificationOpened = Notification.Name(
         "PhotoMemo.NotificationOpened"
     )
 }
 
 enum PhotoMemoNotificationUserInfo {
 
-    static let deepLinkURL = "photoMemo.deepLinkURL"
+    nonisolated static let deepLinkURL = "photoMemo.deepLinkURL"
 }

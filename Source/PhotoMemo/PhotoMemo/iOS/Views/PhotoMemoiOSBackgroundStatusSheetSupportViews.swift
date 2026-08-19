@@ -4,6 +4,7 @@ import SwiftUI
 struct PhotoMemoiOSBackgroundStatusHeroCard:
     View {
 
+    let language: MemoMarkLanguage
     let title: String
     let symbolName: String
     let snapshotTitle: String
@@ -58,13 +59,13 @@ struct PhotoMemoiOSBackgroundStatusHeroCard:
                     spacing: 10
                 ) {
                     PhotoMemoiOSBackgroundStatusPill(
-                        title: "来源",
+                        title: language.localized(key: "processing.source", fallback: "来源"),
                         value:
                             launchSourceTitle
                     )
 
                     PhotoMemoiOSBackgroundStatusPill(
-                        title: "阶段",
+                        title: language.localized(key: "processing.phase", fallback: "阶段"),
                         value:
                             phaseTitle
                     )
@@ -93,7 +94,14 @@ struct PhotoMemoiOSBackgroundStatusHeroCard:
             }
 
             if overflowQueueCount > 0 {
-                Text("另有 \(overflowQueueCount) 个队列")
+                Text(String(
+                    format: language.localized(
+                        key: "processing.queue_overflow_format",
+                        fallback: "另有 %lld 个队列"
+                    ),
+                    locale: language.locale,
+                    Int64(overflowQueueCount)
+                ))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -116,6 +124,7 @@ struct PhotoMemoiOSBackgroundStatusHeroCard:
 struct PhotoMemoiOSBackgroundPipelineCard:
     View {
 
+    let language: MemoMarkLanguage
     let steps: [PhotoMemoBackgroundPipelineStep]
 
     var body: some View {
@@ -124,7 +133,10 @@ struct PhotoMemoiOSBackgroundPipelineCard:
                 alignment: .leading,
                 spacing: 12
             ) {
-                Text("处理流程")
+                Text(language.localized(
+                    key: "processing.pipeline.title",
+                    fallback: "处理流程"
+                ))
                     .font(.headline)
 
                 ForEach(
@@ -215,6 +227,7 @@ struct PhotoMemoiOSBackgroundPipelineCard:
 struct PhotoMemoiOSBackgroundProcessingFocusCard:
     View {
 
+    let language: MemoMarkLanguage
     let currentFileName: String?
     let jobStateTitle: String
     let updatedAt: Date
@@ -226,25 +239,28 @@ struct PhotoMemoiOSBackgroundProcessingFocusCard:
                 alignment: .leading,
                 spacing: 10
             ) {
-                Text("当前处理焦点")
+                Text(language.localized(
+                    key: "processing.focus.title",
+                    fallback: "当前处理焦点"
+                ))
                     .font(.headline)
 
                 if let currentFileName {
                     PhotoMemoiOSBackgroundInfoRow(
-                        title: "当前照片",
+                        title: language.localized(key: "processing.focus.photo", fallback: "当前照片"),
                         value:
                             currentFileName
                     )
                 }
 
                 PhotoMemoiOSBackgroundInfoRow(
-                    title: "任务状态",
+                    title: language.localized(key: "processing.focus.task", fallback: "任务状态"),
                     value:
                         jobStateTitle
                 )
 
                 PhotoMemoiOSBackgroundInfoRow(
-                    title: "最近更新",
+                    title: language.localized(key: "processing.focus.updated", fallback: "最近更新"),
                     value:
                         V1UserFacingDateFormatter.dateTime(
                             updatedAt
@@ -268,6 +284,7 @@ struct PhotoMemoiOSBackgroundProcessingFocusCard:
 struct PhotoMemoiOSBackgroundLatestFailureCard:
     View {
 
+    let language: MemoMarkLanguage
     let phaseTitle: String
     let message: String
     let updatedAt: Date
@@ -278,10 +295,20 @@ struct PhotoMemoiOSBackgroundLatestFailureCard:
                 alignment: .leading,
                 spacing: 8
             ) {
-                Text("最近失败")
+                Text(language.localized(
+                    key: "processing.failure.title",
+                    fallback: "最近失败"
+                ))
                     .font(.headline)
 
-                Text("失败阶段：\(phaseTitle)")
+                Text(String(
+                    format: language.localized(
+                        key: "processing.failure.phase_format",
+                        fallback: "失败阶段：%@"
+                    ),
+                    locale: language.locale,
+                    phaseTitle
+                ))
                     .font(.subheadline.weight(.medium))
 
                 Text(message)
@@ -292,9 +319,14 @@ struct PhotoMemoiOSBackgroundLatestFailureCard:
                         vertical: true
                     )
 
-                Text(
-                    "最近更新：\(V1UserFacingDateFormatter.dateTime(updatedAt))"
-                )
+                Text(String(
+                    format: language.localized(
+                        key: "processing.failure.updated_format",
+                        fallback: "最近更新：%@"
+                    ),
+                    locale: language.locale,
+                    V1UserFacingDateFormatter.dateTime(updatedAt)
+                ))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }

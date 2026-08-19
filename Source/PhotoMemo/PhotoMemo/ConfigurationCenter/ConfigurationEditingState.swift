@@ -135,6 +135,22 @@ struct ConfigurationEditingState {
         )
     }
 
+    var selectedMemoryPresetOutputLanguage:
+        MemoMarkLanguage {
+        get {
+            state.selectedMemoryPreset?.language
+                ?? MemoMarkLanguage.defaultOutputLanguage
+        }
+        set {
+            guard let presetIndex = selectedMemoryPresetIndex else {
+                return
+            }
+
+            state.memoryPresets[presetIndex].language = newValue
+            markSelectedMemoryPresetNeedsApply()
+        }
+    }
+
     var selectedMemoryPresetIsDurable: Bool {
         if case .saved = activeConfigurationState {
             return true
@@ -1070,7 +1086,7 @@ struct ConfigurationEditingState {
             selectedSubjectID: state.selectedSubjectID,
             selectedTimeAnchorID:
                 state.selectedSubject?.primaryTimeAnchor?.id,
-            language: MemoMarkLanguage.stored
+            language: MemoMarkLanguage.defaultOutputLanguage
         )
     }
 

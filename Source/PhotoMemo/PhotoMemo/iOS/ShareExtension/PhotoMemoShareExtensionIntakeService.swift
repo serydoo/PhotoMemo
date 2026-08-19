@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 import UIKit
 
 struct PhotoMemoShareExtensionError:
-    LocalizedError {
+    Error {
 
     enum Kind {
 
@@ -80,64 +80,109 @@ struct PhotoMemoShareExtensionError:
         ?? importResult?.failureContext
     }
 
-    var errorDescription: String? {
+    func localizedDescription(
+        for language: MemoMarkLanguage
+    ) -> String {
 
         switch kind {
 
         case .noSupportedImages:
-            return "这次分享里没有找到可直接处理的照片。"
+            return language.localized(
+                key: "share.error.no_supported.message",
+                fallback: "This share did not include a photo that MemoMark can process."
+            )
 
         case .tooManySharedItems:
-            return "这次分享的照片数量超过当前 Share Extension 可安全处理的上限。"
+            return language.localized(
+                key: "share.error.too_many.message",
+                fallback: "This share exceeds the number of photos that the Share Extension can safely receive."
+            )
 
         case .allImportsFailed:
-            return "这次分享里的照片暂时没有成功交给时光记。"
+            return language.localized(
+                key: "share.error.all_imports.message",
+                fallback: "The photos in this share could not be handed off to MemoMark."
+            )
 
         case .persistFailed:
-            return "时光记暂时无法记录这次分享。"
+            return language.localized(
+                key: "share.error.persist.message",
+                fallback: "MemoMark could not record this share yet."
+            )
         }
     }
 
-    var failureTitle: String {
+    func localizedFailureTitle(
+        for language: MemoMarkLanguage
+    ) -> String {
 
         switch kind {
 
         case .noSupportedImages:
-            return "没有识别到可处理照片"
+            return language.localized(
+                key: "share.error.no_supported.title",
+                fallback: "No Processable Photos"
+            )
 
         case .tooManySharedItems:
-            return "这次的照片有点多"
+            return language.localized(
+                key: "share.error.too_many.title",
+                fallback: "This Batch Is Too Large"
+            )
 
         case .allImportsFailed:
-            return "照片没有成功交给时光记"
+            return language.localized(
+                key: "share.error.all_imports.title",
+                fallback: "Photos Were Not Received"
+            )
 
         case .persistFailed:
-            return "这次分享没有保存下来"
+            return language.localized(
+                key: "share.error.persist.title",
+                fallback: "This Share Was Not Saved"
+            )
         }
     }
 
-    var recoverySuggestion: String {
+    func localizedRecoverySuggestion(
+        for language: MemoMarkLanguage
+    ) -> String {
 
         if let code =
             resolvedFailureContext?
             .errorSummary?.code,
            code == 3010 || code == 3011 {
-            return "照片来源没有及时响应，接收已停止。请返回系统相册，确认原图已从 iCloud 下载完成后重新分享。"
+            return language.localized(
+                key: "share.error.icloud.recovery",
+                fallback: "The photo source did not respond in time. Return to Apple Photos, wait for the original to finish downloading from iCloud, and share again."
+            )
         }
 
         switch kind {
 
         case .noSupportedImages:
-            return "请尽量从系统相册直接分享原始照片；如果来自其他 App，请确认分享的是原图而不是预览图。"
+            return language.localized(
+                key: "share.error.no_supported.recovery",
+                fallback: "Share the original photo from Apple Photos. If it came from another app, make sure it is the original rather than a preview."
+            )
 
         case .tooManySharedItems:
-            return "请减少本次分享数量，可以分几次完成，也能让处理过程更稳定。"
+            return language.localized(
+                key: "share.error.too_many.recovery",
+                fallback: "Share fewer photos at a time. Smaller batches help the process stay reliable."
+            )
 
         case .allImportsFailed:
-            return "请直接点击重试；如果仍失败，请返回系统相册重新分享，或打开时光记检查默认风格。"
+            return language.localized(
+                key: "share.error.all_imports.recovery",
+                fallback: "Tap Try Again. If it still fails, return to Apple Photos and share again, or open MemoMark to check the current configuration."
+            )
 
         case .persistFailed:
-            return "请先重试一次；如果重复出现，请打开时光记检查共享容器、默认风格和系统相册权限。"
+            return language.localized(
+                key: "share.error.persist.recovery",
+                fallback: "Try again. If the problem continues, open MemoMark to check the shared container, current configuration, and Photos permission."
+            )
         }
     }
 

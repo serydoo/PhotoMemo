@@ -75,6 +75,55 @@ struct V1IOSHomeRecentProcessingPresenterTests {
         #expect(projection?.progressFraction == 0.4)
     }
 
+    @Test("home activity projection formats count and status in every interface language")
+    func homeActivityProjectionFormatsEveryInterfaceLanguage() throws {
+        let snapshot = makeSnapshot(
+            presentationState: .active,
+            jobState: .running,
+            completedCount: 5,
+            failedCount: 0,
+            totalCount: 10,
+            progressFraction: 0.56,
+            queuedJobCount: 2
+        )
+        let projection = try #require(
+            V1IOSHomeActivityPresenter.projection(from: snapshot)
+        )
+
+        #expect(
+            projection.countText(language: .simplifiedChinese)
+            == "任务 6 / 10 张 · 后续 2 个"
+        )
+        #expect(
+            projection.statusText(language: .simplifiedChinese)
+            == "进行中"
+        )
+        #expect(
+            projection.countText(language: .english)
+            == "Task 6 / 10 photos · 2 more queued"
+        )
+        #expect(
+            projection.statusText(language: .english)
+            == "Processing"
+        )
+        #expect(
+            projection.countText(language: .japanese)
+            == "写真 6 / 10枚・次に2件"
+        )
+        #expect(
+            projection.statusText(language: .japanese)
+            == "処理中"
+        )
+        #expect(
+            projection.countText(language: .korean)
+            == "사진 6 / 10장 · 다음 2개"
+        )
+        #expect(
+            projection.statusText(language: .korean)
+            == "처리 중"
+        )
+    }
+
     @Test("completed home activity expires after ten minutes")
     func completedHomeActivityExpiresAfterTenMinutes() {
         let completedAt = Date(timeIntervalSince1970: 100)
@@ -185,6 +234,29 @@ struct V1IOSHomeRecentProcessingPresenterTests {
             presentation.recoveryMessage
             == nil
         )
+    }
+
+    @Test("home recent processing chrome follows the interface language")
+    func homeRecentProcessingChromeFollowsTheInterfaceLanguage() {
+        let header = PhotoMemoiOSQueueDiagnosticsHeaderProjection(
+            headline: "Waiting",
+            subheadline: "Waiting",
+            symbolName: "clock",
+            tint: .secondary
+        )
+
+        let presentation = V1IOSHomeRecentProcessingPresenter.presentation(
+            header: header,
+            snapshot: nil,
+            recoveryMessage: nil,
+            language: .japanese
+        )
+
+        #expect(presentation.viewAllTitle == "すべて見る")
+        #expect(presentation.statusLabel == "状態")
+        #expect(presentation.sourceLabel == "ソース")
+        #expect(presentation.updatedLabel == "最終更新")
+        #expect(presentation.updatedDetail == "最近のバックグラウンド進行時刻を保持")
     }
 
     @Test("presentation falls back to recovery-oriented home copy without snapshot")

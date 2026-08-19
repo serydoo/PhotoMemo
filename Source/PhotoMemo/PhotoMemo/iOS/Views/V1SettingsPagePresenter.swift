@@ -85,34 +85,70 @@ struct V1TaskPhotoLibraryLink:
     let assetIdentifier: String?
 
     var displayTitle: String {
+        displayTitle(language: .simplifiedChinese)
+    }
+
+    func displayTitle(language: MemoMarkLanguage) -> String {
         guard let albumName,
               !albumName.isEmpty else {
-            return "系统图库"
+            return language.localized(
+                key: "task.photoLibrary.library_title",
+                fallback: "Photo Library"
+            )
         }
 
         return albumName
     }
 
     var actionTitle: String {
-        "打开照片 App"
+        actionTitle(language: .simplifiedChinese)
+    }
+
+    func actionTitle(language: MemoMarkLanguage) -> String {
+        language.localized(
+            key: "task.photoLibrary.open",
+            fallback: "Open Photos"
+        )
     }
 
     var saveDestinationText: String {
+        saveDestinationText(language: .simplifiedChinese)
+    }
+
+    func saveDestinationText(language: MemoMarkLanguage) -> String {
         guard let albumName,
               !albumName.isEmpty else {
-            return "已保存到系统图库"
+            return language.localized(
+                key: "task.photoLibrary.saved",
+                fallback: "Saved to your photo library"
+            )
         }
 
-        return "已保存到「\(albumName)」"
+        let format = language.localized(
+            key: "task.photoLibrary.saved_album_format",
+            fallback: "Saved to \"%@\""
+        )
+        return String(format: format, locale: language.locale, albumName)
     }
 
     var accessibilityHint: String {
+        accessibilityHint(language: .simplifiedChinese)
+    }
+
+    func accessibilityHint(language: MemoMarkLanguage) -> String {
         guard let albumName,
               !albumName.isEmpty else {
-            return "打开照片 App 查看已保存的回忆"
+            return language.localized(
+                key: "task.photoLibrary.hint",
+                fallback: "Open Photos to view the saved memory."
+            )
         }
 
-        return "打开照片 App；请在照片 App 中查看「\(albumName)」"
+        let format = language.localized(
+            key: "task.photoLibrary.hint_album_format",
+            fallback: "Open Photos to view \"%@\"."
+        )
+        return String(format: format, locale: language.locale, albumName)
     }
 }
 
@@ -157,24 +193,27 @@ enum V1SettingsPagePresenter {
             PhotoMemoBackgroundTaskOverview = .empty,
         recentJobs:
             [PhotoMemoBackgroundJobSummary] = [],
-        fallbackConfigurationName: String = "当前配置"
+        fallbackConfigurationName: String = "当前配置",
+        language: MemoMarkLanguage = .simplifiedChinese
     ) -> V1SettingsPagePresentation {
         let currentTask = currentTaskPresentation(
             header: header,
             snapshot: snapshot,
             recoveryMessage: recoveryMessage,
-            fallbackConfigurationName:
-                fallbackConfigurationName
+            fallbackConfigurationName: fallbackConfigurationName,
+            language: language
         )
         let historyRows = historyRows(
             from: events,
-            recentJobs: recentJobs
+            recentJobs: recentJobs,
+            language: language
         )
 
         return V1SettingsPagePresentation(
             overviewItems:
                 overviewItems(
-                    from: overview
+                    from: overview,
+                    language: language
                 ),
             currentTask: currentTask,
             historyRows:
@@ -198,13 +237,15 @@ private extension V1SettingsPagePresenter {
         snapshot:
             PhotoMemoBackgroundJobSnapshot?,
         recoveryMessage: String?,
-        fallbackConfigurationName: String
+        fallbackConfigurationName: String,
+        language: MemoMarkLanguage
     ) -> V1SettingsCurrentTaskPresentation {
         if let snapshot {
             let progressProjection =
                 PhotoMemoiOSQueueDiagnosticsProjectionEngine
                 .progressProjection(
-                    for: snapshot
+                    for: snapshot,
+                    language: language
                 )
 
             return V1SettingsCurrentTaskPresentation(
@@ -216,19 +257,28 @@ private extension V1SettingsPagePresenter {
                 headline:
                     snapshot.configurationName,
                 subtitleText:
-                    "\(displayTemplateName(snapshot.templateName)) 预设",
+                    presetText(
+                        displayTemplateName(
+                            snapshot.templateName,
+                            language: language
+                        ),
+                        language: language
+                    ),
                 statusText:
                     snapshotStatusText(
-                        snapshot
+                        snapshot,
+                        language: language
                     ),
                 itemCountText:
                     photoCountText(
-                        count: snapshot.totalCount
+                        count: snapshot.totalCount,
+                        language: language
                     ),
                 totalCount: snapshot.totalCount,
                 progressText:
                     progressText(
-                        snapshot
+                        snapshot,
+                        language: language
                     ),
                 detailText:
                     snapshot.statusMessage,
@@ -256,13 +306,15 @@ private extension V1SettingsPagePresenter {
                     snapshot.configurationName,
                 templateName:
                     displayTemplateName(
-                        snapshot.templateName
+                        snapshot.templateName,
+                        language: language
                     ),
                 previewSourceURL:
                     snapshot.previewSourceURL,
                 stepRows:
                     stepRows(
-                        from: snapshot
+                        from: snapshot,
+                        language: language
                     ),
                 photoLibraryLink:
                     photoLibraryLink(
@@ -281,10 +333,14 @@ private extension V1SettingsPagePresenter {
             headline:
                 header.headline,
             subtitleText:
-                "等待 Apple Photos 分享照片",
+                language.localized(
+                    key: "task.waiting.share_subtitle",
+                    fallback: "Waiting for a photo shared from Apple Photos"
+                ),
             statusText:
                 headerStatusText(
-                    header
+                    header,
+                    language: language
                 ),
             itemCountText: nil,
             totalCount: 0,
@@ -307,52 +363,77 @@ private extension V1SettingsPagePresenter {
                 "Classic White",
             previewSourceURL: nil,
             stepRows:
-                waitingStepRows,
+                waitingStepRows(language: language),
             photoLibraryLink: nil
         )
     }
 
     static func overviewItems(
         from overview:
-            PhotoMemoBackgroundTaskOverview
+            PhotoMemoBackgroundTaskOverview,
+        language: MemoMarkLanguage
     ) -> [V1TaskOverviewItemPresentation] {
         [
             V1TaskOverviewItemPresentation(
                 id: "active",
-                title: "进行中",
+                title: language.localized(
+                    key: "task.overview.active.title",
+                    fallback: "Processing"
+                ),
                 value:
                     "\(overview.activeJobCount)",
-                unit: "任务",
+                unit: language.localized(
+                    key: "task.overview.active.unit",
+                    fallback: "tasks"
+                ),
                 symbolName:
                     "arrow.trianglehead.2.clockwise.circle.fill",
                 tint: .blue
             ),
             V1TaskOverviewItemPresentation(
                 id: "completed",
-                title: "已完成",
+                title: language.localized(
+                    key: "task.overview.completed.title",
+                    fallback: "Completed"
+                ),
                 value:
                     "\(overview.completedPhotoCount)",
-                unit: "张照片",
+                unit: language.localized(
+                    key: "task.overview.completed.unit",
+                    fallback: "photos"
+                ),
                 symbolName:
                     "checkmark.circle.fill",
                 tint: .green
             ),
             V1TaskOverviewItemPresentation(
                 id: "failed",
-                title: "失败",
+                title: language.localized(
+                    key: "task.overview.failed.title",
+                    fallback: "Failed"
+                ),
                 value:
                     "\(overview.failedPhotoCount)",
-                unit: "张照片",
+                unit: language.localized(
+                    key: "task.overview.failed.unit",
+                    fallback: "photos"
+                ),
                 symbolName:
                     "xmark.circle.fill",
                 tint: .secondary
             ),
             V1TaskOverviewItemPresentation(
                 id: "today",
-                title: "今天",
+                title: language.localized(
+                    key: "task.overview.today.title",
+                    fallback: "Today"
+                ),
                 value:
                     "\(overview.todayProcessingCount)",
-                unit: "次处理",
+                unit: language.localized(
+                    key: "task.overview.today.unit",
+                    fallback: "runs"
+                ),
                 symbolName:
                     "clock.fill",
                 tint: .orange
@@ -381,13 +462,20 @@ private extension V1SettingsPagePresenter {
             : .waiting
     }
 
-    static var waitingStepRows:
-        [V1TaskPipelineStepPresentation] {
+    static func waitingStepRows(
+        language: MemoMarkLanguage
+    ) -> [V1TaskPipelineStepPresentation] {
         [
             V1TaskPipelineStepPresentation(
                 id: "waiting",
-                title: "等待照片",
-                statusText: "等待中",
+                title: language.localized(
+                    key: "task.pipeline.waiting.title",
+                    fallback: "Waiting for photos"
+                ),
+                statusText: language.localized(
+                    key: "task.pipeline.waiting.status",
+                    fallback: "Waiting"
+                ),
                 timeText: nil,
                 symbolName: "circle",
                 tint: .secondary,
@@ -398,7 +486,8 @@ private extension V1SettingsPagePresenter {
 
     static func stepRows(
         from snapshot:
-            PhotoMemoBackgroundJobSnapshot
+            PhotoMemoBackgroundJobSnapshot,
+        language: MemoMarkLanguage
     ) -> [V1TaskPipelineStepPresentation] {
         snapshot.pipelineSteps
             .enumerated()
@@ -407,10 +496,14 @@ private extension V1SettingsPagePresenter {
                     id:
                         "\(index)-\(step.title)",
                     title:
-                        userFacingStepTitle(step.title),
+                        userFacingStepTitle(
+                            step.title,
+                            language: language
+                        ),
                     statusText:
                         stepStatusText(
-                            for: step.state
+                            for: step.state,
+                            language: language
                         ),
                     timeText:
                         nil,
@@ -430,14 +523,21 @@ private extension V1SettingsPagePresenter {
 
     static func progressText(
         _ snapshot:
-            PhotoMemoBackgroundJobSnapshot
+            PhotoMemoBackgroundJobSnapshot,
+        language: MemoMarkLanguage
     ) -> String? {
         guard snapshot.totalCount > 0 else {
             return nil
         }
 
-        let completedText =
-            "已完成 \(snapshot.completedCount) 张"
+        let completedText = String(
+            format: language.localized(
+                key: "task.progress.completed_format",
+                fallback: "%d photos completed"
+            ),
+            locale: language.locale,
+            snapshot.completedCount
+        )
         let remainingCount = max(
             snapshot.totalCount - snapshot.completedCount,
             0
@@ -448,39 +548,74 @@ private extension V1SettingsPagePresenter {
         }
 
         if snapshot.hasOnlyUnsupportedFailures {
-            return "\(completedText) · 剩余 \(remainingCount) 张暂不支持"
+            return completedText
+                + " · "
+                + String(
+                    format: language.localized(
+                        key: "task.progress.remaining_unsupported_format",
+                        fallback: "%d photos unsupported"
+                    ),
+                    locale: language.locale,
+                    remainingCount
+                )
         }
 
-        return "\(completedText) · 剩余 \(remainingCount) 张"
+        return completedText
+            + " · "
+            + String(
+                format: language.localized(
+                    key: "task.progress.remaining_format",
+                    fallback: "%d photos remaining"
+                ),
+                locale: language.locale,
+                remainingCount
+            )
     }
 
     static func snapshotStatusText(
         _ snapshot:
-            PhotoMemoBackgroundJobSnapshot
+            PhotoMemoBackgroundJobSnapshot,
+        language: MemoMarkLanguage
     ) -> String {
-        snapshot.feedbackState
-            .displayTitle
+        feedbackStateText(
+            snapshot.feedbackState,
+            language: language
+        )
     }
 
     static func headerStatusText(
         _ header:
-            PhotoMemoiOSQueueDiagnosticsHeaderProjection
+            PhotoMemoiOSQueueDiagnosticsHeaderProjection,
+        language: MemoMarkLanguage
     ) -> String {
-        if header.headline.contains(
-            "恢复"
-        ) {
-            return "需要恢复"
+        if header.isRecovery {
+            return language.localized(
+                key: "task.status.recovery",
+                fallback: "Needs recovery"
+            )
         }
 
         switch header.tint {
         case .blue:
-            return "处理中"
+            return language.localized(
+                key: "task.status.processing",
+                fallback: "Processing"
+            )
         case .orange:
-            return "需要处理"
+            return language.localized(
+                key: "task.status.needs_attention",
+                fallback: "Needs attention"
+            )
         case .green:
-            return "已完成"
+            return language.localized(
+                key: "task.status.completed",
+                fallback: "Completed"
+            )
         case .secondary:
-            return "等待中"
+            return language.localized(
+                key: "task.status.waiting",
+                fallback: "Waiting"
+            )
         }
     }
 
@@ -502,7 +637,8 @@ private extension V1SettingsPagePresenter {
         from _:
             [PhotoMemoShareDiagnosticEvent],
         recentJobs:
-            [PhotoMemoBackgroundJobSummary]
+            [PhotoMemoBackgroundJobSummary],
+        language: MemoMarkLanguage
     ) -> [V1SettingsHistoryRowPresentation] {
         recentJobs
             .filter { summary in
@@ -510,7 +646,8 @@ private extension V1SettingsPagePresenter {
             }
             .map {
                 recentJobRow(
-                    from: $0
+                    from: $0,
+                    language: language
                 )
             }
     }
@@ -532,7 +669,8 @@ private extension V1SettingsPagePresenter {
 
     static func recentJobRow(
         from summary:
-            PhotoMemoBackgroundJobSummary
+            PhotoMemoBackgroundJobSummary,
+        language: MemoMarkLanguage
     ) -> V1SettingsHistoryRowPresentation {
         V1SettingsHistoryRowPresentation(
             id: summary.jobID,
@@ -542,14 +680,27 @@ private extension V1SettingsPagePresenter {
             title:
                 summary.configurationName,
             detailText:
-                "\(displayTemplateName(summary.templateName)) 预设 · \(summary.totalCount) 张照片",
+                String(
+                    format: language.localized(
+                        key: "task.recent.detail_format",
+                        fallback: "%@ Preset · %d photos"
+                    ),
+                    locale: language.locale,
+                    displayTemplateName(
+                        summary.templateName,
+                        language: language
+                    ),
+                    summary.totalCount
+                ),
             statusText:
                 summaryStatusText(
-                    summary
+                    summary,
+                    language: language
                 ),
             itemCountText:
                 photoCountText(
-                    count: summary.totalCount
+                    count: summary.totalCount,
+                    language: language
                 ),
             symbolName:
                 summarySymbolName(
@@ -561,7 +712,8 @@ private extension V1SettingsPagePresenter {
                 ),
             templateName:
                 displayTemplateName(
-                    summary.templateName
+                    summary.templateName,
+                    language: language
                 ),
             previewSourceURL:
                 summary.previewSourceURL,
@@ -613,7 +765,8 @@ private extension V1SettingsPagePresenter {
     }
 
     static func displayTemplateName(
-        _ templateName: String
+        _ templateName: String,
+        language: MemoMarkLanguage = .simplifiedChinese
     ) -> String {
         let trimmedName =
             templateName.trimmingCharacters(
@@ -622,28 +775,84 @@ private extension V1SettingsPagePresenter {
 
         switch trimmedName {
         case "Classic White":
-            return "基础白"
+            return language.localized(
+                key: "task.template.classic_white",
+                fallback: "Classic White"
+            )
         default:
             return trimmedName.isEmpty
-                ? "基础白"
+                ? language.localized(
+                    key: "task.template.classic_white",
+                    fallback: "Classic White"
+                )
                 : trimmedName
         }
     }
 
     static func summaryStatusText(
         _ summary:
-            PhotoMemoBackgroundJobSummary
+            PhotoMemoBackgroundJobSummary,
+        language: MemoMarkLanguage
     ) -> String {
         switch summary.presentationState {
         case .active:
-            return "处理中"
+            return language.localized(
+                key: "task.status.processing",
+                fallback: "Processing"
+            )
         case .needsAttention:
             return summary.failedCount > 0
-                ? "需要处理"
-                : "已中断"
+                ? language.localized(
+                    key: "task.status.needs_attention",
+                    fallback: "Needs attention"
+                )
+                : language.localized(
+                    key: "task.status.interrupted",
+                    fallback: "Interrupted"
+                )
         case .completed:
-            return "已完成"
+            return language.localized(
+                key: "task.status.completed",
+                fallback: "Completed"
+            )
         }
+    }
+
+    static func feedbackStateText(
+        _ state: PhotoMemoBackgroundFeedbackState,
+        language: MemoMarkLanguage
+    ) -> String {
+        let key: String
+        switch state {
+        case .preparing:
+            key = "task.status.preparing"
+        case .processing:
+            key = "task.status.processing"
+        case .completed:
+            key = "task.status.completed"
+        case .partialSuccess:
+            key = "task.status.partial_success"
+        case .needsAttention:
+            key = "task.status.needs_attention"
+        case .unsupported:
+            key = "task.status.unsupported"
+        }
+
+        return language.localized(
+            key: key,
+            fallback: state.displayTitle
+        )
+    }
+
+    static func presetText(
+        _ templateName: String,
+        language: MemoMarkLanguage
+    ) -> String {
+        let format = language.localized(
+            key: "task.preset.format",
+            fallback: "%@ Preset"
+        )
+        return String(format: format, locale: language.locale, templateName)
     }
 
     static func summarySymbolName(
@@ -676,34 +885,54 @@ private extension V1SettingsPagePresenter {
 
     static func stepStatusText(
         for state:
-            PhotoMemoBackgroundPipelineStepState
+            PhotoMemoBackgroundPipelineStepState,
+        language: MemoMarkLanguage
     ) -> String {
         switch state {
         case .pending:
-            return "等待中"
+            return language.localized(
+                key: "task.pipeline.waiting.status",
+                fallback: "Waiting"
+            )
         case .active:
-            return "处理中"
+            return language.localized(
+                key: "task.status.processing",
+                fallback: "Processing"
+            )
         case .completed:
-            return "已完成"
+            return language.localized(
+                key: "task.status.completed",
+                fallback: "Completed"
+            )
         case .needsAttention:
-            return "需要处理"
+            return language.localized(
+                key: "task.status.needs_attention",
+                fallback: "Needs attention"
+            )
         }
     }
 
     static func userFacingStepTitle(
-        _ title: String
+        _ title: String,
+        language: MemoMarkLanguage
     ) -> String {
         let normalized = title.lowercased()
 
         if normalized.contains("renderer")
             || normalized.contains("render") {
-            return "生成记忆照片"
+            return language.localized(
+                key: "task.pipeline.render",
+                fallback: "Create memory photo"
+            )
         }
 
         if normalized.contains("pipeline")
             || normalized.contains("queue")
             || normalized.contains("队列") {
-            return "处理照片"
+            return language.localized(
+                key: "task.pipeline.process",
+                fallback: "Process photos"
+            )
         }
 
         return title
@@ -742,13 +971,21 @@ private extension V1SettingsPagePresenter {
     }
 
     static func photoCountText(
-        count: Int
+        count: Int,
+        language: MemoMarkLanguage
     ) -> String? {
         guard count > 0 else {
             return nil
         }
 
-        return "\(count) 张照片"
+        return String(
+            format: language.localized(
+                key: "task.photo_count_format",
+                fallback: "%d photos"
+            ),
+            locale: language.locale,
+            count
+        )
     }
 }
 #endif

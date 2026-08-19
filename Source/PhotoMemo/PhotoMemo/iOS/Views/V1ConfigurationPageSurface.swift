@@ -6,6 +6,13 @@ struct V1ConfigurationPageSurface<
     EditorContent: View
 >: View {
 
+    @AppStorage(
+        MemoMarkLanguage.interfacePreferenceStorageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var interfaceLanguagePreferenceRawValue =
+        MemoMarkInterfaceLanguagePreference.system.rawValue
+
     let previewPinProgress: CGFloat
     let editorRevealProgress: CGFloat
     let configurationStatus: V1ConfigurationStatus
@@ -49,8 +56,14 @@ struct V1ConfigurationPageSurface<
         V1EditorPageSurface(
             previewPinProgress: previewPinProgress,
             editorRevealProgress: editorRevealProgress,
-            pageTitle: "配置中心",
-            pageSubtitle: "围绕一个人和一个重要时刻，决定照片如何呈现。",
+            pageTitle: interfaceLanguage.localized(
+                key: "configuration.page.title",
+                fallback: "配置中心"
+            ),
+            pageSubtitle: interfaceLanguage.localized(
+                key: "configuration.page.subtitle",
+                fallback: "围绕一个人和一个重要时刻，决定照片如何呈现。"
+            ),
             onDismissKeyboard: onDismissKeyboard
         ) {
             previewContent
@@ -68,6 +81,12 @@ struct V1ConfigurationPageSurface<
         }
         .navigationTitle("")
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        MemoMarkInterfaceLanguagePreference(
+            rawValue: interfaceLanguagePreferenceRawValue
+        )?.resolvedLanguage ?? .interfaceStored
     }
 }
 #endif

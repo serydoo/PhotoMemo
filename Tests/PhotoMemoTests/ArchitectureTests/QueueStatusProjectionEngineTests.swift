@@ -29,6 +29,7 @@ struct QueueStatusProjectionEngineTests {
             projection.headline
             == "共享进度记录需要恢复"
         )
+        #expect(projection.isRecovery)
         #expect(
             projection.subheadline
             == "共享进度记录 不可读取，当前已按空状态继续。重新分享后会生成新的本地记录。"
@@ -41,6 +42,27 @@ struct QueueStatusProjectionEngineTests {
             projection.tint
             == .orange
         )
+    }
+
+    @Test("Header status uses explicit recovery semantics instead of headline wording")
+    func headerStatusUsesExplicitRecoverySemanticsInsteadOfHeadlineWording() {
+        let header = PhotoMemoiOSQueueDiagnosticsHeaderProjection(
+            headline: "共享进度记录需要恢复",
+            subheadline: "recovery",
+            symbolName: "exclamationmark.triangle.fill",
+            tint: .orange,
+            isRecovery: false
+        )
+
+        let presentation = V1SettingsPagePresenter.presentation(
+            header: header,
+            snapshot: nil,
+            recoveryMessage: nil,
+            events: [],
+            language: .english
+        )
+
+        #expect(presentation.currentTask.statusText == "Needs attention")
     }
 
     @Test("Header projection prefers a newer share diagnostic over a completed queue snapshot")
@@ -236,6 +258,45 @@ struct QueueStatusProjectionEngineTests {
                 "已完成处理，结果会出现在目标相册。",
                 "照片已接收，如未自动切换，可手动打开时光记继续。",
                 "照片会按当前默认风格生成并保存。"
+            ]
+        )
+    }
+
+    @Test("Event display projection uses the explicit interface language")
+    func eventDisplayProjectionUsesExplicitInterfaceLanguage() {
+
+        let events = [
+            PhotoMemoShareDiagnosticEvent(
+                timestamp: Date(timeIntervalSince1970: 10),
+                stage: .liveActivityPayloadTerminal,
+                message: "done"
+            ),
+            PhotoMemoShareDiagnosticEvent(
+                timestamp: Date(timeIntervalSince1970: 20),
+                stage: .appEnqueueCreated,
+                message: "queued"
+            )
+        ]
+
+        let projections =
+            PhotoMemoiOSQueueDiagnosticsProjectionEngine
+            .eventDisplayProjections(
+                from: events,
+                language: .japanese
+            )
+
+        #expect(
+            projections.map(\.title)
+            == [
+                "処理キューに追加しました",
+                "処理が完了しました"
+            ]
+        )
+        #expect(
+            projections.map(\.message)
+            == [
+                "現在のデフォルト設定で写真を作成して保存します。",
+                "処理が完了しました。結果は指定したアルバムに保存されます。"
             ]
         )
     }

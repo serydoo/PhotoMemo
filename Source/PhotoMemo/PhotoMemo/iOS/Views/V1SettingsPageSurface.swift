@@ -425,6 +425,10 @@ struct V1SettingsPageSurface: View {
             MemoMarkLanguage.simplifiedChinese.displayTitle
         case .english:
             MemoMarkLanguage.english.displayTitle
+        case .japanese:
+            MemoMarkLanguage.japanese.displayTitle
+        case .korean:
+            MemoMarkLanguage.korean.displayTitle
         }
     }
 
@@ -965,7 +969,12 @@ struct V1SettingsPageSurface: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
+                    Button(
+                        interfaceLanguage.localized(
+                            key: "common.done",
+                            fallback: "完成"
+                        )
+                    ) {
                         showsExpressionGuide = false
                     }
                     .fontWeight(.semibold)

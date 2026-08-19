@@ -52,6 +52,7 @@ struct ConfigurationCenterSidebarSubjectGroup:
 
 struct ConfigurationCenterSidebarView: View {
 
+    let language: MemoMarkLanguage
     let subjectGroups:
         [ConfigurationCenterSidebarSubjectGroup]
     let cardItems:
@@ -113,11 +114,11 @@ struct ConfigurationCenterSidebarView: View {
 
     private var sidebarHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("配置资料")
+            Text(localized("configuration.sidebar.title", fallback: "配置资料"))
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Color.primary)
 
-            Text("记忆对象、卡片区域与智能写入")
+            Text(localized("configuration.sidebar.subtitle", fallback: "记忆对象、卡片区域与智能写入"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -153,7 +154,7 @@ struct ConfigurationCenterSidebarView: View {
 
             VStack(spacing: 3) {
                 if items.isEmpty {
-                    Text("暂无内容")
+                    Text(localized("configuration.sidebar.empty", fallback: "暂无内容"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 8)
@@ -269,22 +270,22 @@ struct ConfigurationCenterSidebarView: View {
                 .opacity(0.28)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("当前生效锚点")
+                Text(localized("configuration.sidebar.current_anchor", fallback: "当前生效锚点"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.primary)
 
-                Text("不同记忆对象拥有不同锚点，也拥有不同的回忆角度。")
+                Text(localized("configuration.sidebar.anchor_detail", fallback: "不同记忆对象拥有不同锚点，也拥有不同的回忆角度。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("记忆对象")
+                Text(localized("configuration.sidebar.subject", fallback: "记忆对象"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.primary)
 
-                Text("时光记用锚点帮助你阅读回忆，而不只是保存照片。")
+                Text(localized("configuration.sidebar.subject_detail", fallback: "时光记用锚点帮助你阅读回忆，而不只是保存照片。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -292,6 +293,10 @@ struct ConfigurationCenterSidebarView: View {
         }
         .padding(.horizontal, 10)
         .padding(.top, 6)
+    }
+
+    private func localized(_ key: String, fallback: String) -> String {
+        language.localized(key: key, fallback: fallback)
     }
 }
 #endif

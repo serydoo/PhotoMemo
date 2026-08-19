@@ -3,12 +3,16 @@ import SwiftUI
 
 struct V1HomeFeedbackSection: View {
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     @AppStorage("photomemo.v1.homeFeedbackExpanded")
     private var isExpanded = true
 
     var body: some View {
         V1CardSurface(
-            title: "意见反馈",
+            title: "home.feedback.title",
             systemImage: MemoMarkSymbol.feedback.name,
             tint: .pink
         ) {
@@ -40,11 +44,17 @@ struct V1HomeFeedbackSection: View {
                     .frame(width: 32)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("直接联系开发者")
+                    Text(localized("home.feedback.contact_developer"))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
 
-                    Text(isExpanded ? "收起渠道说明" : "展开渠道说明")
+                    Text(
+                        localized(
+                            isExpanded
+                            ? "home.feedback.collapse"
+                            : "home.feedback.expand"
+                        )
+                    )
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -64,9 +74,15 @@ struct V1HomeFeedbackSection: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("意见反馈")
-        .accessibilityValue(isExpanded ? "已展开" : "已折叠")
-        .accessibilityHint("显示或隐藏反馈渠道")
+        .accessibilityLabel(localized("home.feedback.accessibility.label"))
+        .accessibilityValue(
+            localized(
+                isExpanded
+                ? "home.feedback.accessibility.expanded"
+                : "home.feedback.accessibility.collapsed"
+            )
+        )
+        .accessibilityHint(localized("home.feedback.accessibility.hint"))
     }
 
     private var expandedChannels: some View {
@@ -74,28 +90,28 @@ struct V1HomeFeedbackSection: View {
             V1HorizontalDivider()
 
             feedbackRow(
-                title: "小红书、抖音",
-                detail: "搜索 MemoMark，可直达开发者本人。",
+                title: localized("home.feedback.social.title"),
+                detail: localized("home.feedback.social.detail"),
                 systemImage: "magnifyingglass",
                 tint: .red
             )
 
             feedbackRow(
-                title: "QQ 交流群",
-                detail: "群号 955680366",
+                title: localized("home.feedback.qq.title"),
+                detail: localized("home.feedback.qq.detail"),
                 systemImage: "person.3.fill",
                 tint: .teal
             )
 
             Label(
-                "欢迎交流使用体验、反馈问题，也欢迎提出定制意见。",
+                localized("home.feedback.welcome"),
                 systemImage: "text.bubble.fill"
             )
             .font(.caption)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
 
-            Text("TestFlight 用户仍可使用系统内置反馈，提交截图、录屏和崩溃信息。")
+            Text(localized("home.feedback.testflight"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -126,6 +142,10 @@ struct V1HomeFeedbackSection: View {
                     .textSelection(.enabled)
             }
         }
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
     }
 }
 #endif

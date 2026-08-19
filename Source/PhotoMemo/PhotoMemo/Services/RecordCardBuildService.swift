@@ -81,7 +81,9 @@ private extension RecordCardBuildService {
         let anchorResult =
             resolvedAnchorResult(
                 from: anchor,
-                photo: selectedPhoto
+                photo: selectedPhoto,
+                outputLanguage:
+                    configuration.language
             )
         let context =
             buildContext(
@@ -116,7 +118,9 @@ private extension RecordCardBuildService {
         let anchorResult =
             resolvedAnchorResult(
                 from: anchor,
-                photo: selectedPhoto
+                photo: selectedPhoto,
+                outputLanguage:
+                    configuration.language
             )
         let title =
             resolvedTitle(
@@ -177,7 +181,8 @@ private extension RecordCardBuildService {
 
     func resolvedAnchorResult(
         from anchor: Anchor?,
-        photo selectedPhoto: SelectedPhoto
+        photo selectedPhoto: SelectedPhoto,
+        outputLanguage: MemoMarkLanguage
     ) -> AnchorResult? {
 
         guard let captureDate =
@@ -196,7 +201,9 @@ private extension RecordCardBuildService {
             .build(
                 from: $0,
                 photoDate:
-                    captureDate
+                    captureDate,
+                outputLanguage:
+                    outputLanguage
             )
         }
     }

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ConfigurationCenterInsertableModuleLibrarySection: View {
 
+    let language: MemoMarkLanguage
     let visibleModules: [IOSInsertableModule]
     let additionalModules: [IOSInsertableModule]
     let onInsertModule: (IOSInsertableModule) -> Void
@@ -11,7 +12,7 @@ struct ConfigurationCenterInsertableModuleLibrarySection: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Label(
-                    "可插入模块",
+                    localized("configuration.modules.insertable", fallback: "可插入模块"),
                     systemImage: "tag.fill"
                 )
                 .font(.caption.weight(.semibold))
@@ -32,7 +33,7 @@ struct ConfigurationCenterInsertableModuleLibrarySection: View {
                         }
                     }
                 } label: {
-                    Label("更多模块", systemImage: "chevron.down.circle")
+                    Label(localized("configuration.modules.more", fallback: "更多模块"), systemImage: "chevron.down.circle")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(Color.accentColor)
                 }
@@ -52,7 +53,7 @@ struct ConfigurationCenterInsertableModuleLibrarySection: View {
                 .padding(.vertical, 1)
             }
 
-            Text("默认展示当前最常用的 6 个模块。更多 EXIF 字段可从下拉栏插入；若照片中没有该信息，输出保持为空。")
+            Text(localized("configuration.modules.detail", fallback: "默认展示当前最常用的 6 个模块。更多 EXIF 字段可从下拉栏插入；若照片中没有该信息，输出保持为空。"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -83,6 +84,10 @@ struct ConfigurationCenterInsertableModuleLibrarySection: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.accentColor.opacity(0.16))
         )
+    }
+
+    private func localized(_ key: String, fallback: String) -> String {
+        language.localized(key: key, fallback: fallback)
     }
 }
 #endif

@@ -52,12 +52,12 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("本次维护进一步明确照片交付状态"))
+        #expect(simplifiedChinese.contains("这次更新让时光记在不同语言下更清楚地表达回忆"))
         #expect(simplifiedChinese.contains("没有可呈现内容的照片不会再被保存成空白的成功结果"))
-        #expect(simplifiedChinese.contains("批量结果会从你交给时光记的照片数量开始说明"))
-        #expect(english.contains("This maintenance update makes each photo’s delivery result easier to understand"))
-        #expect(english.contains("A photo with no presentable content is no longer saved as a blank successful result"))
-        #expect(english.contains("Batch results now start from the number of photos you gave MemoMark"))
+        #expect(simplifiedChinese.contains("批量处理会清楚区分已完成、需要处理和仍在等待的照片"))
+        #expect(english.contains("This update makes memory expression clearer across languages"))
+        #expect(english.contains("Photos with no presentable content are no longer saved as blank results"))
+        #expect(english.contains("Batch processing separates photos that finished from those that need attention"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
     }
@@ -72,12 +72,12 @@ struct V1ReleaseNotesContractTests {
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
         #expect(
             projectSource.components(
-                separatedBy: "MARKETING_VERSION = 2.1.2;"
+                separatedBy: "MARKETING_VERSION = 2.1.3;"
             ).count == 11
         )
         #expect(
             projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 86;"
+                separatedBy: "CURRENT_PROJECT_VERSION = 85;"
             ).count == 13
         )
     }

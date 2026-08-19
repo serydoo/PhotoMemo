@@ -6,53 +6,54 @@ extension MemoryAnchorRelativeSnapshot {
     func ageText(
         language: MemoMarkLanguage
     ) -> String {
-        switch language {
-        case .simplifiedChinese:
-            return ageText
-        case .english:
-            return englishComponents(
-                includeZeroValues: false,
-                emptyValue: "0 days"
-            )
-        }
+        MemoryAgeFormatter.format(
+            MemoryAgeComponents(
+                years: years,
+                months: months,
+                days: days
+            ),
+            language: language
+        )
     }
 
     func durationText(
         language: MemoMarkLanguage
     ) -> String {
-        switch language {
-        case .simplifiedChinese:
-            return durationText
-        case .english:
-            return englishComponents(
-                includeZeroValues: false,
-                emptyValue: "0 days"
-            )
-        }
+        MemoryDurationFormatter.format(
+            MemoryDurationComponents(
+                years: years,
+                months: months,
+                days: days,
+                totalDays: totalDays
+            ),
+            language: language
+        )
     }
 
     func countdownText(
         language: MemoMarkLanguage
     ) -> String {
+        let value = countdownValueText(language: language)
+
         switch language {
         case .simplifiedChinese:
-            return countdownText
+            return "还有\(value)"
         case .english:
-            let unit = englishUnit("day", value: totalDays)
-            return "\(totalDays) \(unit) left"
+            return "\(value) left"
+        case .japanese:
+            return "あと\(value)"
+        case .korean:
+            return "\(value) 남음"
         }
     }
 
     func countdownValueText(
         language: MemoMarkLanguage
     ) -> String {
-        switch language {
-        case .simplifiedChinese:
-            return countdownValueText
-        case .english:
-            let unit = englishUnit("day", value: totalDays)
-            return "\(totalDays) \(unit)"
-        }
+        MemoryCountdownFormatter.format(
+            MemoryCountdownComponents(totalDays: totalDays),
+            language: language
+        )
     }
 }
 
@@ -92,67 +93,4 @@ private func englishOrdinal(_ value: Int) -> String {
     return "\(value)\(suffix)"
 }
 
-private extension MemoryAnchorRelativeSnapshot {
-
-    func englishComponents(
-        includeZeroValues: Bool,
-        emptyValue: String
-    ) -> String {
-        let components = [
-            englishComponent(
-                years,
-                singular: "year",
-                includeZeroValues: includeZeroValues
-            ),
-            englishComponent(
-                months,
-                singular: "month",
-                includeZeroValues: includeZeroValues
-            ),
-            englishComponent(
-                days,
-                singular: "day",
-                includeZeroValues: includeZeroValues
-            )
-        ]
-        .compactMap { $0 }
-
-        guard !components.isEmpty else {
-            return emptyValue
-        }
-
-        if components.count == 1 {
-            return components[0]
-        }
-
-        if components.count == 2 {
-            return components.joined(separator: " and ")
-        }
-
-        return components.dropLast().joined(separator: ", ")
-            + ", and "
-            + (components.last ?? "")
-    }
-
-    func englishComponent(
-        _ value: Int,
-        singular: String,
-        includeZeroValues: Bool
-    ) -> String? {
-        guard includeZeroValues || value > 0 else {
-            return nil
-        }
-
-        return "\(value) \(englishUnit(singular, value: value))"
-    }
-
-    func englishUnit(
-        _ singular: String,
-        value: Int
-    ) -> String {
-        value == 1
-            ? singular
-            : "\(singular)s"
-    }
-}
 #endif

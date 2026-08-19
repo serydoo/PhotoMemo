@@ -4,6 +4,13 @@ import SwiftUI
 struct PhotoMemoiOSBackgroundStatusSheet:
     View {
 
+    @AppStorage(
+        MemoMarkLanguage.interfacePreferenceStorageKey,
+        store: PhotoMemoSharedContainer.sharedUserDefaults
+    )
+    private var interfaceLanguagePreferenceRawValue =
+        MemoMarkInterfaceLanguagePreference.system.rawValue
+
     @ObservedObject
     var backgroundStatusService:
         PhotoMemoBackgroundStatusService
@@ -40,7 +47,10 @@ struct PhotoMemoiOSBackgroundStatusSheet:
                     emptyState
                 }
             }
-            .navigationTitle("处理进度")
+            .navigationTitle(MemoMarkLanguage.interfaceStored.localized(
+                key: "processing.navigation.title",
+                fallback: "处理进度"
+            ))
             .navigationBarTitleDisplayMode(
                 .inline
             )
@@ -48,7 +58,10 @@ struct PhotoMemoiOSBackgroundStatusSheet:
                 ToolbarItem(
                     placement: .topBarTrailing
                 ) {
-                    Button("完成") {
+                    Button(MemoMarkLanguage.interfaceStored.localized(
+                        key: "processing.navigation.done",
+                        fallback: "完成"
+                    )) {
                         dismiss()
                     }
                 }
@@ -108,7 +121,10 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
                 }
 
                 if snapshot.canRetryFailures {
-                    Button("重试失败项") {
+                    Button(MemoMarkLanguage.interfaceStored.localized(
+                        key: "processing.retry_failed",
+                        fallback: "重试失败项"
+                    )) {
                         batchQueueStore
                             .retryFailedTasks(
                         in:
@@ -146,19 +162,31 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
     var photoPermissionCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label(
-                "允许保存到 Apple Photos",
+                localized(
+                    "processing.permission.photo.title",
+                    fallback: "允许保存到 Apple Photos"
+                ),
                 systemImage: "photo.badge.checkmark"
             )
             .font(.headline)
             Text(
-                "后台任务需要照片权限，才能把生成结果保存回系统相册。"
+                localized(
+                    "processing.permission.photo.detail",
+                    fallback: "后台任务需要照片权限，才能把生成结果保存回系统相册。"
+                )
             )
             .font(.subheadline)
             .foregroundStyle(.secondary)
             Button(
                 permissionCenter.photoLibraryState == .denied
-                ? "打开系统设置"
-                : "允许照片访问"
+                ? localized(
+                    "processing.permission.photo.open_settings",
+                    fallback: "打开系统设置"
+                )
+                : localized(
+                    "processing.permission.photo.allow",
+                    fallback: "允许照片访问"
+                )
             ) {
                 if permissionCenter.photoLibraryState == .denied {
                     permissionCenter.openSystemSettings(
@@ -182,19 +210,31 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
     var notificationPermissionCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label(
-                "允许完成提醒",
+                localized(
+                    "processing.permission.notification.title",
+                    fallback: "允许完成提醒"
+                ),
                 systemImage: "bell.badge"
             )
             .font(.headline)
             Text(
-                "处理结束后，时光记可以通过系统通知告诉你结果。"
+                localized(
+                    "processing.permission.notification.detail",
+                    fallback: "处理结束后，时光记可以通过系统通知告诉你结果。"
+                )
             )
             .font(.subheadline)
             .foregroundStyle(.secondary)
             Button(
                 permissionCenter.notificationState == .denied
-                ? "打开通知设置"
-                : "允许完成提醒"
+                ? localized(
+                    "processing.permission.notification.open_settings",
+                    fallback: "打开通知设置"
+                )
+                : localized(
+                    "processing.permission.notification.allow",
+                    fallback: "允许完成提醒"
+                )
             ) {
                 if permissionCenter.notificationState == .denied {
                     permissionCenter.openSystemSettings(
@@ -236,6 +276,7 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
     ) -> some View {
 
         PhotoMemoiOSBackgroundStatusHeroCard(
+            language: MemoMarkLanguage.interfaceStored,
             title:
                 heroTitle(
                     snapshot
@@ -276,6 +317,7 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
     ) -> some View {
 
         PhotoMemoiOSBackgroundPipelineCard(
+            language: MemoMarkLanguage.interfaceStored,
             steps:
                 snapshot.pipelineSteps
         )
@@ -306,6 +348,7 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
         }
 
         return PhotoMemoiOSBackgroundProcessingFocusCard(
+            language: MemoMarkLanguage.interfaceStored,
             currentFileName:
                 resolvedCurrentFileName,
             jobStateTitle:
@@ -328,6 +371,7 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
     ) -> some View {
 
         PhotoMemoiOSBackgroundLatestFailureCard(
+            language: MemoMarkLanguage.interfaceStored,
             phaseTitle:
                 summary.latestFailure.phaseTitle,
             message:
@@ -344,17 +388,35 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
 
         switch snapshot.feedbackState {
         case .preparing:
-            return "正在准备处理"
+            return localized(
+                "processing.hero.preparing",
+                fallback: "正在准备处理"
+            )
         case .processing:
-            return "正在后台处理"
+            return localized(
+                "processing.hero.processing",
+                fallback: "正在后台处理"
+            )
         case .completed:
-            return "最近后台任务已完成"
+            return localized(
+                "processing.hero.completed",
+                fallback: "最近后台任务已完成"
+            )
         case .partialSuccess:
-            return "部分照片已完成"
+            return localized(
+                "processing.hero.partial_success",
+                fallback: "部分照片已完成"
+            )
         case .needsAttention:
-            return "有照片需要处理"
+            return localized(
+                "processing.hero.needs_attention",
+                fallback: "有照片需要处理"
+            )
         case .unsupported:
-            return "有照片暂不支持"
+            return localized(
+                "processing.hero.unsupported",
+                fallback: "有照片暂不支持"
+            )
         }
     }
 
@@ -400,15 +462,37 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
         switch snapshot.feedbackState {
         case .preparing,
              .processing:
-            return "整体进度 \(percent)% · 已完成 \(snapshot.completedCount)/\(snapshot.totalCount)"
+            return formatted(
+                "processing.progress.active",
+                fallback: "整体进度 %lld%% · 已完成 %lld/%lld",
+                percent,
+                snapshot.completedCount,
+                snapshot.totalCount
+            )
         case .completed:
-            return "已完成 \(snapshot.completedCount) 张，结果已写回系统相册"
+            return formatted(
+                "processing.progress.completed",
+                fallback: "已完成 %lld 张，结果已写回系统相册",
+                snapshot.completedCount
+            )
         case .partialSuccess:
-            return "已完成 \(snapshot.completedCount) 张，仍有 \(snapshot.failedCount) 张需处理"
+            return formatted(
+                "processing.progress.partial_success",
+                fallback: "已完成 %lld 张，仍有 %lld 张需处理",
+                snapshot.completedCount,
+                snapshot.failedCount
+            )
         case .needsAttention:
-            return "\(snapshot.failedCount) 张需要回到时光记查看"
+            return formatted(
+                "processing.progress.needs_attention",
+                fallback: "%lld 张需要回到时光记查看",
+                snapshot.failedCount
+            )
         case .unsupported:
-            return "这批照片当前不在支持范围内"
+            return localized(
+                "processing.progress.unsupported",
+                fallback: "这批照片当前不在支持范围内"
+            )
         }
     }
 
@@ -418,14 +502,53 @@ private extension PhotoMemoiOSBackgroundStatusSheet {
     ) -> String {
 
         if snapshot.feedbackState == .unsupported {
-            return "这批照片当前不在支持范围内，建议改用支持的照片格式再试。"
+            return localized(
+                "processing.attention.unsupported",
+                fallback: "这批照片当前不在支持范围内，建议改用支持的照片格式再试。"
+            )
         }
 
         if snapshot.canRetryFailures {
-            return "本批次有 \(snapshot.failedCount) 张未成功，可直接在这里重试失败项。"
+            return formatted(
+                "processing.attention.retry",
+                fallback: "本批次有 %lld 张未成功，可直接在这里重试失败项。",
+                snapshot.failedCount
+            )
         }
 
-        return "本批次有 \(snapshot.failedCount) 张未成功，当前更适合先查看失败原因。"
+        return formatted(
+            "processing.attention.failure",
+            fallback: "本批次有 %lld 张未成功，当前更适合先查看失败原因。",
+            snapshot.failedCount
+        )
+    }
+
+    var interfaceLanguage: MemoMarkLanguage {
+        MemoMarkInterfaceLanguagePreference(
+            rawValue: interfaceLanguagePreferenceRawValue
+        )?.resolvedLanguage ?? .interfaceStored
+    }
+
+    func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage.localized(
+            key: key,
+            fallback: fallback
+        )
+    }
+
+    func formatted(
+        _ key: String,
+        fallback: String,
+        _ arguments: CVarArg...
+    ) -> String {
+        String(
+            format: localized(key, fallback: fallback),
+            locale: interfaceLanguage.locale,
+            arguments: arguments
+        )
     }
 }
 #endif

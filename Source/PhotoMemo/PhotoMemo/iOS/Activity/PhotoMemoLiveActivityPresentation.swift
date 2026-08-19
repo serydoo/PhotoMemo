@@ -119,7 +119,10 @@ private struct PhotoMemoLiveActivityLockScreenView:
                 spacing: 8
             ) {
                 Label(
-                    "时光记",
+                    widgetLocalized(
+                        "widget.brand",
+                        fallback: "MemoMark"
+                    ),
                     systemImage:
                         compactSymbolName(
                             for: context
@@ -198,19 +201,28 @@ private struct PhotoMemoLiveActivityLockScreenView:
                     spacing: 12
                 ) {
                     countPill(
-                        title: "完成",
+                        title: widgetLocalized(
+                            "widget.count.completed",
+                            fallback: "Completed"
+                        ),
                         value:
                             "\(context.state.completedCount)"
                     )
 
                     countPill(
-                        title: "失败",
+                        title: widgetLocalized(
+                            "widget.count.failed",
+                            fallback: "Failed"
+                        ),
                         value:
                             "\(context.state.failedCount)"
                     )
 
                     countPill(
-                        title: "总数",
+                        title: widgetLocalized(
+                            "widget.count.total",
+                            fallback: "Total"
+                        ),
                         value:
                             "\(context.state.totalCount)"
                     )
@@ -219,7 +231,10 @@ private struct PhotoMemoLiveActivityLockScreenView:
 
             if context.isStale {
                 Label(
-                    "状态可能已过期，正在等待新进度",
+                    widgetLocalized(
+                        "widget.stale",
+                        fallback: "This status may be out of date while new progress is pending"
+                    ),
                     systemImage:
                         "arrow.trianglehead.2.clockwise"
                 )
@@ -273,7 +288,12 @@ private struct PhotoMemoLiveActivityExpandedLeadingView:
             alignment: .leading,
             spacing: 4
         ) {
-            Text("来源")
+            Text(
+                widgetLocalized(
+                    "widget.source",
+                    fallback: "Source"
+                )
+            )
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
@@ -447,21 +467,40 @@ private func primaryTitle(
         for: context
     ) {
     case .preparing:
-        return "正在准备照片"
+        return widgetLocalized(
+            "widget.title.preparing",
+            fallback: "Preparing Photos"
+        )
     case .processing:
         if isSingleTask(context) {
             return context.state.phaseTitle
         }
 
-        return "正在处理 \(context.state.totalCount) 张照片"
+        return widgetFormatted(
+            "widget.title.processing_format",
+            fallback: "Processing %lld Photos",
+            Int64(context.state.totalCount)
+        )
     case .completed:
-        return "处理已完成"
+        return widgetLocalized(
+            "widget.title.completed",
+            fallback: "Processing Complete"
+        )
     case .partialSuccess:
-        return "部分照片已完成"
+        return widgetLocalized(
+            "widget.title.partial_success",
+            fallback: "Some Photos Completed"
+        )
     case .needsAttention:
-        return "有照片需要处理"
+        return widgetLocalized(
+            "widget.title.needs_attention",
+            fallback: "Some Photos Need Attention"
+        )
     case .unsupported:
-        return "这批照片暂不支持处理"
+        return widgetLocalized(
+            "widget.title.unsupported",
+            fallback: "This Batch Is Not Supported"
+        )
     }
 }
 
@@ -641,10 +680,17 @@ private func resolvedPipelineAccessibilityLabel(
 ) -> String {
 
     guard titles.indices.contains(activeIndex) else {
-        return "处理进度"
+        return widgetLocalized(
+            "widget.accessibility.progress",
+            fallback: "Processing progress"
+        )
     }
 
-    return "当前步骤：\(titles[activeIndex])"
+    return widgetFormatted(
+        "widget.accessibility.current_step",
+        fallback: "Current step: %@",
+        titles[activeIndex]
+    )
 }
 
 @ViewBuilder
@@ -677,7 +723,13 @@ private func queueLinesView(
         }
 
         if context.state.overflowQueueCount > 0 {
-            Text("另有 \(context.state.overflowQueueCount) 个队列")
+            Text(
+                widgetFormatted(
+                    "widget.queue.overflow_format",
+                    fallback: "%lld more queued",
+                    Int64(context.state.overflowQueueCount)
+                )
+            )
                 .font(secondaryFont)
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
@@ -717,6 +769,28 @@ private func resolvedQueueLines(
 
     return Array(
         lines.prefix(3)
+    )
+}
+
+private func widgetLocalized(
+    _ key: String,
+    fallback: String
+) -> String {
+    MemoMarkLanguage.interfaceStored.localized(
+        key: key,
+        fallback: fallback
+    )
+}
+
+private func widgetFormatted(
+    _ key: String,
+    fallback: String,
+    _ arguments: CVarArg...
+) -> String {
+    String(
+        format: widgetLocalized(key, fallback: fallback),
+        locale: MemoMarkLanguage.interfaceStored.locale,
+        arguments: arguments
     )
 }
 #endif

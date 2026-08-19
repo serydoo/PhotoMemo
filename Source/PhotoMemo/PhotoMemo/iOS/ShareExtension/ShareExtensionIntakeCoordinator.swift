@@ -52,10 +52,18 @@ final class ShareExtensionIntakeCoordinator {
             )
             return .failed(
                 ShareExtensionIntakeFailure(
-                    title: "无法读取这次分享",
-                    message: "时光记没有收到这次分享的原始内容。",
-                    suggestion:
-                        "请返回系统相册重新分享；如果重复出现，请打开时光记检查默认风格后再试。"
+                    title: localized(
+                        "share.error.unexpected.title",
+                        fallback: "This Share Did Not Finish"
+                    ),
+                    message: localized(
+                        "share.error.unexpected.message",
+                        fallback: "MemoMark could not receive this share."
+                    ),
+                    suggestion: localized(
+                        "share.error.unexpected.recovery",
+                        fallback: "Return to Apple Photos and share again."
+                    )
                 )
             )
         }
@@ -115,7 +123,9 @@ final class ShareExtensionIntakeCoordinator {
             )
             return .failed(
                 ShareExtensionIntakeFailure(
-                    title: shareError.failureTitle,
+                    title: shareError.localizedFailureTitle(
+                        for: .interfaceStored
+                    ),
                     message: detailedFailureMessage(
                         for: shareError
                     ),
@@ -135,13 +145,18 @@ final class ShareExtensionIntakeCoordinator {
             )
             return .failed(
                 ShareExtensionIntakeFailure(
-                    title: "这次分享没有完成",
-                    message:
-                        (error as? LocalizedError)?
-                        .errorDescription
-                        ?? "无法把内容交给时光记。",
-                    suggestion:
-                        "请先返回系统相册重新分享；如果仍失败，请打开时光记检查默认风格和系统相册权限。"
+                    title: localized(
+                        "share.error.unexpected.title",
+                        fallback: "This Share Did Not Finish"
+                    ),
+                    message: localized(
+                        "share.error.unexpected.message",
+                        fallback: "MemoMark could not receive this share."
+                    ),
+                    suggestion: localized(
+                        "share.error.unexpected.recovery",
+                        fallback: "Return to Apple Photos and share again."
+                    )
                 )
             )
         }
@@ -156,8 +171,9 @@ final class ShareExtensionIntakeCoordinator {
                 "User-facing intake failure detail: \(diagnosticSummary)"
             )
         }
-        return error.errorDescription
-            ?? "这次分享没有完成。"
+        return error.localizedDescription(
+            for: .interfaceStored
+        )
     }
 
     private func detailedSuggestion(
@@ -170,7 +186,19 @@ final class ShareExtensionIntakeCoordinator {
                 "Intake recovery context: \(errorSummary.domain) / \(errorSummary.code)"
             )
         }
-        return error.recoverySuggestion
+        return error.localizedRecoverySuggestion(
+            for: .interfaceStored
+        )
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: key,
+            fallback: fallback
+        )
     }
 }
 #endif

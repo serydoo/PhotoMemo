@@ -21,12 +21,16 @@ struct CardVariableProvider {
         if let anchor = card.anchorResult {
 
             let totalDaysText =
-                "\(anchor.totalDays)天"
+                MemoryAnchorVariableTextFormatter.rawDayText(
+                    from: anchor.totalDays,
+                    language: card.language
+                )
 
             let smartText =
                 smartAnchorText(
                     anchor: card.anchor,
-                    result: anchor
+                    result: anchor,
+                    language: card.language
                 )
 
             context.set(
@@ -136,6 +140,10 @@ struct CardVariableProvider {
         }
 
 #if !PHOTOMEMO_SHARE_EXTENSION
+        // Resolved MemoryResult variables are authoritative. The legacy
+        // AnchorResult/MemoryVariableProvider projection below is only a
+        // compatibility fallback for cards without a resolved semantic
+        // result, and receives the card's frozen output language explicitly.
         MemoryResultVariableProjector.project(
             from: card,
             into: &context
@@ -327,7 +335,8 @@ private extension CardVariableProvider {
 
     static func smartAnchorText(
         anchor: Anchor?,
-        result: AnchorResult
+        result: AnchorResult,
+        language: MemoMarkLanguage
     ) -> String {
 
         guard let anchor else {
@@ -358,7 +367,7 @@ private extension CardVariableProvider {
             return result.totalDays < 365
                 ? firstNonEmpty(
                     result.elapsedText,
-                    rawDayText(result)
+                    rawDayText(result, language: language)
                 )
                 : result.durationText
 
@@ -369,7 +378,7 @@ private extension CardVariableProvider {
             return result.totalDays < 100
                 ? firstNonEmpty(
                     result.elapsedText,
-                    rawDayText(result)
+                    rawDayText(result, language: language)
                 )
                 : result.durationText
 
@@ -377,7 +386,7 @@ private extension CardVariableProvider {
             if result.totalDays < 100 {
                 return firstNonEmpty(
                     result.elapsedText,
-                    rawDayText(result)
+                    rawDayText(result, language: language)
                 )
             }
 
@@ -397,16 +406,22 @@ private extension CardVariableProvider {
     }
 
     static func rawDayText(
-        _ result: AnchorResult
+        _ result: AnchorResult,
+        language: MemoMarkLanguage
     ) -> String {
-
-        "\(result.totalDays)天"
+        MemoryAnchorVariableTextFormatter.rawDayText(
+            from: result.totalDays,
+            language: language
+        )
     }
 
     static func memoryValues(
         from card: RecordCard
     ) -> MemoryCalculationResult {
 
+        // The semantic projector wins whenever a resolved MemoryResult exists;
+        // legacy calculation is retained only for old cards and receives the
+        // Preset language from the card rather than global language state.
         let legacyValues =
             MemoryVariableProvider().build(
             from: MemoryContext(
@@ -415,7 +430,9 @@ private extension CardVariableProvider {
                 anchorResult: card.anchorResult,
                 story: card.story,
                 subjectText:
-                    card.memorySubjectText
+                    card.memorySubjectText,
+                outputLanguage:
+                    card.language
             )
         )
 

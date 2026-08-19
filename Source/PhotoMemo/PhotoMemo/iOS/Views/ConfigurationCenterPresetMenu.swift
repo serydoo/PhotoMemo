@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ConfigurationCenterPresetMenu: View {
 
+    let language: MemoMarkLanguage
     let presets: [MemoryPreset]
     let selectedPreset: MemoryPreset?
     let currentTitle: String
@@ -29,7 +30,10 @@ struct ConfigurationCenterPresetMenu: View {
             }
         } label: {
             VStack(alignment: .leading, spacing: 3) {
-                Text("当前生效配置")
+                Text(language.localized(
+                    key: "configuration.summary.current",
+                    fallback: "当前生效配置"
+                ))
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)

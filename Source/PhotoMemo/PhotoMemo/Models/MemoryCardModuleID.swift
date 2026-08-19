@@ -313,6 +313,8 @@ enum MemoryCardModuleID:
         case (.english, .orientation): return "Orientation"
         case (.english, .fileFormat): return "File format"
         case (.english, .custom): return "Custom"
+        default:
+            return fallbackTitle(for: .english)
         }
     }
 }

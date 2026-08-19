@@ -76,8 +76,12 @@ struct ConfigurationCenteriOSView: View {
     private let diagnosticsRefreshCoordinator:
         V1DiagnosticsRefreshCoordinator
 
-    private let currentBorderStyleName =
-        "基础白"
+    private var currentBorderStyleName: String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: "configuration.preview.basic_white",
+            fallback: "基础白"
+        )
+    }
 
     init(
         runtime: PhotoMemoAppRuntime
@@ -391,6 +395,7 @@ struct ConfigurationCenteriOSView: View {
 
     private var sidebar: some View {
         ConfigurationCenterSidebarView(
+            language: interfaceLanguage,
             subjectGroups: sidebarSubjectGroups,
             cardItems: sidebarCardItems,
             memoryModuleItems: sidebarMemoryModuleItems,
@@ -440,6 +445,7 @@ struct ConfigurationCenteriOSView: View {
             )
 
         return ConfigurationCenterSummarySection(
+            language: interfaceLanguage,
             subject: session.state.selectedSubject,
             selectedRegion: session.state.selectedRegion,
             currentBorderStyleName: currentBorderStyleName,
@@ -483,24 +489,33 @@ struct ConfigurationCenteriOSView: View {
 
     private var languageSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("输出语言")
+            Text(localized(
+                "configuration.output.language_title",
+                fallback: "输出语言"
+            ))
                 .font(.headline.weight(.semibold))
 
             Picker(
-                "智能模块与输出语言",
+                localized(
+                    "configuration.output.language_picker",
+                    fallback: "智能模块与输出语言"
+                ),
                 selection: Binding(
-                    get: { session.languagePreference },
-                    set: { session.languagePreference = $0 }
+                    get: { session.presetOutputLanguage },
+                    set: { session.presetOutputLanguage = $0 }
                 )
             ) {
-                ForEach(MemoMarkLanguagePreference.allCases, id: \.self) { preference in
-                    Text(preference.displayTitle)
-                        .tag(preference)
+                ForEach(MemoMarkLanguage.allCases, id: \.self) { language in
+                    Text(language.displayTitle)
+                        .tag(language)
                 }
             }
             .pickerStyle(.segmented)
 
-            Text("只影响系统生成的智能模块和日期表达；你填写的名称、句子与照片原始信息不会被翻译。")
+            Text(localized(
+                "configuration.output.language_detail",
+                fallback: "只影响系统生成的智能模块和日期表达；你填写的名称、句子与照片原始信息不会被翻译。"
+            ))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -571,13 +586,19 @@ struct ConfigurationCenteriOSView: View {
     private var compactNavigatorSheet: some View {
         NavigationStack {
             sidebar
-                .navigationTitle("配置导航")
+                .navigationTitle(localized(
+                    "configuration.navigation.title",
+                    fallback: "配置导航"
+                ))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(
                         placement: .topBarTrailing
                     ) {
-                        Button("完成") {
+                        Button(localized(
+                            "configuration.navigation.done",
+                            fallback: "完成"
+                        )) {
                             showsCompactNavigator = false
                         }
                         .font(.caption.weight(.semibold))
@@ -648,7 +669,12 @@ struct ConfigurationCenteriOSView: View {
                 ToolbarItem(
                     placement: .topBarTrailing
                 ) {
-                    Button("完成") {
+                    Button(
+                        localized(
+                            "common.done",
+                            fallback: "完成"
+                        )
+                    ) {
                         showsSettingsSheet = false
                     }
                     .font(.caption.weight(.semibold))
@@ -659,6 +685,7 @@ struct ConfigurationCenteriOSView: View {
 
     private var profilePresetMenu: some View {
         ConfigurationCenterPresetMenu(
+            language: interfaceLanguage,
             presets: session.state.memoryPresets,
             selectedPreset: session.state.selectedMemoryPreset,
             currentTitle: session.currentMemoryPresetTitle,
@@ -687,6 +714,7 @@ struct ConfigurationCenteriOSView: View {
 
         case .memoryModule:
             ConfigurationCenterDetailPanelSection(
+                language: interfaceLanguage,
                 title: presentation.title ?? "",
                 systemImage:
                     presentation.systemImage ?? "",
@@ -701,6 +729,7 @@ struct ConfigurationCenteriOSView: View {
 
         case .output:
             ConfigurationCenterDetailPanelSection(
+                language: interfaceLanguage,
                 title: presentation.title ?? "",
                 systemImage:
                     presentation.systemImage ?? "",
@@ -720,6 +749,7 @@ struct ConfigurationCenteriOSView: View {
 
         case .configurationGuide:
             ConfigurationCenterDetailPanelSection(
+                language: interfaceLanguage,
                 title: presentation.title ?? "",
                 systemImage:
                     presentation.systemImage ?? "",
@@ -777,6 +807,7 @@ struct ConfigurationCenteriOSView: View {
             )
 
         return ConfigurationCenterActiveRegionEditorSection(
+            language: interfaceLanguage,
             title: presentation.title,
             systemImage: presentation.systemImage,
             selectedRegion: session.state.selectedRegion
@@ -805,6 +836,7 @@ struct ConfigurationCenteriOSView: View {
                 .configurationPanelChrome()
         case .regionComposer:
             ConfigurationCenterRegionComposerSection(
+                language: interfaceLanguage,
                 region: session.state.selectedRegion,
                 configurationOptions:
                     regionDraftStore.configurationOptions(
@@ -881,6 +913,7 @@ struct ConfigurationCenteriOSView: View {
 
     private var fixedInsertableModuleLibrary: some View {
         ConfigurationCenterInsertableModuleLibrarySection(
+            language: interfaceLanguage,
             visibleModules: visibleInsertableModules,
             additionalModules: additionalInsertableModules,
             onInsertModule: insertModuleIntoCurrentRegion
@@ -916,30 +949,54 @@ struct ConfigurationCenteriOSView: View {
         [ConfigurationCenterGuideCardModel] {
         [
             ConfigurationCenterGuideCardModel(
-                title: "四个自定义区域",
+                title: localized(
+                    "configuration.guide.regions.title",
+                    fallback: "四个自定义区域"
+                ),
                 note:
-                    "插入内容进入当前选中的区域，不走隐式兜底。",
+                    localized(
+                        "configuration.guide.regions.note",
+                        fallback: "插入内容进入当前选中的区域，不走隐式兜底。"
+                    ),
                 systemImage:
                     "rectangle.and.pencil.and.ellipsis"
             ),
             ConfigurationCenterGuideCardModel(
-                title: "当前生效锚点与智能结果",
+                title: localized(
+                    "configuration.guide.anchor.title",
+                    fallback: "当前生效锚点与智能结果"
+                ),
                 note:
-                    "当前生效锚点和照片时间会组合成 1 个智能结果，并可插入任意区域。",
+                    localized(
+                        "configuration.guide.anchor.note",
+                        fallback: "当前生效锚点和照片时间会组合成 1 个智能结果，并可插入任意区域。"
+                    ),
                 systemImage:
                     "calendar.badge.clock"
             ),
             ConfigurationCenterGuideCardModel(
-                title: "输出与相册保存",
+                title: localized(
+                    "configuration.guide.output.title",
+                    fallback: "输出与相册保存"
+                ),
                 note:
-                    "默认生成处理过的新图片，原图保持不变。",
+                    localized(
+                        "configuration.guide.output.note",
+                        fallback: "默认生成处理过的新图片，原图保持不变。"
+                    ),
                 systemImage:
                     "square.and.arrow.down"
             ),
             ConfigurationCenterGuideCardModel(
-                title: "关于时光记",
+                title: localized(
+                    "configuration.guide.about.title",
+                    fallback: "关于时光记"
+                ),
                 note:
-                    "帮助用户阅读回忆，而不只是保存照片。",
+                    localized(
+                        "configuration.guide.about.note",
+                        fallback: "帮助用户阅读回忆，而不只是保存照片。"
+                    ),
                 systemImage: "info.circle"
             )
         ]
@@ -978,8 +1035,14 @@ struct ConfigurationCenteriOSView: View {
         [ConfigurationCenterSidebarSubjectGroup] {
         [
             ConfigurationCenterSidebarSubjectGroup(
-                title: "人物对象",
-                addTitle: "新增人物对象",
+                title: localized(
+                    "configuration.sidebar.people",
+                    fallback: "人物对象"
+                ),
+                addTitle: localized(
+                    "configuration.sidebar.add_people",
+                    fallback: "新增人物对象"
+                ),
                 items:
                     session.state.subjects
                     .filter {
@@ -994,8 +1057,14 @@ struct ConfigurationCenteriOSView: View {
                 }
             ),
             ConfigurationCenterSidebarSubjectGroup(
-                title: "事件对象",
-                addTitle: "新增事件对象",
+                title: localized(
+                    "configuration.sidebar.events",
+                    fallback: "事件对象"
+                ),
+                addTitle: localized(
+                    "configuration.sidebar.add_event",
+                    fallback: "新增事件对象"
+                ),
                 items:
                     session.state.subjects
                     .filter {
@@ -1017,32 +1086,32 @@ struct ConfigurationCenteriOSView: View {
         [ConfigurationCenterSidebarItem] {
         [
             sidebarCardItem(
-                title: "图标",
-                subtitle: "图标装饰",
+                title: localized("configuration.sidebar.icon", fallback: "图标"),
+                subtitle: localized("configuration.sidebar.icon_detail", fallback: "图标装饰"),
                 systemImage: "person.crop.circle",
                 region: .icon
             ),
             sidebarCardItem(
-                title: "记录",
-                subtitle: "卡片左上",
+                title: localized("configuration.sidebar.record", fallback: "记录"),
+                subtitle: localized("configuration.sidebar.record_detail", fallback: "卡片左上"),
                 systemImage: "camera.fill",
                 region: .slotA
             ),
             sidebarCardItem(
-                title: "时间",
-                subtitle: "卡片左下",
+                title: localized("configuration.sidebar.time", fallback: "时间"),
+                subtitle: localized("configuration.sidebar.time_detail", fallback: "卡片左下"),
                 systemImage: "calendar",
                 region: .slotB
             ),
             sidebarCardItem(
-                title: "拍摄信息",
-                subtitle: "卡片右上",
+                title: localized("configuration.sidebar.capture", fallback: "拍摄信息"),
+                subtitle: localized("configuration.sidebar.capture_detail", fallback: "卡片右上"),
                 systemImage: "scope",
                 region: .slotC
             ),
             sidebarCardItem(
-                title: "记忆内容",
-                subtitle: "卡片右下 · 默认承载",
+                title: localized("configuration.sidebar.memory", fallback: "记忆内容"),
+                subtitle: localized("configuration.sidebar.memory_detail", fallback: "卡片右下 · 默认承载"),
                 systemImage: "text.quote",
                 region: .slotD
             )
@@ -1053,8 +1122,8 @@ struct ConfigurationCenteriOSView: View {
         [ConfigurationCenterSidebarItem] {
         [
             ConfigurationCenterSidebarItem(
-                title: "智能模块",
-                subtitle: "生成、承载与智能写入",
+                title: localized("configuration.sidebar.smart", fallback: "智能模块"),
+                subtitle: localized("configuration.sidebar.smart_detail", fallback: "生成、承载与智能写入"),
                 systemImage: "text.badge.checkmark",
                 isSelected:
                     selectedPanel == .memoryModule,
@@ -1072,8 +1141,8 @@ struct ConfigurationCenteriOSView: View {
         [ConfigurationCenterSidebarItem] {
         [
             ConfigurationCenterSidebarItem(
-                title: "输出",
-                subtitle: "处理过的图片",
+                title: localized("configuration.sidebar.output", fallback: "输出"),
+                subtitle: localized("configuration.sidebar.output_detail", fallback: "处理过的图片"),
                 systemImage: MemoMarkSymbol.output.name,
                 isSelected:
                     selectedPanel == .output,
@@ -1091,8 +1160,8 @@ struct ConfigurationCenteriOSView: View {
         [ConfigurationCenterSidebarItem] {
         [
             ConfigurationCenterSidebarItem(
-                title: "配置说明",
-                subtitle: "对象、锚点与输出原则",
+                title: localized("configuration.sidebar.guide", fallback: "配置说明"),
+                subtitle: localized("configuration.sidebar.guide_detail", fallback: "对象、锚点与输出原则"),
                 systemImage: MemoMarkSymbol.help.name,
                 isSelected:
                     selectedPanel == .configurationGuide,
@@ -1128,6 +1197,13 @@ struct ConfigurationCenteriOSView: View {
                 )
             }
         )
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage.localized(key: key, fallback: fallback)
     }
 
     private func sidebarCardItem(
@@ -1619,7 +1695,8 @@ struct ConfigurationCenteriOSView: View {
                 processingDiagnosticsSnapshot:
                     processingDiagnosticsSnapshot,
                 events:
-                    shareDiagnosticEvents
+                    shareDiagnosticEvents,
+                language: .interfaceStored
             )
     }
 

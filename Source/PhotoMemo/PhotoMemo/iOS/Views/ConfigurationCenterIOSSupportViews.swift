@@ -375,6 +375,7 @@ struct IOSDetailPanel<Content: View>: View {
 
 struct IOSRegionComposer: View {
 
+    let language: MemoMarkLanguage
     let region: CardRegion
     let configurationOptions: [IOSRegionConfigurationOption]
     @Binding var selectedConfigurationID: String
@@ -412,7 +413,10 @@ struct IOSRegionComposer: View {
 
             if isRenamingConfiguration {
                 TextField(
-                    "配置名称",
+                    language.localized(
+                        key: "configuration.editor.configuration_name",
+                        fallback: "配置名称"
+                    ),
                     text: $configurationName
                 )
                 .textFieldStyle(.plain)
@@ -521,7 +525,10 @@ struct IOSRegionComposer: View {
             }
 
             HStack(spacing: 8) {
-                Text("修改后保存为当前区域配置。")
+                Text(language.localized(
+                    key: "configuration.editor.save_hint",
+                    fallback: "修改后保存为当前区域配置。"
+                ))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -533,7 +540,15 @@ struct IOSRegionComposer: View {
                     onSaveConfiguration()
                 } label: {
                     Label(
-                        isSaved ? "已保存" : "保存配置",
+                        isSaved
+                        ? language.localized(
+                            key: "configuration.editor.saved",
+                            fallback: "已保存"
+                        )
+                        : language.localized(
+                            key: "configuration.editor.save",
+                            fallback: "保存配置"
+                        ),
                         systemImage:
                             isSaved
                             ? "checkmark.circle.fill"
@@ -623,15 +638,36 @@ struct IOSRegionComposer: View {
 
     private var memorySystemModuleStrip: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("系统模块")
+            Text(language.localized(
+                key: "configuration.modules.system",
+                fallback: "系统模块"
+            ))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
 
             HStack(spacing: 6) {
-                systemModuleChip(title: "对象昵称", value: "Subject")
-                systemModuleChip(title: "智能结果", value: "Smart")
-                systemModuleChip(title: "时间锚点", value: "Anchor")
+                systemModuleChip(
+                    title: language.localized(
+                        key: "configuration.modules.subject",
+                        fallback: "对象昵称"
+                    ),
+                    value: "Subject"
+                )
+                systemModuleChip(
+                    title: language.localized(
+                        key: "configuration.modules.smart",
+                        fallback: "智能结果"
+                    ),
+                    value: "Smart"
+                )
+                systemModuleChip(
+                    title: language.localized(
+                        key: "configuration.modules.anchor",
+                        fallback: "时间锚点"
+                    ),
+                    value: "Anchor"
+                )
             }
         }
     }

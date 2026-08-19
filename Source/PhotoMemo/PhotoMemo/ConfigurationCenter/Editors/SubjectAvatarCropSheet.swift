@@ -276,7 +276,12 @@ struct SubjectAvatarCropSheet: View {
                     ),
                 in: avatarZoomRange
             )
-            .accessibilityLabel("头像缩放")
+            .accessibilityLabel(Text(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "accessibility.avatar_zoom",
+                    fallback: "Avatar zoom"
+                )
+            ))
             .accessibilityValue("\(Int(committedZoomScale * 100))%")
 
             Image(systemName: "photo.fill")
