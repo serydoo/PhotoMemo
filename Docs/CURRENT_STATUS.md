@@ -1,16 +1,16 @@
 # MemoMark Current Status
 
-## 2026-08-19 MemoMark 2.1.3 (86) 多语言与项目整理候选
+## 2026-08-19 MemoMark 2.1.3 (86) 多语言与项目整理发布候选
 
-- 本轮以 2026-08-14 `2.1.2 (85)` 同步节点、基线提交 `2dc0f21` 为范围起点，整理到 2026-08-19 当前工作树；版本字段按用户要求统一为 marketing version `2.1.3`、build `86`。
+- 本轮以 2026-08-14 `2.1.2 (85)` 同步节点、基线提交 `2dc0f21` 为范围起点，整理到 2026-08-19 当前工作树；版本字段按用户要求统一为 marketing version `2.1.3`、build `86`，并已合并到本地 `main`（合并提交 `62e6775`）。
 - 正式整理范围包括：Interface Language / Preset Output Language 生命周期隔离；时间与记忆叙事 Formatter；Legacy Output 显式语言 Adapter；简体中文、English、日本語、한국어资源与主 App/Share/Widget/macOS/Accessibility active surface；空结果、批量结果、通知直达任务和恢复提示。
 - 应用内 Recent Updates 已更新为本轮共同事实源，四语言资源保持 key parity；`CHANGELOG.md`、README、发布目录、HANDOFF 与四份 `2026-08-19-2.1.3-*` 材料已同步，发布资料已使用中文文件名。
 - 本轮不改变 Renderer、CanonicalGeometry、Memory Engine 语义所有权、Live Photo Pipeline、EXIF、Export、PhotoKit 权限或 Share 数据流边界。
 - 用户已明确跳过 JPEG、HEIC、Live Photo、EXIF、Batch Export 媒体回归；该范围记录为本轮未执行/不认证，不作为当前版本构建阻塞。
 - 聚焦本地化/版本/输出语言测试通过：`45 passed / 0 failed / 0 skipped`，结果包为 `/tmp/MemoMark213Focused-20260819.xcresult`；覆盖资源 parity、active UI、四语言 formatter/narrative、Legacy Output、Release Notes 和 Interface/Output Language 隔离。
-- iOS、macOS、Share Extension、Widget Extension 和测试 target 的版本字段均更新为 `2.1.3 (86)`；本轮重新构建会使用独立 DerivedData，并在合并后再次核验产物版本。
+- iOS、macOS、Share Extension、Widget Extension 和测试 target 的版本字段均更新为 `2.1.3 (86)`；合并后的四个 scheme 均重新构建通过，产物版本已再次核验为 `2.1.3 (86)`。
 - 上一轮已安装到 iPhone 17 Pro Max 的仍是 `2.1.3 (85)`；本轮只更新源码与发布候选，尚未重新安装 86，也未清理设备数据。
-- 本轮补齐了 ProductionDiagnosticEvent 与通知深链路径的非隔离修复；相关 focused tests 通过，四个 scheme 本地构建通过，剩余 warning 为既有系统 API 弃用/App Intents 处理器提示。当前状态：`Version Locked; Main Merge Verification Pending; Release Evidence Open`。
+- 本轮补齐了 ProductionDiagnosticEvent 与通知深链路径的非隔离修复；相关 focused tests 为 `21 passed / 0 failed`，合并后的四个 scheme 本地构建通过，截图中两组 actor-isolation warning 扫描为 0，剩余 warning 为既有系统 API 弃用/App Intents 处理器提示。当前状态：`Version Locked; Main Merged; Main Build Verified; Release Evidence Open`。
 
 ## 2026-08-18 MemoMark 2.1.2 (86) User Delivery Reliability Sync Preparation
 
