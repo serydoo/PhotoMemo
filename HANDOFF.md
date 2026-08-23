@@ -1,5 +1,20 @@
 # MemoMark Handoff
 
+## 2026-08-24 MemoMark 2.2.1 (87) Verification Follow-up
+
+- The initially incomplete release-note check was rerun successfully: all four
+  `V1ReleaseNotesContractTests` assertions passed. A complete serial macOS
+  `PhotoMemoTests` run for the current tree also passed with `xcodebuild` exit
+  code `0` (result bundle `/tmp/PhotoMemo221FullSerial.xcresult`).
+- Follow-up closed a Japanese/Korean marriage-anniversary localization leak and
+  an even-pixel Classic White canvas edge gap. The related settings and
+  Configuration Center source-contract tests now assert the localized/current
+  UI contracts rather than retired literal copy.
+- The release checkpoint is now `Source Checkpoint Ready; Release Evidence
+  Open; External Distribution Not Authorized`. The four `2.1.4` drafts remain
+  intentionally untracked; no TestFlight upload, App Store submission, or
+  production-certification claim is authorized.
+
 ## 2026-08-24 MemoMark 2.2.1 (87) Release Preparation
 
 - The release scope begins at the last pushed `2.1.3 (86)` checkpoint

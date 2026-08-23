@@ -386,14 +386,6 @@ struct ClassicWhiteCardRenderer: View {
                 )
             }
         }
-        .aspectRatio(
-            ClassicWhiteRenderer
-                .layout(for: orientation)
-                .finalAspectRatio(
-                    imageAspectRatio: imageAspectRatio
-                ),
-            contentMode: .fit
-        )
     }
 
     private func infoBar(

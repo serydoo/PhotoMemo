@@ -700,7 +700,7 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(configurationPageSource.contains("pageSubtitle: interfaceLanguage.localized("))
         #expect(configurationPageSource.contains("key: \"configuration.page.subtitle\""))
-        #expect(configurationPageSource.contains("fallback: \"围绕一个人和一个重要时刻，决定照片如何呈现。\""))
+        #expect(configurationPageSource.contains("fallback: \"围绕谁、从哪个时刻开始，再决定照片如何表达、卡片采用什么样式。\""))
 
         let previewStart = try #require(
             supportSource.range(of: "struct V1PreviewCard")?.lowerBound

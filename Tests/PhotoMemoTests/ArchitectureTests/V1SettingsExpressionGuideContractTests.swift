@@ -100,7 +100,7 @@ struct V1SettingsExpressionGuideContractTests {
         #expect(source.contains(".sheet(isPresented: $showsExpressionGuide)"))
         #expect(source.contains("private var expressionGuideSheet"))
         #expect(source.contains("V1SettingsExpressionGuide(language: interfaceLanguage)"))
-        #expect(source.contains("Button(\"完成\")"))
+        #expect(source.contains("key: \"common.done\""))
         #expect(source.contains(".presentationDetents([.medium, .large])"))
     }
 

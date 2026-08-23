@@ -1,5 +1,24 @@
 # MemoMark Current Status
 
+## 2026-08-24 MemoMark 2.2.1 (87) Release Evidence Follow-up
+
+- Re-ran the incomplete release-note test and it passed all four
+  `V1ReleaseNotesContractTests` assertions. A complete serial macOS
+  `PhotoMemoTests` run for the current `2.2.1 (87)` tree then exited `0`; its
+  result bundle is `/tmp/PhotoMemo221FullSerial.xcresult`.
+- The full run exposed and closed a Japanese/Korean anniversary-localization
+  regression: marriage annual output now uses the selected output language's
+  native marriage term instead of leaking a Chinese anchor title. It also
+  closed a Classic White even-pixel canvas edge gap by allowing the renderer to
+  fill the already canonical output canvas.
+- Two source-contract tests were aligned to accepted localized UI behavior:
+  the settings guide's localized Done action and the current Configuration
+  Center subtitle. They no longer require obsolete hard-coded production copy.
+- Current state is `Source Checkpoint Ready; Release Evidence Open; External
+  Distribution Not Authorized`. The remaining `2026-08-22-2.1.4-*` documents
+  stay intentionally local-only. TestFlight, App Store, and production
+  certification remain outside this work.
+
 ## 2026-08-24 MemoMark 2.2.1 (87) Release Preparation
 
 - Located and applied `Docs/07_Releases/RELEASE_SYNC_STANDARD.md` using the

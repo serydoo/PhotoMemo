@@ -677,7 +677,17 @@ private extension MemoryAnchorExpressionResolver {
                 return language == .japanese
                     ? "あと\(days)日で\(subject)の\(annualOccurrence.yearsAtOccurrence)歳の誕生日"
                     : "\(days)일 후 \(subject)의 \(annualOccurrence.yearsAtOccurrence)번째 생일입니다"
-            case .marriage, .relationship, .exam, .custom:
+            case .marriage:
+                let marriageTitle = language == .japanese ? "結婚" : "결혼"
+                if days == 0 {
+                    return language == .japanese
+                        ? "今日は\(marriageTitle)\(annualOccurrence.yearsAtOccurrence)周年です"
+                        : "오늘은 \(marriageTitle) \(annualOccurrence.yearsAtOccurrence)주년입니다"
+                }
+                return language == .japanese
+                    ? "あと\(days)日で\(marriageTitle)\(annualOccurrence.yearsAtOccurrence)周年です"
+                    : "\(days)일 후 \(marriageTitle) \(annualOccurrence.yearsAtOccurrence)주년입니다"
+            case .relationship, .exam, .custom:
                 if days == 0 {
                     return language == .japanese
                         ? "今日は\(title)\(annualOccurrence.yearsAtOccurrence)周年です"
