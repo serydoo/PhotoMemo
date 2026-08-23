@@ -28,6 +28,19 @@
   Not Authorized`. Current-build verification, Git staging/commit/push,
   TestFlight upload, and App Store submission remain separate actions.
 
+## 2026-08-24 MemoMark 2.2.1 (87) GitHub Source Sync Completed
+
+- The authorized source checkpoint was committed as `21790d2`
+  (`Prepare MemoMark 2.2.1 build 87 source sync`) and pushed from `main` to
+  `origin/main`. Local `HEAD` and `origin/main` resolve to the same commit.
+- The push contains the accepted source, tests, documentation, PDR/ADR,
+  localization, project version fields, and `2.2.1 (87)` release package.
+  The four superseded `2026-08-22-2.1.4-*` Draft files remain local-only and
+  were intentionally not staged or pushed.
+- GitHub synchronization is a source checkpoint only. The `Release Evidence
+  Open` boundary remains unchanged: no TestFlight upload, App Store submission,
+  external release, or production-certification claim has been made.
+
 ## 2026-08-23 Configuration Center Disclosure Pass Device Delivery
 
 - Built the signed `PhotoMemoiOS` Debug configuration for the paired physical
