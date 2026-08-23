@@ -61,7 +61,7 @@ struct ShareLivePhotoRecovery {
                 originalFileName:
                     importRecord.item.originalFileName,
                 sourceIdentifier:
-                    importRecord.item.sourceIdentifier,
+                    nil,
                 contentTypeIdentifier:
                     resolvedStaticContentTypeIdentifier,
                 livePhotoRecoveryHint:

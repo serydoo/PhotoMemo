@@ -681,7 +681,9 @@ struct LivePhotoBatchQueueExecutionTests {
                 UTType("com.apple.live-photo")
             )
         let processor =
-            RecordingLivePhotoBatchTaskProcessor()
+            RecordingLivePhotoBatchTaskProcessor(
+                failure: .expected
+            )
         let outputFilenameSequenceStore =
             LivePhotoOutputFilenameSequenceStore(
                 storageURL:
@@ -765,8 +767,8 @@ struct LivePhotoBatchQueueExecutionTests {
         )
     }
 
-    @Test("Only explicit static output permits a Live Photo task to use the still-image route")
-    func staticFallbackPolicyRequiresExplicitStaticOutput() throws {
+    @Test("Live Photo inputs without a recoverable source are rejected at queue admission")
+    func unavailableLivePhotoSourceIsRejectedAtQueueAdmission() throws {
         let livePhotoType =
             try #require(
                 UTType("com.apple.live-photo")
@@ -786,28 +788,47 @@ struct LivePhotoBatchQueueExecutionTests {
 
         #expect(
             BatchTaskMemoryPolicy
-                .shouldRejectUnavailableLivePhotoMotion(
-                    for: task,
-                    usesLivePhotoProcessing: false,
-                    outputMode: .originalFormat
+                .shouldRejectUnavailableLivePhotoSource(
+                    for: task
                 )
         )
-        #expect(
-            !BatchTaskMemoryPolicy
-            .shouldRejectUnavailableLivePhotoMotion(
-                for: task,
-                usesLivePhotoProcessing: false,
-                outputMode: .staticImage
+    }
+
+    @MainActor
+    @Test("Explicit static output never falls back to an arbitrary Live Photo URL")
+    func staticLivePhotoOutputFailsWithoutRecoverableStillResource() async throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "PhotoMemo.StaticLivePhotoAdmission.\(UUID().uuidString)",
+                isDirectory: true
             )
+        defer {
+            try? FileManager.default.removeItem(at: rootURL)
+        }
+
+        let processor = LivePhotoBatchTaskProcessor(
+            assetLoader: RecordingLivePhotoAssetLoader(),
+            pairComposer: RecordingLivePhotoPairComposer(),
+            assetWriter: RecordingLivePhotoAssetWriter(),
+            temporaryRootURL: rootURL
         )
-        #expect(
-            !BatchTaskMemoryPolicy
-            .shouldRejectUnavailableLivePhotoMotion(
-                for: task,
-                usesLivePhotoProcessing: true,
-                outputMode: .originalFormat
+        let task = BatchTask(
+            sourceURL: try SyntheticFixtureLibrary.fixtureURL(.portraitJPEG),
+            fileName: "IMG_6093.jpg",
+            sourceIdentifier: nil,
+            contentTypeIdentifier: try #require(
+                UTType("com.apple.live-photo")
+            ).identifier
+        )
+
+        await #expect(
+            throws: LivePhotoBatchTaskProcessingError.assetLocalIdentifierMissing
+        ) {
+            _ = try await processor.process(
+                task: task,
+                configuration: makeConfiguration(outputMode: .staticImage)
             )
-        )
+        }
     }
 
     @MainActor
@@ -1155,6 +1176,8 @@ struct LivePhotoBatchQueueExecutionTests {
             RecordingLivePhotoPairComposer()
         let writer =
             RecordingLivePhotoAssetWriter()
+        let staticImageExporter =
+            SuccessfulPhotoLibraryExportService()
         let suiteName =
             "PhotoMemo.RealLivePhotoSourceBundle.\(UUID().uuidString)"
         let defaults = try #require(
@@ -1169,6 +1192,7 @@ struct LivePhotoBatchQueueExecutionTests {
                 assetLoader: loader,
                 pairComposer: composer,
                 assetWriter: writer,
+                photoLibraryExportService: staticImageExporter,
                 diagnosticsDefaults: defaults,
                 outputFilenameSequenceStore:
                     LivePhotoOutputFilenameSequenceStore(
@@ -1222,6 +1246,20 @@ struct LivePhotoBatchQueueExecutionTests {
             saveRequest.pairedVideoOriginalFilename
             == "IMG_6093 (1).mov"
         )
+
+        let staticResult = try await processor.process(
+            task: task,
+            configuration: makeConfiguration(outputMode: .staticImage)
+        )
+
+        #expect(
+            staticResult.saveResult.assetLocalIdentifier
+            == "rendered-static-photo-asset"
+        )
+        #expect(staticImageExporter.savedImageURLs.count == 1)
+        #expect(composer.requests.count == 1)
+        #expect(writer.requests.count == 1)
+        #expect(staticResult.notificationSourceURL != nil)
     }
 }
 
@@ -1317,6 +1355,8 @@ private extension LivePhotoBatchQueueExecutionTests {
 private final class SuccessfulPhotoLibraryExportService:
     PhotoLibraryExporting {
 
+    private(set) var savedImageURLs: [URL] = []
+
     func fetchAlbumOptions() async throws
     -> [PhotoAlbumOption] {
         [.automatic]
@@ -1333,11 +1373,12 @@ private final class SuccessfulPhotoLibraryExportService:
     }
 
     func saveImageResult(
-        at _: URL,
+        at fileURL: URL,
         metadata _: PhotoMetadata,
         preferredAlbumIdentifier _: String?
     ) async throws -> PhotoLibrarySaveResult {
-        PhotoLibrarySaveResult(
+        savedImageURLs.append(fileURL)
+        return PhotoLibrarySaveResult(
             albumTitle: "MemoMark",
             assetLocalIdentifier:
                 "rendered-static-photo-asset"
@@ -1349,12 +1390,22 @@ private final class SuccessfulPhotoLibraryExportService:
 private final class RecordingLivePhotoBatchTaskProcessor:
     LivePhotoBatchTaskProcessing {
 
+    enum Failure: Error {
+        case expected
+    }
+
     struct Request {
         let task: BatchTask
         let configuration: BatchConfigurationSnapshot
     }
 
     private(set) var requests: [Request] = []
+
+    let failure: Failure?
+
+    init(failure: Failure? = nil) {
+        self.failure = failure
+    }
 
     func process(
         task: BatchTask,
@@ -1366,6 +1417,10 @@ private final class RecordingLivePhotoBatchTaskProcessor:
                 configuration: configuration
             )
         )
+
+        if let failure {
+            throw failure
+        }
 
         return LivePhotoBatchTaskResult(
             saveResult:

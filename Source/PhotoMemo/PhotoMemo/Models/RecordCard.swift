@@ -1,10 +1,22 @@
 import Foundation
 
+enum RecordCardPresentationStyle:
+    String,
+    Codable,
+    CaseIterable,
+    Hashable {
+
+    case classicWhite
+    case minimal
+}
+
 struct RecordCard: Identifiable, Hashable {
 
     let id: UUID
 
     var template: Template
+
+    var presentationStyle: RecordCardPresentationStyle
 
     var metadata: PhotoMetadata
 
@@ -39,6 +51,7 @@ struct RecordCard: Identifiable, Hashable {
     init(
         id: UUID = UUID(),
         template: Template = .classicWhite,
+        presentationStyle: RecordCardPresentationStyle = .classicWhite,
         metadata: PhotoMetadata,
         context: MetadataContext,
         language: MemoMarkLanguage = .simplifiedChinese,
@@ -53,6 +66,7 @@ struct RecordCard: Identifiable, Hashable {
     ) {
         self.id = id
         self.template = template
+        self.presentationStyle = presentationStyle
         self.metadata = metadata
         self.context = context
         self.language = language

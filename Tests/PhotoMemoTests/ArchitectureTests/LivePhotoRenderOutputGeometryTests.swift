@@ -64,23 +64,29 @@ struct LivePhotoRenderOutputGeometryTests {
             portraitGeometry.footerFrame.height
             == portraitFooterHeight
         )
-        #expect(
-            abs(
-                landscapeFooterHeight
-                - 3024
-                * ClassicWhiteRenderer
-                .layout(for: .landscape)
-                .borderToImageHeightRatio
-            ) <= 0.5
+        let expectedLandscapeFooterHeight = Int(
+            ceil(
+                3024
+                    * ClassicWhiteRenderer
+                    .layout(for: .landscape)
+                    .borderToImageHeightRatio
+            )
+        )
+        let expectedPortraitFooterHeight = Int(
+            ceil(
+                4032
+                    * ClassicWhiteRenderer
+                    .layout(for: .portrait)
+                    .borderToImageHeightRatio
+            )
         )
         #expect(
-            abs(
-                portraitFooterHeight
-                - 4032
-                * ClassicWhiteRenderer
-                .layout(for: .portrait)
-                .borderToImageHeightRatio
-            ) <= 0.5
+            Int(landscapeFooterHeight) == expectedLandscapeFooterHeight
+                || Int(landscapeFooterHeight) == expectedLandscapeFooterHeight + 1
+        )
+        #expect(
+            Int(portraitFooterHeight) == expectedPortraitFooterHeight
+                || Int(portraitFooterHeight) == expectedPortraitFooterHeight + 1
         )
         #expect(
             landscapeGeometry.footerFrame.height
@@ -88,8 +94,8 @@ struct LivePhotoRenderOutputGeometryTests {
         )
     }
 
-    @Test("Extracts the footer image from the V1 rendered output bottom area")
-    func extractsFooterImageFromRenderedOutputBottomArea() throws {
+    @Test("Extracts the footer image from the canonical footer frame")
+    func extractsFooterImageFromCanonicalFooterFrame() throws {
         let renderedImage =
             try makeRenderedOutputImage(
                 width: 40,
@@ -154,6 +160,30 @@ struct LivePhotoRenderOutputGeometryTests {
             ) == .blue
         )
     }
+
+    @Test("Appended output geometry keeps photo and footer as distinct regions")
+    func acceptsAppendedOutputGeometry() throws {
+        let descriptor = try FixedFooterOverlayDescriptor(
+            canvasSize: CGSize(width: 40, height: 40),
+            photoFrame: CGRect(x: 0, y: 10, width: 40, height: 30),
+            footerFrame: CGRect(x: 0, y: 0, width: 40, height: 10),
+            footerImage: makeRenderedOutputImage(
+                width: 40,
+                photoHeight: 10,
+                footerHeight: 0
+            )
+        )
+
+        #expect(descriptor.placement == .footer)
+        #expect(descriptor.canvasBackground == .opaqueWhite)
+        #expect(descriptor.photoFrame == CGRect(x: 0, y: 10, width: 40, height: 30))
+        #expect(descriptor.footerFrame == CGRect(x: 0, y: 0, width: 40, height: 10))
+        #expect(
+            descriptor.photoFrame
+            .intersection(descriptor.footerFrame)
+            .height == 0
+        )
+    }
 }
 
 private extension LivePhotoRenderOutputGeometryTests {
@@ -188,7 +218,7 @@ private extension LivePhotoRenderOutputGeometryTests {
         footerHeight: Int
     ) throws -> CGImage {
         let height =
-            photoHeight + footerHeight
+            max(photoHeight + footerHeight, 1)
         let bytesPerPixel = 4
         let bytesPerRow =
             width * bytesPerPixel
@@ -199,10 +229,14 @@ private extension LivePhotoRenderOutputGeometryTests {
             )
 
         for row in 0 ..< height {
+            // The export artifact guard writes the footer into the
+            // canonical footer band at y = 0, followed by the preserved
+            // photo area. This mirrors the production output consumed by
+            // `overlayDescriptor`.
             let color: RGBAColor =
-                row < photoHeight
-                ? .red
-                : .blue
+                row < footerHeight
+                ? .blue
+                : .red
 
             for column in 0 ..< width {
                 let offset =

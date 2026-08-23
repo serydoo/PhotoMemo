@@ -84,7 +84,7 @@ struct V1DesignFreezePolishContractTests {
                 "resolvedMemoryWriteText: resolvedMemoryWriteText"
             )
         )
-        #expect(output.contains("title: \"新照片\""))
+        #expect(output.contains("output.result.title"))
         #expect(
             output.contains(
                 "title: presentation.defaultContentTitle"
@@ -96,14 +96,10 @@ struct V1DesignFreezePolishContractTests {
             )
         )
         #expect(output.contains("Text(presentation.resolvedTitle)"))
-        #expect(output.contains("Picker(\"照片形式\""))
+        #expect(output.contains("output.result.photo_format"))
         #expect(output.contains("case .originalFormat:"))
         #expect(output.contains("case .staticImage:"))
-        #expect(
-            output.contains(
-                "图库中的照片说明显示和搜索能力，可能随 iOS 版本有所不同。"
-            )
-        )
+        #expect(output.contains("output.memory_write.system_note"))
         #expect(output.contains("V1OutputDashedDivider()"))
         #expect(output.contains(".foregroundStyle(Color.primary.opacity(0.72))"))
         #expect(output.contains("@Environment(\\.accessibilityReduceMotion)"))
@@ -164,18 +160,18 @@ struct V1DesignFreezePolishContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1WelcomePresentation.swift"
         )
 
-        #expect(task.contains("?? \"打开照片 App\""))
+        #expect(task.contains("task.photoLibrary.hint"))
         #expect(task.contains(".saveDestinationText"))
         #expect(task.contains(".foregroundStyle(.secondary)"))
         #expect(task.contains("systemImage: \"clock\""))
-        #expect(welcome.contains("Text(\"对象名称\")"))
+        #expect(welcome.contains("对象名称"))
         #expect(welcome.contains("Text(\"*\")"))
         #expect(welcome.contains(".foregroundStyle(.red)"))
         #expect(welcome.contains("showsNameRequiredAlert = true"))
-        #expect(welcome.contains("Section(\"重要日期\")"))
-        #expect(welcome.contains("Text(\"从一个人和一个重要时刻开始。\")"))
+        #expect(welcome.contains("重要日期"))
+        #expect(welcome.contains("从一个人和一个重要时刻开始。"))
         #expect(welcome.contains("isFirstRunConfigurationReady"))
-        #expect(welcome.contains("Text(isSaving ? \"正在保存\" : \"完成设置\")"))
+        #expect(welcome.contains("isSaving"))
     }
 }
 

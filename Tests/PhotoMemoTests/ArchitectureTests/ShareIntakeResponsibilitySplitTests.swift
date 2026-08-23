@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 @Suite("Share intake responsibility split")
 struct ShareIntakeResponsibilitySplitTests {
 
-    @Test("Provider selector prioritizes Live Photo and preserves static fallback")
+    @Test("Provider selector prioritizes Live Photo and keeps media truth explicit")
     func providerSelectorPrioritizesLivePhoto() throws {
         let livePhotoType =
             try #require(
@@ -56,8 +56,8 @@ struct ShareIntakeResponsibilitySplitTests {
         )
     }
 
-    @Test("Original-format Live Photo intake stops after a provider timeout instead of silently becoming static")
-    func originalFormatStopsAfterLivePhotoProviderTimeout() {
+    @Test("Original-format Live Photo intake attempts recoverable static handoff after provider failure")
+    func originalFormatAttemptsRecoverableStaticHandoffAfterLivePhotoProviderFailure() {
         #expect(
             LivePhotoStaticFallbackPolicy
                 .shouldStopAfterLiveRepresentationFailure(
@@ -66,27 +66,27 @@ struct ShareIntakeResponsibilitySplitTests {
                         V1MediaOutputMode
                         .originalFormat
                         .rawValue
-                )
+                ) == false
         )
         #expect(
             LivePhotoStaticFallbackPolicy
                 .shouldStopAfterLiveRepresentationFailure(
                     errorCode: 3010,
                     mediaOutputModeRawValue: nil
-                )
+                ) == false
         )
         #expect(
-            !LivePhotoStaticFallbackPolicy
+            LivePhotoStaticFallbackPolicy
             .shouldStopAfterLiveRepresentationFailure(
                 errorCode: 3010,
                 mediaOutputModeRawValue:
                     V1MediaOutputMode
                     .staticImage
                     .rawValue
-            )
+            ) == false
         )
         #expect(
-            !LivePhotoStaticFallbackPolicy
+            LivePhotoStaticFallbackPolicy
             .shouldStopAfterLiveRepresentationFailure(
                 errorCode: 3010,
                 mediaOutputModeRawValue: nil,
@@ -96,22 +96,22 @@ struct ShareIntakeResponsibilitySplitTests {
                     .LivePhotoPolicy
                     .staticImageOnly
                     .rawValue
-            )
+            ) == false
         )
         #expect(
-            !LivePhotoStaticFallbackPolicy
+            LivePhotoStaticFallbackPolicy
             .shouldStopAfterLiveRepresentationFailure(
                 errorCode: 3001,
                 mediaOutputModeRawValue:
                     V1MediaOutputMode
                     .originalFormat
                     .rawValue
-            )
+            ) == false
         )
     }
 
-    @Test("Share intake freezes the output policy before loading providers and stops original-format timeout fallback")
-    func shareIntakeConnectsOutputPolicyToProviderTimeoutHandling() throws {
+    @Test("Share intake freezes the output policy before loading providers and uses recoverable Live Photo static handoff")
+    func shareIntakeConnectsOutputPolicyToRecoverableLivePhotoStaticHandoff() throws {
         let source = try [
             "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift",
             "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
@@ -145,9 +145,11 @@ struct ShareIntakeResponsibilitySplitTests {
         )
         #expect(
             source.contains(
-                "return .failed(\n                    failureContext"
+                "recordStaticLivePhotoPayloadIfNeeded"
             )
         )
+        #expect(!source.contains("livePhotoStaticFallbackRejected"))
+        #expect(!source.contains("static fallback is not permitted"))
     }
 
     @Test("Share intake declares four focused collaborators")

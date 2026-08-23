@@ -501,6 +501,7 @@ private extension ShareCoordinator {
     ) -> PayloadContext {
 
         var payload = context.payload
+        payload.sourceIdentifier = nil
         payload.contentTypeIdentifier =
             UTType("com.apple.live-photo")?
             .identifier

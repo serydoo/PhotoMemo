@@ -31,10 +31,8 @@ struct LocalizationResourceParityTests {
             parsed.first.map { Set($0.resource.entries.keys) }
         )
 
-        #expect(referenceKeys.count == 1341)
-
         for resource in parsed {
-            #expect(resource.resource.entries.count == 1341)
+            #expect(resource.resource.entries.count == referenceKeys.count)
             #expect(Set(resource.resource.entries.keys) == referenceKeys)
             #expect(resource.resource.duplicateKeys.isEmpty)
             #expect(resource.resource.emptyKeys.isEmpty)

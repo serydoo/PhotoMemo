@@ -264,7 +264,7 @@ struct BatchQueueExecutionContractTests {
                 UTType("com.apple.live-photo")
             ).identifier
         )
-        let staticFallbackTask = BatchTask(
+        let unavailableLivePhotoTask = BatchTask(
             sourceURL: URL(fileURLWithPath: "/tmp/IMG_1002.jpeg"),
             contentTypeIdentifier: try #require(
                 UTType("com.apple.live-photo")
@@ -283,13 +283,13 @@ struct BatchQueueExecutionContractTests {
             )
         )
         #expect(
-            !BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(
-                for: staticFallbackTask
+            BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(
+                for: unavailableLivePhotoTask
             )
         )
         #expect(
             BatchTaskMemoryPolicy.staticImportContentTypeIdentifier(
-                for: staticFallbackTask,
+                for: unavailableLivePhotoTask,
                 usesLivePhotoProcessing: false
             ) == UTType.jpeg.identifier
         )
@@ -298,6 +298,12 @@ struct BatchQueueExecutionContractTests {
                 for: identifiedLivePhotoTask,
                 usesLivePhotoProcessing: true
             ) == identifiedLivePhotoTask.contentTypeIdentifier
+        )
+
+        #expect(
+            BatchTaskMemoryPolicy.processingRoute(
+                for: unavailableLivePhotoTask
+            ) == .livePhoto
         )
     }
 
@@ -459,6 +465,54 @@ struct BatchQueueExecutionContractTests {
 
         #expect(task.phase == .queued)
         #expect(task.failure == nil)
+        #expect(!context.store.isProcessing)
+    }
+
+    @MainActor
+    @Test("Background expiration turns the active task into a retryable interrupted failure")
+    func backgroundExpirationFailsActiveTaskInsteadOfRequeueingIt() async throws {
+        let processor = BackgroundExpiringLivePhotoProcessor()
+        let context = try makeStoreContext(
+            livePhotoProcessor: processor,
+            automaticallyStartsProcessing: false
+        )
+        processor.store = context.store
+        defer { cleanup(context) }
+        let sourceURL = context.intakeDirectoryURL
+            .appendingPathComponent("expired-live-photo.HEIC")
+        try FileManager.default.createDirectory(
+            at: context.intakeDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        try Data("source".utf8).write(to: sourceURL)
+
+        _ = context.store.enqueue(
+            payloads: [
+                BatchTaskIntakePayload(
+                    sourceURL: sourceURL,
+                    sourceIdentifier: "expired-live-photo",
+                    contentTypeIdentifier: try #require(
+                        UTType("com.apple.live-photo")
+                    ).identifier
+                )
+            ],
+            configuration: makeConfiguration(),
+            launchSource: .shareExtension
+        )
+        context.store.startProcessingIfNeeded()
+
+        let task = try await terminalTask(in: context.store)
+
+        #expect(task.phase == .failed)
+        #expect(task.failure?.classification == .interrupted)
+        #expect(task.failure?.canRetry == true)
+        #expect(
+            task.failure?.diagnosticCode
+                == ProductionDiagnosticErrorCode
+                .processingBackgroundExpired
+                .rawValue
+        )
+        #expect(task.progress.statusMessage == "后台处理时间已用尽，请重试")
         #expect(!context.store.isProcessing)
     }
 
@@ -901,6 +955,21 @@ private final class CancellingLivePhotoProcessor:
         task: BatchTask,
         configuration: BatchConfigurationSnapshot
     ) async throws -> LivePhotoBatchTaskResult {
+        throw CancellationError()
+    }
+}
+
+@MainActor
+private final class BackgroundExpiringLivePhotoProcessor:
+    LivePhotoBatchTaskProcessing {
+
+    weak var store: BatchQueueStore?
+
+    func process(
+        task: BatchTask,
+        configuration: BatchConfigurationSnapshot
+    ) async throws -> LivePhotoBatchTaskResult {
+        store?.stopProcessingForBackgroundExpiration()
         throw CancellationError()
     }
 }

@@ -6,7 +6,8 @@ struct ShareIntakeDiagnostics {
 
     func recordReceived(
         itemProviderCount: Int,
-        supportedProviderCount: Int
+        supportedProviderCount: Int,
+        requestID: UUID
     ) {
 
         Self.notice(
@@ -14,6 +15,12 @@ struct ShareIntakeDiagnostics {
         )
         Self.notice(
             "Supported providers count: \(supportedProviderCount)."
+        )
+        PhotoMemoShareDiagnostics.record(
+            stage: .extensionInput,
+            message:
+                "itemProviders=\(itemProviderCount), supportedProviders=\(supportedProviderCount)",
+            requestID: requestID
         )
     }
 

@@ -84,7 +84,11 @@ struct LivePhotoRenderOutputGeometry:
         let cropRect =
             CGRect(
                 x: 0,
-                y: geometry.photoFrame.height,
+                // The bitmap produced by the export guard stores the footer
+                // in the first `footerHeight` pixel rows. Its presentation
+                // frame is canonicalized separately below, so the pixel
+                // crop must remain in the bitmap's own coordinate space.
+                y: 0,
                 width: geometry.footerFrame.width,
                 height: geometry.footerFrame.height
             )

@@ -11,6 +11,8 @@ struct V1ConfigurationApplyBuildInput: Hashable {
     let selectedMemoryPresetID: MemoryPreset.ID?
     let candidateConfiguration:
         MemoryConfigurationRecord?
+    let presentationRoute:
+        MemoryConfigurationRecord.Presentation.Route
     let presetTitle: String
     let templateTextsByRegion: [CardRegion: String]
     let locationDisplayConfiguration:
@@ -35,6 +37,8 @@ struct V1ConfigurationApplyBuildInput: Hashable {
         selectedMemoryPresetID: MemoryPreset.ID?,
         candidateConfiguration:
             MemoryConfigurationRecord? = nil,
+        presentationRoute:
+            MemoryConfigurationRecord.Presentation.Route = .classicWhite,
         presetTitle: String,
         templateTextsByRegion: [CardRegion: String],
         locationDisplayConfiguration:
@@ -59,6 +63,7 @@ struct V1ConfigurationApplyBuildInput: Hashable {
             selectedMemoryPresetID
         self.candidateConfiguration =
             candidateConfiguration
+        self.presentationRoute = presentationRoute
         self.presetTitle = presetTitle
         self.templateTextsByRegion =
             templateTextsByRegion
@@ -126,6 +131,8 @@ enum V1ConfigurationApplyRequestBuilder {
                 input.memoryPresets,
             selectedMemoryPresetID:
                 input.selectedMemoryPresetID,
+            presentationRoute:
+                input.presentationRoute,
             template:
                 candidate?.editor.template
                 ?? Template(

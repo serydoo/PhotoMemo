@@ -52,12 +52,12 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("这次更新让时光记在不同语言下更清楚地表达回忆"))
-        #expect(simplifiedChinese.contains("没有可呈现内容的照片不会再被保存成空白的成功结果"))
-        #expect(simplifiedChinese.contains("批量处理会清楚区分已完成、需要处理和仍在等待的照片"))
-        #expect(english.contains("This update makes memory expression clearer across languages"))
-        #expect(english.contains("Photos with no presentable content are no longer saved as blank results"))
-        #expect(english.contains("Batch processing separates photos that finished from those that need attention"))
+        #expect(simplifiedChinese.contains("这次更新让时光记更从容地表达回忆"))
+        #expect(simplifiedChinese.contains("新增「极简」卡片样式"))
+        #expect(simplifiedChinese.contains("完整的动态照片会以新的动态照片交还系统相册"))
+        #expect(english.contains("This update gives memories a quieter expression"))
+        #expect(english.contains("The new Minimal card style"))
+        #expect(english.contains("a complete Live Photo is returned to Photos as a new Live Photo"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
     }
@@ -67,19 +67,54 @@ struct V1ReleaseNotesContractTests {
         let projectSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo.xcodeproj/project.pbxproj"
         )
+        let releaseManifest = try sourceText(
+            "Docs/07_Releases/2026-08-24-2.2.1-同步清单.md"
+        )
+        let releaseIdentity = try #require(
+            releaseManifest
+                .split(whereSeparator: { $0 == "\n" })
+                .first(where: { $0.hasPrefix("# MemoMark ") })
+        )
+        let identityParts = releaseIdentity.split(separator: " ")
+        let version = String(try #require(identityParts.dropFirst(2).first))
+        let build = String(
+            try #require(identityParts.dropFirst(3).first)
+        )
+            .replacingOccurrences(of: "(", with: "")
+            .replacingOccurrences(of: ")", with: "")
 
         #expect(!projectSource.contains("MARKETING_VERSION = 2.0.3;"))
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
-        #expect(
-            projectSource.components(
-                separatedBy: "MARKETING_VERSION = 2.1.3;"
-            ).count == 11
+        let marketingVersions = Set(
+            projectSource
+                .split(whereSeparator: { $0 == "\n" })
+                .compactMap { line -> String? in
+                    guard line.contains("MARKETING_VERSION =") else {
+                        return nil
+                    }
+                    return line
+                        .split(separator: "=")
+                        .last?
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .replacingOccurrences(of: ";", with: "")
+                }
         )
-        #expect(
-            projectSource.components(
-                separatedBy: "CURRENT_PROJECT_VERSION = 85;"
-            ).count == 13
+        let projectBuilds = Set(
+            projectSource
+                .split(whereSeparator: { $0 == "\n" })
+                .compactMap { line -> String? in
+                    guard line.contains("CURRENT_PROJECT_VERSION =") else {
+                        return nil
+                    }
+                    return line
+                        .split(separator: "=")
+                        .last?
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .replacingOccurrences(of: ";", with: "")
+                }
         )
+        #expect(marketingVersions == [version])
+        #expect(projectBuilds == [build])
     }
 
     @Test("next release drafts keep internal TestFlight and App Store boundaries distinct")

@@ -580,6 +580,21 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
         )
     }
 
+    static func backgroundExpired(
+        phase: String,
+        operationID: UUID,
+        language: MemoMarkLanguage = .simplifiedChinese
+    ) -> ProductionDiagnosticFailure {
+        _ = phase
+        return failure(
+            code: .processingBackgroundExpired,
+            prefix: "JOB",
+            operationID: operationID,
+            language: language,
+            systemError: nil
+        )
+    }
+
     private static func mediaInputCode(
         for error: Error
     ) -> ProductionDiagnosticErrorCode? {

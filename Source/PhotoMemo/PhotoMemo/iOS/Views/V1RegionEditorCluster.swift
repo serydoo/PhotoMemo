@@ -7,6 +7,8 @@ struct V1RegionEditorCluster: View {
 
     @State private var pendingRevealRegion: CardRegion?
 
+    let visibleRegions: [CardRegion]
+
     let slotATextKitCommandBus: V1TextKitCommandBus
     let slotBTextKitCommandBus: V1TextKitCommandBus
     let slotCTextKitCommandBus: V1TextKitCommandBus
@@ -57,12 +59,16 @@ struct V1RegionEditorCluster: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 14) {
                         VStack(alignment: .leading, spacing: 14) {
-                            ForEach(CardRegion.memoryCardRegions, id: \.self) { region in
+                            ForEach(visibleRegions, id: \.self) { region in
                                 let regionDraft = draft(region)
 
                                 if region == .slotA || region == .slotB || region == .slotC || region == .slotD {
                                     V1SlotATextKitSessionEditor(
                                         region: region,
+                                        title:
+                                            visibleRegions.count == 1
+                                            ? localized("输出内容")
+                                            : nil,
                                         draft: regionDraft,
                                         commandBus: region == .slotA
                                             ? slotATextKitCommandBus
@@ -174,17 +180,28 @@ struct V1RegionEditorCluster: View {
     }
 
     private var activeRegion: CardRegion {
-        focusedRegion ?? activeModuleRegion ?? .slotA
+        let candidate = focusedRegion ?? activeModuleRegion ?? .slotA
+        return visibleRegions.contains(candidate)
+            ? candidate
+            : visibleRegions.first ?? .slotA
     }
 
     private var currentEditingTask: some View {
         HStack(alignment: .center, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("正在编辑\(activeRegion.displayTitle)")
+                Text(
+                    visibleRegions.count == 1
+                    ? localized("正在编辑输出内容")
+                    : "正在编辑\(activeRegion.displayTitle)"
+                )
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                Text("这里的内容会显示在照片卡片\(activeRegion.displayTitle)方。")
+                Text(
+                    visibleRegions.count == 1
+                    ? localized("这里的组合内容会显示在照片底部的极简条中。")
+                    : "这里的内容会显示在照片卡片\(activeRegion.displayTitle)方。"
+                )
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -192,14 +209,16 @@ struct V1RegionEditorCluster: View {
 
             Spacer(minLength: 8)
 
-            V1CardRegionNavigator(
-                selectedRegion: activeRegion,
-                onSelect: { region in
-                    pendingRevealRegion = region
-                    onFocus(region)
-                    commandBus(for: region)?.requestFocus()
-                }
-            )
+            if visibleRegions.count > 1 {
+                V1CardRegionNavigator(
+                    selectedRegion: activeRegion,
+                    onSelect: { region in
+                        pendingRevealRegion = region
+                        onFocus(region)
+                        commandBus(for: region)?.requestFocus()
+                    }
+                )
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -250,6 +269,13 @@ struct V1RegionEditorCluster: View {
         }
     }
 
+    private func localized(_ value: String) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: value,
+            fallback: value
+        )
+    }
+
     private var editorFooterNote: some View {
         VStack(alignment: .leading, spacing: 11) {
             Text("这里的内容会怎样使用？")
@@ -264,10 +290,12 @@ struct V1RegionEditorCluster: View {
                 number: 2,
                 text: "处理照片时，模块会替换为每张照片自己的信息。"
             )
-            guidanceRow(
-                number: 3,
-                text: "右下内容还会写入 Apple Photos 的照片说明，方便之后查找。"
-            )
+            if visibleRegions.count > 1 {
+                guidanceRow(
+                    number: 3,
+                    text: "右下内容还会写入 Apple Photos 的照片说明，方便之后查找。"
+                )
+            }
 
             Text("点“完成”返回配置中心；收起键盘不会离开编辑页。")
                 .font(.caption)

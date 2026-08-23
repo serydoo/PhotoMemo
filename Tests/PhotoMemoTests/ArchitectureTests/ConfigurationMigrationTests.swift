@@ -703,6 +703,7 @@ struct ConfigurationMigrationTests {
             )
         let request =
             V1ConfigurationSaveRequest(
+                presentationRoute: .minimal,
                 template:
                     Template.classicWhite
                     .renamed("V1 默认配置"),
@@ -757,6 +758,7 @@ struct ConfigurationMigrationTests {
             snapshot.anchor?.title
             == "生日"
         )
+        #expect(snapshot.presentationRouteRawValue == "minimal")
     }
 
     @MainActor

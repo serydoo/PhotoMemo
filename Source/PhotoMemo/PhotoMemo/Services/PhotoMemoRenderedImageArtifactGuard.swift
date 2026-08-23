@@ -2,6 +2,94 @@ import CoreGraphics
 
 enum PhotoMemoRenderedImageArtifactGuard {
 
+    static func composingSourcePhoto(
+        _ sourceImage: CGImage,
+        with artifact: PresentationArtifact
+    ) -> CGImage? {
+        let width = max(Int(artifact.canvasSize.width.rounded()), 1)
+        let height = max(Int(artifact.canvasSize.height.rounded()), 1)
+        let bytesPerRow = width * 4
+        var pixels = [UInt8](repeating: 0, count: bytesPerRow * height)
+
+        guard let context = CGContext(
+            data: &pixels,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return nil
+        }
+
+        let canvasRect = CGRect(x: 0, y: 0, width: width, height: height)
+        switch artifact.canvasBackground {
+        case .opaqueWhite:
+            context.setFillColor(
+                CGColor(red: 1, green: 1, blue: 1, alpha: 1)
+            )
+            context.fill(canvasRect)
+        case .transparent:
+            context.clear(canvasRect)
+        }
+
+        context.interpolationQuality = .high
+        context.saveGState()
+        context.clip(to: artifact.photoFrame)
+        context.draw(
+            sourceImage,
+            in: aspectFillRect(
+                sourceSize: CGSize(
+                    width: sourceImage.width,
+                    height: sourceImage.height
+                ),
+                targetFrame: artifact.photoFrame
+            )
+        )
+        context.restoreGState()
+
+        for layer in artifact.layers.sorted(by: { $0.zIndex < $1.zIndex }) {
+            guard layer.opacity > 0 else {
+                continue
+            }
+            context.saveGState()
+            context.setAlpha(layer.opacity)
+            context.draw(layer.image, in: layer.frame)
+            context.restoreGState()
+        }
+
+        return context.makeImage()
+    }
+
+    static func composingSourcePhoto(
+        _ sourceImage: CGImage,
+        with overlayImage: CGImage,
+        canvasSize: CGSize
+    ) -> CGImage {
+        let width = max(Int(canvasSize.width.rounded()), 1)
+        let height = max(Int(canvasSize.height.rounded()), 1)
+        let bytesPerRow = width * 4
+        var pixels = [UInt8](repeating: 0, count: bytesPerRow * height)
+
+        guard let context = CGContext(
+            data: &pixels,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return overlayImage
+        }
+
+        context.interpolationQuality = .high
+        context.draw(sourceImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        context.draw(overlayImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage() ?? overlayImage
+    }
+
     static func replacingPhotoArea(
         in renderedImage: CGImage,
         with sourceImage: CGImage,
@@ -343,6 +431,30 @@ enum PhotoMemoRenderedImageArtifactGuard {
         return transitionBrightness > 45
             ? trimWidth
             : 0
+    }
+}
+
+private extension PhotoMemoRenderedImageArtifactGuard {
+
+    static func aspectFillRect(
+        sourceSize: CGSize,
+        targetFrame: CGRect
+    ) -> CGRect {
+        let scale = max(
+            targetFrame.width / max(sourceSize.width, 1),
+            targetFrame.height / max(sourceSize.height, 1)
+        )
+        let fittedSize = CGSize(
+            width: sourceSize.width * scale,
+            height: sourceSize.height * scale
+        )
+
+        return CGRect(
+            x: targetFrame.midX - fittedSize.width / 2,
+            y: targetFrame.midY - fittedSize.height / 2,
+            width: fittedSize.width,
+            height: fittedSize.height
+        )
     }
 }
 

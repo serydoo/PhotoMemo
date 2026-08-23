@@ -13,29 +13,39 @@ struct MemoMarkNarrativeLanguageContractTests {
         let configurationPage = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationPageSurface.swift"
         )
+        let simplifiedChinese = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/zh-Hans.lproj/Localizable.strings"
+        )
 
+        #expect(optionList.contains("configurationTextRow("))
+        #expect(optionList.contains("private func localized(_ value: String)"))
+        #expect(configurationPage.contains("key: \"configuration.page.subtitle\""))
+        #expect(configurationPage.contains("fallback:"))
+
+        #expect(optionList.contains("你想围绕谁开展回忆。"))
+        #expect(optionList.contains("这一刻怎样表达"))
+        #expect(!optionList.contains("选择照片在这个时刻前后怎样表达。"))
+        #expect(optionList.contains("表达方式"))
+        #expect(optionList.contains("围绕时间锚点，可选择 %lld 种表达方式。"))
+        #expect(optionList.contains("卡片样式"))
+        #expect(!optionList.contains("选择照片卡片的整体视觉风格。"))
+        #expect(optionList.contains("时间与地点"))
         #expect(
             optionList.contains(
-                "subtitle: \"你想围绕谁开展回忆。\""
+                "组合自己的文字、照片信息和记忆表达。"
             )
         )
-        #expect(
-            optionList.contains(
-                "format: localized(\"回忆对象重要时刻 · %@\")"
-            )
-        )
-        #expect(optionList.contains("title: \"这一刻怎样表达\""))
-        #expect(optionList.contains("subtitle: memoryExpressionSummary"))
-        #expect(optionList.contains("subtitle: \"决定这段回忆最终如何呈现。\""))
-        #expect(optionList.contains("subtitle: \"决定卡片里的内容与显示方式。\""))
-        #expect(optionList.contains("title: \"时间与地点\""))
-        #expect(optionList.contains("subtitle: \"调整照片中的时间和地点怎样显示。\""))
-        #expect(!optionList.contains("title: \"高级模块\""))
-        #expect(
-            configurationPage.contains(
-                "pageSubtitle: \"围绕一个人和一个重要时刻，决定照片如何呈现。\""
-            )
-        )
+        for phrase in [
+            "你想围绕谁开展回忆。",
+            "这一刻怎样表达",
+            "表达方式",
+            "围绕时间锚点，可选择 %lld 种表达方式。",
+            "卡片样式",
+            "时间与地点",
+            "组合自己的文字、照片信息和记忆表达。"
+        ] {
+            #expect(simplifiedChinese.contains("\"\(phrase)\""))
+        }
     }
 
     @Test("primary headings describe memories and saving rather than implementation")
@@ -65,29 +75,27 @@ struct MemoMarkNarrativeLanguageContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
         )
 
-        #expect(home.contains("title: \"我的预设\""))
-        #expect(home.contains("subtitle: \"下一次分享，照片会怎样呈现。\""))
-        #expect(output.contains("\"保存这段回忆\""))
-        #expect(output.contains("subtitle: \"决定新照片如何留下，也选择它回到哪里。\""))
-        #expect(output.contains("title: \"新照片\""))
-        #expect(output.contains("subtitle: \"选择照片形式与需要保留的信息。\""))
-        #expect(output.contains("title: \"回到哪里\""))
-        #expect(task.contains("\"进展\""))
-        #expect(task.contains("Text(\"从 Apple Photos 分享照片，即可开始生成。\")"))
-        #expect(welcome.contains("subtitle: \"让照片记得，它在人生里的位置。\""))
-        #expect(welcome.contains("key: \"welcome.workflow.title\""))
-        #expect(welcome.contains("Text(\"对象名称\")"))
-        #expect(welcome.contains(".accessibilityLabel(\"对象名称，必填\")"))
-        #expect(welcome.contains("Text(isSaving ? \"正在保存\" : \"完成设置\")"))
-        #expect(regionContent.contains("Text(\"卡片内容\")"))
-        #expect(subjectEditor.contains("subtitle: \"选择重要日子，让照片拥有时间答案。\""))
-        #expect(subjectOverview.contains("subtitle: \"选择重要日子，让照片拥有时间答案。\""))
-        #expect(timeAnchorEditor.contains(".navigationTitle(\"时间锚点\")"))
-        #expect(
-            timeAnchorEditor.contains(
-                "选择一个时间起点，让照片拥有时间答案。"
+        for key in [
+            "home.presets.title", "home.presets.subtitle",
+            "output.page.title", "output.page.subtitle",
+            "output.result.title", "output.result.subtitle",
+            "output.destination.title", "output.destination.subtitle",
+            "task.page.title", "task.page.subtitle",
+            "task.waiting.detail"
+        ] {
+            #expect(
+                [home, output, task].joined().contains(key),
+                "primary surface must resolve localization key \(key)"
             )
-        )
+        }
+        #expect(welcome.contains("key: \"welcome.workflow.title\""))
+        #expect(welcome.contains("welcome.workflow."))
+        #expect(welcome.contains("isFirstRunConfigurationReady"))
+        #expect(regionContent.contains("Text(\"卡片内容\")"))
+        #expect(subjectEditor.contains("mode: .identityOverview"))
+        #expect(subjectOverview.contains("subjectBasicInformation"))
+        #expect(timeAnchorEditor.contains("navigationTitle"))
+        #expect(timeAnchorEditor.contains("选择一个时间起点"))
     }
 
     @Test("macOS labels and localized help use the same product vocabulary")

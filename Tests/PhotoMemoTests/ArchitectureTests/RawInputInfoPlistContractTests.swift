@@ -88,4 +88,5 @@ struct RawInputInfoPlistContractTests {
             project.contains("INFOPLIST_FILE = \"PhotoMemo-Info.plist\";")
         )
     }
+
 }

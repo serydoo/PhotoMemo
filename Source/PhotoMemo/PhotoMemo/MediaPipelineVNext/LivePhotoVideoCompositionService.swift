@@ -15,13 +15,20 @@ protocol LivePhotoVideoComposing {
 
 protocol LivePhotoVideoPairingComposing {
 
-    func composeVideo(
+    /// Composes the motion resource of a Live Photo.
+    ///
+    /// This API is intentionally distinct from `LivePhotoVideoComposing`:
+    /// a paired video must carry the generated content identifier and must
+    /// fail closed when that identity is unavailable. Keeping the operation
+    /// named `composePairedVideo` prevents a future generic-video caller from
+    /// accidentally producing a MOV that looks like a valid Live Photo pair.
+    func composePairedVideo(
         sourceVideoURL: URL,
         geometry: CanonicalGeometry,
         overlay: FixedFooterOverlayDescriptor,
         outputURL: URL,
         pairingIdentityPlan:
-            LivePhotoPairingIdentityPlan?
+            LivePhotoPairingIdentityPlan
     ) async throws -> URL
 }
 
@@ -35,6 +42,7 @@ enum LivePhotoVideoCompositionError:
     case exportSessionUnavailable
     case destinationPrepareFailed
     case exportFailed
+    case pairingIdentityMissing
 
     var errorDescription: String? {
         switch self {
@@ -52,6 +60,8 @@ enum LivePhotoVideoCompositionError:
             return "Unable to prepare the output video destination."
         case .exportFailed:
             return "Unable to export the composed video."
+        case .pairingIdentityMissing:
+            return "A Live Photo pairing identity is required for paired video output."
         }
     }
 }
@@ -84,37 +94,24 @@ final class LivePhotoVideoCompositionService:
                 overlay,
             outputURL:
                 outputURL,
-            pairingIdentityPlan:
-                nil
+            pairingIdentityPlan: nil,
+            requiresPairingIdentity: false
         )
     }
 
-    func composeVideo(
+    func composePairedVideo(
         sourceVideoURL: URL,
         geometry: CanonicalGeometry,
         overlay: FixedFooterOverlayDescriptor,
         outputURL: URL,
         pairingIdentityPlan:
-            LivePhotoPairingIdentityPlan?
+            LivePhotoPairingIdentityPlan
     ) async throws -> URL {
-        let geometryOverlay =
-            try FixedFooterOverlayDescriptor(
-                canvasSize:
-                    geometry
-                    .canvas
-                    .canvasSize,
-                photoFrame:
-                    geometry
-                    .canvas
-                    .photoFrame,
-                footerFrame:
-                    geometry
-                    .canvas
-                    .footerFrame,
-                footerImage:
-                    overlay
-                    .footerImage
-            )
+        let geometryOverlay = try overlay.replacingGeometry(
+            canvasSize: geometry.canvas.canvasSize,
+            photoFrame: geometry.canvas.photoFrame,
+            footerFrame: geometry.canvas.footerFrame
+        )
 
         return try await composeVideo(
             sourceVideoURL:
@@ -123,20 +120,25 @@ final class LivePhotoVideoCompositionService:
                 geometryOverlay,
             outputURL:
                 outputURL,
-            pairingIdentityPlan:
-                pairingIdentityPlan
+            pairingIdentityPlan: pairingIdentityPlan,
+            requiresPairingIdentity: true
         )
     }
 
-    func composeVideo(
+    private func composeVideo(
         sourceVideoURL: URL,
         overlay: FixedFooterOverlayDescriptor,
         outputURL: URL,
         pairingIdentityPlan:
-            LivePhotoPairingIdentityPlan?
+            LivePhotoPairingIdentityPlan?,
+        requiresPairingIdentity: Bool
     ) async throws -> URL {
+        if requiresPairingIdentity && pairingIdentityPlan == nil {
+            throw LivePhotoVideoCompositionError.pairingIdentityMissing
+        }
+
         let preparedOverlay =
-            try overlay.normalizedForEncoder()
+            try overlay.validatedForEncoder()
 
         let preparedInput =
             try await inputPreparer
@@ -146,30 +148,45 @@ final class LivePhotoVideoCompositionService:
                 preparedOverlay:
                     preparedOverlay
             )
+
         let parentLayer = CALayer()
         parentLayer.frame = CGRect(origin: .zero, size: preparedOverlay.canvasSize)
-
-        let backgroundLayer = CALayer()
-        backgroundLayer.frame = parentLayer.frame
-        backgroundLayer.backgroundColor = CGColor(
-            red: 1,
-            green: 1,
-            blue: 1,
-            alpha: 1
-        )
 
         let videoLayer = CALayer()
         videoLayer.frame = parentLayer.frame
 
-        let footerLayer = CALayer()
-        footerLayer.frame = preparedOverlay.footerFrame
-        footerLayer.contents = preparedOverlay.footerImage
-        footerLayer.contentsGravity = .resize
-        footerLayer.masksToBounds = true
-
+        let backgroundLayer = CALayer()
+        backgroundLayer.frame = parentLayer.frame
+        backgroundLayer.backgroundColor =
+            preparedOverlay.canvasBackground == .opaqueWhite
+            ? CGColor(
+                red: 1,
+                green: 1,
+                blue: 1,
+                alpha: 1
+            )
+            : CGColor(
+                red: 0,
+                green: 0,
+                blue: 0,
+                alpha: 0
+            )
         parentLayer.addSublayer(backgroundLayer)
         parentLayer.addSublayer(videoLayer)
-        parentLayer.addSublayer(footerLayer)
+        for layerDescriptor in preparedOverlay.layers.sorted(by: { $0.zIndex < $1.zIndex }) {
+            guard layerDescriptor.opacity > 0 else {
+                continue
+            }
+            let layer = CALayer()
+            layer.frame = layerDescriptor.frame
+            layer.contents = layerDescriptor.image
+            layer.contentsGravity = .resize
+            layer.masksToBounds = true
+            layer.isOpaque = false
+            layer.opacity = Float(layerDescriptor.opacity)
+            layer.backgroundColor = nil
+            parentLayer.addSublayer(layer)
+        }
 
         let videoComposition =
             makeVideoComposition(
@@ -232,7 +249,9 @@ final class LivePhotoVideoCompositionService:
                 outputURL: outputURL,
                 preparedOverlay: preparedOverlay,
                 pairingIdentityPlan:
-                    pairingIdentityPlan
+                    pairingIdentityPlan,
+                requiresPairingIdentity:
+                    requiresPairingIdentity
             )
         exportSession.shouldOptimizeForNetworkUse = false
 
@@ -327,6 +346,13 @@ final class LivePhotoPairCompositionService:
                 outputStillType:
                     outputStillType
             )
+        let canonicalOverlay = try overlay
+            .replacingGeometry(
+                canvasSize: geometry.canvas.canvasSize,
+                photoFrame: geometry.canvas.photoFrame,
+                footerFrame: geometry.canvas.footerFrame
+            )
+            .validatedForEncoder()
 
         let stillPhotoURL =
             try stillComposer.composeStillImage(
@@ -335,7 +361,7 @@ final class LivePhotoPairCompositionService:
                 geometry:
                     geometry,
                 overlay:
-                    overlay,
+                    canonicalOverlay,
                 outputURL:
                     outputStillURL,
                 outputType:
@@ -347,13 +373,13 @@ final class LivePhotoPairCompositionService:
                     outputDescription
             )
         let pairedVideoURL =
-            try await videoComposer.composeVideo(
+            try await videoComposer.composePairedVideo(
                 sourceVideoURL:
                     sourceVideoURL,
                 geometry:
                     geometry,
                 overlay:
-                    overlay,
+                    canonicalOverlay,
                 outputURL:
                     outputVideoURL,
                 pairingIdentityPlan:
@@ -372,7 +398,6 @@ final class LivePhotoPairCompositionService:
 }
 
 extension LivePhotoVideoCompositionService {
-
     private func makeVideoComposition(
         videoTrack: AVMutableCompositionTrack,
         duration: CMTime,
@@ -560,19 +585,31 @@ extension LivePhotoVideoCompositionService {
         outputURL: URL,
         preparedOverlay: FixedFooterOverlayDescriptor,
         pairingIdentityPlan:
-            LivePhotoPairingIdentityPlan? = nil
+            LivePhotoPairingIdentityPlan? = nil,
+        requiresPairingIdentity: Bool = false
     ) async throws -> [AVMetadataItem] {
-        let sourcePairingIdentifier =
-            try await LivePhotoPairingIdentityVerifier
-                .videoContentIdentifier(
-                    from: sourceMetadata
-                )
-        let pairingIdentifier =
-            pairingIdentityPlan?.pairingIdentifier
-            ?? sourcePairingIdentifier
+        let isPairedOutput =
+            requiresPairingIdentity
+            || pairingIdentityPlan != nil
 
-        guard let pairingIdentifier else {
-            return sourceMetadata
+        guard isPairedOutput else {
+            // Generic video output must not retain Live Photo-only metadata.
+            // Keeping a content identifier without a paired still image makes
+            // the MOV look pairable while no valid pair exists.
+            return sourceMetadata.filter {
+                !Self.isLivePhotoPairingMetadata($0)
+            }
+        }
+
+        // A paired output must always use the identity generated by the pair
+        // planner. Never inherit the source video's identifier: doing so can
+        // silently bind a new still image to an unrelated source asset.
+        guard let pairingIdentifier =
+            pairingIdentityPlan?.pairingIdentifier
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !pairingIdentifier.isEmpty
+        else {
+            throw LivePhotoVideoCompositionError.pairingIdentityMissing
         }
 
         let policy =
@@ -624,10 +661,27 @@ extension LivePhotoVideoCompositionService {
             )
     }
 
+    private static func isLivePhotoPairingMetadata(
+        _ item: AVMetadataItem
+    ) -> Bool {
+        if item.identifier == .quickTimeMetadataContentIdentifier
+            || item.identifier == .quickTimeMetadataAutoLivePhoto {
+            return true
+        }
+
+        // AVFoundation has no public typed identifier for the still-image
+        // time mdta key. Keep the comparison local to this media boundary so
+        // generic video exports cannot leak Live Photo pairing markers.
+        return item.identifier?.rawValue
+            == AVFoundationLivePhotoVideoMetadataReviser
+                .livePhotoStillImageTimeIdentifier
+                .rawValue
+    }
+
     static func normalizedOverlay(
         _ overlay: FixedFooterOverlayDescriptor
     ) throws -> FixedFooterOverlayDescriptor {
-        try overlay.normalizedForEncoder()
+        try overlay.validatedForEncoder()
     }
 
     static func normalizedEncoderDimension(

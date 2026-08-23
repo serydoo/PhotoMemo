@@ -62,7 +62,7 @@ struct V1ConfigurationPageSurface<
             ),
             pageSubtitle: interfaceLanguage.localized(
                 key: "configuration.page.subtitle",
-                fallback: "围绕一个人和一个重要时刻，决定照片如何呈现。"
+                fallback: "围绕谁、从哪个时刻开始，再决定照片如何表达、卡片采用什么样式。"
             ),
             onDismissKeyboard: onDismissKeyboard
         ) {

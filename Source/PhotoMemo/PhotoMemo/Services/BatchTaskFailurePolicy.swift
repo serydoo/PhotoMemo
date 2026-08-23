@@ -62,6 +62,11 @@ enum BatchTaskFailurePolicy {
 
         if let photoMemoError = error as? PhotoMemoError,
            let diagnosticCode = photoMemoError.diagnosticCode {
+            if diagnosticCode == ProductionDiagnosticErrorCode
+                .processingBackgroundExpired
+                .rawValue {
+                return .interrupted
+            }
             if PhotoProcessingInputPolicy.RejectionReason(
                 rawValue: diagnosticCode
             ) != nil {

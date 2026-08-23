@@ -35,9 +35,11 @@ struct LivePhotoVideoCompositionServiceTests {
             size: CGSize(width: 40, height: 30),
             frameColors: [
                 .red,
-                .green
+                RGBAColor(red: 255, green: 255, blue: 0, alpha: 255),
+                .green,
+                RGBAColor(red: 255, green: 0, blue: 255, alpha: 255)
             ],
-            framesPerSecond: 1
+            framesPerSecond: 2
         )
 
         let outputVideoURL =
@@ -165,8 +167,8 @@ struct LivePhotoVideoCompositionServiceTests {
         )
     }
 
-    @Test("Preserves source asset metadata needed for Live Photo pairing")
-    func preservesSourceAssetMetadataNeededForLivePhotoPairing() async throws {
+    @Test("Generic video output strips Live Photo pairing metadata")
+    func genericVideoOutputStripsLivePhotoPairingMetadata() async throws {
         let temporaryFolder =
             FileManager.default.temporaryDirectory
             .appendingPathComponent(
@@ -241,10 +243,42 @@ struct LivePhotoVideoCompositionServiceTests {
                     == .quickTimeMetadataContentIdentifier
             }
 
-        #expect(
-            try await contentIdentifier?.load(.stringValue)
-            == expectedIdentifier
-        )
+        #expect(contentIdentifier == nil)
+    }
+
+    @Test("Paired video metadata fails closed without a generated identity")
+    func pairedVideoMetadataFailsClosedWithoutGeneratedIdentity() async throws {
+        let descriptor =
+            try FixedFooterOverlayDescriptor(
+                canvasSize: CGSize(width: 40, height: 40),
+                photoFrame: CGRect(x: 0, y: 10, width: 40, height: 30),
+                footerFrame: CGRect(x: 0, y: 0, width: 40, height: 10),
+                footerImage: makeSolidColorImage(
+                    color: .blue,
+                    size: CGSize(width: 40, height: 10)
+                )
+            )
+
+        do {
+            _ = try await LivePhotoVideoCompositionService()
+                .metadataForExport(
+                    sourceMetadata: [
+                        quickTimeMetadataItem(
+                            identifier: .quickTimeMetadataContentIdentifier,
+                            value: "source-identifier-must-not-be-reused"
+                        )
+                    ],
+                    sourceVideoURL: URL(fileURLWithPath: "/tmp/source.mov"),
+                    outputURL: URL(fileURLWithPath: "/tmp/output.mov"),
+                    preparedOverlay: descriptor,
+                    requiresPairingIdentity: true
+                )
+            Issue.record("Expected paired metadata generation to fail closed")
+        } catch let error as LivePhotoVideoCompositionError {
+            #expect(error == .pairingIdentityMissing)
+        } catch {
+            Issue.record("Received unexpected error: \(error)")
+        }
     }
 
     @Test("Builds export metadata through the VNext MOV metadata contract")
@@ -298,11 +332,7 @@ struct LivePhotoVideoCompositionServiceTests {
                 $0.identifier == .quickTimeMetadataCreationDate
             }
 
-        #expect(contentIdentifiers.count == 1)
-        #expect(
-            try await contentIdentifiers.first?.load(.stringValue)
-            == expectedIdentifier
-        )
+        #expect(contentIdentifiers.isEmpty)
         #expect(
             try await creationDate?.load(.stringValue)
             == "2026-06-25T10:11:12+0800"
@@ -407,8 +437,8 @@ struct LivePhotoVideoCompositionServiceTests {
         }
     }
 
-    @Test("Normalizes odd canvas heights to encoder-compatible even dimensions")
-    func normalizesOddCanvasHeightsToEncoderCompatibleEvenDimensions() throws {
+    @Test("Rejects odd canvas heights supplied outside the Layout Engine")
+    func rejectsOddCanvasHeightsOutsideLayoutEngine() throws {
         let descriptor =
             try FixedFooterOverlayDescriptor(
                 canvasSize: CGSize(width: 40, height: 41),
@@ -420,25 +450,14 @@ struct LivePhotoVideoCompositionServiceTests {
                 )
             )
 
-        let normalized =
-            try LivePhotoVideoCompositionService
-            .normalizedOverlay(descriptor)
-
-        #expect(
-            Int(normalized.canvasSize.width) == 40
-        )
-        #expect(
-            Int(normalized.canvasSize.height) == 40
-        )
-        #expect(
-            Int(normalized.photoFrame.height) == 30
-        )
-        #expect(
-            Int(normalized.footerFrame.height) == 10
-        )
-        #expect(
-            Int(normalized.photoFrame.minY) == 10
-        )
+        do {
+            _ = try descriptor.validatedForEncoder()
+            Issue.record("Expected odd canvas geometry to be rejected")
+        } catch let error as LivePhotoVideoCompositionError {
+            #expect(error == .invalidOverlayGeometry)
+        } catch {
+            Issue.record("Received unexpected error: \(error)")
+        }
     }
 
     @Test("Video transform preserves aspect ratio when filling the renderer photo frame")
@@ -837,6 +856,52 @@ private extension LivePhotoVideoCompositionServiceTests {
         generator.requestedTimeToleranceBefore = .zero
 
         return try await generator.image(at: time).image
+    }
+
+    func videoFrameImages(
+        from asset: AVAsset
+    ) async throws -> [CGImage] {
+        let tracks =
+            try await asset.loadTracks(withMediaType: .video)
+        let track = try #require(tracks.first)
+        let reader = try AVAssetReader(asset: asset)
+        let output =
+            AVAssetReaderTrackOutput(
+                track: track,
+                outputSettings: [
+                    kCVPixelBufferPixelFormatTypeKey as String:
+                        Int(kCVPixelFormatType_32BGRA)
+                ]
+            )
+        guard reader.canAdd(output) else {
+            throw NSError(
+                domain: "LivePhotoVideoCompositionServiceTests",
+                code: 1,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Unable to add output for frame inspection"
+                ]
+            )
+        }
+        reader.add(output)
+        #expect(reader.startReading())
+
+        let context = CIContext()
+        var images: [CGImage] = []
+        while let sampleBuffer = output.copyNextSampleBuffer() {
+            let pixelBuffer = try #require(
+                CMSampleBufferGetImageBuffer(sampleBuffer)
+            )
+            let image =
+                CIImage(cvPixelBuffer: pixelBuffer)
+            let cgImage = try #require(
+                context.createCGImage(image, from: image.extent)
+            )
+            images.append(cgImage)
+        }
+
+        #expect(reader.status == .completed)
+        return images
     }
 
     func pixelColor(

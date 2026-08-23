@@ -989,6 +989,26 @@ struct V1ConfigurationApplyRequestBuilderTests {
         #expect(request.badge?.imagePath != staleBadge.imagePath)
     }
 
+    @Test("build request preserves the explicit presentation route for legacy apply")
+    func buildRequestPreservesExplicitPresentationRoute() throws {
+        let subject = try #require(
+            ConfigurationCenterState.mock.selectedSubject
+        )
+        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
+            from: Self.makeLogoBuildInput(
+                subject: subject,
+                candidate: Self.makeLogoCandidate(
+                    mode: .appleMini,
+                    badge: nil
+                ),
+                badge: nil,
+                presentationRoute: .minimal
+            )
+        )
+
+        #expect(request.presentationRoute == .minimal)
+    }
+
     @Test("Apple-logo candidate ignores stale descriptors and stale custom-logo input")
     func appleCandidateDoesNotReuseStaleBadgeState() throws {
         let subject = try #require(
@@ -1408,7 +1428,9 @@ struct V1ConfigurationApplyRequestBuilderTests {
     private static func makeLogoBuildInput(
         subject: MemorySubject,
         candidate: MemoryConfigurationRecord,
-        badge: Badge?
+        badge: Badge?,
+        presentationRoute:
+            MemoryConfigurationRecord.Presentation.Route = .classicWhite
     ) -> V1ConfigurationApplyBuildInput {
         V1ConfigurationApplyBuildInput(
             selectedSubject: subject,
@@ -1418,6 +1440,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             memoryPresets: [],
             selectedMemoryPresetID: candidate.id,
             candidateConfiguration: candidate,
+            presentationRoute: presentationRoute,
             presetTitle: "Logo candidate",
             templateTextsByRegion: [:],
             locationDisplayConfiguration: nil,

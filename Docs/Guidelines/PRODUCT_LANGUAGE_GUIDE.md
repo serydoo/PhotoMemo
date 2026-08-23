@@ -1,6 +1,6 @@
 # MemoMark Product Language Guide
 
-Last updated: 2026-08-06
+Last updated: 2026-08-23
 
 ## Status
 
@@ -81,12 +81,38 @@ the subtitle:
 | Title | Subtitle role |
 | --- | --- |
 | `时间锚点` editor | `选择一个时间起点，让照片拥有时间答案。` |
-| `这一刻怎样表达` | `自然（默认） · 随时间变化` |
-| `表达风格` | `围绕时间锚点，可选择 5 种表达风格。` The number comes from the current available styles. |
+| `这一刻怎样表达` | `表达方式：自然（默认） · 随时间变化` |
+| `表达方式` | `围绕时间锚点，可选择 5 种表达方式。` The number comes from the current available styles. |
+| `卡片样式` | `选择照片卡片的整体视觉风格。` |
 | `我的预设` | `下一次分享，照片会怎样呈现。` |
 
 When the title and controls already make the result clear, omit the subtitle.
 Do not add helper copy only to make a section look complete.
+
+### Configuration Center Expression And Style Terms
+
+The Configuration Center keeps two adjacent decisions deliberately separate:
+
+- `这一刻怎样表达` is the user-facing entry for the time-aware Memory
+  Expression result. It explains how the photo speaks about the moment before,
+  on, or after the selected Time Anchor.
+- `表达方式` is the selectable expression choice inside that section. It
+  changes the wording pattern and time relationship; it does not generate a
+  complete sentence on the user's behalf. Smart anchor variables still return
+  time results, and the user composes the final sentence from literal text and
+  variables.
+- `卡片样式` is the visual expression system for the whole photo card. It may
+  control composition, information density, typography hierarchy, color
+  treatment, content placement, and the relationship between the photo and the
+  presentation surface. It must not be described as only a `边框样式`.
+- `卡片布局与内容` explains the content combination layer: the user's words,
+  photo information, and Memory Expression. It does not own the visual style
+  decision.
+
+The internal model names remain implementation details:
+`MemoryAnchorExpressionStyle` and `RecordCardPresentationStyle`. User-facing
+copy should use `表达方式` and `卡片样式` so first-time users can identify what
+they are choosing without knowing the renderer or layout architecture.
 
 ### Memory Subject Identity Terms
 

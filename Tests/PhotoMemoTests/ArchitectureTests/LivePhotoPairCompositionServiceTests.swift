@@ -307,25 +307,22 @@ private final class StubPairingVideoComposer:
     private(set) var receivedOutputDescriptions:
         [String] = []
 
-    func composeVideo(
+    func composePairedVideo(
         sourceVideoURL: URL,
         geometry: CanonicalGeometry,
         overlay: FixedFooterOverlayDescriptor,
         outputURL: URL,
         pairingIdentityPlan:
-            LivePhotoPairingIdentityPlan?
+            LivePhotoPairingIdentityPlan
     ) async throws -> URL {
 
         receivedGeometries.append(
             geometry
         )
 
-        if let pairingIdentifier =
-            pairingIdentityPlan?.pairingIdentifier {
-            receivedPairingIdentifiers.append(
-                pairingIdentifier
-            )
-        }
+        receivedPairingIdentifiers.append(
+            pairingIdentityPlan.pairingIdentifier
+        )
 
         return outputURL
     }

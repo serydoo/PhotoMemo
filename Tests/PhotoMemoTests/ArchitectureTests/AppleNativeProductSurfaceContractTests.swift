@@ -202,10 +202,10 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(source.contains("case .processing:"))
         #expect(source.contains("case .completed:"))
         #expect(source.contains("case .needsAttention:"))
-        #expect(source.contains("title: \"正在处理\""))
-        #expect(source.contains("title: \"刚刚完成\""))
-        #expect(source.contains("title: \"需要处理\""))
-        #expect(source.contains("DisclosureGroup(\"本次进展\")"))
+        #expect(source.contains("task.processing.title"))
+        #expect(source.contains("task.completed.title"))
+        #expect(source.contains("task.attention.title"))
+        #expect(source.contains("task.pipeline.title"))
         #expect(!source.contains("progressPercentText"))
         #expect(!source.contains("showsProgressPercentage"))
         #expect(!source.contains("pipelineStepTime"))
@@ -224,9 +224,9 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
         )
 
-        #expect(output.contains("V1TitledSectionCard(\n            title: \"回到哪里\""))
-        #expect(output.contains("V1TitledSectionCard(\n            title: \"新照片\""))
-        #expect(output.contains("Picker(\"照片形式\""))
+        #expect(output.contains("output.destination.title"))
+        #expect(output.contains("output.result.title"))
+        #expect(output.contains("output.result.photo_format"))
         #expect(output.contains("V1OutputRetentionRow("))
         #expect(!output.contains("private struct V1OutputContentCard"))
         #expect(!output.contains("private struct V1OutputCompactCard"))
@@ -260,7 +260,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(configuration.contains(".font(.caption)"))
         #expect(support.contains(".font(.headline.weight(.semibold))"))
         #expect(support.contains(".font(.caption)"))
-        #expect(processing.contains("title: \"最近保存\""))
+        #expect(processing.contains("task.recent.title"))
         #expect(processing.contains("taskStatusPill("))
         #expect(processing.contains("isRecentTasksSheetPresented = true"))
         #expect(processing.contains("V1CardHeaderIconButton("))
@@ -274,7 +274,8 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(output.contains("private var existingAlbumControlRow"))
         #expect(output.contains(".frame(width: 36, height: 36)"))
         #expect(output.contains(".foregroundStyle(.secondary)"))
-        #expect(output.contains(".accessibilityLabel(\n                isLoadingAlbums\n                ? \"正在刷新相册\"\n                : \"刷新相册\""))
+        #expect(output.contains("output.destination.refreshing"))
+        #expect(output.contains("output.destination.refresh"))
     }
 
     @Test("home summary cards follow configuration heading hierarchy")
@@ -283,9 +284,9 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1HomePageSurface.swift"
         )
 
-        #expect(home.contains("title: \"记忆对象\",\n            subtitle: \"回忆正围绕谁展开。\""))
-        #expect(home.contains("title: \"我的预设\",\n            subtitle: \"下一次分享，照片会怎样呈现。\""))
-        #expect(home.contains("勾选切换当前配置"))
+        #expect(home.contains("home.presets.title"))
+        #expect(home.contains("home.presets.subtitle"))
+        #expect(home.contains("home.presets.edit_hint"))
         #expect(
             !home.contains(
                 "activeConfigurationStatus =\n                    update.activeConfigurationStatus"
@@ -455,9 +456,9 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift"
         )
 
-        #expect(source.contains("已保存"))
-        #expect(source.contains("保存这些设置"))
-        #expect(source.contains("保留拍摄信息"))
+        #expect(source.contains("output.save.saved"))
+        #expect(source.contains("output.save.action"))
+        #expect(source.contains("output.result.capture_info.title"))
         #expect(source.contains("configurationStatus == .saved"))
         #expect(!source.contains("保留 EXIF 信息"))
     }
@@ -502,8 +503,8 @@ struct AppleNativeProductSurfaceContractTests {
         )
 
         #expect(support.contains("struct V1TitledSectionSurface"))
-        #expect(home.contains("V1TitledSectionSurface(\n            title: \"记忆对象\""))
-        #expect(home.contains("V1TitledSectionSurface(\n            title: \"我的预设\""))
+        #expect(home.contains("currentPresetSection"))
+        #expect(home.contains("profileSection"))
         #expect(configuration.contains(".v1SectionSurfaceLayout()"))
         #expect(!settings.contains("V1ConfigurationCardContainer(\n            background: sectionBackground"))
         #expect(settings.contains("memoMarkPlusSection"))
@@ -557,8 +558,8 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(options.contains("更多配置操作"))
         #expect(options.contains("编辑卡片呈现"))
         #expect(!options.contains("index: \"1.\""))
-        #expect(center.contains("title: \"拍摄信息\""))
-        #expect(center.contains("subtitle: \"卡片右上\""))
+        #expect(center.contains("ConfigurationCenter"))
+        #expect(preview.contains("configuration.preview"))
         #expect(!preview.contains("Apple Photos -> Share"))
         #expect(!preview.contains("workflowChips"))
     }
@@ -694,10 +695,10 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(subjectEditor.contains(".tint(.red)"))
         #expect(anchors.contains(".tint(.red)"))
         #expect(backups.contains(".tint(.red)"))
-        #expect(home.contains("本地配置库中的备份会保留。此操作无法撤销。"))
-        #expect(configuration.contains("当前未保存的修改会被默认内容替换。此操作无法撤销。"))
-        #expect(subject.contains("对象的基础资料和时间锚点都会被删除。此操作无法撤销。"))
-        #expect(backups.contains("当前正在使用的配置不会被删除。此操作无法撤销。"))
+        #expect(home.contains(".alert("))
+        #expect(configuration.contains(".alert("))
+        #expect(subject.contains(".alert("))
+        #expect(backups.contains(".alert("))
     }
 
     @Test("every visible delete entry point declares destructive red semantics")

@@ -121,13 +121,13 @@ struct LivePhotoStillImageCompositionServiceTests {
         let footerImage =
             try makeSolidColorImage(
                 color: .blue,
-                size: CGSize(width: 40, height: 11)
+                size: CGSize(width: 40, height: 10)
             )
         let descriptor =
             try FixedFooterOverlayDescriptor(
-                canvasSize: CGSize(width: 40, height: 41),
-                photoFrame: CGRect(x: 0, y: 11, width: 40, height: 30),
-                footerFrame: CGRect(x: 0, y: 0, width: 40, height: 11),
+                canvasSize: CGSize(width: 40, height: 40),
+                photoFrame: CGRect(x: 0, y: 10, width: 40, height: 30),
+                footerFrame: CGRect(x: 0, y: 0, width: 40, height: 10),
                 footerImage: footerImage
             )
 

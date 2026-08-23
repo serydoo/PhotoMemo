@@ -473,7 +473,66 @@ final class BatchQueueStore: ObservableObject {
     }
 
     func stopProcessingForBackgroundExpiration() {
+        guard processingTask != nil else {
+            return
+        }
+        markActiveTaskAsBackgroundExpiredIfNeeded()
         processingTask?.cancel()
+    }
+
+    /// Stops the current processing owner after a processor reports a plain
+    /// cancellation. The task remains queued for a future owner; unlike a
+    /// background expiration this does not create a failure record.
+    func stopProcessingForCancellation() {
+        processingTask?.cancel()
+    }
+
+    private func markActiveTaskAsBackgroundExpiredIfNeeded() {
+        guard let activeJobID,
+              let activeTaskID,
+              let jobIndex = jobs.firstIndex(where: { $0.id == activeJobID }),
+              let taskIndex = jobs[jobIndex].tasks.firstIndex(where: { $0.id == activeTaskID })
+        else {
+            return
+        }
+
+        let currentPhase = jobs[jobIndex].tasks[taskIndex].phase
+        guard !currentPhase.isTerminal,
+              currentPhase != .savingToPhotoLibrary
+        else {
+            // A save in flight must remain recoverable through its durable
+            // receipt/readback reconciliation path. It must not be reported
+            // as a processing failure before PhotoKit ownership is known.
+            return
+        }
+
+        let taskID = jobs[jobIndex].tasks[taskIndex].id
+        let diagnosticFailure = ProductionDiagnosticFailureClassifier
+            .backgroundExpired(
+                phase: currentPhase.rawValue,
+                operationID: taskID,
+                language: .interfaceStored
+            )
+        jobs[jobIndex].tasks[taskIndex].phase = .failed
+        jobs[jobIndex].tasks[taskIndex].renderedFileURL = nil
+        jobs[jobIndex].tasks[taskIndex].notificationAttachmentURL = nil
+        jobs[jobIndex].tasks[taskIndex].failure = BatchTaskFailure(
+            phase: currentPhase,
+            message: diagnosticFailure.userMessage,
+            classification: .interrupted,
+            canRetry: true,
+            diagnosticCode: diagnosticFailure.code.rawValue,
+            supportID: diagnosticFailure.supportID
+        )
+        jobs[jobIndex].tasks[taskIndex].progress = BatchTaskProgress(
+            currentUnit: 0,
+            totalUnits: 1,
+            statusMessage: "后台处理时间已用尽，请重试"
+        )
+        jobs[jobIndex].updatedAt = Date()
+        jobs[jobIndex].state = execution.derivedJobState(from: jobs[jobIndex].tasks)
+        setLastErrorMessage(diagnosticFailure.userMessage)
+        _ = persistJobs()
     }
 
     func retryPersistence() {

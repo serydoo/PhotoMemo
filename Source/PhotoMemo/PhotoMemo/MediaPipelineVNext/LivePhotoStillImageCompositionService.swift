@@ -161,24 +161,11 @@ final class LivePhotoStillImageCompositionService:
         pairingIdentifier: String?,
         outputDescription: String?
     ) throws -> URL {
-        let geometryOverlay =
-            try FixedFooterOverlayDescriptor(
-                canvasSize:
-                    geometry
-                    .canvas
-                    .canvasSize,
-                photoFrame:
-                    geometry
-                    .canvas
-                    .photoFrame,
-                footerFrame:
-                    geometry
-                    .canvas
-                    .footerFrame,
-                footerImage:
-                    overlay
-                    .footerImage
-            )
+        let geometryOverlay = try overlay.replacingGeometry(
+            canvasSize: geometry.canvas.canvasSize,
+            photoFrame: geometry.canvas.photoFrame,
+            footerFrame: geometry.canvas.footerFrame
+        )
 
         return try composeStillImage(
             sourceStillURL:
@@ -206,7 +193,7 @@ final class LivePhotoStillImageCompositionService:
     ) throws -> URL {
 
         let preparedOverlay =
-            try overlay.normalizedForEncoder()
+            try overlay.validatedForEncoder()
 
         let preparedSource =
             try sourcePreparer
@@ -237,20 +224,29 @@ final class LivePhotoStillImageCompositionService:
                 .outputContextUnavailable
         }
 
-        context.setFillColor(
-            CGColor(
-                red: 1,
-                green: 1,
-                blue: 1,
-                alpha: 1
+        if preparedOverlay.canvasBackground == .opaqueWhite {
+            context.setFillColor(
+                CGColor(
+                    red: 1,
+                    green: 1,
+                    blue: 1,
+                    alpha: 1
+                )
             )
-        )
-        context.fill(
-            CGRect(
-                origin: .zero,
-                size: preparedOverlay.canvasSize
+            context.fill(
+                CGRect(
+                    origin: .zero,
+                    size: preparedOverlay.canvasSize
+                )
             )
-        )
+        } else {
+            context.clear(
+                CGRect(
+                    origin: .zero,
+                    size: preparedOverlay.canvasSize
+                )
+            )
+        }
         context.interpolationQuality = .high
         context.saveGState()
         context.clip(
@@ -280,10 +276,13 @@ final class LivePhotoStillImageCompositionService:
                 )
         )
         context.restoreGState()
-        context.draw(
-            preparedOverlay.footerImage,
-            in: preparedOverlay.footerFrame
-        )
+        for layer in preparedOverlay.layers.sorted(by: { $0.zIndex < $1.zIndex }) {
+            guard layer.opacity > 0 else {
+                continue
+            }
+            context.setAlpha(layer.opacity)
+            context.draw(layer.image, in: layer.frame)
+        }
 
         guard let composedImage =
             context.makeImage()

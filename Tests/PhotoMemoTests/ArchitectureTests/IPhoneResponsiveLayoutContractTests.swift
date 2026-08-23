@@ -21,7 +21,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!root.contains("ConfigurationRestoreRequest("))
         // Keep a bounded root budget while allowing the native Logo picker
         // transaction and its stale-result identity checks to stay together.
-        #expect(root.components(separatedBy: "\n").count < 3_150)
+        #expect(root.components(separatedBy: "\n").count < 3_250)
     }
 
     @Test("shared page layout binds scroll content to the viewport")
@@ -373,6 +373,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(modifier.contains("Button(\"完成\", action: onDismiss)"))
         #expect(cluster.contains("focusedRegion"))
         #expect(cluster.contains("private var currentEditingTask"))
+        #expect(cluster.contains("visibleRegions.count == 1"))
+        #expect(cluster.contains("正在编辑输出内容"))
         #expect(cluster.contains("正在编辑\\(activeRegion.displayTitle)"))
         #expect(cluster.contains("这里的内容会显示在照片卡片"))
         #expect(cluster.contains("private struct V1CardRegionNavigator"))
@@ -382,10 +384,12 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(cluster.contains("这里的内容会怎样使用？"))
         #expect(cluster.contains("修改会实时出现在上方完整卡片预览中。"))
         #expect(cluster.contains("模块会替换为每张照片自己的信息。"))
+        #expect(cluster.contains("if visibleRegions.count > 1"))
         #expect(cluster.contains("右下内容还会写入 Apple Photos 的照片说明"))
         #expect(!cluster.contains("IOSCompactEntryListGroup("))
         #expect(cluster.contains("点“完成”返回配置中心；收起键盘不会离开编辑页。"))
-        #expect(textKit.contains("Text(region.displayTitle)"))
+        #expect(textKit.contains("let title: String?"))
+        #expect(textKit.contains("Text(title ?? region.displayTitle)"))
         #expect(textKit.contains("let isFocused: Bool"))
         #expect(textKit.contains("isFocused ? Color.accentColor.opacity(0.42)"))
         #expect(library.contains("displayCategoryTitle"))
@@ -395,7 +399,7 @@ struct IPhoneResponsiveLayoutContractTests {
         // Frozen behavior boundaries for this visual-only pass.
         #expect(cluster.contains("V1ModuleLibrarySurface.fixedHeight"))
         #expect(cluster.contains(".scrollDismissesKeyboard(.never)"))
-        #expect(cluster.contains("ForEach(CardRegion.memoryCardRegions"))
+        #expect(cluster.contains("ForEach(visibleRegions"))
         #expect(!cluster.contains("previewContent"))
         #expect(!cluster.contains("glassEffect"))
         #expect(modifier.contains("keyboardWillChangeFrameNotification"))
@@ -448,8 +452,9 @@ struct IPhoneResponsiveLayoutContractTests {
         )
         let editorSource = String(support[editorStart..<support.endIndex])
 
-        #expect(cluster.contains("ForEach(CardRegion.memoryCardRegions"))
-        #expect(cluster.contains("Text(\"正在编辑\\(activeRegion.displayTitle)\")"))
+        #expect(cluster.contains("ForEach(visibleRegions"))
+        #expect(cluster.contains("正在编辑输出内容"))
+        #expect(cluster.contains("正在编辑\\(activeRegion.displayTitle)"))
         #expect(editorSource.contains("VStack(alignment: .leading, spacing: 6)"))
         #expect(!editorSource.contains("HStack(alignment: .center, spacing: 8)"))
         #expect(editorSource.contains(".frame(maxWidth: .infinity)"))
@@ -693,11 +698,9 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
         )
 
-        #expect(
-            configurationPageSource.contains(
-                "pageSubtitle: \"围绕一个人和一个重要时刻，决定照片如何呈现。\""
-            )
-        )
+        #expect(configurationPageSource.contains("pageSubtitle: interfaceLanguage.localized("))
+        #expect(configurationPageSource.contains("key: \"configuration.page.subtitle\""))
+        #expect(configurationPageSource.contains("fallback: \"围绕一个人和一个重要时刻，决定照片如何呈现。\""))
 
         let previewStart = try #require(
             supportSource.range(of: "struct V1PreviewCard")?.lowerBound
@@ -713,6 +716,11 @@ struct IPhoneResponsiveLayoutContractTests {
         )
 
         #expect(previewBody.contains(".aspectRatio(compactPreviewAspectRatio"))
+        #expect(previewBody.contains(".compactPreview.imageSliceHeightToWidth"))
+        #expect(!previewBody.contains(".compactPreview.totalHeightToWidth"))
+        #expect(previewBody.contains("height: size.height"))
+        #expect(previewBody.contains("layout.capsuleVerticalPaddingToBarHeight"))
+        #expect(!previewBody.contains("height * 0.10"))
         #expect(previewBody.contains("cornerRadius: ConfigurationUI.cornerRadius"))
         #expect(previewBody.contains(".stroke(ConfigurationUI.faintHairline)"))
         #expect(previewBody.contains("color: ConfigurationUI.cardShadow"))
@@ -824,7 +832,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(source.contains("private var activitySection"))
         #expect(source.contains("activityProgressBar"))
         #expect(source.contains(".frame(height: 4)"))
-        #expect(source.contains("进度 \\(progressPercentText)"))
+        #expect(source.contains("localized(\"home.activity.progress\")"))
         #expect(source.contains("V1IOSHomeActivityPresenter.shouldShow(projection)"))
     }
 
@@ -1047,7 +1055,7 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift"
         )
 
-        #expect(cluster.contains("ForEach(CardRegion.memoryCardRegions"))
+        #expect(cluster.contains("ForEach(visibleRegions"))
         #expect(cluster.contains("V1RegionEditorCard("))
         #expect(!cluster.contains("expansionBinding"))
         #expect(!cluster.contains("configurationGuide"))

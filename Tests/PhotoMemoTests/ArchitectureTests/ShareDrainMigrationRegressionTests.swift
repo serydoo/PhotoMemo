@@ -850,6 +850,8 @@ struct ShareDrainMigrationRegressionTests {
                         managedURL: sourceURL,
                         originalFileName:
                             "IMG_0935.jpg",
+                        sourceIdentifier:
+                            "data:not-a-photokit-asset",
                         contentTypeIdentifier:
                             UTType.jpeg.identifier,
                         livePhotoRecoveryHint:
@@ -948,6 +950,8 @@ struct ShareDrainMigrationRegressionTests {
                         managedURL: sourceURL,
                         originalFileName:
                             "IMG_0935.jpg",
+                        sourceIdentifier:
+                            "data:not-a-photokit-asset",
                         contentTypeIdentifier:
                             UTType.jpeg.identifier,
                         livePhotoRecoveryHint:

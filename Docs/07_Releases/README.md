@@ -12,6 +12,22 @@ Canonical repository-line guidance for current release history:
 
 Release events:
 
+## Current Candidate Materials
+
+The current local candidate package is `2.2.1 (87)`, prepared on 2026-08-24
+from the last pushed `2.1.3 (86)` checkpoint. Its version fields are locked,
+but release evidence remains open. It is not a Git commit, TestFlight upload,
+App Store submission, production certification, or public release.
+
+- [`2026-08-24-2.2.1-版本更新说明.md`](2026-08-24-2.2.1-版本更新说明.md)
+- [`2026-08-24-2.2.1-AppStore更新说明.md`](2026-08-24-2.2.1-AppStore更新说明.md)
+- [`2026-08-24-2.2.1-TestFlight测试说明.md`](2026-08-24-2.2.1-TestFlight测试说明.md)
+- [`2026-08-24-2.2.1-同步清单.md`](2026-08-24-2.2.1-同步清单.md)
+
+The `2026-08-22-2.1.4-*` files remain local Draft history only. They were
+prepared before a build was assigned and are explicitly excluded by the current
+sync manifest.
+
 - `2026-08-19-2.1.3-release-notes.md`
 - `2026-08-19-2.1.3-app-store-whats-new.md`
 - `2026-08-19-2.1.3-testflight-notes.md`

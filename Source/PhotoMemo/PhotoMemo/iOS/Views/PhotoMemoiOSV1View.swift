@@ -83,6 +83,13 @@ struct PhotoMemoiOSV1View: View {
         }
     }
 
+    private var presentationStyle: RecordCardPresentationStyle {
+        get { rootConfigurationProjectionState.presentationStyle }
+        nonmutating set {
+            rootConfigurationProjectionState.presentationStyle = newValue
+        }
+    }
+
     private var customLogoBadge: Badge? {
         get { rootConfigurationProjectionState.customLogoBadge }
         nonmutating set {
@@ -208,17 +215,35 @@ struct PhotoMemoiOSV1View: View {
     @AppStorage("photomemo.v1.welcomeSeen")
     private var hasSeenWelcome = false
 
-    private let currentBorderStyleName =
-        MemoMarkLanguage.interfaceStored.localized(
-            key: "configuration.preview.basic_white",
-            fallback: "基础白"
-        )
+    private var currentBorderStyleName: String {
+        switch presentationStyle {
+        case .classicWhite:
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "基础白",
+                fallback: "基础白"
+            )
+        case .minimal:
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "极简",
+                fallback: "极简"
+            )
+        }
+    }
 
-    private let currentBorderStyleDescription =
-        MemoMarkLanguage.interfaceStored.localized(
-            key: "configuration.preview.basic_white.description",
-            fallback: "Classic White 当前唯一公开边框，预览与生成保持同一套锁定规范。"
-        )
+    private var currentBorderStyleDescription: String {
+        switch presentationStyle {
+        case .classicWhite:
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "四处内容，适合完整记录照片信息。",
+                fallback: "四处内容，适合完整记录照片信息。"
+            )
+        case .minimal:
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "一处组合内容，安静地补充这张照片的时间答案。",
+                fallback: "一处组合内容，安静地补充这张照片的时间答案。"
+            )
+        }
+    }
 
     private let previewCompositionEngine =
         V1PreviewCompositionEngine()
@@ -847,6 +872,8 @@ struct PhotoMemoiOSV1View: View {
                     $rootPresentationState.mediaPickerPresentation,
                 logoMode:
                     $rootConfigurationProjectionState.logoMode,
+                presentationStyle:
+                    $rootConfigurationProjectionState.presentationStyle,
                 customLogoBadge:
                     $rootConfigurationProjectionState.customLogoBadge,
                 outputTarget: $outputDraftState.outputTarget,
@@ -1105,6 +1132,8 @@ struct PhotoMemoiOSV1View: View {
                 ),
             subjectAvatarPreviewImagePath:
                 resolvedSubjectAvatarPreviewImagePath,
+            presentationStyle:
+                $rootConfigurationProjectionState.presentationStyle,
             logoMode: logoModeSelectionBinding,
             selectedLogoItem:
                 $rootPresentationState.mediaPickerPresentation.selectedLogoItem,
@@ -1151,8 +1180,6 @@ struct PhotoMemoiOSV1View: View {
                 ),
             selectedMemoryDisplayStyle:
                 selectedMemoryDisplayStyleBinding,
-            borderStyleName:
-                currentBorderStyleName,
             configurationStatus:
                 activeConfigurationStatus,
             onOpenRegionContent: {
@@ -1690,6 +1717,7 @@ struct PhotoMemoiOSV1View: View {
         }
 
         logoMode = preset.logoMode
+        presentationStyle = .classicWhite
         customLogoBadge = nil
         applySavedOutputConfiguration(preset)
     }
@@ -1797,6 +1825,7 @@ struct PhotoMemoiOSV1View: View {
 
     private var previewSection: some View {
         V1PreviewSection(
+            presentationStyle: presentationStyle,
             logoMode: logoMode,
             customLogoImagePath:
                 customLogoBadge?.imagePath,
@@ -1824,6 +1853,10 @@ struct PhotoMemoiOSV1View: View {
 
     private var editorCluster: some View {
         V1RegionEditorCluster(
+            visibleRegions:
+                presentationStyle == .minimal
+                ? [.slotA]
+                : CardRegion.memoryCardRegions,
             slotATextKitCommandBus:
                 editorInteractionState.slotATextKitCommandBus,
             slotBTextKitCommandBus:
@@ -2236,6 +2269,7 @@ struct PhotoMemoiOSV1View: View {
                 configurationAlbumTitle:
                     outputDraftState.configurationAlbumTitle,
                 livePhotoPolicy: outputDraftState.livePhotoPolicy,
+                presentationRoute: presentationStyle,
                 selectedTimeAnchorID: session.selectedTimeAnchorID,
                 language: session.language,
                 savedAt: Date()
@@ -2516,6 +2550,7 @@ struct PhotoMemoiOSV1View: View {
     ) {
         customLogoBadge = projection.badge
         logoMode = projection.logoMode
+        presentationStyle = projection.route
         locationDisplayConfiguration =
             projection.locationConfiguration
         session.language = projection.language

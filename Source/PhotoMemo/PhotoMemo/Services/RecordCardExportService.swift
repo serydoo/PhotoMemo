@@ -105,6 +105,16 @@ final class RecordCardExportService {
         )
     }
 
+    func renderLivePhotoOverlay(
+        photo: SelectedPhoto,
+        card: RecordCard
+    ) throws -> FixedFooterOverlayDescriptor {
+        try pipeline.renderLivePhotoOverlay(
+            photo: photo,
+            card: card
+        )
+    }
+
     func exportIntermediateToTemporaryFile(
         photo: SelectedPhoto,
         card: RecordCard

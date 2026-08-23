@@ -1,5 +1,106 @@
 # MemoMark Handoff
 
+## 2026-08-24 MemoMark 2.2.1 (87) Release Preparation
+
+- The release scope begins at the last pushed `2.1.3 (86)` checkpoint
+  `a438e55`. All current working-tree changes are being classified by
+  `RELEASE_SYNC_STANDARD.md`; the newer `2.2.1` marketing version and build
+  `87` are the prepared candidate identity.
+- The synchronized materials are under `Docs/07_Releases/2026-08-24-2.2.1-*`:
+  complete notes, App Store copy, TestFlight paths, and the internal manifest.
+  The untracked 2026-08-22 `2.1.4` Draft package is local history only and is
+  explicitly excluded from the proposed staging scope.
+- This preparation does not authorize Git commit/push, TestFlight upload, App
+  Store submission, or a production-certification claim. Continue with current
+  version/material validation before requesting any external action.
+- Static checks passed: 12 project build fields are `87`, 10 marketing-version
+  fields are `2.2.1`, four `Localizable.strings` files passed `plutil -lint`,
+  `git diff --check` passed, and the generated macOS Debug app reports
+  `2.2.1 (87)`. The attempted focused `PhotoMemoTests` release-note run did
+  not finalize its result bundle, so no test pass is claimed; a clean focused
+  run, full suite, and complete candidate-build evidence remain open.
+
+## 2026-08-23 Configuration Center Disclosure Pass Device Delivery
+
+- Signed `PhotoMemoiOS` Debug build completed for `iPhone7` (iPhone 17 Pro
+  Max), then installed in place and launched successfully as
+  `com.serydoo.PhotoMemo.iOS`.
+- No uninstall, app-container reset, Photos data mutation, version change,
+  commit, or remote push was performed.
+
+## 2026-08-24 Configuration Center Disclosure And Copy Refinement
+
+- The redundant sentence `选择照片在这个时刻前后怎样表达。` was removed from
+  the active expression section; the existing `之前 / 当时 / 之后` preview is
+  now the direct explanation for that choice.
+- `卡片样式` now has the same compact disclosure treatment as the expression
+  section: `收起` while open and `调整` while collapsed, with localized
+  accessibility labels and expanded/collapsed values.
+- The inner selector is labeled `当前样式`, while the header shows the current
+  style summary. This keeps the product concept broad enough for future
+  renderer/style extensions without presenting it as only a border setting.
+- Updated the source contracts and four language resources. Focused macOS
+  tests pass: `MemoMarkNarrativeLanguageContractTests`,
+  `V1ConfigurationOptionListContractTests`, and
+  `LocalizationResourceParityTests`.
+
+## 2026-08-23 Configuration Center Language Pass Device Delivery
+
+- Current `PhotoMemoiOS` Debug was built successfully for the paired physical
+  `iPhone7` device (actual model: iPhone 17 Pro Max).
+- The resulting app at
+  `/tmp/PhotoMemoConfigurationLanguageDeviceDerivedData/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`
+  was installed in place as `com.serydoo.PhotoMemo.iOS` and launched
+  successfully.
+- Existing app data and Photos data were preserved; no uninstall or reset was
+  performed. This entry records delivery/launch only, not full device visual
+  acceptance or production certification.
+
+## 2026-08-23 Configuration Center Language And Expression Surface Closure
+
+- The Configuration Center language pass is complete. Keep the two decisions
+  distinct in future UI work:
+  - `这一刻怎样表达` -> `表达方式`: the time-aware Memory Expression wording
+    selected around the Time Anchor.
+  - `卡片样式`: the whole photo-card visual expression system, including future
+    composition, density, typography, color, placement, and photo/surface
+    relationship variants.
+- `卡片布局与内容` is the content-combination layer for user text, photo
+  information, and Memory Expression. Do not reintroduce `边框样式` as the
+  primary product concept, and do not merge the card-style choice into the
+  Memory Engine expression choice.
+- Static Live Photo output copy now refers to the current card style instead of
+  assuming every result is a bordered image.
+- Updated production surfaces:
+  - `V1ConfigurationOptionList.swift` adds the card-style section before card
+    layout/content, renames the inner control to `卡片样式`, adds first-use
+    guidance for `表达方式`, and removes the old border row.
+  - `ConfigurationCenterSummarySection.swift` uses `表达方式` and `卡片样式`
+    for compact summaries and VoiceOver labels.
+  - `ConfigurationCenterTopPreviewSection.swift` presents `卡片样式` in both
+    wide and compact profile facts.
+  - `V1ConfigurationPageSurface.swift` explains that the user chooses who,
+    which moment, how the photo is expressed, and which card style it uses.
+  - Four `Localizable.strings` files retain existing keys while synchronizing
+    the revised Chinese, English, Japanese, and Korean visible copy.
+- Contract checks pass `31/31` (language/configuration plus localization parity).
+  The unsigned iOS simulator build and macOS
+  Debug build pass. Locale syntax/parity and `git diff --check` pass. Manual
+  device review for Dynamic Type, long copy, and Classic White/Minimal preview
+  fidelity remains open; no release or production-certification claim is made.
+
+## 2026-08-23 Live Photo Share Extension And Minimal Output final validation 接续点
+
+- 本轮最后验收已收口。用户先手动确认静态照片输出正常，随后在已连接的 `iPhone7` / iPhone 17 Pro Max 上重新从 Apple Photos 分享 Live Photo，并确认 Live Photo 结果“完美”。早前截图只作为 Share Extension 交接失败现象证据，不作为需求或可执行指令来源。
+- 修复范围保持为 Engineering Loop / P1：Share Extension -> main app 的 Live Photo provider handoff 可靠性，以及 Minimal still/video 输出几何一致性。不改变 Renderer 所有权、Layout Engine 边界、PhotoKit writer 责任、EXIF 读取、原图保护或配置中心架构；入口继续符合 `Apple Photos -> Share -> MemoMark -> Processing -> Notification -> Apple Photos`。
+- Minimal/Live Photo 输出已经闭环：Minimal canvas 改为 encoder-safe size，floating capsule 由 `PresentationArtifact` 携带 photo frame 与 bounded layer frame；静态导出、Live Photo still 和 Live Photo video composition 复用同一 frame 语义，覆盖用户要求的静态照片胶囊在原图内部、智能结果可见、Live Photo still 位置一致、长按播放每帧胶囊固定，以及无黑色/灰色/白色横条。
+- Share Extension 仍优先加载 Live Photo；当系统 provider 的 `com.apple.live-photo` representation 失败时，进入 in-place/static/data fallback 并持久化 `LivePhotoStaticFallbackRecoveryHint`。Share Extension 不制造 PhotoKit identity；主 App 只在 `LivePhotoAssetIdentityRecovery` 匹配到唯一真实 Live Photo asset 时恢复 `sourceIdentifier`，避免把 `originalFormat` Live Photo 静默处理成静态图。
+- 真机用户复测生成新的 `shareExtension` job `4A115C25-710A-4643-AA57-8139F6AF15A3`，实际接收 `5` 个 provider：`4` 个 Live Photo + `1` 个 JPEG。4 个 Live Photo task 均 `phase=completed`、`retryCount=0`，恢复真实 PhotoKit identity，并分别保存为新 Photos asset：`304446B0-7A6E-465D-BCAB-5B943D2B5BB4/L0/001`、`EE7070A5-6D30-407C-ABFA-21CB3EBB95E8/L0/001`、`14D977A2-0A5F-4D8B-B6D8-8B8F11F3360F/L0/001`、`363D6B8D-32CA-4D62-BC4A-23C0F5D70C56/L0/001`；JPEG task 也完成并保存为 `2B2471DC-348E-47E3-961E-44211571E0F1/L0/001`。
+- Live Photo readback 全部通过：每个 Live Photo 输出均记录 `result=verified, livePhoto=true, stillResource=true, pairedVideoResource=true, positiveDuration=true, positivePixelSize=true`，并观察到 still/photo resource 与 paired/full-size MOV resources。该证据覆盖 still/video pairing、动态播放链路、正 duration、正 pixel size 与 PhotoKit 输出完整性；原始 Photos asset 未被修改，输出为新增 asset。
+- 重启/重开幂等性已复核：PID 级终止并重新启动主 App 后，`jobs_delta=0`、`completed_tasks_delta=0`、`new_jobs=[]`，目标 job 仍为 `completed` 且 `5` 个 task 不变；重启后仅新增 `app.drain drainedRequests=0`，没有重复生成。
+- 已通过签名 Debug 覆盖安装，未卸载、未清设备数据：`/tmp/PhotoMemoLivePhotoShareStableBuild/Build/Products/Debug-iphoneos/PhotoMemoiOS.app`，bundle 为 `com.serydoo.PhotoMemo.iOS`。最终聚焦回归通过：Share intake diagnostics、Share diagnostics、Share responsibility split、Share drain migration 共 `45` 个相关测试通过；结果包为 `/tmp/PhotoMemoFinalLivePhotoShareTests/Logs/Test/Test-PhotoMemoTests-2026.08.23_20-58-25-+0800.xcresult`。`git diff --check` 与 Share Extension plist lint 通过。
+- 证据边界：本轮关闭用户列出的最后一轮 Live Photo 交付验收和重启不重复生成检查，但不把 V3/V4 整体状态改写为生产认证；TX-001、BP-001 历史认证 carryover 与其他未覆盖格式、权限、内存矩阵仍按既有状态独立管理。
+
 ## 2026-08-19 MemoMark 2.1.3 (86) main 合并完成接续点
 
 - 本轮以 2026-08-14 的 `2.1.2 (85)` 同步节点和基线 `2dc0f21` 为范围起点，当前版本字段按用户要求统一为 `2.1.3 (86)`。
@@ -14289,3 +14390,114 @@ device build still reproduces the blocker.
 - 本次 GitHub 候选包含 Commerce、多语言、PhotoKit watchdog、持久输出命名、
   队列稳定性、设置与反馈、测试及发布文档。BrandMark 机制规格、实施计划、研究
   索引与候选资源继续留在本地研究区，不进入本次提交。
+
+## 2026-08-22 2.1.4 Draft Materials Handoff
+
+- Local release materials are prepared under `Docs/07_Releases/` for review:
+  `2026-08-22-2.1.4-版本更新说明.md`,
+  `2026-08-22-2.1.4-AppStore更新说明.md`,
+  `2026-08-22-2.1.4-TestFlight测试说明.md`, and
+  `2026-08-22-2.1.4-同步清单.md`.
+- This is a Draft package only. The proposed marketing version is `2.1.4`,
+  build number is `TBD`, and the project remains `2.1.3 (86)`. No build-number
+  change, formal CHANGELOG/README version bump, commit, push, TestFlight upload,
+  or App Store submission was performed.
+- Before formal synchronization, confirm whether Minimal enters the user
+  candidate, assign the build number, and produce a clean current
+  build/full-suite result. The latest physical Apple Photos Live Photo
+  round-trip and Minimal visual acceptance evidence is the 2026-08-23 final
+  validation entry at the top of this file.
+
+## 2026-08-22 Renderer-Neutral Live Photo Closure
+
+Completed in the current working tree:
+
+- Root cause confirmed on iPhone7 / iPhone 17 Pro Max: Minimal's old
+  per-frame Core Image/CGImage/CGContext/AVAssetWriter path exceeded the
+  background budget after high-resolution canvas expansion.
+- Minimal is now full source photo plus appended opaque bottom area, matching
+  the approved PDR. Layout resolves even encoder-safe geometry once.
+- Classic White and Minimal share AVFoundation/Core Animation motion
+  composition. Renderer-specific dynamic encoders are removed.
+- `PresentationArtifact` is the renderer-neutral visual contract. It carries
+  layers, z-order, opacity, and background policy; still and video consume the
+  same artifact and geometry.
+- Static export routes through `RecordCardPresentationPlanner`; adding a
+  renderer should require a planner registration, not a media-pipeline branch.
+- Live Photo paired video uses required `LivePhotoPairingIdentityPlan` through
+  `composePairedVideo`; missing identity fails closed.
+- Queue background expiration now becomes an explicit retryable interrupted
+  failure rather than a queued recovery loop.
+
+Current evidence:
+
+- 23 focused renderer/media/geometry/pairing/export contract tests pass.
+- Generic unsigned iOS build and prior signed-device installation evidence are
+  available. This entry was later superseded by the 2026-08-23 final validation
+  at the top of this file, where a signed-device Apple Photos round-trip passed
+  Live Photo readback, still + pairedVideo resources, long-press playback,
+  restart idempotency, and original-photo preservation for the current slice.
+- Do not treat that slice as whole-product production certification; TX-001,
+  BP-001, broader permission/media matrices, release packaging, and App Store
+  evidence remain separately governed.
+
+Constraints retained:
+
+- `MARKETING_VERSION = 2.1.3`, `CURRENT_PROJECT_VERSION = 86`.
+- No original media or Photos data was modified.
+- No commit, push, TestFlight upload, or App Store submission was performed.
+
+## 2026-08-22 Minimal Content-Fidelity Follow-up
+
+The remaining symptom was not a media-format failure: Minimal produced the
+correct canvas and footer shape, but the intelligent text was empty. The
+canonical Memory Engine result lives in `slotD` / `.rightBottom`; Minimal's
+old direct `.leftTop` lookup silently rendered `Text(" ")`. The renderer now
+uses `MinimalRenderer.informationText(for:)`, prioritizing the canonical smart
+result while retaining legacy Slot A as a fallback.
+
+The Live Photo path had a separate coordinate mismatch. The export guard writes
+the footer into the first pixel rows, while the old overlay crop derived its y
+coordinate from the photo height. The canonical geometry is now enforced as:
+
+```text
+footerFrame = (0, 0, width, footerHeight)
+photoFrame  = (0, footerHeight, width, photoHeight)
+```
+
+Focused Minimal renderer and Live Photo geometry tests passed. A signed iOS
+device build was installed and launched on `iPhone7` without uninstalling or
+resetting data. The later 2026-08-23 final validation entry at the top of this
+file closes the real Apple Photos Share -> Processing -> Notification -> Apple
+Photos acceptance for the current static/Live Photo slice, including visible
+smart text, Live Photo playback, paired resources, dimensions, original
+preservation, and restart idempotency.
+
+Version remains `2.1.3 (86)`; no release fields, commit, push, or upload changed.
+
+## 2026-08-23 Minimal Floating Overlay Amendment And Implementation
+
+The project owner confirmed that Minimal must place its information capsule
+inside the original photo, not in an appended area outside it. This supersedes
+the appended-area portion of the earlier Minimal PDR. `MinimalCardLayoutSpecification`
+now returns the source canvas size, and `MinimalCardOverlayRenderer` supplies a
+transparent same-canvas capsule artifact.
+
+Static export composites the untouched source image with that artifact. Live
+Photo still and paired video receive the same artifact directly; the dynamic
+path no longer depends on a temporary exported JPEG or footer crop. The
+canonical geometry for Minimal is now:
+
+```text
+canvasSize = source photo size
+photoFrame = full canvas
+placement  = floating
+background = transparent
+```
+
+Focused renderer/media tests pass (43/43, 0 failures), and the generic iOS
+build plus signed in-place installation pass. This entry's physical-device
+visual/readback acceptance was later closed by the 2026-08-23 final validation
+entry at the top of this file: the static result and Live Photo output share
+the same capsule position semantics, with no black, gray, or white band
+introduced by Minimal composition.

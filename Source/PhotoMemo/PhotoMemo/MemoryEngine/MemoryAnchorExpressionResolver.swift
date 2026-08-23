@@ -306,6 +306,19 @@ enum MemoryAnchorExpressionResolver {
                 candidate: expressionStyle
             )
 
+        if resolvedStyle.isCanonicalNatural,
+           prefersAnnualOccurrence,
+           !relativeSnapshot.isFutureRelative,
+           let annualOccurrence {
+            return canonicalAnnualText(
+                subjectText: subjectText,
+                anchorTitle: anchorTitle,
+                anchorType: anchorType,
+                annualOccurrence: annualOccurrence,
+                language: language
+            )
+        }
+
         if resolvedStyle.isCanonicalNatural {
             return narrativeText(
                 subjectText: subjectText,
@@ -571,6 +584,111 @@ enum MemoryAnchorExpressionResolver {
 }
 
 private extension MemoryAnchorExpressionResolver {
+
+    static func canonicalAnnualText(
+        subjectText: String,
+        anchorTitle: String,
+        anchorType: AnchorType,
+        annualOccurrence: MemoryAnchorAnnualOccurrence,
+        language: MemoMarkLanguage
+    ) -> String {
+        let style = MemoryAnchorExpressionStyle.resolvedStyle(
+            for: anchorType,
+            candidate: nil
+        )
+        let subject = normalizedText(subjectText)
+            ?? normalizedText(anchorTitle)
+            ?? (language == .english ? "this memory" : "记忆对象")
+        let title = normalizedText(anchorTitle)
+            ?? anchorType.suggestedTitle
+
+        switch language {
+        case .simplifiedChinese:
+            switch anchorType {
+            case .birthday:
+                if annualOccurrence.daysUntilOccurrence == 0 {
+                    return "今天是\(subject)\(annualOccurrence.yearsAtOccurrence)岁生日"
+                }
+                return renderedBirthdayAnnualText(
+                    subjectText: subject,
+                    style: style,
+                    occurrence: annualOccurrence
+                )
+            case .marriage:
+                if annualOccurrence.daysUntilOccurrence == 0 {
+                    return "今天是结婚\(annualOccurrence.yearsAtOccurrence)周年"
+                }
+                return renderedMarriageAnnualText(
+                    style: style,
+                    occurrence: annualOccurrence
+                )
+            case .relationship:
+                if annualOccurrence.daysUntilOccurrence == 0 {
+                    return "今天是\(title)\(annualOccurrence.yearsAtOccurrence)周年"
+                }
+                return renderedRelationshipAnnualText(
+                    anchorTitle: title,
+                    style: style,
+                    occurrence: annualOccurrence
+                )
+            case .exam, .custom:
+                return "还有\(annualOccurrence.countdownValueText)，就是\(title)"
+            }
+        case .english:
+            switch anchorType {
+            case .birthday:
+                if annualOccurrence.daysUntilOccurrence == 0 {
+                    return "Today is \(subject)'s \(annualOccurrence.englishBirthdayText)"
+                }
+                return englishBirthdayAnnualText(
+                    subjectText: subject,
+                    style: style,
+                    occurrence: annualOccurrence
+                )
+            case .marriage:
+                if annualOccurrence.daysUntilOccurrence == 0 {
+                    return "Today marks \(annualOccurrence.yearsAtOccurrence) years of marriage"
+                }
+                return englishMarriageAnnualText(
+                    style: style,
+                    occurrence: annualOccurrence
+                )
+            case .relationship:
+                if annualOccurrence.daysUntilOccurrence == 0 {
+                    return "Today marks \(annualOccurrence.yearsAtOccurrence) years since \(title)"
+                }
+                return englishRelationshipAnnualText(
+                    anchorTitle: title,
+                    style: style,
+                    occurrence: annualOccurrence
+                )
+            case .exam, .custom:
+                return "\(annualOccurrence.englishCountdownValueText) until \(title)"
+            }
+        case .japanese, .korean:
+            let days = annualOccurrence.daysUntilOccurrence
+            switch anchorType {
+            case .birthday:
+                if days == 0 {
+                    return language == .japanese
+                        ? "今日は\(subject)の\(annualOccurrence.yearsAtOccurrence)歳の誕生日です"
+                        : "오늘은 \(subject)의 \(annualOccurrence.yearsAtOccurrence)번째 생일입니다"
+                }
+                return language == .japanese
+                    ? "あと\(days)日で\(subject)の\(annualOccurrence.yearsAtOccurrence)歳の誕生日"
+                    : "\(days)일 후 \(subject)의 \(annualOccurrence.yearsAtOccurrence)번째 생일입니다"
+            case .marriage, .relationship, .exam, .custom:
+                if days == 0 {
+                    return language == .japanese
+                        ? "今日は\(title)\(annualOccurrence.yearsAtOccurrence)周年です"
+                        : "오늘은 \(title) \(annualOccurrence.yearsAtOccurrence)주년입니다"
+                }
+                return language == .japanese
+                    ? "あと\(days)日で\(title)\(annualOccurrence.yearsAtOccurrence)周年です"
+                    : "\(days)일 후 \(title) \(annualOccurrence.yearsAtOccurrence)주년입니다"
+            }
+        }
+    }
 
     static func narrativeText(
         subjectText: String,

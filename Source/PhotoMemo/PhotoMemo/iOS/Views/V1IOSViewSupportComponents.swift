@@ -670,6 +670,7 @@ extension V1TitledSectionCard where TrailingAccessory == EmptyView {
 
 struct V1PreviewCard: View {
 
+    let presentationStyle: RecordCardPresentationStyle
     let logoMode: V1LogoMode
     let customLogoImagePath: String?
     let subjectAvatarLogoImagePath: String?
@@ -678,14 +679,9 @@ struct V1PreviewCard: View {
     let contextText: String
     let memoryText: String
 
+    @ViewBuilder
     var body: some View {
-        Color.clear
-            .aspectRatio(compactPreviewAspectRatio, contentMode: .fit)
-            .overlay {
-                GeometryReader { proxy in
-                    compactPreviewCard(size: proxy.size)
-                }
-            }
+        previewSurface
             .clipShape(
                 RoundedRectangle(
                     cornerRadius: ConfigurationUI.cornerRadius,
@@ -704,6 +700,227 @@ struct V1PreviewCard: View {
                 radius: 8,
                 y: 3
             )
+    }
+
+    @ViewBuilder
+    private var previewSurface: some View {
+        switch presentationStyle {
+        case .classicWhite:
+            Color.clear
+                .aspectRatio(compactPreviewAspectRatio, contentMode: .fit)
+                .overlay {
+                    GeometryReader { proxy in
+                        compactPreviewCard(size: proxy.size)
+                    }
+                }
+        case .minimal:
+            Color.clear
+                .aspectRatio(
+                    1 / MinimalCardLayoutSpecification
+                        .compactPreview.imageSliceHeightToWidth,
+                    contentMode: .fit
+                )
+                .overlay {
+                    GeometryReader { proxy in
+                        minimalPreviewCard(size: proxy.size)
+                    }
+                }
+        }
+    }
+
+    private func minimalPreviewCard(size: CGSize) -> some View {
+        let layout = MinimalRenderer.layout(for: .landscape)
+        let barHeight = size.width * layout.barHeightToImageWidth
+
+        return ZStack(alignment: .bottomTrailing) {
+            minimalLandscapeSlice(
+                width: size.width,
+                height: size.height
+            )
+            .frame(
+                width: size.width,
+                height: size.height
+            )
+
+            minimalPreviewInformationBar(
+                width: size.width,
+                height: barHeight,
+                layout: layout
+            )
+            .padding(
+                .trailing,
+                size.width * (1 - layout.trailingAnchorX)
+            )
+            .padding(
+                .bottom,
+                size.width * layout.overlayBottomInsetToImageWidth
+            )
+        }
+        .frame(
+            width: size.width,
+            height: size.height
+        )
+        .clipped()
+    }
+
+    private func minimalPreviewInformationBar(
+        width: CGFloat,
+        height: CGFloat,
+        layout: MinimalRenderer.Layout
+    ) -> some View {
+        let capsuleHeight = height * layout.capsuleHeightToBarHeight
+        let avatarSize = min(
+            height * layout.avatarSizeToBarHeight,
+            capsuleHeight
+        )
+        return HStack(spacing: height * layout.avatarTextSpacingToBarHeight) {
+            minimalLogo(
+                size: avatarSize
+            )
+            .frame(
+                width: height * layout.avatarAreaWidthToBarHeight,
+                height: capsuleHeight,
+                alignment: .leading
+            )
+
+            Text(regionText.isEmpty ? " " : regionText)
+                .font(
+                    .system(
+                        size: height * layout.textSizeToBarHeight,
+                        weight: .medium
+                    )
+                )
+                .monospacedDigit()
+                .foregroundStyle(MinimalRenderer.foreground)
+                .lineLimit(layout.textLineLimit)
+                .allowsTightening(true)
+                .minimumScaleFactor(0.78)
+        }
+        .fixedSize(horizontal: true, vertical: false)
+        .padding(
+            .trailing,
+            height * layout.capsuleHorizontalPaddingToBarHeight
+        )
+        .padding(
+            .leading,
+            height * layout.avatarLeadingInsetToBarHeight
+        )
+        .padding(
+            .vertical,
+            height * layout.capsuleVerticalPaddingToBarHeight
+        )
+        .background {
+            RoundedRectangle(
+                cornerRadius: capsuleHeight / 2,
+                style: .continuous
+            )
+            .fill(MinimalRenderer.capsuleSurface)
+            .overlay {
+                RoundedRectangle(
+                    cornerRadius: capsuleHeight / 2,
+                    style: .continuous
+                )
+                .stroke(
+                    MinimalRenderer.hairline,
+                    lineWidth: max(1, height * 0.006)
+                )
+            }
+        }
+        .frame(
+            maxWidth: width * layout.maximumModuleWidth,
+            minHeight: capsuleHeight,
+            alignment: .trailing
+        )
+    }
+
+    private func minimalLandscapeSlice(
+        width: CGFloat,
+        height: CGFloat
+    ) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.73, green: 0.84, blue: 0.88),
+                    Color(red: 0.93, green: 0.84, blue: 0.69)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            Circle()
+                .fill(Color.white.opacity(0.68))
+                .frame(width: height * 0.34)
+                .position(
+                    x: width * 0.78,
+                    y: height * 0.26
+                )
+
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: height * 0.80))
+                path.addLine(to: CGPoint(x: width * 0.22, y: height * 0.30))
+                path.addLine(to: CGPoint(x: width * 0.43, y: height * 0.79))
+                path.addLine(to: CGPoint(x: width * 0.63, y: height * 0.46))
+                path.addLine(to: CGPoint(x: width, y: height * 0.82))
+                path.addLine(to: CGPoint(x: width, y: height))
+                path.addLine(to: CGPoint(x: 0, y: height))
+                path.closeSubpath()
+            }
+            .fill(
+                Color(
+                    red: 0.38,
+                    green: 0.48,
+                    blue: 0.45
+                )
+                .opacity(0.88)
+            )
+
+            LinearGradient(
+                colors: [
+                    Color(red: 0.42, green: 0.56, blue: 0.50),
+                    Color(red: 0.26, green: 0.38, blue: 0.35)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: height * 0.31)
+            .frame(maxHeight: .infinity, alignment: .bottom)
+        }
+        .frame(width: width, height: height)
+        .clipped()
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func minimalLogo(size: CGFloat) -> some View {
+        switch logoMode {
+        case .appleMini:
+            Image(systemName: "apple.logo")
+                .font(.system(size: size, weight: .semibold))
+        case .customUpload:
+            if let customLogoImagePath,
+               let image = UIImage(contentsOfFile: customLogoImagePath) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "apple.logo")
+                    .font(.system(size: size * 0.82, weight: .semibold))
+            }
+        case .subjectAvatar:
+            if let subjectAvatarLogoImagePath,
+               let image = UIImage(contentsOfFile: subjectAvatarLogoImagePath) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "apple.logo")
+                    .font(.system(size: size * 0.82, weight: .semibold))
+            }
+        }
     }
 
     private var compactSpec: CompactInformationBarSpec {

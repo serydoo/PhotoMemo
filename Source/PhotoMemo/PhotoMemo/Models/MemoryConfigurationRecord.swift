@@ -117,13 +117,7 @@ struct MemoryConfigurationRecord:
         Codable,
         Hashable {
 
-        enum Route:
-            String,
-            Codable,
-            Hashable {
-
-            case classicWhite
-        }
+        typealias Route = RecordCardPresentationStyle
 
         struct Logo:
             Codable,
@@ -170,6 +164,64 @@ struct MemoryConfigurationRecord:
         var locationConfiguration:
             ExpressionModuleConfiguration?
         var logo: Logo
+
+        private enum CodingKeys:
+            String,
+            CodingKey {
+
+            case route
+            case locationConfiguration
+            case logo
+        }
+
+        init(
+            route: Route,
+            locationConfiguration: ExpressionModuleConfiguration?,
+            logo: Logo
+        ) {
+            self.route = route
+            self.locationConfiguration = locationConfiguration
+            self.logo = logo
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(
+                keyedBy: CodingKeys.self
+            )
+            let routeRawValue = try container.decodeIfPresent(
+                String.self,
+                forKey: .route
+            )
+            self.route = routeRawValue
+                .flatMap(Route.init(rawValue:))
+                ?? .classicWhite
+            self.locationConfiguration = try container.decodeIfPresent(
+                ExpressionModuleConfiguration.self,
+                forKey: .locationConfiguration
+            )
+            self.logo = try container.decode(
+                Logo.self,
+                forKey: .logo
+            )
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(
+                keyedBy: CodingKeys.self
+            )
+            try container.encode(
+                route.rawValue,
+                forKey: .route
+            )
+            try container.encodeIfPresent(
+                locationConfiguration,
+                forKey: .locationConfiguration
+            )
+            try container.encode(
+                logo,
+                forKey: .logo
+            )
+        }
     }
 
     struct Output:

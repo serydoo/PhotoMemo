@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.1 (87) Expression, Media Truth, And Configuration Clarity - 2026-08-24
+
+- Added the Minimal card style as a bounded presentation route whose floating information capsule stays within the photo canvas, while preserving Classic White content and Logo configuration when users switch styles.
+- Clarified the Configuration Center distinction between time-aware Memory Expression and the photo card's overall visual style, with synchronized four-language copy and accessibility states.
+- Preserved static-photo output as static and Live Photo output as a verified still/video pair when original format is selected; incomplete pairing, unresolved identity, or failed readback now remains recoverable instead of silently reporting a static success.
+- Refined birthday-day and annual-anchor language so birthdays, anniversaries, and countdowns retain their distinct everyday meaning and use the configured photo-output language.
+- Kept all processing local, originals unchanged, Apple Photos as the photo owner, and the existing Memory Engine, Layout Engine, Renderer, Export, and Share Extension boundaries intact.
+
+This is a controlled V4 refinement candidate. Version fields are locked to `2.2.1 (87)`; full current-build validation, visual/accessibility acceptance, StoreKit, TestFlight, App Store Connect, and production-certification evidence remain separate and open.
+
 ## 2.1.3 (86) Multilingual Memory Expression And Delivery Clarity - 2026-08-19
 
 - Added a four-language localization architecture for Simplified Chinese, English, Japanese, and Korean, with Interface Language kept independent from Preset Output Language.

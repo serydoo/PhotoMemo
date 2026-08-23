@@ -11,7 +11,7 @@ struct V1NativeSystemInteractionContractTests {
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1OutputPageSurface.swift"
         )
 
-        #expect(source.contains("\"回到哪里\","))
+        #expect(source.contains("output.destination.title"))
         #expect(source.contains(".pickerStyle(.segmented)"))
         #expect(!source.contains("private struct V1OutputTargetGrid"))
     }
@@ -24,7 +24,8 @@ struct V1NativeSystemInteractionContractTests {
 
         #expect(source.contains("List(presentation.historyRows)"))
         #expect(source.contains(".listStyle(.plain)"))
-        #expect(source.contains("Button(\"完成\")"))
+        #expect(source.contains("task.recent.sheet.title"))
+        #expect(source.contains("common.done"))
     }
 
     @Test("backup swipe confirmation avoids destructive precommit")
@@ -87,14 +88,14 @@ struct V1NativeSystemInteractionContractTests {
 
         #expect(rootSource.contains("configurationStatus: activeConfigurationStatus"))
         #expect(outputSource.contains("let configurationStatus: V1ConfigurationStatus"))
-        #expect(outputSource.contains("\"已保存\""))
-        #expect(outputSource.contains("\"重新保存\""))
+        #expect(outputSource.contains("output.save.saved"))
+        #expect(outputSource.contains("output.save.retry"))
         #expect(
             homeSource.contains(
                 ".buttonStyle(V1CompactPrimaryActionButtonStyle())"
             )
         )
-        #expect(homeSource.contains("App 内选择照片"))
+        #expect(homeSource.contains("home.process.choose_photo"))
         #expect(!homeSource.contains("备用：App 内选择照片"))
         #expect(outputSource.contains("V1OutputSaveButtonStyle"))
         #expect(

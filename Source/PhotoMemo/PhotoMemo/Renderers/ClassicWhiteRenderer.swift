@@ -308,14 +308,14 @@ enum ClassicWhiteRenderer {
                 )
             )
 
-        return CGSize(
+        return PresentationPixelGeometry.encoderSafeSize(CGSize(
             width: width,
             height:
                 round(
                     imageHeight
                     * (1 + layout.borderToImageHeightRatio)
                 )
-        )
+        ))
     }
 }
 

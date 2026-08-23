@@ -543,7 +543,7 @@ struct ConfigurationCenterTopPreviewSection<
             profileInlineFact(
                 title: interfaceLocalized(
                     "configuration.preview.border",
-                    fallback: "边框"
+                    fallback: "卡片样式"
                 ),
                 value: currentBorderStyleName,
                 systemImage: MemoMarkSymbol.configuration.name
@@ -574,7 +574,7 @@ struct ConfigurationCenterTopPreviewSection<
             profileInlineFact(
                 title: interfaceLocalized(
                     "configuration.preview.border",
-                    fallback: "边框"
+                    fallback: "卡片样式"
                 ),
                 value: currentBorderStyleName,
                 systemImage: MemoMarkSymbol.configuration.name

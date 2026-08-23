@@ -3,6 +3,7 @@ import SwiftUI
 
 struct V1PreviewSection: View {
 
+    let presentationStyle: RecordCardPresentationStyle
     let logoMode: V1LogoMode
     let customLogoImagePath: String?
     let subjectAvatarLogoImagePath: String?
@@ -14,6 +15,7 @@ struct V1PreviewSection: View {
 
     var body: some View {
         V1PreviewCard(
+            presentationStyle: presentationStyle,
             logoMode: logoMode,
             customLogoImagePath: customLogoImagePath,
             subjectAvatarLogoImagePath:

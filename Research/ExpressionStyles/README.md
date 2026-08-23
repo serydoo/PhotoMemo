@@ -2,6 +2,18 @@
 
 Last updated: 2026-07-30
 
+## 2026-08-19 bounded implementation exception
+
+The project owner explicitly authorized the bounded `Minimal` implementation
+defined by `Docs/01_Product/V4_Minimal_Expression_Style_PDR_2026-08-19.md` and
+directed that the earlier display-implementation wait condition not block this
+specific work. For this one accepted slice, that PDR supersedes the general
+research-only wording below.
+
+This exception does not close TX-001, BP-001, or production certification, and
+does not authorize other Expression Style candidates or a broad architecture
+rewrite.
+
 ## Status
 
 ```text
@@ -10,6 +22,9 @@ V4.0 Research And Product Definition
 Not Frozen
 No Production Implementation Authorized
 ```
+
+Except for the accepted 2026-08-19 Minimal slice described above, the status
+remains unchanged.
 
 This document is the active research foundation for MemoMark V4. It remains a
 research starting point rather than a Product Design Review, architecture

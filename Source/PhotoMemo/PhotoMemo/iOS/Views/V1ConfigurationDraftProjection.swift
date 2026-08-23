@@ -110,6 +110,8 @@ struct V1ConfigurationAggregateDraft: Hashable {
     let mediaOutputMode: V1MediaOutputMode
     let livePhotoPolicy:
         MemoryConfigurationRecord.Output.LivePhotoPolicy
+    let presentationRoute:
+        MemoryConfigurationRecord.Presentation.Route
     let selectedTimeAnchorID: UUID?
     let savedAt: Date
     let language: MemoMarkLanguage
@@ -131,6 +133,8 @@ struct V1ConfigurationAggregateDraft: Hashable {
         mediaOutputMode: V1MediaOutputMode,
         livePhotoPolicy:
             MemoryConfigurationRecord.Output.LivePhotoPolicy,
+        presentationRoute:
+            MemoryConfigurationRecord.Presentation.Route = .classicWhite,
         selectedTimeAnchorID: UUID?,
         savedAt: Date,
         language: MemoMarkLanguage = .simplifiedChinese
@@ -154,6 +158,7 @@ struct V1ConfigurationAggregateDraft: Hashable {
         self.albumTitle = albumTitle
         self.mediaOutputMode = mediaOutputMode
         self.livePhotoPolicy = livePhotoPolicy
+        self.presentationRoute = presentationRoute
         self.selectedTimeAnchorID = selectedTimeAnchorID
         self.savedAt = savedAt
         self.language = language
@@ -255,7 +260,7 @@ enum V1ConfigurationAggregateCandidateBuilder {
                 )
             ),
             presentation: .init(
-                route: .classicWhite,
+                route: draft.presentationRoute,
                 locationConfiguration: draft.locationConfiguration,
                 logo: logo
             ),
@@ -318,7 +323,7 @@ enum V1ConfigurationAggregateCandidateBuilder {
                 )
             ),
             presentation: .init(
-                route: .classicWhite,
+                route: draft.presentationRoute,
                 locationConfiguration:
                     draft.locationConfiguration,
                 logo: logo

@@ -195,7 +195,7 @@ struct ConfigurationCenterSummarySection: View {
             summaryDivider
 
             summaryRow(
-                title: localized("configuration.summary.memory_expression", fallback: "记忆表达"),
+                title: localized("configuration.summary.memory_expression", fallback: "表达方式"),
                 systemImage: MemoMarkSymbol.memoryContent.name,
                 detail: memoryDisplayDetail
             ) {
@@ -209,7 +209,7 @@ struct ConfigurationCenterSummarySection: View {
                         .foregroundStyle(.secondary)
                 } else {
                     Picker(
-                        localized("configuration.summary.memory_expression", fallback: "记忆表达"),
+                        localized("configuration.summary.memory_expression", fallback: "表达方式"),
                         selection: selectedMemoryDisplayStyle
                     ) {
                         ForEach(
@@ -223,16 +223,16 @@ struct ConfigurationCenterSummarySection: View {
                     .pickerStyle(.menu)
                     .labelsHidden()
                     .controlSize(.small)
-                    .accessibilityLabel(localized("configuration.summary.choose_expression", fallback: "选择记忆表达方式"))
+                    .accessibilityLabel(localized("configuration.summary.choose_expression", fallback: "选择表达方式"))
                 }
             }
 
             summaryDivider
 
             summaryRow(
-                title: localized("configuration.summary.border_style", fallback: "边框样式"),
+                title: localized("configuration.summary.border_style", fallback: "卡片样式"),
                 systemImage: MemoMarkSymbol.configuration.name,
-                detail: localized("configuration.summary.border_detail", fallback: "当前使用基础白。")
+                detail: localized("configuration.summary.border_detail", fallback: "当前使用的卡片样式。")
             ) {
                 Text(currentBorderStyleName)
                     .font(.subheadline.weight(.semibold))

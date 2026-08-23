@@ -325,6 +325,8 @@ final class PhotoMemoShareExtensionIntakeService {
         _ items: [NSExtensionItem]
     ) async throws -> PhotoMemoShareExtensionImportResult {
 
+        let requestID = UUID()
+
         let itemProviders =
             providerLoader
             .allItemProviders(
@@ -340,7 +342,12 @@ final class PhotoMemoShareExtensionIntakeService {
             itemProviderCount:
                 itemProviders.count,
             supportedProviderCount:
-                providers.count
+                providers.count,
+            requestID: requestID
+        )
+        diagnostics.recordProviderDiagnostics(
+            itemProviders,
+            requestID: requestID
         )
 
         guard !providers.isEmpty else {
@@ -350,7 +357,6 @@ final class PhotoMemoShareExtensionIntakeService {
 
         guard providers.count <= maxSupportedPhotoCount,
               maxSupportedPhotoCount > 0 else {
-            let requestID = UUID()
             let failureContext =
                 PhotoMemoShareIntakeOperationSeed(
                     itemProviderCount:
@@ -388,7 +394,6 @@ final class PhotoMemoShareExtensionIntakeService {
             )
         }
 
-        let requestID = UUID()
         let configurationSnapshot =
             snapshotService.loadSnapshot()
         diagnostics.recordRequestCreated(
@@ -396,10 +401,6 @@ final class PhotoMemoShareExtensionIntakeService {
                 itemProviders.count,
             supportedProviderCount:
                 providers.count,
-            requestID: requestID
-        )
-        diagnostics.recordProviderDiagnostics(
-            itemProviders,
             requestID: requestID
         )
         var managedItems:

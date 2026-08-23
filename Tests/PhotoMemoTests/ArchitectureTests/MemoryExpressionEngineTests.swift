@@ -755,6 +755,43 @@ struct MemoryExpressionEngineTests {
         )
     }
 
+    @Test("annual birthday occurrence on the anniversary day is not rendered as a countdown")
+    func annualBirthdayOccurrenceOnTheAnniversaryDayUsesTodaySemantics() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let birthday = try #require(
+            calendar.date(from: DateComponents(year: 2022, month: 8, day: 10))
+        )
+        let captureDate = try #require(
+            calendar.date(from: DateComponents(year: 2026, month: 8, day: 10))
+        )
+        let snapshot = MemoryAnchorRelativeSnapshot.resolve(
+            anchorDate: birthday,
+            captureDate: captureDate,
+            calendar: calendar,
+            comparesByCalendarDay: true
+        )
+        let occurrence = try #require(
+            MemoryAnchorAnnualOccurrence.resolve(
+                anchorDate: birthday,
+                captureDate: captureDate,
+                calendar: calendar
+            )
+        )
+
+        #expect(occurrence.daysUntilOccurrence == 0)
+        #expect(
+            MemoryAnchorExpressionResolver.renderedText(
+                subjectText: "小宝",
+                anchorTitle: "生日",
+                anchorType: .birthday,
+                expressionStyle: .birthdayNatural,
+                relativeSnapshot: snapshot,
+                annualOccurrence: occurrence,
+                prefersAnnualOccurrence: true
+            ) == "今天是小宝4岁生日"
+        )
+    }
+
     @Test("annual marriage countdown names the next anniversary")
     func annualMarriageCountdownNamesTheNextAnniversary() throws {
         let calendar =

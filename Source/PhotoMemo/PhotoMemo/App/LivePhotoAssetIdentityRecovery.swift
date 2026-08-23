@@ -200,35 +200,19 @@ enum LivePhotoAssetIdentityMatcher {
 
 enum LivePhotoStaticFallbackPolicy {
 
-    private static let providerTimeoutErrorCode = 3010
-
-    private static let staticImageOutputModeRawValue =
-        "staticImage"
-
-    private static let staticImageOnlyPolicyRawValue =
-        "staticImageOnly"
-
     static func shouldStopAfterLiveRepresentationFailure(
         errorCode: Int?,
         mediaOutputModeRawValue: String?,
         livePhotoPolicyRawValue: String? = nil
     ) -> Bool {
-
-        guard errorCode == providerTimeoutErrorCode else {
-            return false
-        }
-
-        if let mediaOutputModeRawValue {
-            return mediaOutputModeRawValue
-                != staticImageOutputModeRawValue
-        }
-
-        if let livePhotoPolicyRawValue {
-            return livePhotoPolicyRawValue
-                != staticImageOnlyPolicyRawValue
-        }
-
-        return true
+        // A provider that advertises Live Photo may still hand the extension a
+        // still image. Let the Share Extension persist that still only with a
+        // recovery hint; the main app must recover a real PhotoKit identity or
+        // fail the Live Photo task before processing.
+        _ = errorCode
+        _ = mediaOutputModeRawValue
+        _ = livePhotoPolicyRawValue
+        return false
     }
 }
 

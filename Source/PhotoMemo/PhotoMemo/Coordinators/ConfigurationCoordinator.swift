@@ -242,10 +242,15 @@ final class ConfigurationCoordinator {
                     .albumSelection
                     .title
             )
-        applyLiveDefaultConfiguration(
-            configurationRepository
+        var snapshot = configurationRepository
             .loadDefaultBatchConfigurationSnapshot()
-        )
+        // The legacy MemoryPreset has no presentation route. Carry the
+        // current route through this compatibility save path so preview,
+        // export, and batch processing stay aligned for the current session.
+        snapshot.presentationRouteRawValue = request
+            .presentationRoute
+            .rawValue
+        applyLiveDefaultConfiguration(snapshot)
 
         return .success(
             V1ConfigurationSaveReceipt(

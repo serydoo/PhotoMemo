@@ -18,16 +18,16 @@ struct V1HomeConfigurationActionContractTests {
         )
 
         #expect(source.contains("applePhotosEntrySection"))
-        #expect(source.contains("从 Apple Photos 开始"))
+        #expect(source.contains("home.apple_photos.title"))
         #expect(source.contains("photomemo.v1.applePhotosGuideDismissed"))
         #expect(source.contains("if !hasDismissedApplePhotosGuide"))
         #expect(source.contains("dismissApplePhotosGuide"))
         #expect(source.contains("Image(systemName: \"xmark\")"))
         #expect(source.contains("V1WelcomePresentation.workflowSteps"))
         #expect(source.contains("ForEach(applePhotosWorkflowSteps)"))
-        #expect(source.contains("下一次从 Apple Photos 分享时，将使用当前配置"))
+        #expect(source.contains("home.next_share.configuration_format"))
         #expect(source.contains("onOpenWorkflowGuide"))
-        #expect(source.contains("App 内选择照片"))
+        #expect(source.contains("home.process.choose_photo"))
         #expect(!source.contains("备用：App 内选择照片"))
         #expect(source.contains(".v1CompactBottomPrimaryAction()"))
         #expect(source.contains("V1CompactPrimaryActionButtonStyle()"))
@@ -51,17 +51,9 @@ struct V1HomeConfigurationActionContractTests {
         )
         #expect(reminderPosition.lowerBound > presetPosition.lowerBound)
         #expect(source.contains("private struct V1HomeWorkflowReminderCard"))
-        #expect(source.contains("怎么记录"))
-        #expect(
-            source.contains(
-                "从 Apple Photos 选择照片并分享给时光记；时光记会按当前预设在本地处理，完成后将新照片保存回 Apple Photos。"
-            )
-        )
-        #expect(
-            source.contains(
-                "PS：也可以使用下方“App 内选择照片”；日常记录仍建议从 Apple Photos 分享。"
-            )
-        )
+        #expect(source.contains("home.workflow.title"))
+        #expect(source.contains("home.workflow.detail"))
+        #expect(source.contains("home.workflow.note"))
 
         let cardSource = try #require(
             source.components(
@@ -84,25 +76,22 @@ struct V1HomeConfigurationActionContractTests {
             with: " ",
             options: .regularExpression
         )
-        #expect(
-            normalizedSource.contains(
-                "Label( \"保存\", systemImage: MemoMarkSymbol.localStorage.name )"
-            )
-        )
+        #expect(normalizedSource.contains("home.preset.save"))
+        #expect(normalizedSource.contains("MemoMarkSymbol.localStorage.name"))
         #expect(source.contains(".tint(.blue)"))
-        #expect(source.contains("Label(\"删除\", systemImage: \"trash\")"))
+        #expect(source.contains("home.preset.delete"))
         #expect(source.contains(".tint(.red)"))
         #expect(source.contains("Button(role: .destructive)"))
         #expect(source.contains("showsDeleteConfirmation = true"))
         #expect(!source.contains("DragGesture(minimumDistance: 12)"))
         #expect(!source.contains("V1HomeConfigurationSwipePresenter"))
-        #expect(source.contains("accessibilityLabel(\"保存配置到本地库\")"))
-        #expect(source.contains("accessibilityLabel(\"删除配置\")"))
-        #expect(source.contains("accessibilityLabel(\"更多配置操作\")"))
+        #expect(source.contains("home.preset.save_accessibility"))
+        #expect(source.contains("home.preset.delete_accessibility"))
+        #expect(source.contains("home.preset.more_actions"))
         #expect(source.contains("Image(systemName: \"ellipsis.circle\")"))
-        #expect(source.contains("Label(\"重命名\", systemImage: \"pencil\")"))
+        #expect(source.contains("home.preset.rename"))
         #expect(!source.contains("accessibilityLabel(\"重命名配置\")"))
-        #expect(source.contains("删除“\\(preset.title)”配置？"))
+        #expect(source.contains("home.preset.delete_confirmation"))
     }
 
     @Test("swipe-action rows avoid nested collection-view lists")
@@ -142,18 +131,10 @@ struct V1HomeConfigurationActionContractTests {
 
         #expect(source.contains("V1CardHeaderIconButton("))
         #expect(source.contains("systemImage: \"ellipsis\""))
-        #expect(source.contains("accessibilityLabel: \"管理本地备份\""))
+        #expect(source.contains("home.presets.manage"))
         #expect(source.contains("onOpenLocalConfigurationLibrary"))
-        #expect(
-            source.contains(
-                "右上角可管理本地备份。"
-            )
-        )
-        #expect(
-            source.contains(
-                "配置内可保存、删除或重命名；勾选切换当前配置。"
-            )
-        )
+        #expect(source.contains("home.presets.manage_hint"))
+        #expect(source.contains("home.presets.edit_hint"))
         #expect(!source.contains("Text(\"勾选生效\")"))
         #expect(!source.contains("Image(systemName: \"plus\")"))
     }

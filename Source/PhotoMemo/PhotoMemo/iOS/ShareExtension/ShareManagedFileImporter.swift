@@ -162,6 +162,11 @@ struct ShareManagedFileImporter {
                 from:
                     registeredTypeIdentifiers
             )
+        let livePhotoTypeIdentifier =
+            providerLoader
+            .preferredLivePhotoTypeIdentifier(
+                from: registeredTypeIdentifiers
+            )
         let diagnosticsSeed =
             PhotoMemoShareIntakeOperationSeed(
                 itemProviderCount:
@@ -179,11 +184,10 @@ struct ShareManagedFileImporter {
             "Provider[\(index)] selectedUTType=\(UTType.image.identifier) preferredUTType=\(preferredTypeIdentifier ?? "unknown")"
         )
 
-        if let livePhotoTypeIdentifier =
-            providerLoader
-            .preferredLivePhotoTypeIdentifier(
-                from: registeredTypeIdentifiers
-            ) {
+        var firstLoadFailureContext:
+            PhotoMemoShareIntakeFailureContext?
+
+        if let livePhotoTypeIdentifier {
             let liveFileLoadResult =
                 await loadFileRepresentationResult(
                     from: provider,
@@ -209,46 +213,93 @@ struct ShareManagedFileImporter {
 
             if let importRecord =
                 liveFileLoadResult.importRecord {
+                return outcomeForImportedRecord(
+                    importRecord,
+                    livePhotoTypeIdentifier:
+                        livePhotoTypeIdentifier,
+                    requestID: requestID,
+                    index: index,
+                    diagnosticsSeed:
+                        diagnosticsSeed,
+                    seenSourceKeys:
+                        &seenSourceKeys
+                )
+            }
 
-                let resolvedImportRecord =
-                    livePhotoRecovery
-                    .recordStaticLivePhotoPayloadIfNeeded(
-                        importRecord,
-                        requestedTypeIdentifier:
-                            livePhotoTypeIdentifier,
-                        requestID: requestID,
-                        index: index
-                    )
+            if let failureContext =
+                liveFileLoadResult
+                .failureContext {
+                firstLoadFailureContext =
+                    firstLoadFailureContext
+                    ?? failureContext
 
-                if let unsupportedOutcome =
-                    unsupportedManagedImportOutcomeIfNeeded(
-                        resolvedImportRecord,
-                        diagnosticsSeed:
-                            diagnosticsSeed
+                if LivePhotoStaticFallbackPolicy
+                    .shouldStopAfterLiveRepresentationFailure(
+                        errorCode:
+                            failureContext
+                            .errorSummary?
+                            .code,
+                        mediaOutputModeRawValue:
+                            mediaOutputModeRawValue,
+                        livePhotoPolicyRawValue:
+                            livePhotoPolicyRawValue
                     ) {
-                    return unsupportedOutcome
+                    return .failed(
+                        failureContext
+                    )
                 }
+            }
 
-                let sourceKey =
-                    resolvedImportRecord.dedupeKey
+            let liveInPlaceLoadResult =
+                await loadInPlaceFileRepresentationResult(
+                    from: provider,
+                    requestID: requestID,
+                    index: index,
+                    diagnosticsSeed:
+                        PhotoMemoShareIntakeOperationSeed(
+                            itemProviderCount:
+                                itemProviderCount,
+                            supportedProviderCount:
+                                supportedProviderCount,
+                            providerIndex: index,
+                            requestedTypeIdentifier:
+                                livePhotoTypeIdentifier,
+                            preferredRegisteredTypeIdentifier:
+                                livePhotoTypeIdentifier
+                        ),
+                    requestedTypeIdentifier:
+                        livePhotoTypeIdentifier,
+                    allowsDirectoryPackage:
+                        true
+                )
 
-                guard seenSourceKeys.insert(sourceKey)
-                    .inserted else {
-                    intakeStore
-                        .cleanupManagedSourceIfNeeded(
-                            at: resolvedImportRecord.managedURL
-                        )
-                    return .skippedDuplicate
-                }
-
-                return .imported(
-                    resolvedImportRecord
+            if let importRecord =
+                liveInPlaceLoadResult.importRecord {
+                return outcomeForImportedRecord(
+                    importRecord,
+                    livePhotoTypeIdentifier:
+                        livePhotoTypeIdentifier,
+                    requestID: requestID,
+                    index: index,
+                    diagnosticsSeed:
+                        diagnosticsSeed,
+                    seenSourceKeys:
+                        &seenSourceKeys
                 )
             }
 
             if
                 let failureContext =
-                    liveFileLoadResult
+                    liveInPlaceLoadResult
+                    .failureContext,
+                firstLoadFailureContext == nil {
+                firstLoadFailureContext =
+                    failureContext
+            }
+
+            if
+                let failureContext =
+                    liveInPlaceLoadResult
                     .failureContext,
                 LivePhotoStaticFallbackPolicy
                 .shouldStopAfterLiveRepresentationFailure(
@@ -281,11 +332,7 @@ struct ShareManagedFileImporter {
                     preferredStaticImageTypeIdentifier
                     ?? UTType.image.identifier
             )
-        let shouldMarkLivePhotoStaticFallback =
-            providerLoader
-            .supportsLivePhoto(
-                registeredTypeIdentifiers
-            )
+
         let fileLoadResult =
             await loadFileRepresentationResult(
                 from: provider,
@@ -297,46 +344,55 @@ struct ShareManagedFileImporter {
 
         if let importRecord =
             fileLoadResult.importRecord {
-
-            let resolvedImportRecord =
-                shouldMarkLivePhotoStaticFallback
-                ? livePhotoRecovery
-                .recordStaticLivePhotoPayloadIfNeeded(
-                    importRecord,
-                    requestedTypeIdentifier:
-                        preferredTypeIdentifier
-                        ?? "unknown",
-                    requestID: requestID,
-                    index: index
-                )
-                : importRecord
-
-            if let unsupportedOutcome =
-                unsupportedManagedImportOutcomeIfNeeded(
-                    resolvedImportRecord,
-                    diagnosticsSeed:
-                        staticDiagnosticsSeed
-                ) {
-                return unsupportedOutcome
-            }
-
-            let sourceKey =
-                resolvedImportRecord.dedupeKey
-
-            guard
-                seenSourceKeys.insert(sourceKey)
-                    .inserted
-            else {
-                intakeStore
-                    .cleanupManagedSourceIfNeeded(
-                        at: resolvedImportRecord.managedURL
-                    )
-                return .skippedDuplicate
-            }
-
-            return .imported(
-                resolvedImportRecord
+            return outcomeForImportedRecord(
+                importRecord,
+                livePhotoTypeIdentifier:
+                    livePhotoTypeIdentifier,
+                requestID: requestID,
+                index: index,
+                diagnosticsSeed:
+                    staticDiagnosticsSeed,
+                seenSourceKeys:
+                    &seenSourceKeys
             )
+        }
+
+        if let failureContext =
+            fileLoadResult.failureContext,
+           firstLoadFailureContext == nil {
+            firstLoadFailureContext =
+                failureContext
+        }
+
+        let inPlaceLoadResult =
+            await loadInPlaceFileRepresentationResult(
+                from: provider,
+                requestID: requestID,
+                index: index,
+                diagnosticsSeed:
+                    staticDiagnosticsSeed
+            )
+
+        if let importRecord =
+            inPlaceLoadResult.importRecord {
+            return outcomeForImportedRecord(
+                importRecord,
+                livePhotoTypeIdentifier:
+                    livePhotoTypeIdentifier,
+                requestID: requestID,
+                index: index,
+                diagnosticsSeed:
+                    staticDiagnosticsSeed,
+                seenSourceKeys:
+                    &seenSourceKeys
+            )
+        }
+
+        if let failureContext =
+            inPlaceLoadResult.failureContext,
+           firstLoadFailureContext == nil {
+            firstLoadFailureContext =
+                failureContext
         }
 
         let fallbackResult =
@@ -357,52 +413,21 @@ struct ShareManagedFileImporter {
 
         if case .imported(let imported) =
             fallbackResult {
-
-            let resolvedImported =
-                shouldMarkLivePhotoStaticFallback
-                ? livePhotoRecovery
-                .recordStaticLivePhotoPayloadIfNeeded(
-                    imported,
-                    requestedTypeIdentifier:
-                        preferredTypeIdentifier
-                        ?? "unknown",
-                    requestID: requestID,
-                    index: index
-                )
-                : imported
-
-            if let unsupportedOutcome =
-                unsupportedManagedImportOutcomeIfNeeded(
-                    resolvedImported,
-                    diagnosticsSeed:
-                        staticDiagnosticsSeed
-                ) {
-                return unsupportedOutcome
-            }
-
-            let sourceKey =
-                resolvedImported.dedupeKey
-
-            guard
-                seenSourceKeys.insert(sourceKey)
-                    .inserted
-            else {
-                intakeStore
-                    .cleanupManagedSourceIfNeeded(
-                        at: resolvedImported
-                        .managedURL
-                    )
-                return .skippedDuplicate
-            }
-
-            return .imported(
-                resolvedImported
+            return outcomeForImportedRecord(
+                imported,
+                livePhotoTypeIdentifier:
+                    livePhotoTypeIdentifier,
+                requestID: requestID,
+                index: index,
+                diagnosticsSeed:
+                    staticDiagnosticsSeed,
+                seenSourceKeys:
+                    &seenSourceKeys
             )
         }
 
         if let failureContext =
-            fileLoadResult
-            .failureContext {
+            firstLoadFailureContext {
             return .failed(
                 failureContext
             )
@@ -429,6 +454,72 @@ struct ShareManagedFileImporter {
 }
 
 private extension ShareManagedFileImporter {
+
+    func outcomeForImportedRecord(
+        _ importRecord: ManagedImportRecord,
+        livePhotoTypeIdentifier: String?,
+        requestID: UUID,
+        index: Int,
+        diagnosticsSeed:
+            PhotoMemoShareIntakeOperationSeed,
+        seenSourceKeys: inout Set<String>
+    ) -> ManagedImportOutcome {
+
+        let resolvedImportRecord =
+            recoverLivePhotoStaticPayloadIfNeeded(
+                importRecord,
+                livePhotoTypeIdentifier:
+                    livePhotoTypeIdentifier,
+                requestID: requestID,
+                index: index
+            )
+
+        if let unsupportedOutcome =
+            unsupportedManagedImportOutcomeIfNeeded(
+                resolvedImportRecord,
+                diagnosticsSeed:
+                    diagnosticsSeed
+            ) {
+            return unsupportedOutcome
+        }
+
+        let sourceKey =
+            resolvedImportRecord.dedupeKey
+
+        guard seenSourceKeys.insert(sourceKey)
+            .inserted else {
+            intakeStore
+                .cleanupManagedSourceIfNeeded(
+                    at: resolvedImportRecord.managedURL
+                )
+            return .skippedDuplicate
+        }
+
+        return .imported(
+            resolvedImportRecord
+        )
+    }
+
+    func recoverLivePhotoStaticPayloadIfNeeded(
+        _ importRecord: ManagedImportRecord,
+        livePhotoTypeIdentifier: String?,
+        requestID: UUID,
+        index: Int
+    ) -> ManagedImportRecord {
+
+        guard let livePhotoTypeIdentifier else {
+            return importRecord
+        }
+
+        return livePhotoRecovery
+            .recordStaticLivePhotoPayloadIfNeeded(
+                importRecord,
+                requestedTypeIdentifier:
+                    livePhotoTypeIdentifier,
+                requestID: requestID,
+                index: index
+            )
+    }
 
     func loadFileRepresentationResult(
         from provider: NSItemProvider,
@@ -471,6 +562,22 @@ private extension ShareManagedFileImporter {
                 }
 
                 if let error {
+                    PhotoMemoShareDiagnostics.record(
+                        stage:
+                            .extensionLivePhotoRepresentationProbe,
+                        message:
+                            PhotoMemoShareLivePhotoRepresentationProbe
+                            .message(
+                                operation: "loadItem",
+                                providerIndex: index,
+                                typeIdentifier:
+                                    UTType.image.identifier,
+                                url: nil,
+                                error: error
+                            ),
+                        requestID: requestID
+                    )
+
                     let wrappedError =
                         PhotoMemoShareIntakeDiagnosticError
                         .make(
@@ -714,6 +821,310 @@ private extension ShareManagedFileImporter {
         }
     }
 
+    func loadInPlaceFileRepresentationResult(
+        from provider: NSItemProvider,
+        requestID: UUID,
+        index: Int,
+        diagnosticsSeed:
+            PhotoMemoShareIntakeOperationSeed,
+        requestedTypeIdentifier: String =
+            UTType.image.identifier,
+        allowsDirectoryPackage: Bool = false
+    ) async -> FileRepresentationLoadResult {
+
+        ShareIntakeDiagnostics.notice(
+            "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadInPlaceFileRepresentation start for \(requestedTypeIdentifier)"
+        )
+
+        let suggestedName =
+            provider.suggestedName
+
+        return await withCheckedContinuation {
+            (
+                continuation:
+                    CheckedContinuation<
+                        FileRepresentationLoadResult,
+                        Never
+                    >
+            ) in
+
+            let timeoutTask =
+                ShareProviderTimeoutTask()
+            let gate =
+                ShareProviderCompletionGate()
+            let progress =
+                provider.loadInPlaceFileRepresentation(
+                    forTypeIdentifier:
+                        requestedTypeIdentifier
+                ) { [intakeStore] url, isInPlace, error in
+                    PhotoMemoShareDiagnostics.record(
+                        stage:
+                            .extensionLivePhotoRepresentationProbe,
+                        message:
+                            PhotoMemoShareLivePhotoRepresentationProbe
+                            .message(
+                                operation:
+                                    "loadInPlaceFileRepresentation",
+                                providerIndex: index,
+                                typeIdentifier:
+                                    requestedTypeIdentifier,
+                                resultDescription:
+                                    "isInPlace=\(isInPlace)",
+                                url: url,
+                                error: error
+                            ),
+                        requestID: requestID
+                    )
+
+                    guard gate.claim() else {
+                        return
+                    }
+
+                    if let error {
+                        let wrappedError =
+                            PhotoMemoShareIntakeDiagnosticError
+                            .make(
+                                description:
+                                    "loadInPlaceFileRepresentation returned an error.",
+                                code: 3012,
+                                underlyingError: error
+                            )
+                        let failureContext =
+                            diagnosticsSeed
+                            .failureContext(
+                                stage: .load,
+                                operation:
+                                    "loadInPlaceFileRepresentation",
+                                returnedURL:
+                                    url,
+                                error:
+                                    wrappedError
+                            )
+
+                        ShareIntakeDiagnostics.error(
+                            "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadInPlaceFileRepresentation failed.\n\(failureContext.debugDescription)"
+                        )
+
+                        timeoutTask.cancel()
+                        continuation.resume(
+                            returning:
+                                FileRepresentationLoadResult(
+                                    importRecord: nil,
+                                    failureContext:
+                                        failureContext
+                                )
+                        )
+                        return
+                    }
+
+                    guard let url else {
+                        let failureContext =
+                            diagnosticsSeed
+                            .failureContext(
+                                stage: .load,
+                                operation:
+                                    "loadInPlaceFileRepresentation.missingURL",
+                                error:
+                                    PhotoMemoShareIntakeDiagnosticError
+                                    .make(
+                                        description:
+                                            "loadInPlaceFileRepresentation completed without returning a URL.",
+                                        code: 3013
+                                    )
+                            )
+
+                        ShareIntakeDiagnostics.error(
+                            "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadInPlaceFileRepresentation returned nil URL.\n\(failureContext.debugDescription)"
+                        )
+
+                        timeoutTask.cancel()
+                        continuation.resume(
+                            returning:
+                                FileRepresentationLoadResult(
+                                    importRecord: nil,
+                                    failureContext:
+                                        failureContext
+                                )
+                        )
+                        return
+                    }
+
+                    let normalizedURL =
+                        url.standardizedFileURL
+                    ShareIntakeDiagnostics.notice(
+                        "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadInPlaceFileRepresentation returned a file URL. isInPlace=\(isInPlace)"
+                    )
+
+                    let sourceReadiness =
+                        PhotoMemoImageFileReadiness
+                        .probe(
+                            at: normalizedURL
+                        )
+                    ShareIntakeDiagnostics
+                        .recordSourcePreparationIfNeeded(
+                            sourceReadiness,
+                            requestID: requestID,
+                            index: index
+                        )
+
+                    let originalFileName =
+                        Self.resolvedOriginalFileName(
+                            preferredName:
+                                suggestedName,
+                            sourceURL:
+                                normalizedURL
+                        )
+
+                    let copyResult =
+                        intakeStore
+                        .createManagedCopyDetailed(
+                            from: normalizedURL,
+                            requestID: requestID,
+                            index: index,
+                            preferredOriginalFileName:
+                                originalFileName,
+                            requiresReadableImage:
+                                !allowsDirectoryPackage,
+                            diagnosticsSeed:
+                                diagnosticsSeed
+                        )
+
+                    ShareIntakeDiagnostics.notice(
+                        "Provider[\(diagnosticsSeed.providerIndex ?? -1)] inPlace temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") managedDestinationCreated=\(copyResult.sharedContainerDestination != nil)"
+                    )
+
+                    guard let managedURL =
+                        copyResult.managedURL
+                    else {
+                        ShareIntakeDiagnostics
+                            .recordSourceUnavailableIfNeeded(
+                                sourceReadiness,
+                                copyResult:
+                                    copyResult,
+                                requestID:
+                                    requestID,
+                                index:
+                                    index
+                            )
+                        timeoutTask.cancel()
+                        continuation.resume(
+                            returning:
+                                FileRepresentationLoadResult(
+                                    importRecord: nil,
+                                    failureContext:
+                                        copyResult
+                                        .failureContext
+                                        ?? diagnosticsSeed
+                                        .failureContext(
+                                            stage: .copy,
+                                            operation:
+                                                "loadInPlaceFileRepresentation.copyURL.missingManagedURL",
+                                            returnedURL:
+                                                normalizedURL,
+                                            temporaryCopyResult:
+                                                copyResult
+                                                .temporaryCopyResult
+                                                ?? "missing-managed-url",
+                                            sharedContainerDestination:
+                                                copyResult
+                                                .sharedContainerDestination,
+                                            error:
+                                                PhotoMemoShareIntakeDiagnosticError
+                                                .make(
+                                                    description:
+                                                        "In-place file representation copy did not produce a managed URL.",
+                                                    code: 3014
+                                                )
+                                        )
+                                )
+                        )
+                        return
+                    }
+
+                    ShareIntakeDiagnostics
+                        .recordSourceReadyIfNeeded(
+                            sourceReadiness,
+                            requestID: requestID,
+                            index: index
+                        )
+
+                    timeoutTask.cancel()
+                    continuation.resume(
+                        returning:
+                            FileRepresentationLoadResult(
+                                importRecord:
+                                    ManagedImportRecord(
+                                        item:
+                                            ExternalPhotoIntakeItem(
+                                                managedURL:
+                                                    managedURL,
+                                                originalFileName:
+                                                    originalFileName,
+                                                contentTypeIdentifier:
+                                                    diagnosticsSeed
+                                                    .preferredRegisteredTypeIdentifier
+                                            ),
+                                        dedupeKey:
+                                            "inPlace:\(normalizedURL.path)"
+                                    ),
+                                failureContext: nil
+                            )
+                    )
+                }
+
+            let task = Task {
+                try? await Task.sleep(
+                    nanoseconds:
+                        providerLoadTimeoutNanoseconds
+                )
+                guard !Task.isCancelled else {
+                    return
+                }
+                guard gate.claim() else {
+                    return
+                }
+
+                progress.cancel()
+                let failureContext =
+                    diagnosticsSeed
+                    .failureContext(
+                        stage: .load,
+                        operation:
+                            "loadInPlaceFileRepresentation.timeout",
+                        supportID:
+                            ProductionDiagnosticSupportID
+                            .make(
+                                prefix: "SHR",
+                                operationID: requestID
+                            ),
+                        error:
+                            PhotoMemoShareIntakeDiagnosticError
+                            .make(
+                                description:
+                                    "The source app did not provide the in-place photo within 15 seconds.",
+                                code: 3015
+                            )
+                    )
+                PhotoMemoShareDiagnostics.record(
+                    stage:
+                        .extensionProviderLoadTimedOut,
+                    message:
+                        "operation=loadInPlaceFileRepresentation, providerIndex=\(index), requestedType=\(requestedTypeIdentifier)",
+                    requestID: requestID
+                )
+                continuation.resume(
+                    returning:
+                        FileRepresentationLoadResult(
+                            importRecord: nil,
+                            failureContext:
+                                failureContext
+                        )
+                )
+            }
+            timeoutTask.install(task)
+        }
+    }
+
     func loadFallbackItem(
         from provider: NSItemProvider,
         requestID: UUID,
@@ -796,6 +1207,24 @@ private extension ShareManagedFileImporter {
                 if let url = item as? URL {
                     let normalizedURL =
                         url.standardizedFileURL
+
+                    PhotoMemoShareDiagnostics.record(
+                        stage:
+                            .extensionLivePhotoRepresentationProbe,
+                        message:
+                            PhotoMemoShareLivePhotoRepresentationProbe
+                            .message(
+                                operation: "loadItem",
+                                providerIndex: index,
+                                typeIdentifier:
+                                    UTType.image.identifier,
+                                resultDescription:
+                                    "itemClass=URL",
+                                url: normalizedURL,
+                                error: nil
+                            ),
+                        requestID: requestID
+                    )
 
                     ShareIntakeDiagnostics.notice(
                         "Provider[\(index)] loadItem returned a file URL."
@@ -914,6 +1343,24 @@ private extension ShareManagedFileImporter {
                 }
 
                 if let data = item as? Data {
+                    PhotoMemoShareDiagnostics.record(
+                        stage:
+                            .extensionLivePhotoRepresentationProbe,
+                        message:
+                            PhotoMemoShareLivePhotoRepresentationProbe
+                            .message(
+                                operation: "loadItem",
+                                providerIndex: index,
+                                typeIdentifier:
+                                    UTType.image.identifier,
+                                resultDescription:
+                                    "itemClass=Data, bytes=\(data.count)",
+                                url: nil,
+                                error: nil
+                            ),
+                        requestID: requestID
+                    )
+
                     ShareIntakeDiagnostics.notice(
                         "Provider[\(index)] loadItem returnedDataBytes=\(data.count)"
                     )
@@ -1010,6 +1457,29 @@ private extension ShareManagedFileImporter {
                     )
                     return
                 }
+
+                let payloadClassDescription =
+                    item.map {
+                        "itemClass=\(String(reflecting: type(of: $0)))"
+                    } ?? "itemClass=nil"
+
+                PhotoMemoShareDiagnostics.record(
+                    stage:
+                        .extensionLivePhotoRepresentationProbe,
+                    message:
+                        PhotoMemoShareLivePhotoRepresentationProbe
+                        .message(
+                            operation: "loadItem",
+                            providerIndex: index,
+                            typeIdentifier:
+                                UTType.image.identifier,
+                            resultDescription:
+                                payloadClassDescription,
+                            url: nil,
+                            error: nil
+                        ),
+                    requestID: requestID
+                )
 
                 let failureContext =
                     diagnosticsSeed

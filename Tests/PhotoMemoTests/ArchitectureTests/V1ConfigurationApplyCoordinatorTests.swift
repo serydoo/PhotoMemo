@@ -41,6 +41,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                     ConfigurationCenterState
                     .mock
                     .selectedSubjectID,
+                presentationRoute: .minimal,
                 template:
                     Template.classicWhite,
                 badge: .family,
@@ -133,6 +134,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                 )
             )
         )
+        #expect(receivedSaveRequest?.presentationRoute == .minimal)
         #expect(
             receivedSaveRequest?.template
             == request.template

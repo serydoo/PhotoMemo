@@ -163,13 +163,12 @@ final class BatchQueueCoordinator {
         guard let initialTask = store.currentTask(at: reference) else { return }
         let memoryBudget = mediaMemoryBudget(for: initialTask)
         let totalProgressUnits = memoryBudget.requiresExtendedPreviewPreparation ? 6 : 5
-        let route: BatchTaskProcessingRoute =
-            BatchTaskMemoryPolicy.shouldUseLivePhotoProcessing(for: initialTask)
-            ? .livePhoto
-            : .staticImage
         guard let configuration = store.currentJob(at: reference)?.configuration else {
             return
         }
+        let route = BatchTaskMemoryPolicy.processingRoute(
+            for: initialTask
+        )
         await taskProcessor.process(
             context: BatchTaskExecutionContext(
                 taskReference: reference,

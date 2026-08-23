@@ -12,14 +12,14 @@ struct BackgroundQueueRunResultTests {
         #expect(!BackgroundQueueRunResult.requiresUserAction.systemTaskSucceeded)
     }
 
-    @Test("Cancellation always schedules a retry")
+    @Test("Cancellation only schedules a retry when durable pending work remains")
     func cancellationCompletionPolicy() {
         #expect(
             BackgroundQueueRunResult.resolve(
                 cancellationRequested: true,
                 retryRequested: false,
                 pendingTaskCount: 0
-            ) == .retryScheduled
+            ) == .completed
         )
         #expect(
             BackgroundQueueRunResult.resolve(

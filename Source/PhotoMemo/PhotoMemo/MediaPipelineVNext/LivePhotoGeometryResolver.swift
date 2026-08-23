@@ -38,24 +38,22 @@ struct LivePhotoGeometryResolver:
                 outputStillType
         )
         let preparedOverlay =
-            try overlay.normalizedForEncoder()
+            try overlay.validatedForEncoder()
+
+        // The prepared artifact is the canonical presentation geometry. In
+        // particular, same-canvas renderers own the complete canvas; do not
+        // ask the legacy media resolver to append a footer a second time.
+        let canvas = CanvasGeometry(
+            canvasSize: preparedOverlay.canvasSize,
+            photoFrame: preparedOverlay.photoFrame,
+            footerFrame: preparedOverlay.footerFrame
+        )
 
         return CanonicalGeometry(
             facts:
                 mediaGeometry
                 .facts,
-            canvas:
-                CanvasGeometry(
-                    canvasSize:
-                        preparedOverlay
-                        .canvasSize,
-                    photoFrame:
-                        preparedOverlay
-                        .photoFrame,
-                    footerFrame:
-                        preparedOverlay
-                        .footerFrame
-                )
+                canvas: canvas
         )
     }
 }

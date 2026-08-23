@@ -85,7 +85,8 @@ struct V1ConfigurationOptionListContractTests {
             "Source/PhotoMemo/PhotoMemo/ConfigurationCenter/Models/CardRegion.swift"
         )
 
-        #expect(editorClusterSource.contains("Text(\"正在编辑\\(activeRegion.displayTitle)\")"))
+        #expect(editorClusterSource.contains("正在编辑输出内容"))
+        #expect(editorClusterSource.contains("正在编辑\\(activeRegion.displayTitle)"))
         #expect(regionSource.contains("return \"左上\""))
         #expect(regionSource.contains("return \"左下\""))
         #expect(regionSource.contains("return \"右上\""))
@@ -93,7 +94,7 @@ struct V1ConfigurationOptionListContractTests {
         #expect(regionSource.contains("return \"默认动作 + 设备信息\""))
         #expect(regionSource.contains("return \"默认智能模块输出信息\""))
         #expect(editorClusterSource.contains("struct V1RegionEditorCluster: View"))
-        #expect(editorClusterSource.contains("ForEach(CardRegion.memoryCardRegions"))
+        #expect(editorClusterSource.contains("ForEach(visibleRegions"))
         #expect(editorClusterSource.contains("V1SlotATextKitSessionEditor("))
         #expect(editorClusterSource.contains("这里的内容会怎样使用？"))
         #expect(editorClusterSource.contains("修改会实时出现在上方完整卡片预览中。"))
@@ -143,6 +144,9 @@ struct V1ConfigurationOptionListContractTests {
         #expect(optionListSource.contains("? \"收起\"\n                    : \"调整\""))
         #expect(optionListSource.contains(".buttonBorderShape(.capsule)"))
         #expect(optionListSource.contains("title: \"这一刻怎样表达\""))
+        #expect(!optionListSource.contains("选择照片在这个时刻前后怎样表达。"))
+        #expect(!optionListSource.contains("memoryExpressionGuide"))
+        #expect(optionListSource.contains("memoryDisplayRow"))
         #expect(
             optionListSource.contains(
                 "localized(\"随时间变化\")"
@@ -153,11 +157,18 @@ struct V1ConfigurationOptionListContractTests {
                 "localized(\"拍摄前、当天和之后，会使用不同说法。\")"
             )
         )
-        #expect(optionListSource.contains("title: \"表达风格\""))
+        #expect(optionListSource.contains("title: \"表达方式\""))
+        #expect(!optionListSource.contains("title: \"表达风格\""))
+        #expect(!optionListSource.contains("title: \"表达样式\""))
         #expect(optionListSource.contains("subtitle: memoryDisplaySubtitle"))
         #expect(
             optionListSource.contains(
-                "围绕时间锚点，可选择 %lld 种表达风格。"
+                "围绕时间锚点，可选择 %lld 种表达方式。"
+            )
+        )
+        #expect(
+            optionListSource.contains(
+                ".accessibilityLabel(localized(\"表达方式\"))"
             )
         )
         #expect(
@@ -271,43 +282,54 @@ struct V1ConfigurationOptionListContractTests {
         #expect(!section.contains(" · %@"))
     }
 
-    @Test("card layout places border before logo without changing row forms")
-    func cardLayoutPlacesBorderBeforeLogoWithoutChangingRowForms() throws {
+    @Test("card style is promoted before card layout and drives one-region editing")
+    func cardStylePrecedesCardLayoutAndDrivesEditing() throws {
         let optionListSource = try sourceText(
             "Source/PhotoMemo/PhotoMemo/iOS/Views/V1ConfigurationOptionList.swift"
         )
-        let sectionStart = try #require(
-            optionListSource.range(
-                of: "title: \"卡片布局与内容\""
-            )
+        let rootSource = try sourceText(
+            "Source/PhotoMemo/PhotoMemo/iOS/Views/PhotoMemoiOSV1View.swift"
         )
-        let sectionEnd = try #require(
-            optionListSource.range(
-                of: "configurationStatusCard",
-                range: sectionStart.upperBound..<optionListSource.endIndex
-            )
+        let styleRange = try #require(
+            optionListSource.range(of: "expressionStyleSection")
         )
-        let sectionSource = optionListSource[
-            sectionStart.lowerBound..<sectionEnd.upperBound
-        ]
-        let borderRange = try #require(
-            sectionSource.range(of: "borderStyleRow")
-        )
-        let logoRange = try #require(
-            sectionSource.range(of: "logoRow")
+        let layoutRange = try #require(
+            optionListSource.range(of: "title: \"卡片布局与内容\"")
         )
 
-        #expect(borderRange.lowerBound < logoRange.lowerBound)
+        #expect(styleRange.lowerBound < layoutRange.lowerBound)
+        #expect(optionListSource.contains("title: \"卡片样式\""))
+        #expect(!optionListSource.contains("title: \"回忆怎样呈现\""))
         #expect(
             optionListSource.contains(
-                "private var borderStyleRow: some View {\n        configurationTextRow("
+                "adaptiveSectionHeader(\n            title: \"卡片样式\","
             )
         )
         #expect(
-            optionListSource.contains(
-                "private var logoRow: some View {\n        configurationRow("
+            !optionListSource.contains(
+                "configurationTextRow(\n                        title: \"卡片样式\","
             )
         )
+        #expect(
+            optionListSource.contains("subtitle: presentationStyleSubtitle")
+        )
+        #expect(!optionListSource.contains("预览与内容编辑会一起变化"))
+        #expect(optionListSource.contains("RecordCardPresentationStyle.allCases"))
+        #expect(optionListSource.contains("private var presentationStyleSectionHeader"))
+        #expect(optionListSource.contains("private var presentationStyleDisclosureButton"))
+        #expect(optionListSource.contains("isPresentationStyleExpanded = true"))
+        #expect(optionListSource.contains("title: \"当前样式\""))
+        #expect(optionListSource.contains("收起卡片样式设置"))
+        #expect(optionListSource.contains("调整卡片样式设置"))
+        #expect(!optionListSource.contains("private var borderStyleRow"))
+        #expect(optionListSource.contains("private var logoRow: some View"))
+        #expect(
+            optionListSource.contains(
+                "subtitle: \"组合自己的文字、照片信息和记忆表达。\""
+            )
+        )
+        #expect(rootSource.contains("presentationStyle == .minimal"))
+        #expect(rootSource.contains("? [.slotA]"))
     }
 
     @Test("advanced modules move location display behind the card-content-style editor")

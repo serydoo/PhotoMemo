@@ -4,7 +4,7 @@
 
 MemoMark is a local-first memory tool designed for Apple Photos. It does not replace the system library and never edits the original photo. It reads capture time, location, device and other available photo facts, combines them with dates you define, and creates a new memory version of the photo.
 
-Current release candidate: **MemoMark 2.1.3 (build 86)**. This maintenance update focuses on multilingual memory expression, clearer photo-delivery results, and confident on-device processing. See the [2.1.3 (86) release notes](Docs/07_Releases/2026-08-19-2.1.3-版本更新说明.md).
+Current release candidate: **MemoMark 2.2.1 (build 87)**. This controlled update focuses on card expression, Live Photo media truth, time-anchor language, and clearer Configuration Center choices. Release evidence remains open; it has not been uploaded to TestFlight or submitted to the App Store. See the [2.2.1 (87) release notes](Docs/07_Releases/2026-08-24-2.2.1-版本更新说明.md).
 
 The everyday flow is intentionally small:
 

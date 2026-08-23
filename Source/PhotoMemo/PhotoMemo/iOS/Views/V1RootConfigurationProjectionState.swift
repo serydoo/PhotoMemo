@@ -3,6 +3,7 @@ import Foundation
 
 struct V1RootConfigurationProjectionState {
 
+    var presentationStyle: RecordCardPresentationStyle = .classicWhite
     var logoMode: V1LogoMode = .appleMini
     var customLogoBadge: Badge?
 

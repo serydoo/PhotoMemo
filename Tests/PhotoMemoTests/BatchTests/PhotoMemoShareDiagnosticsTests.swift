@@ -156,6 +156,11 @@ struct PhotoMemoShareDiagnosticsTests {
         )
         #expect(
             PhotoMemoShareDiagnosticStage(
+                rawValue: "extension.input"
+            ) == .extensionInput
+        )
+        #expect(
+            PhotoMemoShareDiagnosticStage(
                 rawValue: "extension.livePhotoRepresentation.probe"
             ) == .extensionLivePhotoRepresentationProbe
         )

@@ -386,6 +386,7 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
 
 struct V1TextKitSessionEditor: View {
     let region: CardRegion
+    let title: String?
     let draft: V1EditorDraft
     let commandBus: V1TextKitCommandBus
     let isFocused: Bool
@@ -396,6 +397,7 @@ struct V1TextKitSessionEditor: View {
 
     init(
         region: CardRegion,
+        title: String? = nil,
         draft: V1EditorDraft,
         commandBus: V1TextKitCommandBus,
         isFocused: Bool,
@@ -403,6 +405,7 @@ struct V1TextKitSessionEditor: View {
         onDraftChange: @escaping (V1EditorDraft) -> Void
     ) {
         self.region = region
+        self.title = title
         self.draft = draft
         self.commandBus = commandBus
         self.isFocused = isFocused
@@ -420,7 +423,7 @@ struct V1TextKitSessionEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(region.displayTitle)
+            Text(title ?? region.displayTitle)
                 .font(.headline.weight(.semibold))
                 .accessibilityAddTraits(.isHeader)
 

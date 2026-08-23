@@ -20,6 +20,7 @@ struct V1RootChangeObservationModifier: ViewModifier {
         V1MemorySourceDisclosureState
     @Binding var mediaPickerPresentation: V1MediaPickerPresentationState
     @Binding var logoMode: V1LogoMode
+    @Binding var presentationStyle: RecordCardPresentationStyle
     @Binding var customLogoBadge: Badge?
     @Binding var outputTarget: V1IOSOutputTarget
     @Binding var mediaOutputMode: V1MediaOutputMode
@@ -83,6 +84,7 @@ struct V1RootChangeObservationModifier: ViewModifier {
                     )
                 } else if let preset = session.state.selectedMemoryPreset {
                     logoMode = preset.logoMode
+                    presentationStyle = .classicWhite
                     customLogoBadge = nil
                     applySavedOutputConfiguration(preset)
                 }
@@ -111,6 +113,9 @@ struct V1RootChangeObservationModifier: ViewModifier {
             .onChange(of: logoMode) { _, newMode in
                 guard session.state.selectedMemoryPreset?.logoMode
                         != newMode else { return }
+                configurationStatus = .dirty
+            }
+            .onChange(of: presentationStyle) { _, _ in
                 configurationStatus = .dirty
             }
             .onChange(of: outputTarget) { _, _ in

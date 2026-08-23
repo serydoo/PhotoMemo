@@ -31,6 +31,8 @@ struct V1ConfigurationApplyPayloadInput {
     let configurationAlbumTitle: String
     let livePhotoPolicy:
         MemoryConfigurationRecord.Output.LivePhotoPolicy
+    let presentationRoute:
+        MemoryConfigurationRecord.Presentation.Route
     let selectedTimeAnchorID: UUID?
     let language: MemoMarkLanguage
     let savedAt: Date
@@ -53,6 +55,7 @@ enum V1ConfigurationApplyPayloadBuilder {
                         input.persistenceMemoryPresets,
                     selectedMemoryPresetID:
                         input.persistenceSelectedMemoryPresetID,
+                    presentationRoute: input.presentationRoute,
                     presetTitle: input.title,
                     templateTextsByRegion: input.regionDrafts
                         .mapValues(\.singleLineTemplateText),
@@ -95,6 +98,7 @@ enum V1ConfigurationApplyPayloadBuilder {
                 : input.configurationAlbumTitle,
             mediaOutputMode: input.mediaOutputMode,
             livePhotoPolicy: input.livePhotoPolicy,
+            presentationRoute: input.presentationRoute,
             selectedTimeAnchorID: input.selectedTimeAnchorID,
             savedAt: input.savedAt,
             language: input.language

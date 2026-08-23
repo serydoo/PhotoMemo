@@ -154,6 +154,11 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
                 relativePath:
                     "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift"
             )
+        let chineseLocalization =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/zh-Hans.lproj/Localizable.strings"
+            )
 
         #expect(
             intakeSource
@@ -179,12 +184,7 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
                 "case tooManySharedItems"
             )
         )
-        #expect(
-            intakeSource
-            .contains(
-                "guard providers.count <= maxSupportedPhotoCount"
-            )
-        )
+        #expect(intakeSource.contains("providers.count <= maxSupportedPhotoCount"))
         #expect(
             intakeSource
             .contains(
@@ -203,21 +203,12 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
                 "stage: .extensionInputTooManyPhotos"
             )
         )
-        #expect(
-            intakeSource.contains(
-                "请减少本次分享数量，可以分几次完成，也能让处理过程更稳定。"
-            )
-        )
-        #expect(
-            rendererSource.contains(
-                "这次的照片有点多"
-            )
-        )
-        #expect(
-            rendererSource.contains(
-                "返回分批分享"
-            )
-        )
+        #expect(intakeSource.contains("share.error.too_many.recovery"))
+        #expect(rendererSource.contains("share.status.stage.batch_too_large"))
+        #expect(rendererSource.contains("share.status.message.batch_too_large"))
+        #expect(rendererSource.contains("share.status.button.share_smaller_batches"))
+        #expect(chineseLocalization.contains("\"share.error.too_many.recovery\""))
+        #expect(chineseLocalization.contains("\"share.status.button.share_smaller_batches\""))
     }
 
     @Test("Share Extension intake uses the Live Photo-first provider selector")
@@ -335,8 +326,8 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
         )
     }
 
-    @Test("Share Extension copy tells users when Live Photos fall back to static photos")
-    func shareExtensionCopyTellsUsersWhenLivePhotosFallBackToStaticPhotos() throws {
+    @Test("Share Extension queues incomplete Live Photo provider payloads as recoverable still handoff")
+    func shareExtensionQueuesIncompleteLivePhotoProviderPayloadsAsRecoverableStillHandoff() throws {
         let intakeCoordinatorSource =
             try sourceText(
                 relativePath:
@@ -350,16 +341,23 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
 
         #expect(
             intakeCoordinatorSource
-            .contains(
-                "livePhotoStaticFallback=\\(result.livePhotoStaticFallbackCount)"
-            )
+                .contains("livePhotoStaticFallback=\\(result.livePhotoStaticFallbackCount)")
         )
-        #expect(
-            rendererSource
-            .contains(
-                "张 Live Photo 已按静态照片接收"
-            )
+        #expect(!rendererSource.contains("Live Photo 已按静态照片接收"))
+        let importerSource = try sourceText(
+            relativePath:
+                "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
         )
+        #expect(importerSource.contains("recordStaticLivePhotoPayloadIfNeeded"))
+        #expect(importerSource.contains("livePhotoStaticFallback"))
+        #expect(!importerSource.contains("livePhotoStaticFallbackRejected"))
+        #expect(!importerSource.contains("static fallback is not permitted"))
+
+        let recoverySource = try sourceText(
+            relativePath:
+                "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareLivePhotoRecovery.swift"
+        )
+        #expect(recoverySource.contains("sourceIdentifier:\n                    nil"))
     }
 
     @Test("Share Extension data fallback does not invent a Live Photo asset identity")
@@ -386,6 +384,101 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
             !intakeSource
             .contains(
                 "sourceIdentifier:\n                                                Self\n                                                .dedupeKey("
+            )
+        )
+    }
+
+    @Test("Share Extension records intake entry before provider filtering can fail")
+    func shareExtensionRecordsIntakeEntryBeforeProviderFilteringCanFail() throws {
+        let intakeServiceSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/PhotoMemoShareExtensionIntakeService.swift"
+            )
+        let diagnosticsSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareIntakeDiagnostics.swift"
+            )
+
+        try expectOrdered(
+            source: intakeServiceSource,
+            earlier: "let requestID = UUID()",
+            later: "diagnostics.recordReceived("
+        )
+        try expectOrdered(
+            source: intakeServiceSource,
+            earlier: "diagnostics.recordProviderDiagnostics(",
+            later: "guard !providers.isEmpty"
+        )
+        #expect(
+            diagnosticsSource.contains(
+                "stage: .extensionInput"
+            )
+        )
+        #expect(
+            diagnosticsSource.contains(
+                "itemProviders=\\(itemProviderCount), supportedProviders=\\(supportedProviderCount)"
+            )
+        )
+    }
+
+    @Test("Share Extension Live Photo intake includes in-place provider fallback")
+    func shareExtensionLivePhotoIntakeIncludesInPlaceProviderFallback() throws {
+        let importerSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
+            )
+
+        #expect(
+            importerSource.contains(
+                "func loadInPlaceFileRepresentationResult("
+            )
+        )
+        #expect(
+            importerSource.contains(
+                "provider.loadInPlaceFileRepresentation("
+            )
+        )
+        try expectOrdered(
+            source: importerSource,
+            earlier: "let liveFileLoadResult =",
+            later: "let liveInPlaceLoadResult ="
+        )
+        try expectOrdered(
+            source: importerSource,
+            earlier: "let fileLoadResult =",
+            later: "let inPlaceLoadResult ="
+        )
+        try expectOrdered(
+            source: importerSource,
+            earlier: "let inPlaceLoadResult =",
+            later: "await loadFallbackItem("
+        )
+    }
+
+    @Test("Share Extension loadItem diagnostics preserve unsupported payload class")
+    func shareExtensionLoadItemDiagnosticsPreserveUnsupportedPayloadClass() throws {
+        let importerSource =
+            try sourceText(
+                relativePath:
+                    "Source/PhotoMemo/PhotoMemo/iOS/ShareExtension/ShareManagedFileImporter.swift"
+            )
+
+        #expect(
+            importerSource.contains(
+                "let payloadClassDescription ="
+            )
+        )
+        #expect(
+            importerSource.contains(
+                "itemClass=\\(String(reflecting: type(of: $0)))"
+            )
+        )
+        #expect(
+            importerSource.contains(
+                "operation: \"loadItem\""
             )
         )
     }
@@ -473,5 +566,25 @@ struct PhotoMemoShareIntakeDiagnosticsTests {
             .appendingPathComponent(
                 relativePath
             )
+    }
+
+    private func expectOrdered(
+        source: String,
+        earlier: String,
+        later: String
+    ) throws {
+
+        let earlierIndex =
+            try #require(
+                source.range(of: earlier)?.lowerBound
+            )
+        let laterIndex =
+            try #require(
+                source.range(of: later)?.lowerBound
+            )
+
+        #expect(
+            earlierIndex < laterIndex
+        )
     }
 }

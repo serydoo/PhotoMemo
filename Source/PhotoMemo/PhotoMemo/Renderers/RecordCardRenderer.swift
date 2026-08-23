@@ -5,6 +5,7 @@ struct RecordCardRenderer: View {
     enum Destination: Equatable {
 
         case classicWhite
+        case minimal
     }
 
     let image: Image
@@ -13,10 +14,18 @@ struct RecordCardRenderer: View {
 
     var body: some View {
 
-        ClassicWhiteCardRenderer(
-            image: image,
-            card: card
-        )
+        switch card.presentationStyle {
+        case .classicWhite:
+            ClassicWhiteCardRenderer(
+                image: image,
+                card: card
+            )
+        case .minimal:
+            MinimalCardRenderer(
+                image: image,
+                card: card
+            )
+        }
     }
 
     static func destination(
@@ -24,5 +33,25 @@ struct RecordCardRenderer: View {
     ) -> Destination {
 
         .classicWhite
+    }
+
+    static func destination(
+        for style: RecordCardPresentationStyle
+    ) -> Destination {
+        switch style {
+        case .classicWhite: .classicWhite
+        case .minimal: .minimal
+        }
+    }
+
+    static func outputPixelSize(
+        for card: RecordCard,
+        fallbackSize: CGSize
+    ) -> CGSize {
+        RecordCardPresentationPlanner()
+            .outputPixelSize(
+                for: card,
+                fallbackSize: fallbackSize
+            )
     }
 }

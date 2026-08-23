@@ -92,18 +92,13 @@ final class BatchTaskProcessor {
             )
 
             if BatchTaskMemoryPolicy
-                .shouldRejectUnavailableLivePhotoMotion(
-                    for: task,
-                    usesLivePhotoProcessing:
-                        usesLivePhotoProcessing,
-                    outputMode:
-                        context.configuration
-                        .v1MediaOutputMode
+                .shouldRejectUnavailableLivePhotoSource(
+                    for: task
                 ) {
                 throw PhotoMemoError(
                     code: .importFailed,
                     message:
-                        "The source did not provide the Live Photo motion resource.",
+                        "The source did not provide the paired Live Photo resources.",
                     diagnosticCode:
                         PhotoProcessingInputPolicy
                         .RejectionReason
@@ -345,16 +340,10 @@ final class BatchTaskProcessor {
                 await store.deliverFinalNotificationIfNeeded(for: jobID)
             }
         } catch {
-            if BatchTaskFailurePolicy.shouldResumeAfterCancellation(
-                error: error,
-                taskIsCancelled: Task.isCancelled
-            ) {
-                resourceLifecycle.cleanupTemporaryFile(
-                    at: temporaryFileURL
-                )
-                return
-            }
-
+            // A cancellation may race with an explicit terminal transition
+            // (user cancellation or a system background-expiration guard).
+            // Resolve that durable state first so cleanup/notification logic
+            // is not bypassed by the generic CancellationError branch.
             if BatchTaskFailurePolicy.shouldIgnoreErrorBecauseTaskEnded(
                 currentPhase: store.currentTaskPhase(at: reference)
             ) {
@@ -364,6 +353,23 @@ final class BatchTaskProcessor {
                 )
                 if let jobID = store.currentJobID(at: reference) {
                     await store.deliverFinalNotificationIfNeeded(for: jobID)
+                }
+                return
+            }
+
+            if BatchTaskFailurePolicy.shouldResumeAfterCancellation(
+                error: error,
+                taskIsCancelled: Task.isCancelled
+            ) {
+                resourceLifecycle.cleanupTemporaryFile(
+                    at: temporaryFileURL
+                )
+                // A processor can throw CancellationError without the owner
+                // Task itself being cancelled. Stop that owner explicitly;
+                // otherwise the queue loop immediately selects the same
+                // queued task and spins forever.
+                if !Task.isCancelled {
+                    store.stopProcessingForCancellation()
                 }
                 return
             }

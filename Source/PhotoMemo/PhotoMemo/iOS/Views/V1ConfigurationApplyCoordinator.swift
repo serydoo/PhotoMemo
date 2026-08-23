@@ -10,6 +10,8 @@ struct V1ConfigurationApplyRequest:
     let shouldSaveSubjectLibrary: Bool
     let memoryPresets: [MemoryPreset]
     let selectedMemoryPresetID: MemoryPreset.ID?
+    let presentationRoute:
+        MemoryConfigurationRecord.Presentation.Route
     let template: Template
     let badge: Badge?
     let locationDisplayConfiguration:
@@ -32,6 +34,8 @@ struct V1ConfigurationApplyRequest:
         shouldSaveSubjectLibrary: Bool = true,
         memoryPresets: [MemoryPreset] = [],
         selectedMemoryPresetID: MemoryPreset.ID? = nil,
+        presentationRoute:
+            MemoryConfigurationRecord.Presentation.Route = .classicWhite,
         template: Template,
         badge: Badge?,
         locationDisplayConfiguration:
@@ -56,6 +60,7 @@ struct V1ConfigurationApplyRequest:
             memoryPresets
         self.selectedMemoryPresetID =
             selectedMemoryPresetID
+        self.presentationRoute = presentationRoute
         self.template = template
         self.badge = badge
         self.locationDisplayConfiguration =
@@ -288,6 +293,8 @@ struct V1ConfigurationApplyCoordinator {
                         request.memoryPresets,
                     selectedMemoryPresetID:
                         request.selectedMemoryPresetID,
+                    presentationRoute:
+                        request.presentationRoute,
                     template: request.template,
                     badge: request.badge,
                     locationDisplayConfiguration:

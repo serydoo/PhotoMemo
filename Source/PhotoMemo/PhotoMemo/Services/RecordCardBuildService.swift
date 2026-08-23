@@ -132,6 +132,12 @@ private extension RecordCardBuildService {
 
         var card = RecordCard(
             template: configuration.template,
+            presentationStyle:
+                RecordCardPresentationStyle(
+                    rawValue:
+                        configuration.presentationRouteRawValue
+                        ?? ""
+                ) ?? .classicWhite,
             metadata: selectedPhoto.metadata,
             context: context,
             language: configuration.language,

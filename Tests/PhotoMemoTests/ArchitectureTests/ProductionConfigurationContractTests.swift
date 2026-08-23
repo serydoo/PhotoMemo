@@ -408,6 +408,7 @@ struct ProductionConfigurationContractTests {
             albumTitle: "更新后的相册",
             mediaOutputMode: .staticImage,
             livePhotoPolicy: .preserveMotion,
+            presentationRoute: .minimal,
             selectedTimeAnchorID: fixture.anchor.id,
             savedAt: fixture.captureDate
         )
@@ -425,6 +426,28 @@ struct ProductionConfigurationContractTests {
         #expect(
             candidate.aggregate.activeConfigurationID
             == fixture.configuration.id
+        )
+        #expect(candidate.configuration.presentation.route == .minimal)
+    }
+
+    @Test("Minimal route reaches the production batch snapshot")
+    func minimalRouteReachesProductionSnapshot() throws {
+        let fixture = try Self.makeFixture()
+        var aggregate = fixture.aggregate
+        aggregate.subjects[0].configurations[0]
+            .presentation.route = .minimal
+
+        let snapshot = try ProductionConfigurationSnapshotFactory.resolve(
+            reference: ProductionConfigurationReference(
+                configurationID: fixture.configuration.id,
+                revision: fixture.configuration.revision
+            ),
+            from: aggregate
+        )
+
+        #expect(
+            snapshot.presentationRouteRawValue
+            == RecordCardPresentationStyle.minimal.rawValue
         )
     }
 

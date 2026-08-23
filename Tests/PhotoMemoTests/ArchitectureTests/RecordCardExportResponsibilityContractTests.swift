@@ -68,8 +68,9 @@ struct RecordCardExportResponsibilityContractTests {
                 "JPEGExifUserCommentPatcher.swift"
             )
 
-        #expect(pipeline.contains("let content = RecordCardRenderer("))
-        #expect(pipeline.contains("ClassicWhiteRenderer"))
+        #expect(pipeline.contains("private let presentationPlanner = RecordCardPresentationPlanner()"))
+        #expect(pipeline.contains("presentationPlanner.content("))
+        #expect(pipeline.contains("presentationPlanner.outputPixelSize("))
         #expect(pipeline.contains("PhotoMemoRenderedImageArtifactGuard"))
         #expect(namingResolver.contains("PhotoFileNameResolver"))
         #expect(namingResolver.contains("PHAssetResource.assetResources"))
@@ -79,6 +80,26 @@ struct RecordCardExportResponsibilityContractTests {
         #expect(commentPatcher.contains("Data(\"UNICODE\\0\".utf8)"))
         #expect(commentPatcher.contains(".utf16BigEndian"))
         #expect(commentPatcher.contains("options: .atomic"))
+    }
+
+    @Test("Static export uses one renderer-independent preservation path")
+    func staticExportUsesOneRendererIndependentPreservationPath() throws {
+        let pipeline = try serviceSource("RecordCardExportPipeline.swift")
+
+        #expect(!pipeline.contains("if card.presentationStyle == .minimal"))
+        #expect(!pipeline.contains("RecordCardRenderer"))
+        #expect(pipeline.contains("PhotoMemoRenderedImageArtifactGuard"))
+    }
+
+    @Test("Motion-preserving Live Photo derives one appended output geometry")
+    func motionPreservingLivePhotoUsesSharedOutputGeometry() throws {
+        let processor = try serviceSource("LivePhotoBatchTaskProcessor.swift")
+        let exportPipeline = try serviceSource("RecordCardExportPipeline.swift")
+
+        #expect(processor.contains("renderLivePhotoOverlay"))
+        #expect(exportPipeline.contains("sourcePhotoPixelSize"))
+        #expect(!exportPipeline.contains("renderMinimalLivePhotoOverlay"))
+        #expect(!processor.contains("card.presentationStyle == .minimal"))
     }
 }
 

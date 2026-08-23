@@ -242,7 +242,7 @@ final class LivePhotoBatchTaskProcessor:
     private let exportService:
         RecordCardExportService
     private let photoLibraryExportService:
-        PhotoLibraryExportService
+        any PhotoLibraryExporting
     private let fileManager:
         FileManager
     private let temporaryRootURL:
@@ -275,7 +275,7 @@ final class LivePhotoBatchTaskProcessor:
         exportService:
             RecordCardExportService? = nil,
         photoLibraryExportService:
-            PhotoLibraryExportService? = nil,
+            (any PhotoLibraryExporting)? = nil,
         diagnosticsDefaults:
             UserDefaults = PhotoMemoSharedContainer
             .sharedUserDefaults,
@@ -456,46 +456,53 @@ private extension LivePhotoBatchTaskProcessor {
         task: BatchTask,
         configuration: BatchConfigurationSnapshot
     ) async throws -> LivePhotoBatchTaskResult {
-        let importedPhoto =
-            try await importLivePhotoStill(
-                from: task.sourceURL,
-                task: task
+        var temporaryFileURLs: [URL] = []
+        do {
+            let workDirectoryURL = try makeWorkDirectory()
+            temporaryFileURLs.append(workDirectoryURL)
+            let bundle = try await prepareLivePhotoBundle(
+                for: task,
+                workDirectoryURL: workDirectoryURL
             )
-        let card =
-            cardBuildService.buildCard(
+
+            let importedPhoto = try await importLivePhotoStill(
+                from: bundle.stillPhotoFileURL,
+                task: task,
+                originalFileName: bundle.stillPhotoResource.originalFilename,
+                contentTypeIdentifier: bundle.stillPhotoResource.uniformTypeIdentifier
+            )
+            let card = cardBuildService.buildCard(
                 from: importedPhoto,
                 configuration: configuration
             )
-        try validateRenderHealth(
-            card: card,
-            configuration: configuration,
-            task: task
-        )
-        let renderedFileURL =
-            try await exportService.exportToTemporaryFile(
+            try validateRenderHealth(
+                card: card,
+                configuration: configuration,
+                task: task
+            )
+            let renderedFileURL = try await exportService.exportToTemporaryFile(
                 photo: importedPhoto,
                 card: card
             )
-        let saveResult =
-            try await photoLibraryExportService
-            .saveImageResult(
+            temporaryFileURLs.append(renderedFileURL)
+            let saveResult = try await photoLibraryExportService.saveImageResult(
                 at: renderedFileURL,
                 metadata: importedPhoto.metadata,
-                preferredAlbumIdentifier:
-                    preferredAlbumIdentifier(
-                        from: configuration
-                    ),
+                preferredAlbumIdentifier: preferredAlbumIdentifier(
+                    from: configuration
+                ),
                 idempotencyKey: task.id.uuidString
             )
 
-        return LivePhotoBatchTaskResult(
-            saveResult: saveResult,
-            notificationSourceURL:
-                renderedFileURL,
-            temporaryFileURLs: [
-                renderedFileURL
-            ]
-        )
+            return LivePhotoBatchTaskResult(
+                saveResult: saveResult,
+                notificationSourceURL: renderedFileURL,
+                temporaryFileURLs: temporaryFileURLs
+            )
+        } catch {
+            cleanupTemporaryFiles(temporaryFileURLs)
+            throw error
+        }
     }
 
     func processMotionPreservingLivePhoto(
@@ -505,47 +512,15 @@ private extension LivePhotoBatchTaskProcessor {
     ) async throws -> LivePhotoBatchTaskResult {
         let workDirectoryURL =
             try makeWorkDirectory()
-        var temporaryFileURLs: [URL] = [
+        let temporaryFileURLs: [URL] = [
             workDirectoryURL
         ]
 
         do {
-            let preparedBundle:
-                LivePhotoPreparedAssetBundle
-
-            if let assetLocalIdentifier =
-                task.sourceIdentifier?
-                .trimmingCharacters(
-                    in: .whitespacesAndNewlines
-                ),
-               !assetLocalIdentifier.isEmpty {
-                let bundle =
-                    try await assetLoader.bundle(
-                        for: assetLocalIdentifier
-                    )
-                preparedBundle =
-                    try await assetLoader
-                .exportResources(
-                    for: bundle,
-                    to:
-                        workDirectoryURL
-                        .appendingPathComponent(
-                            "Source",
-                            isDirectory: true
-                        )
-                )
-            } else if let sourceBundle =
-                LivePhotoSourceBundleLocator
-                .preparedBundle(
-                    at: task.sourceURL,
-                    fileManager:
-                        fileManager
-                ) {
-                preparedBundle = sourceBundle
-            } else {
-                throw LivePhotoBatchTaskProcessingError
-                    .assetLocalIdentifierMissing
-            }
+            let preparedBundle = try await prepareLivePhotoBundle(
+                for: task,
+                workDirectoryURL: workDirectoryURL
+            )
             let importedPhoto =
                 try await importLivePhotoStill(
                     from:
@@ -574,35 +549,16 @@ private extension LivePhotoBatchTaskProcessor {
                 configuration: configuration,
                 task: task
             )
-            let renderedFileURL =
-                try exportService
-                .exportIntermediateToTemporaryFile(
-                    photo: importedPhoto,
-                    card: card
-                )
             let outputDescription =
                 CardVariableProvider
                 .exportDescription(
                     from: card
                 )
-            temporaryFileURLs.append(
-                renderedFileURL
-            )
-            let renderedImage =
-                try renderedCGImage(
-                    at: renderedFileURL
-                )
             let overlay =
-                try LivePhotoRenderOutputGeometry
-                .overlayDescriptor(
-                    renderedOutputImage:
-                        renderedImage,
-                    footerHeight:
-                        rendererFooterHeight(
-                            renderedImage:
-                                renderedImage,
-                            card: card
-                        )
+                try exportService
+                .renderLivePhotoOverlay(
+                    photo: importedPhoto,
+                    card: card
                 )
             let outputStillURL =
                 workDirectoryURL
@@ -757,6 +713,35 @@ private extension LivePhotoBatchTaskProcessor {
             )
     }
 
+    func prepareLivePhotoBundle(
+        for task: BatchTask,
+        workDirectoryURL: URL
+    ) async throws -> LivePhotoPreparedAssetBundle {
+        if let assetLocalIdentifier = task.sourceIdentifier?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !assetLocalIdentifier.isEmpty {
+            let bundle = try await assetLoader.bundle(
+                for: assetLocalIdentifier
+            )
+            return try await assetLoader.exportResources(
+                for: bundle,
+                to: workDirectoryURL.appendingPathComponent(
+                    "Source",
+                    isDirectory: true
+                )
+            )
+        }
+
+        if let sourceBundle = LivePhotoSourceBundleLocator.preparedBundle(
+            at: task.sourceURL,
+            fileManager: fileManager
+        ) {
+            return sourceBundle
+        }
+
+        throw LivePhotoBatchTaskProcessingError.assetLocalIdentifierMissing
+    }
+
     static func outputOriginalFilename(
         baseName: String,
         fileURL: URL,
@@ -794,69 +779,6 @@ private extension LivePhotoBatchTaskProcessor {
             pixelHeight:
                 pixelSize?.height,
             isLivePhotoAsset: true
-        )
-    }
-
-    func renderedCGImage(
-        at fileURL: URL
-    ) throws -> CGImage {
-        guard
-            let source =
-                CGImageSourceCreateWithURL(
-                    fileURL as CFURL,
-                    [
-                        kCGImageSourceShouldCache:
-                            false
-                    ] as CFDictionary
-                ),
-            let image =
-                CGImageSourceCreateImageAtIndex(
-                    source,
-                    0,
-                    nil
-                )
-        else {
-            throw LivePhotoBatchTaskProcessingError
-                .renderedOutputUnreadable
-        }
-
-        return image
-    }
-
-    func rendererFooterHeight(
-        renderedImage: CGImage,
-        card: RecordCard
-    ) -> CGFloat {
-        let renderedHeight =
-            CGFloat(
-                renderedImage.height
-            )
-        let footerHeight =
-            renderedHeight
-            - renderedHeight
-            / (
-                1
-                + ClassicWhiteRenderer
-                    .layout(
-                        for:
-                            ClassicWhiteRenderer
-                            .orientation(
-                                for:
-                                    card.metadata
-                            )
-                    )
-                    .borderToImageHeightRatio
-            )
-
-        return min(
-            max(
-                footerHeight,
-                1
-            ),
-            max(
-                renderedHeight - 1,
-                1
-            )
         )
     }
 

@@ -9,8 +9,16 @@ struct RecordCardRendererRoutingTests {
 
         #expect(
             RecordCardRenderer
-            .destination(for: .classicWhite)
+            .destination(for: TemplatePreset.classicWhite)
             == .classicWhite
+        )
+    }
+
+    @Test("Minimal presentation route selects the Minimal renderer")
+    func minimalRouteSelectsMinimalRenderer() {
+        #expect(
+            RecordCardRenderer.destination(for: .minimal)
+            == .minimal
         )
     }
 }
