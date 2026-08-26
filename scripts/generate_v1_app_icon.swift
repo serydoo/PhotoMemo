@@ -40,7 +40,7 @@ let destination = URL(
     fileURLWithPath: FileManager.default.currentDirectoryPath
 )
     .appendingPathComponent(
-        "Source/PhotoMemo/PhotoMemo/Assets.xcassets/AppIcon.appiconset",
+        "Source/MemoMark/MemoMark/Assets.xcassets/AppIcon.appiconset",
         isDirectory: true
     )
 
@@ -330,7 +330,7 @@ try FileManager.default.createDirectory(
 for slot in iconSlots {
     guard let data = pngData(size: slot.pixels) else {
         throw NSError(
-            domain: "PhotoMemoIcon",
+            domain: "MemoMarkIcon",
             code: 1,
             userInfo: [
                 NSLocalizedDescriptionKey:

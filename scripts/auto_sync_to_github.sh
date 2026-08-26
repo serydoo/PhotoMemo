@@ -2,8 +2,10 @@
 
 set -euo pipefail
 
-REPO_DIR="${PHOTOMEMO_REPO_DIR:-/Users/rui/Desktop/PhotoMemo}"
-SUPPORT_DIR="${PHOTOMEMO_SUPPORT_DIR:-$HOME/Library/Application Support/PhotoMemo}"
+REPO_DIR="${MEMOMARK_REPO_DIR:-${PHOTOMEMO_REPO_DIR:-/Users/rui/Desktop/PhotoMemo}}"
+# Keep the existing support directory so an installed launch agent retains
+# its logs and runtime state across this repository naming migration.
+SUPPORT_DIR="${MEMOMARK_SUPPORT_DIR:-${PHOTOMEMO_SUPPORT_DIR:-$HOME/Library/Application Support/PhotoMemo}}"
 LOG_DIR="$SUPPORT_DIR/AutoSync"
 LOG_FILE="$LOG_DIR/auto-sync.log"
 

@@ -1,0 +1,3721 @@
+import AppKit
+import Foundation
+import Testing
+@testable import MemoMark
+
+@Suite("RecordCardBuildService", .serialized)
+struct RecordCardBuildServiceTests {
+
+    @Test("Location display configuration feeds production render text")
+    func locationDisplayConfigurationFeedsProductionRenderText() throws {
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "Location Display",
+                leftTopArea:
+                    TemplateArea(
+                        name: "Location",
+                        items: [
+                            TemplateItem(
+                                type: .variable,
+                                name: "Location",
+                                value: "{{location_display}}"
+                            )
+                        ]
+                    ),
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea: .empty,
+                badgeArea: .empty
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(fileURLWithPath: "/tmp/location.jpeg"),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1200,
+                                height: 900
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        city: "示例市",
+                        district: "示例区",
+                        province: "示例省",
+                        country: "中国"
+                    )
+            )
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: nil,
+                locationDisplayConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: "cityDistrict"
+                    ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+
+        let card =
+            RecordCardBuildService()
+            .buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        let block =
+            try #require(
+                CardTextBlockEngine()
+                    .build(
+                        from: card
+                    )
+                    .first
+            )
+
+        #expect(block.value == "示例市 · 示例区")
+    }
+
+    @Test("Time display configuration feeds the final render text")
+    func timeDisplayConfigurationFeedsFinalRenderText() throws {
+        let template = Template(
+            preset: .classicWhite,
+            name: "Time Display",
+            leftTopArea: .empty,
+            leftBottomArea: TemplateArea(
+                name: "Timeline",
+                items: [
+                    TemplateItem(
+                        type: .variable,
+                        name: "Date",
+                        value: "{{capture_date_short}}"
+                    )
+                ]
+            ),
+            rightTopArea: .empty,
+            rightBottomArea: .empty,
+            badgeArea: .empty
+        )
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let captureDate = calendar.date(
+            from: DateComponents(
+                calendar: calendar,
+                year: 2026,
+                month: 7,
+                day: 29,
+                hour: 15,
+                minute: 24
+            )
+        )!
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/time.jpeg"),
+            image: NSImage(size: NSSize(width: 1200, height: 900)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                captureTimezoneOffsetSeconds: 0
+            )
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: template,
+            badge: nil,
+            anchor: nil,
+            timeDisplayConfiguration:
+                TimeDisplayInspectorPresenter.configuration(
+                    baseStyle: .daily,
+                    supplement: .none
+                ),
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+
+        let blocks = CardTextBlockEngine().build(
+            from: RecordCardBuildService().buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        )
+
+        #expect(
+            blocks.first(where: { $0.area == .leftBottom })?.value
+                == "2026年7月29日 星期三"
+        )
+    }
+
+    @Test("Explicit location display configuration does not fall back to legacy coordinates")
+    func explicitLocationDisplayConfigurationDoesNotFallBackToLegacyCoordinates() throws {
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "Location Display",
+                leftTopArea:
+                    TemplateArea(
+                        name: "Location",
+                        items: [
+                            TemplateItem(
+                                type: .variable,
+                                name: "Location",
+                                value: "{{location_display}}"
+                            )
+                        ]
+                    ),
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea: .empty,
+                badgeArea: .empty
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(fileURLWithPath: "/tmp/location.jpeg"),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1200,
+                                height: 900
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        latitude: 0,
+                        longitude: 0
+                    )
+            )
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: nil,
+                locationDisplayConfiguration:
+                    LocationDisplayInspectorPresenter
+                    .configuration(
+                        for: "cityDistrict"
+                    ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+
+        let card =
+            RecordCardBuildService()
+            .buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        let blocks =
+            CardTextBlockEngine()
+            .build(
+                from: card
+            )
+
+        #expect(blocks.isEmpty)
+    }
+
+    @Test("Builds template1 with profile relationship and Memory Summary phrasing")
+    func buildsTemplate1WithProfileRelationshipAndMemorySummaryPhrasing() throws {
+        let profile = PersonalProfile(
+            relationshipRole: .custom,
+            customRelationshipLabel: "他爹",
+            babyNickname: "小宝"
+        )
+
+        let service =
+            RecordCardBuildService()
+
+        let captureDate =
+            Calendar(identifier: .gregorian)
+            .date(
+                from: DateComponents(
+                    year: 2026,
+                    month: 4,
+                    day: 11,
+                    hour: 10,
+                    minute: 13,
+                    second: 5
+                )
+            )!
+
+        let birthday =
+            Calendar(identifier: .gregorian)
+            .date(
+                from: DateComponents(
+                    year: 2025,
+                    month: 6,
+                    day: 28
+                )
+            )!
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_5668.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                iso: "125",
+                aperture: "1.78",
+                shutterSpeed: "1/98",
+                focalLength35mm: "24",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+
+        let anchor =
+            Anchor(
+                type: .birthday,
+                title: "小宝",
+                date: birthday,
+                isCountdown: false
+            )
+        let subject =
+            MemorySubjectAdapter.adapt(
+                profile: profile,
+                anchors: [
+                    anchor
+                ],
+                selectedAnchorID:
+                    anchor.id,
+                referenceDate:
+                    birthday
+            )
+        var configuration =
+            BatchConfigurationSnapshot(
+            template: .classicWhite.normalizedForEditing,
+            badge: nil,
+            anchor: anchor,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        .withLegacyPairedFrozenMemoryConfiguration(
+            subject: subject,
+            snapshot:
+                ConfigurationSnapshotBuilder.build(
+                    from: subject
+                )
+        )
+        configuration.usesCustomMemoryWriteText = true
+        configuration.customMemoryWriteText = "第一次一起看海"
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: configuration
+        )
+
+        let blocks =
+            CardTextBlockEngine().build(from: card)
+
+        #expect(
+            blocks.first(where: { $0.area == CardTextArea.leftTop })?.value
+            == "他爹手持iPhone 15 Pro记录"
+        )
+        #expect(
+            blocks.first(where: { $0.area == CardTextArea.leftBottom })?.value
+            == "记录于2026.04.11 10:13:05"
+        )
+        #expect(
+            blocks.first(where: { $0.area == CardTextArea.rightTop })?.value
+            == "24mm f/1.78 1/98s ISO125"
+        )
+        #expect(
+            blocks.first(where: { $0.area == CardTextArea.rightBottom })?.value
+            == "今天小宝9个月14天\n第一次一起看海"
+        )
+        #expect(
+            card.memoryModule?.renderedText
+            == "今天小宝9个月14天\n第一次一起看海"
+        )
+        #expect(
+            card
+                .productionExpressionContext?
+                .value(
+                    for: MemoryProvider.memoryToken
+                )?
+                .resolvedText
+            == "今天小宝9个月14天\n第一次一起看海"
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "今天小宝9个月14天\n第一次一起看海"
+        )
+        #expect(card.exportDescriptionOverride?.contains("\n") == true)
+    }
+
+    @Test("Legacy anchor card result uses the photo capture calendar")
+    func legacyAnchorCardResultUsesPhotoCaptureCalendar() throws {
+        for timezoneOffsetSeconds in [
+            -10 * 60 * 60,
+            10 * 60 * 60
+        ] {
+            var captureCalendar =
+                Calendar(identifier: .gregorian)
+            captureCalendar.timeZone =
+                try #require(
+                    TimeZone(
+                        secondsFromGMT:
+                            timezoneOffsetSeconds
+                    )
+                )
+
+            let birthday =
+                try #require(
+                    captureCalendar.date(
+                        from: DateComponents(
+                            year: 2026,
+                            month: 6,
+                            day: 1,
+                            hour: 0,
+                            minute: 0
+                        )
+                    )
+                )
+            let captureDate =
+                try #require(
+                    captureCalendar.date(
+                        from: DateComponents(
+                            year: 2026,
+                            month: 6,
+                            day: 1,
+                            hour: 23,
+                            minute: 59
+                        )
+                    )
+                )
+            let anchor =
+                Anchor(
+                    type: .birthday,
+                    title: "宝宝",
+                    date: birthday,
+                    isCountdown: false
+                )
+            let photo =
+                SelectedPhoto(
+                    sourceURL:
+                        URL(
+                            fileURLWithPath:
+                                "/tmp/capture-calendar-birthday.jpg"
+                        ),
+                    image:
+                        NSImage(
+                            size:
+                                NSSize(
+                                    width: 32,
+                                    height: 32
+                                )
+                        ),
+                    metadata:
+                        PhotoMetadata(
+                            captureDate: captureDate,
+                            captureTimezoneOffsetSeconds:
+                                timezoneOffsetSeconds
+                        )
+                )
+            let configuration =
+                BatchConfigurationSnapshot(
+                    template:
+                        .classicWhite
+                        .normalizedForEditing,
+                    badge: nil,
+                    anchor: anchor,
+                    shouldWritePhotoDescription: false,
+                    photoDescriptionOverride: "",
+                    selectedAlbumIdentifier: ""
+                )
+
+            let card =
+                RecordCardBuildService()
+                .buildCard(
+                    from: photo,
+                    configuration: configuration
+                )
+            let anchorResult =
+                try #require(
+                    card.anchorResult
+                )
+
+            #expect(anchorResult.totalDays == 0)
+            #expect(anchorResult.ageText == "出生当天")
+            #expect(
+                card
+                .memoryResult?
+                .primaryAnchorResult?
+                .elapsed
+                .totalDays == 0
+            )
+        }
+    }
+    @Test("English frozen configuration projects English anchor variables")
+    func englishFrozenConfigurationProjectsEnglishAnchorVariables() throws {
+
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let birthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 1,
+                        day: 1
+                    )
+                )
+            )
+        let birthdayAnchor =
+            Anchor(
+                type: .birthday,
+                title: "Birthday",
+                date: birthday,
+                isCountdown: false
+            )
+        let pastPhoto =
+            selectedPhoto(
+                captureDate:
+                    try #require(
+                        calendar.date(
+                            from: DateComponents(
+                                year: 2026,
+                                month: 3,
+                                day: 4
+                            )
+                        )
+                    )
+            )
+
+        let pastContext =
+            CardVariableProvider.build(
+                from:
+                    RecordCardBuildService()
+                    .buildCard(
+                        from: pastPhoto,
+                        configuration:
+                            englishFrozenConfiguration(
+                                anchor: birthdayAnchor
+                            )
+                    )
+            )
+
+        #expect(
+            pastContext[MetadataContext.Key.anchorAgeText]
+            == "1 year, 2 months, and 3 days"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorDurationText]
+            == "1 year, 2 months, and 3 days"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorTotalDaysText]
+            == "427 days"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorElapsedText]
+            == "427 days elapsed"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorDayIndexText]
+            == "Day 427"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorWeekText]
+            == "61 weeks"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.anchorMonthAgeText]
+            == "14 months"
+        )
+        #expect(
+            pastContext[MetadataContext.Key.babyAge]
+            == "1 year, 2 months, and 3 days"
+        )
+
+        let futureAnchor =
+            Anchor(
+                type: .custom,
+                title: "Future date",
+                date:
+                    try #require(
+                        calendar.date(
+                            from: DateComponents(
+                                year: 2026,
+                                month: 6,
+                                day: 1
+                            )
+                        )
+                    ),
+                isCountdown: true
+            )
+        let futurePhoto =
+            selectedPhoto(
+                captureDate:
+                    try #require(
+                        calendar.date(
+                            from: DateComponents(
+                                year: 2026,
+                                month: 3,
+                                day: 7
+                            )
+                        )
+                    )
+            )
+
+        let futureContext =
+            CardVariableProvider.build(
+                from:
+                    RecordCardBuildService()
+                    .buildCard(
+                        from: futurePhoto,
+                        configuration:
+                            englishFrozenConfiguration(
+                                anchor: futureAnchor
+                            )
+                    )
+            )
+
+        #expect(
+            futureContext[MetadataContext.Key.anchorCountdownText]
+            == "86 days left"
+        )
+        #expect(
+            futureContext[MetadataContext.Key.anchorDurationText]
+            == "86 days"
+        )
+        #expect(
+            futureContext[MetadataContext.Key.anchorTotalDaysText]
+            == "86 days"
+        )
+        #expect(
+            futureContext[MetadataContext.Key.anchorSmartText]
+            == "86 days left"
+        )
+    }
+
+    @Test("Frozen ConfigurationSnapshot relationship label wins over legacy fallback")
+    func frozenConfigurationSnapshotRelationshipLabelWinsOverLegacyFallback() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.FrozenRelationshipLabel.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let liveProfile =
+            PersonalProfile(
+                relationshipRole: .custom,
+                customRelationshipLabel: "运行期关系",
+                babyNickname: "运行期对象"
+            )
+        defaults.set(
+            try JSONEncoder().encode(liveProfile),
+            forKey: "photomemo.personalProfile"
+        )
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let anchorDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 6,
+                        day: 28
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 4,
+                        day: 11,
+                        hour: 10,
+                        minute: 13,
+                        second: 5
+                    )
+                )
+            )
+        let anchor =
+            Anchor(
+                type: .birthday,
+                title: "冻结生日",
+                date: anchorDate,
+                isCountdown: false
+            )
+        let frozenSubject =
+            MemorySubjectAdapter.adapt(
+                profile:
+                    PersonalProfile(
+                        relationshipRole: .custom,
+                        customRelationshipLabel: "冻结关系",
+                        babyNickname: "冻结对象"
+                    ),
+                anchors: [
+                    anchor
+                ],
+                selectedAnchorID:
+                    anchor.id,
+                referenceDate:
+                    anchorDate
+            )
+        let snapshot =
+            BatchConfigurationSnapshot(
+                template: .classicWhite.normalizedForEditing,
+                badge: nil,
+                anchor: anchor,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: frozenSubject,
+                snapshot:
+                    ConfigurationSnapshotBuilder.build(
+                        from: frozenSubject
+                    )
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(fileURLWithPath: "/tmp/IMG_5669.JPEG"),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1920,
+                                height: 1080
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        captureDate: captureDate,
+                        deviceBrand: "Apple",
+                        deviceModel: "iPhone 15 Pro",
+                        imageWidth: 4032,
+                        imageHeight: 2268
+                    )
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
+        let blocks =
+            CardTextBlockEngine()
+            .build(from: card)
+
+        #expect(
+            card.context[MetadataContext.Key.relationshipLabel]
+            == "冻结关系"
+        )
+        #expect(
+            blocks.first(where: { $0.area == CardTextArea.leftTop })?.value
+            == "冻结关系手持iPhone 15 Pro记录"
+        )
+    }
+
+    @Test("Legacy frozen subject relationship label wins when embedded snapshot subject is missing")
+    func legacyFrozenSubjectRelationshipLabelWinsWhenEmbeddedSnapshotSubjectIsMissing() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.LegacyFrozenSubjectRelationshipLabel.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let liveProfile =
+            PersonalProfile(
+                relationshipRole: .custom,
+                customRelationshipLabel: "运行期关系",
+                babyNickname: "运行期对象"
+            )
+        defaults.set(
+            try JSONEncoder().encode(liveProfile),
+            forKey: "photomemo.personalProfile"
+        )
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let anchorDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 6,
+                        day: 28
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 4,
+                        day: 11,
+                        hour: 10,
+                        minute: 13,
+                        second: 5
+                    )
+                )
+            )
+        let anchor =
+            Anchor(
+                type: .birthday,
+                title: "旧冻结生日",
+                date: anchorDate,
+                isCountdown: false
+            )
+        let frozenSubject =
+            MemorySubjectAdapter.adapt(
+                profile:
+                    PersonalProfile(
+                        relationshipRole: .custom,
+                        customRelationshipLabel: "旧冻结关系",
+                        babyNickname: "旧冻结对象"
+                    ),
+                anchors: [
+                    anchor
+                ],
+                selectedAnchorID:
+                    anchor.id,
+                referenceDate:
+                    anchorDate
+            )
+        var frozenSnapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: frozenSubject
+            )
+        frozenSnapshot.memorySubject = nil
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: .classicWhite.normalizedForEditing,
+                badge: nil,
+                anchor: anchor,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: frozenSubject,
+                snapshot: frozenSnapshot
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(fileURLWithPath: "/tmp/IMG_5670.JPEG"),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1920,
+                                height: 1080
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        captureDate: captureDate,
+                        deviceBrand: "Apple",
+                        deviceModel: "iPhone 15 Pro",
+                        imageWidth: 4032,
+                        imageHeight: 2268
+                    )
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: configuration
+        )
+
+        #expect(
+            card.context[MetadataContext.Key.relationshipLabel]
+            == "旧冻结关系"
+        )
+    }
+
+    @Test("Incomplete frozen snapshot does not suppress legacy batch anchor fallback")
+    func incompleteFrozenSnapshotDoesNotSuppressLegacyBatchAnchorFallback() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.IncompleteFrozenSnapshotAnchor.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let anchorDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 6,
+                        day: 28
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 4,
+                        day: 11,
+                        hour: 10,
+                        minute: 13,
+                        second: 5
+                    )
+                )
+            )
+        let legacyAnchor =
+            Anchor(
+                type: .birthday,
+                title: "Legacy Birthday",
+                date: anchorDate,
+                isCountdown: false
+            )
+        let snapshotSubject =
+            try #require(
+                ConfigurationCenterState
+                    .mock
+                    .selectedSubject
+            )
+        var incompleteSnapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: snapshotSubject
+            )
+        incompleteSnapshot.memorySubject = nil
+
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: .classicWhite.normalizedForEditing,
+                badge: nil,
+                anchor: legacyAnchor,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+            .withCanonicalProductionSnapshot(
+                incompleteSnapshot
+            )
+
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(fileURLWithPath: "/tmp/IMG_5670.JPEG"),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1920,
+                                height: 1080
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        captureDate: captureDate,
+                        deviceBrand: "Apple",
+                        deviceModel: "iPhone 15 Pro",
+                        imageWidth: 4032,
+                        imageHeight: 2268
+                    )
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: configuration
+        )
+
+        #expect(card.anchor?.title == "Legacy Birthday")
+        #expect(card.title == "Legacy Birthday")
+    }
+
+    @Test("Falls back to right-bottom content when custom description is disabled")
+    func fallsBackToRightBottomContentWhenCustomDescriptionIsDisabled() {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.DescriptionFallback.\(UUID().uuidString)"
+        let defaults =
+            UserDefaults(
+                suiteName: suiteName
+            )!
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/test.jpg"),
+            image: NSImage(size: NSSize(width: 10, height: 10)),
+            metadata: PhotoMetadata(
+                captureDate: Date(),
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 17 Pro",
+                imageWidth: 4032,
+                imageHeight: 3024
+            )
+        )
+
+        let template = Template(
+            preset: .classicWhite,
+            name: "模板 1",
+            leftTopArea: .leftTop,
+            leftBottomArea: .leftBottom,
+            rightTopArea: TemplateArea(
+                name: "Right Top",
+                items: [.cameraSummary]
+            ),
+            rightBottomArea: TemplateArea(
+                name: "Right Bottom",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "补充说明",
+                        value: "右下默认说明"
+                    )
+                ]
+            ),
+            badgeArea: .badge
+        ).normalizedForEditing
+
+        let configuration = BatchConfigurationSnapshot(
+            template: template,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "Should not be written",
+            selectedAlbumIdentifier: ""
+        )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: configuration
+        )
+
+        #expect(card.exportDescriptionOverride == "右下默认说明")
+        #expect(CardVariableProvider.exportDescription(from: card) == "右下默认说明")
+    }
+
+    @Test("Minimal writes its slot A content to the photo description")
+    func minimalWritesSlotAContentToPhotoDescription() {
+        let service = RecordCardBuildService()
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/minimal-description.jpg"),
+            image: NSImage(size: NSSize(width: 10, height: 10)),
+            metadata: PhotoMetadata(
+                captureDate: Date(),
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 17 Pro",
+                imageWidth: 4032,
+                imageHeight: 3024
+            )
+        )
+        let template = Template(
+            preset: .classicWhite,
+            name: "极简说明来源",
+            leftTopArea: TemplateArea(
+                name: "Minimal Output",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "用户内容",
+                        value: "极简用户组合内容"
+                    )
+                ]
+            ),
+            leftBottomArea: .empty,
+            rightTopArea: .empty,
+            rightBottomArea: TemplateArea(
+                name: "Legacy Smart Result",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "不应写入",
+                        value: "经典白智能结果"
+                    )
+                ]
+            ),
+            badgeArea: .badge
+        ).normalizedForEditing
+        let configuration = BatchConfigurationSnapshot(
+            template: template,
+            badge: nil,
+            anchor: nil,
+            presentationRouteRawValue:
+                RecordCardPresentationStyle.minimal.rawValue,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: configuration
+        )
+
+        #expect(card.presentationStyle == .minimal)
+        #expect(card.exportDescriptionOverride == "极简用户组合内容")
+        #expect(
+            CardVariableProvider.exportDescription(from: card)
+                == "极简用户组合内容"
+        )
+    }
+
+    @Test("Uses explicit override when description writing is enabled")
+    func usesExplicitOverrideWhenDescriptionWritingIsEnabled() {
+
+        let service = RecordCardBuildService()
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/test.jpg"),
+            image: NSImage(size: NSSize(width: 10, height: 10)),
+            metadata: PhotoMetadata(
+                captureDate: Date(),
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 17 Pro",
+                imageWidth: 4032,
+                imageHeight: 3024
+            )
+        )
+
+        let configuration = BatchConfigurationSnapshot(
+            template: .classicWhite.normalizedForEditing,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: true,
+            photoDescriptionOverride: "My export note",
+            selectedAlbumIdentifier: ""
+        )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: configuration
+        )
+
+        #expect(card.exportDescriptionOverride == "My export note")
+        #expect(CardVariableProvider.exportDescription(from: card) == "My export note")
+    }
+
+    @Test("Default photo description renders the complete Memory region")
+    func defaultPhotoDescriptionRendersCompleteMemoryRegion() throws {
+        let service = RecordCardBuildService()
+        let captureDate = Date(timeIntervalSince1970: 800_000_000)
+        let anchorDate = Date(timeIntervalSince1970: 736_702_512)
+        let anchor = Anchor(
+            type: .marriage,
+            title: "结婚日子",
+            date: anchorDate,
+            isCountdown: false,
+            expressionStyle: .marriageNatural
+        )
+        let subject = MemorySubjectAdapter.adapt(
+            profile: PersonalProfile(
+                relationshipRole: .custom,
+                customRelationshipLabel: "老公",
+                babyNickname: "亲爱的媳妇"
+            ),
+            anchors: [anchor],
+            selectedAnchorID: anchor.id,
+            referenceDate: anchorDate
+        )
+        let template = Template(
+            preset: .classicWhite,
+            name: "完整写入说明",
+            leftTopArea: .empty,
+            leftBottomArea: .empty,
+            rightTopArea: .empty,
+            rightBottomArea: TemplateArea(
+                name: "Memory",
+                items: [
+                    TemplateItem(
+                        type: .text,
+                        name: "开头",
+                        value: "两口子"
+                    ),
+                    .memorySummary,
+                    TemplateItem(
+                        type: .text,
+                        name: "结尾",
+                        value: "！"
+                    )
+                ]
+            ),
+            badgeArea: .empty
+        )
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/complete-memory.jpeg"),
+            image: NSImage(size: NSSize(width: 1200, height: 900)),
+            metadata: PhotoMetadata(captureDate: captureDate)
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: template,
+            badge: nil,
+            anchor: anchor,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        .withLegacyPairedFrozenMemoryConfiguration(
+            subject: subject,
+            snapshot: ConfigurationSnapshotBuilder.build(from: subject)
+        )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: configuration
+        )
+        let renderedMemory = try #require(
+            CardTextBlockEngine()
+                .build(from: card)
+                .first(where: { $0.area == .rightBottom })?
+                .value
+        )
+
+        #expect(card.exportDescriptionOverride == renderedMemory)
+        #expect(renderedMemory.hasPrefix("两口子"))
+        #expect(renderedMemory.hasSuffix("！"))
+        #expect(renderedMemory != "两口子")
+    }
+
+    @Test("Build chain keeps raw anchor expression-style payloads available to downstream output")
+    func buildChainKeepsRawAnchorExpressionStylePayloadsAvailableToDownstreamOutput() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.RawAnchorExpressionStyle.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let birthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 5,
+                        day: 26
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 6,
+                        day: 13,
+                        hour: 10,
+                        minute: 13,
+                        second: 5
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_5668.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                iso: "125",
+                aperture: "1.78",
+                shutterSpeed: "1/98",
+                focalLength35mm: "24",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+
+        let legacySnapshot =
+            try injectedExpressionStyleSnapshot(
+                base:
+                    BatchConfigurationSnapshot(
+                        template:
+                            .classicWhite
+                            .normalizedForEditing,
+                        badge: nil,
+                        anchor: Anchor(
+                            type: .birthday,
+                            title: "小宝",
+                            date: birthday,
+                            isCountdown: false
+                        ),
+                        shouldWritePhotoDescription:
+                            false,
+                        photoDescriptionOverride: "",
+                        selectedAlbumIdentifier: ""
+                    ),
+                expressionStyle:
+                    "birthdayAgeToday"
+            )
+        let subject =
+            MemorySubjectAdapter.adapt(
+                profile:
+                    PersonalProfile(
+                        relationshipRole: .custom,
+                        customRelationshipLabel: "爸爸",
+                        babyNickname: "小宝"
+                    ),
+                anchors:
+                    legacySnapshot.anchor.map {
+                        [$0]
+                    } ?? [],
+                selectedAnchorID:
+                    legacySnapshot.anchor?.id,
+                referenceDate:
+                    birthday
+            )
+        let configurationSnapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: subject
+            )
+        let snapshot =
+            legacySnapshot
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot: configurationSnapshot
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            context[MetadataContext.Key.memorySummary]
+            == "今天小宝18天"
+        )
+        #expect(
+            card.memoryResult?.subjectID
+            == subject.id
+        )
+        #expect(
+            card.memoryResult?.captureDate
+            == captureDate
+        )
+        #expect(
+            card.memoryResult?
+                .primaryAnchorResult?
+                .elapsed.totalDays
+            == 18
+        )
+        #expect(
+            try encodedExpressionStyle(
+                from: card.anchor
+            ) == "birthdayNatural"
+        )
+    }
+
+    @Test("Preview and export share the same frozen Memory expression")
+    func previewAndExportShareTheSameFrozenMemoryExpression() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.PreviewExportMemoryExpression.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar.current
+        let birthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 1,
+                        day: 1
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 3,
+                        day: 7,
+                        hour: 10,
+                        minute: 13,
+                        second: 5
+                    )
+                )
+            )
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "Preview Export Memory Expression",
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: TemplateArea(
+                    name: "Right Top",
+                    items: [.cameraSummary]
+                ),
+                rightBottomArea: TemplateArea(
+                    name: "Right Bottom",
+                    items: [
+                        TemplateItem(
+                            type: .text,
+                            name: "Memory",
+                            value: "{{memory_summary}}"
+                        )
+                    ]
+                ),
+                badgeArea: .badge
+            )
+            .normalizedForEditing
+        let subject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "示例昵称",
+                        shortName: "示例昵称"
+                    ),
+                relationship:
+                    .init(
+                        role: "孩子",
+                        label: "孩子"
+                    ),
+                definition: "真机反馈回归对象",
+                referenceDate:
+                    birthday,
+                timeAnchors: [
+                    .init(
+                        title: "生日",
+                        date: birthday,
+                        note: "生日",
+                        anchorType:
+                            .birthday,
+                        expressionStyle:
+                            .birthdayWarm
+                    )
+                ],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "生日",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "生日记忆",
+                                blocks: [
+                                    .text("生日智能模块")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        let previewText =
+            try #require(
+                MemoryExpressionPreviewResolver
+                    .previewText(
+                        subject: subject,
+                        captureDate: captureDate
+                    )
+            )
+        let legacyConfiguration =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor:
+                    Anchor(
+                        type: .birthday,
+                        title: "旧生日",
+                        date: birthday,
+                        isCountdown: false
+                    ),
+                memorySubjectText: "家人",
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let configuration =
+            legacyConfiguration
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot:
+                    ConfigurationSnapshotBuilder
+                    .build(from: subject)
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(fileURLWithPath: "/tmp/IMG_9999.JPEG"),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1920,
+                                height: 1080
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        captureDate: captureDate,
+                        deviceBrand: "Apple",
+                        deviceModel: "iPhone 15 Pro",
+                        imageWidth: 4032,
+                        imageHeight: 2268
+                    )
+            )
+
+        let card =
+            service.buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(previewText.hasPrefix("陪示例昵称走到"))
+        #expect(previewText.contains("1岁2个月6天"))
+        #expect(!previewText.contains("家人"))
+        #expect(
+            context[MetadataContext.Key.memorySummary]
+            == previewText
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == previewText
+        )
+    }
+
+    @Test("Selected subject identity projection feeds smart module output")
+    func selectedSubjectIdentityProjectionFeedsSmartModuleOutput() throws {
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let birthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 5,
+                        day: 26
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 6,
+                        day: 13,
+                        hour: 10,
+                        minute: 13
+                    )
+                )
+            )
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "Legacy Transport Smart Module",
+                leftTopArea: .empty,
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea:
+                    TemplateArea(
+                        name: "Right Bottom",
+                        items: [
+                            TemplateItem(
+                                type: .text,
+                                name: "Memory",
+                                value: "{{memory_summary}}"
+                            )
+                        ]
+                    ),
+                badgeArea: .empty
+            )
+            .normalizedForEditing
+        let configuration =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor:
+                    Anchor(
+                        type: .birthday,
+                        title: "生日",
+                        date: birthday,
+                        isCountdown: false
+                    ),
+                memorySubjectText: "小宝",
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(
+                        fileURLWithPath:
+                            "/tmp/legacy_transport_subject.jpeg"
+                    ),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1920,
+                                height: 1080
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        captureDate: captureDate,
+                        deviceBrand: "Apple",
+                        deviceModel: "iPhone 15 Pro",
+                        imageWidth: 4032,
+                        imageHeight: 2268
+                    )
+            )
+
+        let card =
+            RecordCardBuildService()
+            .buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            card.memorySubjectText == "小宝"
+        )
+        #expect(
+            context[MetadataContext.Key.memorySummary]
+            == "今天小宝18天"
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "今天小宝18天"
+        )
+        #expect(
+            card.exportDescriptionOverride?
+                .contains("家人") == false
+        )
+    }
+
+    @Test("Production output resolves subject nickname separately from relationship label")
+    func productionOutputResolvesSubjectNicknameSeparatelyFromRelationshipLabel() throws {
+
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let birthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 5,
+                        day: 26
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 5,
+                        day: 24,
+                        hour: 14,
+                        minute: 33
+                    )
+                )
+            )
+        let subject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "示例对象",
+                        shortName: "小宝"
+                    ),
+                relationship:
+                    .init(
+                        role: "亲人",
+                        label: "家人"
+                    ),
+                definition: "测试对象",
+                referenceDate: birthday,
+                timeAnchors: [
+                    .init(
+                        title: "生日",
+                        date: birthday,
+                        note: "出生日期",
+                        anchorType: .birthday,
+                        expressionStyle:
+                            .birthdayNatural
+                    )
+                ],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "生日",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "生日记忆",
+                                blocks: [
+                                    .text("生日智能模块")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "Subject Nickname Token",
+                leftTopArea: .empty,
+                leftBottomArea: .empty,
+                rightTopArea: .empty,
+                rightBottomArea:
+                    TemplateArea(
+                        name: "Right Bottom",
+                        items: [
+                            TemplateItem(
+                                type: .variable,
+                                name: "Subject Nickname",
+                                value: "{{subject_nickname}}|{{relationship_label}}"
+                            )
+                        ]
+                    ),
+                badgeArea: .empty
+            )
+            .normalizedForEditing
+        let legacyConfiguration =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor:
+                    Anchor(
+                        type: .birthday,
+                        title: "旧生日",
+                        date: birthday,
+                        isCountdown: false
+                    ),
+                memorySubjectText: "家人",
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let configuration =
+            legacyConfiguration
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot:
+                    ConfigurationSnapshotBuilder
+                    .build(from: subject)
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(fileURLWithPath: "/tmp/IMG_subject_nickname.JPEG"),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1920,
+                                height: 1080
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        captureDate: captureDate,
+                        deviceBrand: "Apple",
+                        deviceModel: "iPhone 15 Pro",
+                        imageWidth: 4032,
+                        imageHeight: 2268
+                    )
+            )
+
+        let card =
+            RecordCardBuildService()
+            .buildCard(
+                from: photo,
+                configuration: configuration
+            )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            context[MetadataContext.Key.subjectNickname]
+            == "小宝"
+        )
+        #expect(
+            context[MetadataContext.Key.relationshipLabel]
+            == "家人"
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "小宝|家人"
+        )
+    }
+
+    @Test("Frozen MemoryResult keeps production variables from refilling legacy baby age")
+    func frozenMemoryResultKeepsProductionVariablesFromRefillingLegacyBabyAge() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.FrozenMemoryResultAuthority.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let legacyBirthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 1,
+                        day: 1
+                    )
+                )
+            )
+        let relationshipDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 1
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 2,
+                        hour: 8,
+                        minute: 30
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_8888.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "MemoryResult Authority",
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: TemplateArea(
+                    name: "Right Top",
+                    items: [.cameraSummary]
+                ),
+                rightBottomArea: TemplateArea(
+                    name: "Right Bottom",
+                    items: [
+                        TemplateItem(
+                            type: .text,
+                            name: "Memory",
+                            value: "年龄:{{baby_age}}|{{memory_summary}}"
+                        )
+                    ]
+                ),
+                badgeArea: .badge
+            )
+            .normalizedForEditing
+        let legacySnapshot =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: Anchor(
+                    type: .birthday,
+                    title: "旧生日",
+                    date: legacyBirthday,
+                    isCountdown: false
+                ),
+                memorySubjectText: "旧对象",
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let subject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "示例对象",
+                        shortName: "小宝"
+                    ),
+                relationship:
+                    .init(
+                        role: "朋友",
+                        label: "朋友"
+                    ),
+                definition: "测试对象",
+                referenceDate:
+                    relationshipDate,
+                timeAnchors: [
+                    .init(
+                        title: "相识",
+                        date: relationshipDate,
+                        note: "相识日期",
+                        anchorType:
+                            .relationship,
+                        expressionStyle:
+                            .relationshipNatural
+                    )
+                ],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "相识",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "相识记忆",
+                                blocks: [
+                                    .text("相识智能模块")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        let configurationSnapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: subject
+            )
+        let snapshot =
+            legacySnapshot
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot:
+                    configurationSnapshot
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            card.memoryResult?
+                .primaryAnchorResult?
+                .anchorType == .relationship
+        )
+        #expect(
+            card.memorySubjectText == "小宝"
+        )
+        #expect(
+            card.title == "相识"
+        )
+        #expect(
+            card.anchor?.title == "相识"
+        )
+        #expect(
+            card.anchor?.type == .relationship
+        )
+        #expect(
+            card.anchor?.date == relationshipDate
+        )
+        #expect(
+            card.anchorResult?.title == "相识"
+        )
+        #expect(
+            context[MetadataContext.Key.title]
+            == "相识"
+        )
+        #expect(
+            context[MetadataContext.Key.babyAge]
+            .isEmpty
+        )
+        #expect(
+            context[MetadataContext.Key.memorySummary]
+            == "相识已经1个月1天"
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "年龄:|相识已经1个月1天"
+        )
+    }
+
+    @Test("Frozen MemoryResult clears legacy anchor display-copy variables in production output")
+    func frozenMemoryResultClearsLegacyAnchorDisplayCopyVariablesInProductionOutput() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.FrozenMemoryResultDisplayCopy.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let legacyBirthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 1,
+                        day: 1
+                    )
+                )
+            )
+        let relationshipDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 1
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 2,
+                        hour: 8,
+                        minute: 30
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_8889.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "MemoryResult Display Copy",
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: TemplateArea(
+                    name: "Right Top",
+                    items: [.cameraSummary]
+                ),
+                rightBottomArea: TemplateArea(
+                    name: "Right Bottom",
+                    items: [
+                        TemplateItem(
+                            type: .text,
+                            name: "Legacy Copy",
+                            value: "{{anchor_summary}}|{{anchor_primary}}|{{anchor_secondary}}"
+                        )
+                    ]
+                ),
+                badgeArea: .badge
+            )
+            .normalizedForEditing
+        let legacySnapshot =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: Anchor(
+                    type: .birthday,
+                    title: "旧生日",
+                    date: legacyBirthday,
+                    isCountdown: false
+                ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let subject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "示例对象",
+                        shortName: "小宝"
+                    ),
+                relationship:
+                    .init(
+                        role: "朋友",
+                        label: "朋友"
+                    ),
+                definition: "测试对象",
+                referenceDate:
+                    relationshipDate,
+                timeAnchors: [
+                    .init(
+                        title: "相识",
+                        date: relationshipDate,
+                        note: "相识日期",
+                        anchorType:
+                            .relationship,
+                        expressionStyle:
+                            .relationshipNatural
+                    )
+                ],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "相识",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "相识记忆",
+                                blocks: [
+                                    .text("相识智能模块")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        let configurationSnapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: subject
+            )
+        let snapshot =
+            legacySnapshot
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot:
+                    configurationSnapshot
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            card.memoryResult?
+                .primaryAnchorResult?
+                .anchorTitle == "相识"
+        )
+        #expect(
+            context[MetadataContext.Key.anchorPrimary]
+            .isEmpty
+        )
+        #expect(
+            context[MetadataContext.Key.anchorSecondary]
+            .isEmpty
+        )
+        #expect(
+            context[MetadataContext.Key.anchorSummary]
+            .isEmpty
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "||"
+        )
+    }
+
+    @Test("Frozen unresolved MemoryResult keeps anchor title authoritative in production output")
+    func frozenUnresolvedMemoryResultKeepsAnchorTitleAuthoritativeInProductionOutput() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.FrozenMemoryResultTitle.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let legacyBirthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 1,
+                        day: 1
+                    )
+                )
+            )
+        let frozenBirthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 1
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 2,
+                        hour: 8,
+                        minute: 30
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_8890.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "MemoryResult Title Authority",
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: TemplateArea(
+                    name: "Right Top",
+                    items: [.cameraSummary]
+                ),
+                rightBottomArea: TemplateArea(
+                    name: "Right Bottom",
+                    items: [
+                        TemplateItem(
+                            type: .text,
+                            name: "Frozen Title",
+                            value: "{{anchor_title}}|{{anchor_age_text}}"
+                        )
+                    ]
+                ),
+                badgeArea: .badge
+            )
+            .normalizedForEditing
+        let legacySnapshot =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: Anchor(
+                    type: .birthday,
+                    title: "旧生日",
+                    date: legacyBirthday,
+                    isCountdown: false
+                ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let subject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "示例对象",
+                        shortName: "小宝"
+                    ),
+                relationship:
+                    .init(
+                        role: "孩子",
+                        label: "孩子"
+                    ),
+                definition: "测试对象",
+                referenceDate:
+                    frozenBirthday,
+                timeAnchors: [
+                    .init(
+                        title: "冻结生日",
+                        date: frozenBirthday,
+                        note: "冻结生日",
+                        anchorType:
+                            .birthday,
+                        expressionStyle:
+                            .birthdayNatural
+                    )
+                ],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "冻结生日",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "生日记忆",
+                                blocks: [
+                                    .text("生日智能模块")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        var configurationSnapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: subject
+            )
+        configurationSnapshot
+            .primaryAnchor?
+            .isEnabled = false
+        let snapshot =
+            legacySnapshot
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot:
+                    configurationSnapshot
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            card.memoryResult?
+                .primaryAnchorResult?
+                .status == .disabledAnchor
+        )
+        #expect(
+            context[MetadataContext.Key.anchorTitle]
+            == "冻结生日"
+        )
+        #expect(
+            context[MetadataContext.Key.anchorAgeText]
+            .isEmpty
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "冻结生日|"
+        )
+    }
+
+    @Test("Frozen unsupported primary anchor does not refill card anchor from legacy batch input")
+    func frozenUnsupportedPrimaryAnchorDoesNotRefillCardAnchorFromLegacyBatchInput() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.UnsupportedFrozenAnchor.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let legacyBirthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 1,
+                        day: 1
+                    )
+                )
+            )
+        let frozenAnchorDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 1
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 2,
+                        hour: 8,
+                        minute: 30
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_8890B.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "Unsupported Frozen Anchor",
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: TemplateArea(
+                    name: "Right Top",
+                    items: [.cameraSummary]
+                ),
+                rightBottomArea: TemplateArea(
+                    name: "Right Bottom",
+                    items: [
+                        TemplateItem(
+                            type: .text,
+                            name: "Frozen Title",
+                            value: "{{anchor_title}}|{{anchor_age_text}}"
+                        )
+                    ]
+                ),
+                badgeArea: .badge
+            )
+            .normalizedForEditing
+        let legacySnapshot =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: Anchor(
+                    type: .birthday,
+                    title: "旧生日",
+                    date: legacyBirthday,
+                    isCountdown: false
+                ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let subject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "示例对象",
+                        shortName: "小宝"
+                    ),
+                relationship:
+                    .init(
+                        role: "孩子",
+                        label: "孩子"
+                    ),
+                definition: "测试对象",
+                referenceDate:
+                    frozenAnchorDate,
+                timeAnchors: [
+                    .init(
+                        title: "冻结未知锚点",
+                        date: frozenAnchorDate,
+                        note: "冻结未知锚点",
+                        anchorType:
+                            .birthday,
+                        expressionStyle:
+                            .birthdayNatural
+                    )
+                ],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "冻结未知锚点",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "未知锚点记忆",
+                                blocks: [
+                                    .text("未知锚点智能模块")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        var configurationSnapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: subject
+            )
+        configurationSnapshot
+            .primaryAnchor?
+            .anchorType = nil
+        let snapshot =
+            legacySnapshot
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot:
+                    configurationSnapshot
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            card.memoryResult?
+                .primaryAnchorResult?
+                .status == .unsupportedAnchor
+        )
+        #expect(card.anchor == nil)
+        #expect(card.anchorResult == nil)
+        #expect(
+            context[MetadataContext.Key.anchorTitle]
+            == "冻结未知锚点"
+        )
+        #expect(
+            context[MetadataContext.Key.anchorAgeText]
+            .isEmpty
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "冻结未知锚点|"
+        )
+    }
+
+    @Test("Frozen snapshot without primary anchor does not refill card anchor from legacy batch input")
+    func frozenSnapshotWithoutPrimaryAnchorDoesNotRefillCardAnchorFromLegacyBatchInput() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.NoFrozenPrimaryAnchor.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let legacyBirthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 1,
+                        day: 1
+                    )
+                )
+            )
+        let referenceDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 1
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 2,
+                        hour: 8,
+                        minute: 30
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_8890C.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "No Frozen Primary Anchor",
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: TemplateArea(
+                    name: "Right Top",
+                    items: [.cameraSummary]
+                ),
+                rightBottomArea: TemplateArea(
+                    name: "Right Bottom",
+                    items: [
+                        TemplateItem(
+                            type: .text,
+                            name: "Frozen Empty Anchor",
+                            value: "{{anchor_title}}|{{anchor_age_text}}"
+                        )
+                    ]
+                ),
+                badgeArea: .badge
+            )
+            .normalizedForEditing
+        let legacySnapshot =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: Anchor(
+                    type: .birthday,
+                    title: "旧生日",
+                    date: legacyBirthday,
+                    isCountdown: false
+                ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let subject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "示例对象",
+                        shortName: "小宝"
+                    ),
+                relationship:
+                    .init(
+                        role: "孩子",
+                        label: "孩子"
+                    ),
+                definition: "测试对象",
+                referenceDate:
+                    referenceDate,
+                timeAnchors: [],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "无锚点记忆",
+                                blocks: [
+                                    .text("无锚点智能模块")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        let configurationSnapshot =
+            ConfigurationSnapshot(
+                subjectID: subject.id,
+                memorySubject: subject,
+                expression:
+                    subject.behavior.memoryExpression,
+                decorations: [],
+                primaryAnchor: nil
+            )
+        let snapshot =
+            legacySnapshot
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot:
+                    configurationSnapshot
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            card.memoryResult?
+                .primaryAnchorResultID == nil
+        )
+        #expect(card.anchor == nil)
+        #expect(card.anchorResult == nil)
+        #expect(
+            context[MetadataContext.Key.anchorTitle]
+            .isEmpty
+        )
+        #expect(
+            context[MetadataContext.Key.anchorAgeText]
+            .isEmpty
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "|"
+        )
+    }
+
+    @Test("Legacy anchor result is not calculated from current time when capture date is missing")
+    func legacyAnchorResultIsNotCalculatedFromCurrentTimeWhenCaptureDateIsMissing() {
+        let birthday =
+            Calendar(identifier: .gregorian)
+            .date(
+                from:
+                    DateComponents(
+                        year: 2020,
+                        month: 1,
+                        day: 1
+                    )
+            )!
+        let anchor =
+            Anchor(
+                type: .birthday,
+                title: "生日",
+                date: birthday,
+                isCountdown: false
+            )
+        let photo =
+            SelectedPhoto(
+                sourceURL:
+                    URL(
+                        fileURLWithPath:
+                            "/tmp/missing-capture-date.jpeg"
+                    ),
+                image:
+                    NSImage(
+                        size:
+                            NSSize(
+                                width: 1200,
+                                height: 900
+                            )
+                    ),
+                metadata:
+                    PhotoMetadata(
+                        captureDate: nil
+                    )
+            )
+        let configuration =
+            BatchConfigurationSnapshot(
+                template:
+                    .classicWhite
+                    .normalizedForEditing,
+                badge: nil,
+                anchor:
+                    anchor,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+
+        let card =
+            RecordCardBuildService()
+            .buildCard(
+                from: photo,
+                configuration:
+                    configuration
+            )
+
+        #expect(card.anchor?.id == anchor.id)
+        #expect(card.anchor?.type == anchor.type)
+        #expect(card.anchor?.title == anchor.title)
+        #expect(card.anchorResult == nil)
+    }
+
+    @Test("Frozen MemoryResult clears legacy sub-day anchor components in production output")
+    func frozenMemoryResultClearsLegacySubDayAnchorComponentsInProductionOutput() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.FrozenMemoryResultSubDay.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let legacyBirthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2025,
+                        month: 1,
+                        day: 1,
+                        hour: 1,
+                        minute: 2,
+                        second: 3
+                    )
+                )
+            )
+        let frozenBirthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 1
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 2,
+                        hour: 8,
+                        minute: 30
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_8891.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "MemoryResult SubDay Authority",
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: TemplateArea(
+                    name: "Right Top",
+                    items: [.cameraSummary]
+                ),
+                rightBottomArea: TemplateArea(
+                    name: "Right Bottom",
+                    items: [
+                        TemplateItem(
+                            type: .text,
+                            name: "SubDay",
+                            value: "{{anchor_hours}}|{{anchor_minutes}}|{{anchor_seconds}}"
+                        )
+                    ]
+                ),
+                badgeArea: .badge
+            )
+            .normalizedForEditing
+        let legacySnapshot =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: Anchor(
+                    type: .birthday,
+                    title: "旧生日",
+                    date: legacyBirthday,
+                    isCountdown: false
+                ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let subject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "示例对象",
+                        shortName: "小宝"
+                    ),
+                relationship:
+                    .init(
+                        role: "孩子",
+                        label: "孩子"
+                    ),
+                definition: "测试对象",
+                referenceDate:
+                    frozenBirthday,
+                timeAnchors: [
+                    .init(
+                        title: "冻结生日",
+                        date: frozenBirthday,
+                        note: "冻结生日",
+                        anchorType:
+                            .birthday,
+                        expressionStyle:
+                            .birthdayNatural
+                    )
+                ],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "冻结生日",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "生日记忆",
+                                blocks: [
+                                    .text("生日智能模块")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        let configurationSnapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: subject
+            )
+        let snapshot =
+            legacySnapshot
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot:
+                    configurationSnapshot
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            card.memoryResult?
+                .primaryAnchorResult?
+                .precision == .day
+        )
+        #expect(
+            context[MetadataContext.Key.anchorHours]
+            .isEmpty
+        )
+        #expect(
+            context[MetadataContext.Key.anchorMinutes]
+            .isEmpty
+        )
+        #expect(
+            context[MetadataContext.Key.anchorSeconds]
+            .isEmpty
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "||"
+        )
+    }
+
+    @Test("Frozen MemoryResult clears legacy milestone text in production output")
+    func frozenMemoryResultClearsLegacyMilestoneTextInProductionOutput() throws {
+
+        let suiteName =
+            "RecordCardBuildServiceTests.FrozenMemoryResultMilestone.\(UUID().uuidString)"
+        let defaults =
+            try #require(
+                UserDefaults(
+                    suiteName: suiteName
+                )
+            )
+        defaults.removePersistentDomain(
+            forName: suiteName
+        )
+        defer {
+            defaults.removePersistentDomain(
+                forName: suiteName
+            )
+        }
+
+        let service =
+            RecordCardBuildService()
+        let calendar =
+            Calendar(identifier: .gregorian)
+        let legacyBirthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 3,
+                        day: 24
+                    )
+                )
+            )
+        let frozenBirthday =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 1
+                    )
+                )
+            )
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 7,
+                        day: 2,
+                        hour: 8,
+                        minute: 30
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/IMG_8892.JPEG"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+        let template =
+            Template(
+                preset: .classicWhite,
+                name: "MemoryResult Milestone Authority",
+                leftTopArea: .leftTop,
+                leftBottomArea: .leftBottom,
+                rightTopArea: TemplateArea(
+                    name: "Right Top",
+                    items: [.cameraSummary]
+                ),
+                rightBottomArea: TemplateArea(
+                    name: "Right Bottom",
+                    items: [
+                        TemplateItem(
+                            type: .text,
+                            name: "Milestone",
+                            value: "{{anchor_milestone_text}}|{{anchor_total_days}}"
+                        )
+                    ]
+                ),
+                badgeArea: .badge
+            )
+            .normalizedForEditing
+        let legacySnapshot =
+            BatchConfigurationSnapshot(
+                template: template,
+                badge: nil,
+                anchor: Anchor(
+                    type: .birthday,
+                    title: "旧生日",
+                    date: legacyBirthday,
+                    isCountdown: false
+                ),
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        let subject =
+            MemorySubject(
+                identity:
+                    .init(
+                        displayName: "示例对象",
+                        shortName: "小宝"
+                    ),
+                relationship:
+                    .init(
+                        role: "孩子",
+                        label: "孩子"
+                    ),
+                definition: "测试对象",
+                referenceDate:
+                    frozenBirthday,
+                timeAnchors: [
+                    .init(
+                        title: "冻结生日",
+                        date: frozenBirthday,
+                        note: "冻结生日",
+                        anchorType:
+                            .birthday,
+                        expressionStyle:
+                            .birthdayNatural
+                    )
+                ],
+                expressionSubjectSource:
+                    .shortName,
+                behavior:
+                    MemoryBehavior(
+                        primaryAnchor: "冻结生日",
+                        iconStrategy: .autoMatch,
+                        badgeStrategy: .autoMatch,
+                        memoryExpression:
+                            MemoryExpression(
+                                title: "生日记忆",
+                                blocks: [
+                                    .text("生日智能模块")
+                                ]
+                            )
+                    ),
+                decorations: []
+            )
+        let configurationSnapshot =
+            ConfigurationSnapshotBuilder.build(
+                from: subject
+            )
+        let snapshot =
+            legacySnapshot
+            .withLegacyPairedFrozenMemoryConfiguration(
+                subject: subject,
+                snapshot:
+                    configurationSnapshot
+            )
+
+        let card = service.buildCard(
+            from: photo,
+            configuration: snapshot
+        )
+        let context =
+            CardVariableProvider.build(
+                from: card
+            )
+
+        #expect(
+            card.memoryResult?
+                .primaryAnchorResult?
+                .elapsed.totalDays == 31
+        )
+        #expect(
+            context[MetadataContext.Key.anchorMilestoneText]
+            .isEmpty
+        )
+        #expect(
+            card.exportDescriptionOverride
+            == "|31"
+        )
+    }
+
+    @MainActor
+    @Test("Keeps original base filename and appends copy suffixes for repeated exports")
+    func keepsOriginalBaseFilenameAndAppendsCopySuffixesForRepeatedExports() async throws {
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/MemoMarkNamingFixture.HEIC"),
+            image: NSImage(size: NSSize(width: 32, height: 32)),
+            metadata: PhotoMetadata(
+                captureDate: Date(),
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 17 Pro",
+                imageWidth: 32,
+                imageHeight: 32
+            )
+        )
+
+        let card = RecordCardBuildService().buildCard(
+            from: photo,
+            configuration: BatchConfigurationSnapshot(
+                template: .classicWhite.normalizedForEditing,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        )
+
+        let exportFolder =
+            temporaryExportFolder()
+
+        let firstURL =
+            exportFolder.appendingPathComponent(
+                "MemoMarkNamingFixture (1).jpg"
+            )
+        let secondURL =
+            exportFolder.appendingPathComponent(
+                "MemoMarkNamingFixture (2).jpg"
+            )
+        let sequenceRootURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "MemoMarkNamingSequenceTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+        let sequenceStorageURL =
+            sequenceRootURL.appendingPathComponent(
+                "OutputFilenameSequence.json"
+            )
+
+        clearTemporaryExportFolder()
+
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+            try? FileManager.default.removeItem(
+                at: sequenceRootURL
+            )
+        }
+
+        let firstExportService =
+            RecordCardExportService(
+                outputFilenameSequenceStore:
+                    LivePhotoOutputFilenameSequenceStore(
+                        storageURL:
+                            sequenceStorageURL
+                    )
+            )
+
+        let intermediateURL =
+            try firstExportService
+            .exportIntermediateToTemporaryFile(
+                photo: photo,
+                card: card
+            )
+
+        #expect(
+            intermediateURL.lastPathComponent
+            == "MemoMarkNamingFixture.jpg"
+        )
+
+        try FileManager.default.removeItem(
+            at: intermediateURL
+        )
+
+        let exportedFirstURL =
+            try await firstExportService.exportToTemporaryFile(
+                photo: photo,
+                card: card
+            )
+
+        try FileManager.default.removeItem(
+            at: exportedFirstURL
+        )
+
+        let restartedExportService =
+            RecordCardExportService(
+                outputFilenameSequenceStore:
+                    LivePhotoOutputFilenameSequenceStore(
+                        storageURL:
+                            sequenceStorageURL
+                    )
+            )
+        let exportedSecondURL =
+            try await restartedExportService.exportToTemporaryFile(
+                photo: photo,
+                card: card
+            )
+
+        #expect(
+            exportedFirstURL.lastPathComponent
+            == "MemoMarkNamingFixture (1).jpg"
+        )
+        #expect(
+            exportedSecondURL.lastPathComponent
+            == "MemoMarkNamingFixture (2).jpg"
+        )
+    }
+
+    @MainActor
+    @Test("Export naming prefers the imported original file name over the temporary source URL")
+    func exportNamingPrefersImportedOriginalFileName() async throws {
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/ManagedShareCopy.jpg"),
+            image: NSImage(size: NSSize(width: 32, height: 32)),
+            metadata: PhotoMetadata(
+                captureDate: Date(),
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 17 Pro",
+                imageWidth: 32,
+                imageHeight: 32
+            ),
+            sourceInfo: PhotoSourceInfo(
+                originalFileName: "IMG_7581.HEIC",
+                assetLocalIdentifier: "asset-7581",
+                contentTypeIdentifier: "public.heic"
+            )
+        )
+
+        let card = RecordCardBuildService().buildCard(
+            from: photo,
+            configuration: BatchConfigurationSnapshot(
+                template: .classicWhite.normalizedForEditing,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        )
+
+        let exportFolder =
+            temporaryExportFolder()
+        let sequenceRootURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "MemoMarkImportedNameSequenceTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+
+        let expectedURL =
+            exportFolder.appendingPathComponent(
+                "IMG_7581 (1).jpg"
+            )
+
+        clearTemporaryExportFolder()
+
+        defer {
+            try? FileManager.default.removeItem(at: expectedURL)
+            try? FileManager.default.removeItem(
+                at: sequenceRootURL
+            )
+        }
+
+        let exportedURL =
+            try await RecordCardExportService(
+                outputFilenameSequenceStore:
+                    LivePhotoOutputFilenameSequenceStore(
+                        storageURL:
+                            sequenceRootURL
+                            .appendingPathComponent(
+                                "OutputFilenameSequence.json"
+                            )
+                    )
+            )
+            .exportToTemporaryFile(
+                photo: photo,
+                card: card
+            )
+
+        #expect(
+            exportedURL.lastPathComponent
+            == "IMG_7581 (1).jpg"
+        )
+    }
+
+    @MainActor
+    @Test("Export naming falls back from placeholder names to a capture-date filename")
+    func exportNamingFallsBackFromPlaceholderNamesToCaptureDateFilename() async throws {
+
+        var calendar =
+            Calendar(identifier: .gregorian)
+        calendar.timeZone =
+            try #require(
+                TimeZone(
+                    secondsFromGMT:
+                        8 * 60 * 60
+                )
+            )
+
+        let captureDate =
+            try #require(
+                calendar.date(
+                    from: DateComponents(
+                        year: 2026,
+                        month: 6,
+                        day: 20,
+                        hour: 9,
+                        minute: 8,
+                        second: 19
+                    )
+                )
+            )
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/MemoMark Import.JPG"),
+            image: NSImage(size: NSSize(width: 32, height: 32)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                captureTimezoneOffsetSeconds:
+                    8 * 60 * 60,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 17 Pro",
+                imageWidth: 32,
+                imageHeight: 32
+            ),
+            sourceInfo: PhotoSourceInfo(
+                originalFileName:
+                    "MemoMark Import.JPG"
+            )
+        )
+
+        let card = RecordCardBuildService().buildCard(
+            from: photo,
+            configuration: BatchConfigurationSnapshot(
+                template: .classicWhite.normalizedForEditing,
+                badge: nil,
+                anchor: nil,
+                shouldWritePhotoDescription: false,
+                photoDescriptionOverride: "",
+                selectedAlbumIdentifier: ""
+            )
+        )
+
+        let exportFolder =
+            temporaryExportFolder()
+        let sequenceRootURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "MemoMarkFallbackNameSequenceTests-\(UUID().uuidString)",
+                isDirectory: true
+            )
+
+        let expectedURL =
+            exportFolder.appendingPathComponent(
+                "IMG_20260620_090819 (1).jpg"
+            )
+
+        clearTemporaryExportFolder()
+
+        defer {
+            try? FileManager.default.removeItem(
+                at: expectedURL
+            )
+            try? FileManager.default.removeItem(
+                at: sequenceRootURL
+            )
+        }
+
+        let exportedURL =
+            try await RecordCardExportService(
+                outputFilenameSequenceStore:
+                    LivePhotoOutputFilenameSequenceStore(
+                        storageURL:
+                            sequenceRootURL
+                            .appendingPathComponent(
+                                "OutputFilenameSequence.json"
+                            )
+                    )
+            )
+            .exportToTemporaryFile(
+                photo: photo,
+                card: card
+            )
+
+        #expect(
+            exportedURL.lastPathComponent
+            == "IMG_20260620_090819 (1).jpg"
+        )
+    }
+
+    @MainActor
+    @Test("Uses exported file name as the photo-library original filename")
+    func usesExportedFileNameAsPhotoLibraryOriginalFilename() {
+
+        let service =
+            PhotoLibraryExportService()
+
+        #expect(
+            service.assetOriginalFilename(
+                for: URL(fileURLWithPath: "/tmp/IMG_1234.jpg")
+            ) == "IMG_1234.jpg"
+        )
+
+        #expect(
+            service.assetOriginalFilename(
+                for: URL(fileURLWithPath: "/tmp/IMG_1234 (1).jpg")
+            ) == "IMG_1234 (1).jpg"
+        )
+
+        #expect(
+            service.assetOriginalFilename(
+                for: URL(fileURLWithPath: "/tmp/ ")
+            ) == "MemoMark.jpg"
+        )
+
+        #expect(
+            service.assetOriginalFilename(
+                for: URL(fileURLWithPath: "/tmp/IMG_1234.jpg"),
+                idempotencyKey: "task-123"
+            ) == "IMG_1234.jpg"
+        )
+    }
+}
+
+private extension RecordCardBuildServiceTests {
+
+    func selectedPhoto(
+        captureDate: Date
+    ) -> SelectedPhoto {
+
+        SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/anchor-language.jpeg"),
+            image: NSImage(size: NSSize(width: 1920, height: 1080)),
+            metadata: PhotoMetadata(
+                captureDate: captureDate,
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                imageWidth: 4032,
+                imageHeight: 2268
+            )
+        )
+    }
+
+    func englishFrozenConfiguration(
+        anchor: Anchor
+    ) -> BatchConfigurationSnapshot {
+
+        let subject =
+            MemorySubjectAdapter.adapt(
+                profile:
+                    PersonalProfile(
+                        relationshipRole: .custom,
+                        customRelationshipLabel: "Family",
+                        babyNickname: "Alex"
+                    ),
+                anchors: [anchor],
+                selectedAnchorID: anchor.id,
+                referenceDate: anchor.date
+            )
+
+        return BatchConfigurationSnapshot(
+            template: .classicWhite.normalizedForEditing,
+            badge: nil,
+            anchor: anchor,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: "",
+            language: .english
+        )
+        .withLegacyPairedFrozenMemoryConfiguration(
+            subject: subject,
+            snapshot:
+                ConfigurationSnapshotBuilder.build(
+                    from: subject,
+                    language: .english
+                )
+        )
+    }
+
+    func temporaryExportFolder() -> URL {
+
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "MemoMarkExports",
+                isDirectory: true
+            )
+    }
+
+    func clearTemporaryExportFolder() {
+
+        try? FileManager.default.removeItem(
+            at:
+                temporaryExportFolder()
+        )
+    }
+
+    func injectedExpressionStyleSnapshot(
+        base: BatchConfigurationSnapshot,
+        expressionStyle: String
+    ) throws -> BatchConfigurationSnapshot {
+
+        let data =
+            try JSONEncoder().encode(base)
+        guard
+            var payload =
+                try JSONSerialization
+                .jsonObject(with: data)
+                as? [String: Any],
+            var anchorPayload =
+                payload["anchor"]
+                as? [String: Any]
+        else {
+            throw CocoaError(.coderInvalidValue)
+        }
+
+        anchorPayload["expressionStyle"] =
+            expressionStyle
+        payload["anchor"] =
+            anchorPayload
+
+        let mutatedData =
+            try JSONSerialization.data(
+                withJSONObject: payload
+            )
+
+        return try JSONDecoder().decode(
+            BatchConfigurationSnapshot.self,
+            from: mutatedData
+        )
+    }
+
+    func encodedExpressionStyle(
+        from anchor: Anchor?
+    ) throws -> String? {
+
+        guard let anchor else {
+            return nil
+        }
+
+        let data =
+            try JSONEncoder().encode(anchor)
+
+        return (
+            try JSONSerialization
+            .jsonObject(with: data)
+            as? [String: Any]
+        )?["expressionStyle"] as? String
+    }
+}

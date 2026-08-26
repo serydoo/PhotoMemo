@@ -15,12 +15,12 @@ product UI acceptance has passed.
 The target has two local build gates before any physical-device run:
 
 ```bash
-xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+xcodebuild -project Source/MemoMark/MemoMark.xcodeproj \
   -scheme MemoMarkDeviceQA -configuration Debug -sdk iphoneos \
   -derivedDataPath /tmp/MemoMarkDeviceQABuild \
   CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
 
-xcodebuild -project Source/PhotoMemo/PhotoMemo.xcodeproj \
+xcodebuild -project Source/MemoMark/MemoMark.xcodeproj \
   -scheme MemoMarkDeviceQA -configuration Debug -sdk iphoneos \
   -derivedDataPath /tmp/MemoMarkDeviceQATestBuild \
   CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build-for-testing
@@ -196,7 +196,7 @@ verification. Older schema v1 artifacts created before these fields existed
 remain replayable as legacy-unbound evidence, while new artifacts are bound to
 the manifest identities. The verifier also requires the diagnostic's scheme to
 match `defaultScheme` and its project path to resolve to the current
-`Source/PhotoMemo/PhotoMemo.xcodeproj`, preventing a valid-looking diagnostic
+`Source/MemoMark/MemoMark.xcodeproj`, preventing a valid-looking diagnostic
 from another scheme or checkout from being reused as MemoMark evidence.
 `verify` rechecks an existing run directory offline. It only reads the copied
 manifest, run metadata, test summary, xcodebuild log, and result-bundle
@@ -306,7 +306,7 @@ For the default path, the JSON diagnostic is also retained as
 `signing-status.json` inside the run directory, so an early blocked run keeps a
 machine-readable reason even though no device artifact exists.
 
-The process commands discover the main `PhotoMemoiOS` process by its executable
+The process commands discover the main `MemoMarkiOS` process by its executable
 path when `--pid` is omitted. They are intended for later BP-001 and TX-001
 orchestration. `terminate` is an explicit test action and is never called by
 `preflight` or by an ordinary smoke run.

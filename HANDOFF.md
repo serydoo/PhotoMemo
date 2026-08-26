@@ -1,5 +1,100 @@
 # MemoMark Handoff
 
+## 2026-08-26 2.2.2 收尾与同步接续点（当前）
+
+- 当前工程：`Source/MemoMark/MemoMark.xcodeproj`；版本 `2.2.2 (90)`；GitHub 基点
+  `c0f11a7aa36b7a3b0107b3e6003214e57376e074`，`main == origin/main`。
+- 内部命名迁移、Renderer 样式内容隔离、Classic White Live Photo 底栏修复、Minimal slot A
+  输出、卡片样式独立草稿、Card Content Editor 方案 A、混排删除和固定中心 caret 已在当前
+  工作区。Apple 提交身份与所有历史兼容值保持不变。
+- 已删除 8 份被取代的未跟踪发布草稿和无生产引用的 iOS 临时双入口；保留正式 2.2.2 材料、
+  V4 UI/编辑器研究、命名与 Renderer 规范、Subject Avatar 回归测试、历史审计和兼容迁移代码。
+- source-contract 测试不得再硬编码 `/Users/rui/Desktop/MemoMark`；统一使用
+  `Tests/MemoMarkTests/Support/MemoMarkTestPaths.swift` 从当前 checkout 解析路径。
+- `AI_CONTEXT.md` 是紧凑 AI 事实源，`AI.md` 仅为历史链接兼容入口；当前结构图使用
+  `Docs/PROJECT_STRUCTURE.md`，发布与同步范围使用
+  `Docs/07_Releases/2026-08-26-2.2.2-sync-manifest.md`。
+- 已有验证证据包括 macOS/generic iOS/Share/Widget/Device QA 构建、53/53 编辑器与 iPhone
+  focused tests、59/59 仓库路径相关 tests、117 项脚本测试以及签名候选真机安装启动。最新完整
+  `MemoMarkTests` 为 `1,551` passed、`30` failed、`1` skipped，共 `1,582` 项；失败较整理前基线
+  减少 17 个，剩余集中在既有 UI/source-contract、导出命名 fixture 与导出责任契约。最终 GitHub
+  同步前仍需复核 diff/static checks 与最终暂存范围，不能把当前候选表述为完整生产认证。
+- 当前未执行暂存合并、commit 或 push。继续时先看最终 `git status`，确认 staged rename 与
+  unstaged 内容形成一个可解释的 2.2.2 提交候选，再取得明确 Git 操作授权。
+
+
+## 2026-08-24 2.2.1（构建 90）Share 交接门禁根因修复
+
+- 已解出两次完全一致的真机失败：点击后约 `5–14ms` 在 `PhotoMemoShareExtensionIntakeService.persistSharedItems` 的 `sharedContainerReadiness` 前置分支失败，诊断码 `PhotoMemoShareIntake / 2004`；照片 provider 尚未读取，批量队列尚未创建。
+- 根因确认是 App Group 诊断探针依赖 `UserDefaults.synchronize()` 返回值。真机上该返回值不等价于持久化是否成功，导致新增门禁误判共享容器不可用。
+- 代码修复：`PhotoMemoSharedContainerHandoffReadiness` 新增 `canAttemptHandoff` 与读回诊断字段；Share Extension 改为仅在 `canAttemptHandoff == false` 时阻断。`ExternalIntakeRequestStore` 继续以 `set` 后 `data(forKey:) == data` 的权威读回校验决定请求是否成功，未放松数据完整性要求。
+- 测试：共享容器 5/5；外部交接、诊断和 Share Intake 相关 4 个 suite 共 38 项通过。真机 `PhotoMemoiOS` Debug 构建成功，已覆盖安装并启动；本轮没有点击发送，也没有重置 App/Photos 数据。
+- 下一步：保持手机连接。只有在实时监听启动并明确收到“现在点发送”后再做第三次重现，重点检查完整日志中是否出现 `canAttemptHandoff=true`、实际请求持久化成功及后续队列创建；不要把探针 `handoffReady=false` 单独当作失败。
+
+## 2026-08-24 2.2.1（构建 90）候选构建与安装状态
+
+- 版本号保持 `2.2.1`，构建号已统一为 `90`；四语设置内更新说明和四类发布材料已同步更新。
+- 全量 macOS 测试：`1557` passed、`1` skipped、`0` failed；macOS Debug 和通用 iOS 签名构建均通过。
+- 真实 iPhone 17 Pro Max（`iPhone18,2`，UDID `863C2747-6742-5E93-B715-6F89DBF90B31`）已经配对并安装成功。启动时 iOS 返回开发者信任限制；在设备端信任 Apple Development 开发者后，继续执行启动和首屏确认。
+- 不要把本次真机安装授权理解为 GitHub 推送授权；当前没有 Git commit/push、TestFlight 上传或 App Store 提交。
+
+## 2026-08-24 Stability And Persistence Audit Closure
+
+- Before device verification, the current workflow was audited across its
+  durable boundaries. The Apple Photos first-use marker now follows a
+  successfully persisted intake request for both URL and Live Photo item
+  representations; a failed App Group/request write cannot hide the Home
+  recovery action.
+- Compact presentation normalizes the retired output destination to
+  Configuration Center, and entering Configuration Center reloads album
+  choices. Existing wide-layout/deep-link state therefore cannot create a
+  blank compact destination or stale output-album list.
+- Old static-image output values remain readable for migration compatibility,
+  but are no longer projected into active bootstrap, draft, apply, projection,
+  or production snapshot paths. The source asset now remains authoritative for
+  still-versus-motion output behavior.
+- Background expiration retains the durable write order
+  (diagnostics/progress/recovery fields before terminal failure phase). Its
+  regression test now waits for the processing owner to finish clearing its
+  transient flag, eliminating a test-only observation race.
+- Verification completed: focused stability contracts passed; full parallel
+  macOS `PhotoMemoTests` passed (`1563` passed, `1` skipped); unsigned generic
+  iOS Simulator `PhotoMemoiOS` Debug build passed; localized resource lint and
+  `git diff --check` passed. Physical-device visual acceptance remains the
+  next step, and no commit/push was performed.
+
+## 2026-08-24 Configuration Center Workflow Consolidation Pass
+
+- The current iPhone workflow is now `首页 / 配置 / 进展`. The visible `保存`
+  tab was removed because photo description and output destination are now
+  configuration decisions. Compatibility output models and persistence fields
+  remain in place, but the user no longer chooses static-vs-Live Photo output;
+  source media format remains authoritative.
+- Home's in-app photo picker is first-use only: it requires no external
+  processing record and no accepted Apple Photos Share Extension intake. The
+  latter is an App Group UserDefaults fact; the former is derived from the full
+  external job set, not the ten-item recent list.
+- `V1ConfigurationOptionList` reuses the existing photo-description and output
+  destination sections, preserving the current album picker, custom description,
+  save-dirty behavior, and configuration persistence path.
+- `V1EditorPresentationModifier` now presents `V1CardEditorSheet` through the
+  system Sheet API. TextKit region editing, module insertion, live preview, and
+  completion callbacks are preserved; old custom keyboard geometry and pull
+  dismissal code is gone.
+- Settings inner row groups now sit directly on the page background with softer
+  icon fills. Do not alter the MemoMark+ section as part of this pass. The
+  card-editor, navigation, footer action, and output-section strings have been
+  added with four-language parity.
+- Apple Photos first-use state is marked consistently for both URL and Live
+  Photo intake paths. Background-expiration terminal tasks now publish their
+  failed phase only after diagnostic and progress fields are complete, closing
+  an observer race seen under the full parallel test runner.
+- Verification: unsigned iOS simulator build passed; focused UI/share/
+  background contracts passed; the complete parallel macOS `PhotoMemoTests`
+  suite passed with exit code `0`; and `git diff --check` passed. CoreSimulator
+  install/launch hung before a reliable visual screenshot, so manual
+  simulator/device visual acceptance is still open.
+
 ## 2026-08-24 MemoMark 2.2.1 (87) Verification Follow-up
 
 - The initially incomplete release-note check was rerun successfully: all four
@@ -14527,3 +14622,108 @@ visual/readback acceptance was later closed by the 2026-08-23 final validation
 entry at the top of this file: the static result and Live Photo output share
 the same capsule position semantics, with no black, gray, or white band
 introduced by Minimal composition.
+
+## 2026-08-24 Stability Handoff Before Physical Validation
+
+The current working tree now includes a bottom-up stability pass for the V4
+interface and the existing local-first processing loop. The important invariant
+is that UI state, queue state, media transactions, and durable files no longer
+claim success ahead of the layer beneath them.
+
+Completed safeguards:
+
+- PhotoKit save receipts are committed only after `performChanges` completes;
+  interrupted transactions have asset-aware recovery and synchronized receipt
+  rollback. A visible asset is not reported as successful until its local
+  receipt is commit-acknowledged, so a retry cannot lose its idempotency proof.
+- Queue writes use a last-durable baseline. Write failure restores that
+  baseline and stops processing; completion/retry/cleanup state is not reported
+  as durable before the write succeeds.
+- Picker intake freezes one configuration snapshot before asynchronous media
+  loading, and the same snapshot is used for persistence and submission.
+- Share Extension handoff fails closed if App Group readiness is unavailable.
+- Subject avatar files commit atomically as a three-file asset set, with stale
+  async picker/crop results rejected by subject/request identity.
+- Album option loading uses request generation and full output identity, so
+  stale results cannot overwrite the current draft.
+- EXIF date parsing and iOS date presentation avoid shared mutable formatters;
+  Live Photo metadata copying avoids force-casts.
+
+Evidence:
+
+- `PhotoMemo` macOS Whole-Module build: passed.
+- Full `PhotoMemoTests`: `1,558` passed, `1` skipped, `0` failed.
+- Generic `PhotoMemoiOS` iOS Simulator build: passed.
+- `git diff --check`: passed.
+
+The test report still records two non-failing QoS priority-inversion warnings
+from `FixtureExportReadbackTests`; they are test-harness/AVFoundation timing
+warnings, not failed product assertions. The next validation session should
+exercise the signed iPhone path and Apple Photos round trips: first-use share,
+configuration switch during picker load, repeated album refresh, static JPEG,
+HEIF/RAW where available, Live Photo playback, process termination/relaunch,
+and reinstall behavior. No claim of physical-device validation is made here.
+
+## 2026-08-25 Final Device Handoff: Share Pipeline Fixed
+
+The `2.2.1 (90)` Debug package was built, signed, and installed in place on
+the paired iPhone 17 Pro Max (`863C2747-6742-5E93-B715-6F89DBF90B31`). Existing
+App Group data and pending requests were preserved.
+
+Root causes closed in this pass:
+
+- App Group and commerce persistence no longer interpret
+  `UserDefaults.synchronize()` returning `false` as proof of failed storage;
+  actual write/readback remains the hard verification.
+- Local `.xcode` QA uses a separate development commerce policy, so historical
+  Debug usage cannot reduce the share batch limit to zero.
+- `ShareCoordinator` can recover the missing canonical Memory snapshot from
+  the active durable configuration only when configuration ID and subject
+  semantics match. It does not overwrite legacy request template, album,
+  copy, language, or other transport choices.
+
+Physical-device result:
+
+- Three retained requests drained from the App Group.
+- Request `2D66FDFD-6657-40D7-A6D6-A575CE1B08D7` recovered legacy canonical
+  data, created a static-image job, and completed successfully.
+- Request `C83A5D74-E621-4FE4-9BDA-98E802A484C0` recovered legacy canonical
+  data, created a Live Photo job, and completed successfully, including
+  paired-resource readback.
+- Request `BECF9E94-3EDA-45C0-9F67-53BB36E7CE16` was identified as a duplicate
+  source and dropped without creating a second job.
+- Final pending request count is `0`; both created jobs have `state=completed`,
+  `failedCount=0`, and `retryCount=0`.
+- The latest evidence window contains no `missingCanonicalSnapshot`,
+  `app.enqueue.failed`, or `extension.input.tooManyPhotos` events.
+
+Focused contract tests passed (`23/23`), the signed iOS build passed, and the
+final evidence is at
+`/tmp/PhotoMemoRuntimeEvidence/post-resume-fix2-final-20260825`.
+
+Do not uninstall the app, reset the App Group, remove Photos data, or delete
+the evidence requests while continuing investigation. No commit, push,
+TestFlight upload, or App Store submission was performed.
+
+## 2026-08-25 Source Sync Preparation Handoff
+
+- Current branch and remote baseline: `main == origin/main == c0f11a7`.
+- Required comparison range: `c0f11a7..current working tree`.
+- Baseline version: `2.2.1 (87)`; current version: `2.2.1 (90)`.
+- Current standard package:
+  `Docs/07_Releases/2026-08-25-2.2.1-{release-notes,app-store-whats-new,testflight-notes,sync-manifest}.md`.
+- The four 2026-08-24 files are cumulative candidate history and must not be
+  used as the current Git comparison baseline.
+- The full macOS test run completed with `1572` total, `1571` passed, `1`
+  skipped, and `0` failed in `222` suites with exit code `0`. Two non-failing
+  QoS warnings remain in the synthetic export-readback harness. Result bundle:
+  `/tmp/PhotoMemoSync90Final/Logs/Test/Test-PhotoMemoTests-2026.08.25_13-00-42-+0800.xcresult`.
+- Local reserve excludes the Liquid Glass research record and its research
+  index entry, the four untracked `2.1.4` Drafts, private inputs, device data,
+  screenshots, signed products, DerivedData, `.xcresult`, and `/tmp` evidence.
+- `SubjectAvatarAssetOptimizationServiceTests.swift` is a formal source-sync
+  candidate, despite being untracked, because it covers production changes in
+  this comparison range.
+- No `git add`, commit, push, TestFlight upload, or App Store submission has
+  been authorized or performed. Stop after displaying the prepared materials
+  and final suggested sync/exclusion lists.

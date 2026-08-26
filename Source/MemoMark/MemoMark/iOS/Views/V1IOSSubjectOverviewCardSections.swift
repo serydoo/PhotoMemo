@@ -1,0 +1,365 @@
+#if os(iOS) && !MEMOMARK_SHARE_EXTENSION
+import SwiftUI
+
+struct V1IOSSubjectOverviewCard: View {
+
+    let presentation:
+        V1IOSSubjectOverviewPresentation
+
+    var body: some View {
+        V1CardSurface(
+            title: "概览",
+            systemImage: MemoMarkSymbol.configuration.name,
+            tint: .blue
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                overviewRow(
+                    title: "主体身份",
+                    value: presentation.expressionSubjectValue,
+                    detail: presentation.expressionSubjectTitle
+                )
+                highlightedOverviewRow(
+                    title: "当前生效时间锚点",
+                    value: presentation.anchorTitle
+                )
+            }
+        }
+    }
+
+    private func highlightedOverviewRow(
+        title: String,
+        value: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(
+                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
+                style: .continuous
+            )
+            .fill(Color.accentColor.opacity(0.08))
+        )
+    }
+
+    private func overviewRow(
+        title: String,
+        value: String,
+        detail: String? = nil
+    ) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                if let detail,
+                   !detail.isEmpty {
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            Text(value)
+                .font(.subheadline.weight(.medium))
+                .multilineTextAlignment(.trailing)
+        }
+    }
+}
+
+struct V1IOSSubjectIdentitySection: View {
+
+    let presentation:
+        V1IOSSubjectOverviewPresentation
+
+    let subject: MemorySubject?
+
+    var body: some View {
+        V1CardSurface(
+            title: "基本资料",
+            systemImage: MemoMarkSymbol.memorySubject.name,
+            tint: .blue
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                identityRow(
+                    title: "显示名称",
+                    value:
+                        subject?
+                        .identity.displayName
+                        ?? presentation.title
+                )
+                identityRow(
+                    title: "昵称",
+                    value:
+                        normalized(
+                            subject?
+                            .identity.shortName
+                        )
+                        ?? "未设置"
+                )
+                identityRow(
+                    title: "关系备注",
+                    value:
+                        normalized(
+                            subject?
+                            .relationship.label
+                        )
+                        ?? "未设置"
+                )
+            }
+        }
+    }
+
+    private func identityRow(
+        title: String,
+        value: String
+    ) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 0)
+
+            Text(value)
+                .font(.subheadline.weight(.medium))
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
+    private func normalized(
+        _ text: String?
+    ) -> String? {
+        guard let text else {
+            return nil
+        }
+
+        let trimmed =
+            text.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return trimmed.isEmpty
+            ? nil
+            : trimmed
+    }
+}
+
+struct V1IOSSubjectAnchorSection: View {
+
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
+    let presentation:
+        V1IOSSubjectOverviewPresentation
+
+    let subject: MemorySubject?
+
+    var body: some View {
+        V1CardSurface(
+            title: "可用时间锚点",
+            systemImage: MemoMarkSymbol.timeAnchor.name,
+            tint: .blue
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("展示当前记忆对象下可用于配置的全部时间锚点；具体使用哪个锚点，由配置中心的当前配置决定。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let subject,
+                   !subject.timeAnchors.isEmpty {
+                    VStack(spacing: 0) {
+                        ForEach(subject.timeAnchors) { anchor in
+                            anchorRow(anchor)
+
+                            if anchor.id != subject.timeAnchors.last?.id {
+                                V1HorizontalDivider(
+                                    horizontalInset: 12
+                                )
+                            }
+                        }
+                    }
+                    .background(ConfigurationUI.controlBackground)
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius:
+                                ConfigurationUI.innerPanelCornerRadius,
+                            style: .continuous
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(
+                            cornerRadius:
+                                ConfigurationUI.innerPanelCornerRadius,
+                            style: .continuous
+                        )
+                        .stroke(ConfigurationUI.faintHairline)
+                    )
+                } else {
+                    Text("暂无可用时间锚点。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private func anchorRow(
+        _ anchor: MemorySubject.TimeAnchor
+    ) -> some View {
+        let trimmedNote =
+            anchor.note
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        return Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .top, spacing: 12) {
+                        anchorIcon(anchor)
+                        anchorText(anchor, trimmedNote: trimmedNote)
+                    }
+                    anchorTypePill(anchor)
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .center, spacing: 12) {
+                        anchorIcon(anchor)
+                        anchorText(anchor, trimmedNote: trimmedNote)
+                        Spacer(minLength: 0)
+                        anchorTypePill(anchor)
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(alignment: .top, spacing: 12) {
+                            anchorIcon(anchor)
+                            anchorText(anchor, trimmedNote: trimmedNote)
+                        }
+                        anchorTypePill(anchor)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+    }
+
+    private func anchorIcon(
+        _ anchor: MemorySubject.TimeAnchor
+    ) -> some View {
+        RoundedRectangle(
+                cornerRadius:
+                    ConfigurationUI.compactIconCornerRadius,
+                style: .continuous
+            )
+            .fill(
+                iconTint(
+                    for: anchor.resolvedAnchorType
+                ).opacity(0.10)
+            )
+            .frame(
+                width: ConfigurationUI.compactIconSize,
+                height: ConfigurationUI.compactIconSize
+            )
+            .overlay {
+                Image(
+                    systemName:
+                        iconName(for: anchor.resolvedAnchorType)
+                )
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(
+                    iconTint(
+                        for: anchor.resolvedAnchorType
+                    )
+                )
+            }
+    }
+
+    private func anchorText(
+        _ anchor: MemorySubject.TimeAnchor,
+        trimmedNote: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(anchor.title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
+
+            Text(
+                trimmedNote.isEmpty
+                ? chineseDate(anchor.date)
+                : "\(chineseDate(anchor.date)) · \(trimmedNote)"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
+        }
+    }
+
+    private func anchorTypePill(
+        _ anchor: MemorySubject.TimeAnchor
+    ) -> some View {
+        Text(anchor.resolvedAnchorType.displayName)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .lineLimit(2)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.primary.opacity(0.045))
+            )
+    }
+
+    private func chineseDate(_ date: Date) -> String {
+        V1UserFacingDateFormatter.date(date)
+    }
+
+    private func iconName(
+        for anchorType: AnchorType
+    ) -> String {
+        switch anchorType {
+        case .birthday:
+            return "birthday.cake.fill"
+        case .relationship:
+            return "heart.fill"
+        case .marriage:
+            return "sparkles"
+        case .exam:
+            return "flag.checkered"
+        case .custom:
+            return "calendar"
+        }
+    }
+
+    private func iconTint(
+        for anchorType: AnchorType
+    ) -> Color {
+        switch anchorType {
+        case .birthday:
+            return .orange
+        case .relationship:
+            return .pink
+        case .marriage:
+            return .purple
+        case .exam:
+            return .green
+        case .custom:
+            return .blue
+        }
+    }
+}
+#endif

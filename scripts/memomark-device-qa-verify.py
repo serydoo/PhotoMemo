@@ -38,8 +38,8 @@ SIGNING_FAILURE_CLASSES = frozenset(
 MEMOMARK_PROJECT_PATH = (
     Path(__file__).resolve().parents[1]
     / "Source"
-    / "PhotoMemo"
-    / "PhotoMemo.xcodeproj"
+    / "MemoMark"
+    / "MemoMark.xcodeproj"
 )
 
 EARLY_SIGNING_FORBIDDEN_ARTIFACTS = (

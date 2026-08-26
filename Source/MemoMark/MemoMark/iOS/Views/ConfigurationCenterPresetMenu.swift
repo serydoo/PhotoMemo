@@ -1,0 +1,95 @@
+#if os(iOS) && !MEMOMARK_SHARE_EXTENSION
+import SwiftUI
+
+struct ConfigurationCenterPresetMenu: View {
+
+    let language: MemoMarkLanguage
+    let presets: [MemoryPreset]
+    let selectedPreset: MemoryPreset?
+    let currentTitle: String
+    let onSelectPreset: (MemoryPreset) -> Void
+    let onRenameCurrent: () -> Void
+    let onResetCurrent: () -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(presets) { preset in
+                Button {
+                    onSelectPreset(preset)
+                } label: {
+                    HStack {
+                        Text(preset.title)
+
+                        if ConfigurationCenterPresetSelectionPresenter
+                            .isSelectedPreset(
+                                preset,
+                                selectedPreset: selectedPreset
+                            ) {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+
+            Divider()
+
+            Button {
+                onRenameCurrent()
+            } label: {
+                Label(
+                    language.localized(
+                        key: "configuration.preview.rename",
+                        fallback: "重命名"
+                    ),
+                    systemImage: "pencil"
+                )
+            }
+
+            Button {
+                onResetCurrent()
+            } label: {
+                Label(
+                    language.localized(
+                        key: "configuration.preview.reset",
+                        fallback: "重置"
+                    ),
+                    systemImage: "arrow.counterclockwise"
+                )
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(language.localized(
+                    key: "configuration.summary.current",
+                    fallback: "当前生效配置"
+                ))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+
+                HStack(spacing: 6) {
+                    Text(currentTitle)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
+            .background(ConfigurationUI.selectedBackground)
+            .clipShape(
+                RoundedRectangle(
+                    cornerRadius: ConfigurationUI.smallCornerRadius,
+                    style: .continuous
+                )
+            )
+        }
+    }
+}
+#endif

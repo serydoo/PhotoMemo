@@ -1,0 +1,1112 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A0C0A0010000000000000103 /* Localizable.strings in Share Extension resources */ = {isa = PBXBuildFile; fileRef = A0C0A0010000000000000010 /* Localizable.strings */; };
+		F4A1B23D3A9C410100A10001 /* Localizable.strings in Widget Extension resources */ = {isa = PBXBuildFile; fileRef = A0C0A0010000000000000010 /* Localizable.strings */; };
+		F4A1B23E3A9C410100A10002 /* MemoMark/App/MemoMarkSharedContainer.swift in Widget Extension sources */ = {isa = PBXBuildFile; fileRef = F4A1B2503A9C410100A10001 /* MemoMark/App/MemoMarkSharedContainer.swift */; };
+		F4A1B2403A9C410100A10002 /* MemoMark/Models/MemoMarkLanguage.swift in Widget Extension sources */ = {isa = PBXBuildFile; fileRef = F4A1B2513A9C410100A10001 /* MemoMark/Models/MemoMarkLanguage.swift */; };
+		8B0A7C6D4E184A8AA7E10001 /* MemoMarkShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2093A9C410100A10001 /* MemoMarkShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8B0A7C6D4E184A8AA7E10005 /* MemoMarkWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2333A9C410100A10001 /* MemoMarkWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F4A1B2303A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2383A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift */; };
+		F4A1B2313A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2393A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		8B0A7C6D4E184A8AA7E10002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F4A1B20B3A9C410100A10001;
+			remoteInfo = MemoMarkShareExtension;
+		};
+		8B0A7C6D4E184A8AA7E10006 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F4A1B23E3A9C410100A10001;
+			remoteInfo = MemoMarkWidgetExtension;
+		};
+		F5B100013A9D000000A10001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B3DBA4F32FE1581100945016;
+			remoteInfo = MemoMark;
+		};
+		C0D000070000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3DBA4EC2FE1581100945016 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DF8E1E1435DC445F99C53213;
+			remoteInfo = MemoMarkiOS;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8B0A7C6D4E184A8AA7E10003 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				8B0A7C6D4E184A8AA7E10001 /* MemoMarkShareExtension.appex in Embed App Extensions */,
+				8B0A7C6D4E184A8AA7E10005 /* MemoMarkWidgetExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		A0C0A0010000000000000001 /* en Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = MemoMark/en.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		A0C0A0010000000000000002 /* zh-Hans Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = MemoMark/zh-Hans.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		A0C0A0010000000000000003 /* ja Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = MemoMark/ja.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		A0C0A0010000000000000004 /* ko Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = MemoMark/ko.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		B3DBA4F42FE1581100945016 /* MemoMark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MemoMark.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1155B1BF5AC74477ACAA1F66 /* MemoMarkiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MemoMarkiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F4A1B2093A9C410100A10001 /* MemoMarkShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MemoMarkShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F4A1B2333A9C410100A10001 /* MemoMarkWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MemoMarkWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F4A1B2503A9C410100A10001 /* MemoMark/App/MemoMarkSharedContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/App/MemoMarkSharedContainer.swift; sourceTree = SOURCE_ROOT; };
+		F4A1B2513A9C410100A10001 /* MemoMark/Models/MemoMarkLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Models/MemoMarkLanguage.swift; sourceTree = SOURCE_ROOT; };
+		F4A1B2383A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift; sourceTree = SOURCE_ROOT; };
+		F4A1B2393A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift; sourceTree = SOURCE_ROOT; };
+		F5B100023A9D000000A10001 /* MemoMarkTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MemoMarkTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0D000010000000000000001 /* MemoMarkDeviceQA.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MemoMarkDeviceQA.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXVariantGroup section */
+		A0C0A0010000000000000010 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A0C0A0010000000000000001 /* en Localizable.strings */,
+				A0C0A0010000000000000002 /* zh-Hans Localizable.strings */,
+				A0C0A0010000000000000003 /* ja Localizable.strings */,
+				A0C0A0010000000000000004 /* ko Localizable.strings */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A1B2C3013A9C410100A10001 /* Exceptions for "MemoMark/App" folder in "MemoMarkShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ExternalPhotoIntakeCenter.swift,
+				MemoMarkApp.swift,
+				MemoMarkAppDelegate.swift,
+				MemoMarkAppRuntime.swift,
+				MemoMarkBackgroundStatusService.swift,
+				MemoMarkRootSceneView.swift,
+			);
+			target = F4A1B20B3A9C410100A10001 /* MemoMarkShareExtension */;
+		};
+		A1B2C3023A9C410100A10001 /* Exceptions for "MemoMark/Models" folder in "MemoMarkShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AnchorResult.swift,
+				CardTextBlock.swift,
+				CardVariableProvider.swift,
+				CustomBadge.swift,
+				InlineContentTextComposer.swift,
+				MetadataContext.swift,
+				PersonalProfile.swift,
+				PhotoMetadata.swift,
+				RecordCard.swift,
+				SelectedPhoto.swift,
+				TemplateVariable.swift,
+				TemplateVariableCategory.swift,
+				TemplateVariableLibrary.swift,
+			);
+			target = F4A1B20B3A9C410100A10001 /* MemoMarkShareExtension */;
+		};
+		A1B2C3033A9C410100A10001 /* Exceptions for "MemoMark/iOS/ShareExtension" folder in "MemoMarkShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				MemoMarkShareExtension-Info.plist,
+			);
+			target = F4A1B20B3A9C410100A10001 /* MemoMarkShareExtension */;
+		};
+		77CE0C61042F41738A77F85D /* Exceptions for "MemoMark" folder in "MemoMarkiOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				iOS/ShareExtension/PrivacyInfo.xcprivacy,
+			);
+			target = DF8E1E1435DC445F99C53213 /* MemoMarkiOS */;
+		};
+		F4A1B2443A9C410100A10001 /* Exceptions for "MemoMark" folder in "MemoMark" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				iOS/App/LaunchScreen.storyboard,
+				iOS/ShareExtension/PrivacyInfo.xcprivacy,
+			);
+			target = B3DBA4F32FE1581100945016 /* MemoMark */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		B3DBA4F62FE1581100945016 /* MemoMark */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F4A1B2443A9C410100A10001 /* Exceptions for "MemoMark" folder in "MemoMark" target */,
+				77CE0C61042F41738A77F85D /* Exceptions for "MemoMark" folder in "MemoMarkiOS" target */,
+			);
+			path = MemoMark;
+			sourceTree = "<group>";
+		};
+		A1B2C3113A9C410100A10001 /* MemoMark/App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A1B2C3013A9C410100A10001 /* Exceptions for "MemoMark/App" folder in "MemoMarkShareExtension" target */,
+			);
+			path = MemoMark/App;
+			sourceTree = "<group>";
+		};
+		A1B2C3123A9C410100A10001 /* MemoMark/Models */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A1B2C3023A9C410100A10001 /* Exceptions for "MemoMark/Models" folder in "MemoMarkShareExtension" target */,
+			);
+			path = MemoMark/Models;
+			sourceTree = "<group>";
+		};
+		A1B2C3133A9C410100A10001 /* MemoMark/iOS/ShareExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A1B2C3033A9C410100A10001 /* Exceptions for "MemoMark/iOS/ShareExtension" folder in "MemoMarkShareExtension" target */,
+			);
+			path = MemoMark/iOS/ShareExtension;
+			sourceTree = "<group>";
+		};
+		A1B2C3143A9C410100A10001 /* MemoMark/Expression */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MemoMark/Expression;
+			sourceTree = "<group>";
+		};
+		F4A1B2373A9C410100A10001 /* MemoMarkWidgetExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MemoMarkWidgetExtension;
+			sourceTree = "<group>";
+		};
+		F5B100033A9D000000A10001 /* ../../Tests/MemoMarkTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ../../Tests/MemoMarkTests;
+			sourceTree = "<group>";
+		};
+		C0D000020000000000000001 /* ../../Tests/MemoMarkUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ../../Tests/MemoMarkUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B3DBA4F12FE1581100945016 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		630755BBC5174C7A80B839C4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		F4A1B20A3A9C410100A10001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		F4A1B23B3A9C410100A10001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		F5B100043A9D000000A10001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		C0D000040000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		B39FE7622FECAF5200C88A23 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				F4A1B2383A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift */,
+				F4A1B2393A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		B3DBA4EB2FE1581100945016 = {
+			isa = PBXGroup;
+			children = (
+				B3DBA4F62FE1581100945016 /* MemoMark */,
+				A0C0A0010000000000000010 /* Localizable.strings */,
+				F5B100033A9D000000A10001 /* ../../Tests/MemoMarkTests */,
+				C0D000020000000000000001 /* ../../Tests/MemoMarkUITests */,
+				A1B2C3143A9C410100A10001 /* MemoMark/Expression */,
+				F4A1B2373A9C410100A10001 /* MemoMarkWidgetExtension */,
+				B3DBA4F52FE1581100945016 /* Products */,
+				B39FE7622FECAF5200C88A23 /* Recovered References */,
+			);
+			sourceTree = "<group>";
+		};
+		B3DBA4F52FE1581100945016 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B3DBA4F42FE1581100945016 /* MemoMark.app */,
+				F5B100023A9D000000A10001 /* MemoMarkTests.xctest */,
+				C0D000010000000000000001 /* MemoMarkDeviceQA.xctest */,
+				1155B1BF5AC74477ACAA1F66 /* MemoMarkiOS.app */,
+				F4A1B2093A9C410100A10001 /* MemoMarkShareExtension.appex */,
+				F4A1B2333A9C410100A10001 /* MemoMarkWidgetExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B3DBA4F32FE1581100945016 /* MemoMark */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B3DBA4FF2FE1581300945016 /* Build configuration list for PBXNativeTarget "MemoMark" */;
+			buildPhases = (
+				B3DBA4F02FE1581100945016 /* Sources */,
+				B3DBA4F12FE1581100945016 /* Frameworks */,
+				B3DBA4F22FE1581100945016 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				B3DBA4F62FE1581100945016 /* MemoMark */,
+			);
+			name = MemoMark;
+			productName = MemoMark;
+			productReference = B3DBA4F42FE1581100945016 /* MemoMark.app */;
+			productType = "com.apple.product-type.application";
+		};
+		DF8E1E1435DC445F99C53213 /* MemoMarkiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FD8F6E5CD0234A8BB96291DE /* Build configuration list for PBXNativeTarget "MemoMarkiOS" */;
+			buildPhases = (
+				F89B4A3D3DB343EBAF7D9B7F /* Sources */,
+				630755BBC5174C7A80B839C4 /* Frameworks */,
+				8BC39CB08D7741D3BB38C1AC /* Resources */,
+				8B0A7C6D4E184A8AA7E10003 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8B0A7C6D4E184A8AA7E10004 /* PBXTargetDependency */,
+				8B0A7C6D4E184A8AA7E10007 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B3DBA4F62FE1581100945016 /* MemoMark */,
+			);
+			name = MemoMarkiOS;
+			productName = MemoMarkiOS;
+			productReference = 1155B1BF5AC74477ACAA1F66 /* MemoMarkiOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F4A1B20B3A9C410100A10001 /* MemoMarkShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F4A1B2103A9C410100A10001 /* Build configuration list for PBXNativeTarget "MemoMarkShareExtension" */;
+			buildPhases = (
+				F4A1B20C3A9C410100A10001 /* Sources */,
+				F4A1B20A3A9C410100A10001 /* Frameworks */,
+				F4A1B20D3A9C410100A10001 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				A1B2C3113A9C410100A10001 /* MemoMark/App */,
+				A1B2C3143A9C410100A10001 /* MemoMark/Expression */,
+				A1B2C3123A9C410100A10001 /* MemoMark/Models */,
+				A1B2C3133A9C410100A10001 /* MemoMark/iOS/ShareExtension */,
+			);
+			name = MemoMarkShareExtension;
+			productName = MemoMarkShareExtension;
+			productReference = F4A1B2093A9C410100A10001 /* MemoMarkShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		F4A1B23E3A9C410100A10001 /* MemoMarkWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F4A1B2433A9C410100A10001 /* Build configuration list for PBXNativeTarget "MemoMarkWidgetExtension" */;
+			buildPhases = (
+				F4A1B23A3A9C410100A10001 /* Sources */,
+				F4A1B23B3A9C410100A10001 /* Frameworks */,
+				F4A1B23C3A9C410100A10001 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				F4A1B2373A9C410100A10001 /* MemoMarkWidgetExtension */,
+			);
+			name = MemoMarkWidgetExtension;
+			productName = MemoMarkWidgetExtension;
+			productReference = F4A1B2333A9C410100A10001 /* MemoMarkWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		F5B1000A3A9D000000A10001 /* MemoMarkTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F5B1000B3A9D000000A10001 /* Build configuration list for PBXNativeTarget "MemoMarkTests" */;
+			buildPhases = (
+				F5B100053A9D000000A10001 /* Sources */,
+				F5B100043A9D000000A10001 /* Frameworks */,
+				F5B100063A9D000000A10001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F5B100093A9D000000A10001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F5B100033A9D000000A10001 /* ../../Tests/MemoMarkTests */,
+			);
+			name = MemoMarkTests;
+			productName = MemoMarkTests;
+			productReference = F5B100023A9D000000A10001 /* MemoMarkTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		C0D000030000000000000001 /* MemoMarkDeviceQA */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0D0000B0000000000000001 /* Build configuration list for PBXNativeTarget "MemoMarkDeviceQA" */;
+			buildPhases = (
+				C0D000060000000000000001 /* Sources */,
+				C0D000040000000000000001 /* Frameworks */,
+				C0D000050000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C0D000080000000000000001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C0D000020000000000000001 /* ../../Tests/MemoMarkUITests */,
+			);
+			name = MemoMarkDeviceQA;
+			productName = MemoMarkDeviceQA;
+			productReference = C0D000010000000000000001 /* MemoMarkDeviceQA.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B3DBA4EC2FE1581100945016 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					B3DBA4F32FE1581100945016 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					DF8E1E1435DC445F99C53213 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					F4A1B20B3A9C410100A10001 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					F4A1B23E3A9C410100A10001 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+				F5B1000A3A9D000000A10001 = {
+					CreatedOnToolsVersion = 27.0;
+					TestTargetID = B3DBA4F32FE1581100945016;
+				};
+				C0D000030000000000000001 = {
+					CreatedOnToolsVersion = 27.0;
+					TestTargetID = DF8E1E1435DC445F99C53213;
+				};
+				};
+			};
+			buildConfigurationList = B3DBA4EF2FE1581100945016 /* Build configuration list for PBXProject "MemoMark" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				zh-Hans,
+				Base,
+			);
+			mainGroup = B3DBA4EB2FE1581100945016;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B3DBA4F52FE1581100945016 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B3DBA4F32FE1581100945016 /* MemoMark */,
+				F5B1000A3A9D000000A10001 /* MemoMarkTests */,
+				DF8E1E1435DC445F99C53213 /* MemoMarkiOS */,
+				F4A1B20B3A9C410100A10001 /* MemoMarkShareExtension */,
+				F4A1B23E3A9C410100A10001 /* MemoMarkWidgetExtension */,
+				C0D000030000000000000001 /* MemoMarkDeviceQA */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B3DBA4F22FE1581100945016 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		8BC39CB08D7741D3BB38C1AC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		F4A1B20D3A9C410100A10001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+				A0C0A0010000000000000103 /* Localizable.strings in Share Extension resources */,
+			);
+		};
+		F4A1B23C3A9C410100A10001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+				F4A1B23D3A9C410100A10001 /* Localizable.strings in Widget Extension resources */,
+			);
+		};
+		F5B100063A9D000000A10001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		C0D000050000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B3DBA4F02FE1581100945016 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		F89B4A3D3DB343EBAF7D9B7F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		F4A1B20C3A9C410100A10001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		F4A1B23A3A9C410100A10001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+				F4A1B23E3A9C410100A10002 /* MemoMark/App/MemoMarkSharedContainer.swift in Widget Extension sources */,
+				F4A1B2303A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift in Sources */,
+				F4A1B2313A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift in Sources */,
+				F4A1B2403A9C410100A10002 /* MemoMark/Models/MemoMarkLanguage.swift in Widget Extension sources */,
+			);
+		};
+		F5B100053A9D000000A10001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		C0D000060000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8B0A7C6D4E184A8AA7E10004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F4A1B20B3A9C410100A10001 /* MemoMarkShareExtension */;
+			targetProxy = 8B0A7C6D4E184A8AA7E10002 /* PBXContainerItemProxy */;
+		};
+		8B0A7C6D4E184A8AA7E10007 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F4A1B23E3A9C410100A10001 /* MemoMarkWidgetExtension */;
+			targetProxy = 8B0A7C6D4E184A8AA7E10006 /* PBXContainerItemProxy */;
+		};
+		F5B100093A9D000000A10001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B3DBA4F32FE1581100945016 /* MemoMark */;
+			targetProxy = F5B100013A9D000000A10001 /* PBXContainerItemProxy */;
+		};
+		C0D000080000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DF8E1E1435DC445F99C53213 /* MemoMarkiOS */;
+			targetProxy = C0D000070000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		B3DBA4FD2FE1581300945016 /* Debug configuration for PBXProject "MemoMark" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B3DBA4FE2FE1581300945016 /* Release configuration for PBXProject "MemoMark" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		B3DBA5002FE1581300945016 /* Debug configuration for PBXNativeTarget "MemoMark" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMark.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "MemoMark-Info.plist";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "时光记需要把处理后的照片存回你的系统相册。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "时光记需要读取你选择的相册，并把处理后的照片保存进去。";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 2.2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B3DBA5012FE1581300945016 /* Release configuration for PBXNativeTarget "MemoMark" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMark.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "MemoMark-Info.plist";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "时光记需要把处理后的照片存回你的系统相册。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "时光记需要读取你选择的相册，并把处理后的照片保存进去。";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 2.2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		F9F054D5C7B4471E885C1840 /* Debug configuration for PBXNativeTarget "MemoMarkiOS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMarkiOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "MemoMarkiOS-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "时光记";
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLName = \"com.serydoo.PhotoMemo.iOS\";\n    CFBundleURLSchemes =     (\n        memomark,\n        photomemo\n    );\n}";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "时光记需要把处理后的照片存回你的系统相册。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "时光记需要读取你选择的照片与相册，并把处理后的照片保存进去。";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		2DB40F57D9AA4FC5AD790FF2 /* Release configuration for PBXNativeTarget "MemoMarkiOS" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMarkiOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "MemoMarkiOS-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "时光记";
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleTypeRole = Editor;\n    CFBundleURLName = \"com.serydoo.PhotoMemo.iOS\";\n    CFBundleURLSchemes =     (\n        memomark,\n        photomemo\n    );\n}";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "时光记需要把处理后的照片存回你的系统相册。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "时光记需要读取你选择的照片与相册，并把处理后的照片保存进去。";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F4A1B20E3A9C410100A10001 /* Debug configuration for PBXNativeTarget "MemoMarkShareExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMarkShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ShareExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "MEMOMARK_SHARE_EXTENSION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F4A1B20F3A9C410100A10001 /* Release configuration for PBXNativeTarget "MemoMarkShareExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMarkShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ShareExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "MEMOMARK_SHARE_EXTENSION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		F4A1B2403A9C410100A10001 /* Debug configuration for PBXNativeTarget "MemoMarkWidgetExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "MemoMarkWidgetExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.WidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "MEMOMARK_WIDGET_EXTENSION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F4A1B2413A9C410100A10001 /* Release configuration for PBXNativeTarget "MemoMarkWidgetExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "MemoMarkWidgetExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.iOS.WidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "MEMOMARK_WIDGET_EXTENSION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F5B100073A9D000000A10001 /* Debug configuration for PBXNativeTarget "MemoMarkTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MemoMark.app/Contents/MacOS/MemoMark";
+				TEST_TARGET_NAME = MemoMark;
+			};
+			name = Debug;
+		};
+		F5B100083A9D000000A10001 /* Release configuration for PBXNativeTarget "MemoMarkTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MemoMark.app/Contents/MacOS/MemoMark";
+				TEST_TARGET_NAME = MemoMark;
+			};
+			name = Release;
+		};
+		C0D000090000000000000001 /* Debug configuration for PBXNativeTarget "MemoMarkDeviceQA" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 2.2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.MemoMarkDeviceQA;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = MemoMarkiOS;
+			};
+			name = Debug;
+		};
+		C0D0000A0000000000000001 /* Release configuration for PBXNativeTarget "MemoMarkDeviceQA" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 90;
+				DEVELOPMENT_TEAM = UK7ZR8G564;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 2.2.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.serydoo.PhotoMemo.MemoMarkDeviceQA;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = MemoMarkiOS;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B3DBA4EF2FE1581100945016 /* Build configuration list for PBXProject "MemoMark" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B3DBA4FD2FE1581300945016 /* Debug configuration for PBXProject "MemoMark" */,
+				B3DBA4FE2FE1581300945016 /* Release configuration for PBXProject "MemoMark" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		B3DBA4FF2FE1581300945016 /* Build configuration list for PBXNativeTarget "MemoMark" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B3DBA5002FE1581300945016 /* Debug configuration for PBXNativeTarget "MemoMark" */,
+				B3DBA5012FE1581300945016 /* Release configuration for PBXNativeTarget "MemoMark" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		FD8F6E5CD0234A8BB96291DE /* Build configuration list for PBXNativeTarget "MemoMarkiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F9F054D5C7B4471E885C1840 /* Debug configuration for PBXNativeTarget "MemoMarkiOS" */,
+				2DB40F57D9AA4FC5AD790FF2 /* Release configuration for PBXNativeTarget "MemoMarkiOS" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		F4A1B2103A9C410100A10001 /* Build configuration list for PBXNativeTarget "MemoMarkShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F4A1B20E3A9C410100A10001 /* Debug configuration for PBXNativeTarget "MemoMarkShareExtension" */,
+				F4A1B20F3A9C410100A10001 /* Release configuration for PBXNativeTarget "MemoMarkShareExtension" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		F4A1B2433A9C410100A10001 /* Build configuration list for PBXNativeTarget "MemoMarkWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F4A1B2403A9C410100A10001 /* Debug configuration for PBXNativeTarget "MemoMarkWidgetExtension" */,
+				F4A1B2413A9C410100A10001 /* Release configuration for PBXNativeTarget "MemoMarkWidgetExtension" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		F5B1000B3A9D000000A10001 /* Build configuration list for PBXNativeTarget "MemoMarkTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F5B100073A9D000000A10001 /* Debug configuration for PBXNativeTarget "MemoMarkTests" */,
+				F5B100083A9D000000A10001 /* Release configuration for PBXNativeTarget "MemoMarkTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		C0D0000B0000000000000001 /* Build configuration list for PBXNativeTarget "MemoMarkDeviceQA" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0D000090000000000000001 /* Debug configuration for PBXNativeTarget "MemoMarkDeviceQA" */,
+				C0D0000A0000000000000001 /* Release configuration for PBXNativeTarget "MemoMarkDeviceQA" */,
+			);
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B3DBA4EC2FE1581100945016 /* Project object */;
+	validationLevel = 1;
+}

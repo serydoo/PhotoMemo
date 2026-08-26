@@ -7,7 +7,7 @@
   "defaultDeviceName": "iPhone7",
   "defaultScheme": "MemoMarkDeviceQA",
   "qaTarget": "MemoMarkDeviceQA",
-  "qaHostProduct": "PhotoMemoiOS.app",
+  "qaHostProduct": "MemoMarkiOS.app",
   "qaRunnerBundleIdentifier": "com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner",
   "inputPolicy": {
     "mode": "userProvidedAssetIdentifiers",

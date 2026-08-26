@@ -6,11 +6,12 @@ Current scripts:
 
 - `auto_sync_to_github.sh`
 - `install_autosync.sh`
-- `com.serydoo.photomemo.autosync.plist`
+- `com.serydoo.memomark.autosync.plist` (the installer also boots out the
+  legacy `com.serydoo.photomemo.autosync` label if it is installed)
 - `export_options_v1_testing.plist` - local debugging export options
 - `export_options_testflight.plist` - App Store Connect/TestFlight upload export options
 - `collect-ios-runtime-evidence.sh` - pulls iPhone runtime diagnostics,
-  shared defaults, queue summaries, and PhotoMemo crash reports for MGF-2B
+  shared defaults, queue summaries, and MemoMark crash reports for MGF-2B
   evidence review without copying private media.
 - `summarize-ios-runtime-evidence.py` - summarizes collected iOS evidence and,
   when given a baseline plus scenario, evaluates V3 real-device Share Extension
@@ -23,8 +24,8 @@ Current scripts:
 Create a baseline before a manual Apple Photos -> Share -> MemoMark run:
 
 ```bash
-PHOTOMEMO_RUNTIME_EVIDENCE_DIR=/tmp/PhotoMemoRuntimeEvidence/v3-baseline-$(date '+%Y%m%d-%H%M%S') \
-PHOTOMEMO_RUNTIME_SCENARIO=baseline \
+MEMOMARK_RUNTIME_EVIDENCE_DIR=/tmp/MemoMarkRuntimeEvidence/v3-baseline-$(date '+%Y%m%d-%H%M%S') \
+MEMOMARK_RUNTIME_SCENARIO=baseline \
   scripts/collect-ios-runtime-evidence.sh '<device-id>'
 ```
 
@@ -32,9 +33,9 @@ After sharing a validation batch from Apple Photos, collect again with the
 baseline directory:
 
 ```bash
-PHOTOMEMO_RUNTIME_BASELINE_DIR=/tmp/PhotoMemoRuntimeEvidence/v3-baseline-YYYYMMDD-HHMMSS \
-PHOTOMEMO_RUNTIME_EVIDENCE_DIR=/tmp/PhotoMemoRuntimeEvidence/v3-share-20-$(date '+%Y%m%d-%H%M%S') \
-PHOTOMEMO_RUNTIME_SCENARIO=share-20 \
+MEMOMARK_RUNTIME_BASELINE_DIR=/tmp/MemoMarkRuntimeEvidence/v3-baseline-YYYYMMDD-HHMMSS \
+MEMOMARK_RUNTIME_EVIDENCE_DIR=/tmp/MemoMarkRuntimeEvidence/v3-share-20-$(date '+%Y%m%d-%H%M%S') \
+MEMOMARK_RUNTIME_SCENARIO=share-20 \
   scripts/collect-ios-runtime-evidence.sh '<device-id>'
 ```
 
@@ -51,7 +52,7 @@ Supported scenario values are:
 
 The generated `runtime-evidence-summary.md` is the first file to inspect. For
 the 21-photo rejection scenario, the script can only verify that no new handoff
-request, batch job, or PhotoMemo crash appeared and that
+request, batch job, or MemoMark crash appeared and that
 `extension.input.tooManyPhotos` was recorded; the rejection copy still needs
 manual UI confirmation on the device. Without that machine-readable rejection
 event, the scenario is `needs-review` rather than `pass`. For `share-1` and

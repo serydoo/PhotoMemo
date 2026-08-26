@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.2.2 (90) Configuration Center And Apple Photos Reliability - 2026-08-26
+
+- Consolidated the iPhone experience around Home, Configuration, and Progress, with Photo Description and Output Destination now edited alongside the Memory Card configuration.
+- Unified six Configuration Center sections under one native disclosure behavior: all start expanded, later choices persist locally, and accessibility-size, VoiceOver, and Reduce Motion states remain explicit.
+- Moved Photo Description and Output Destination headings outside their white content cards while preserving the standalone Output page's complete titled-card hierarchy.
+- Fixed a physical-device Apple Photos Share regression by using real App Group preference readback instead of treating `UserDefaults.synchronize()` as a storage result.
+- Recovered older Share requests only when Configuration identity and Memory Subject semantics match, while preserving the request's original preset, album, language, copy, and transport choices.
+- Hardened PhotoKit receipts, queue rollback, configuration snapshot capture, avatar asset commits, album-load identity, EXIF date parsing, and Live Photo metadata copying.
+- Unified Classic White still-image and Live Photo output around one renderer-owned artifact, preventing black empty footer bands and missing footer content in motion output.
+- Made Minimal use the user's Card Content Editor slot A composition as its only rendered and Apple Photos description source; it no longer borrows Classic White's slot D smart result.
+- Persisted Card Content Editor drafts independently per card style so Classic White and Minimal no longer overwrite one another when switching, saving, or reloading.
+- Added one style content contract for editable regions, rendered regions, and photo-description sources, so future two- or three-region Renderers can register their own mapping without sharing slot state.
+- Refined the light-mode Home, Configuration Center, Progress, Share, and Card Content Editor surfaces, including long-text layout, editor height boundaries, caret preservation, and a bounded Configuration Center Save/More action cluster.
+- Compactified the Card Content Editor with left-side titles, a 40pt visible input field, natural TextKit line height, and post-layout vertical caret alignment; module insertion and Dynamic Type remain supported.
+- Fixed TextKit backspace in mixed custom-text and module content to delete only the item immediately before the live caret, preserving the local caret position instead of falling back to the rightmost module.
+- Unified the text/module line box and tightened the title-to-field spacing so empty, text-only, and module-containing rows keep a stable height and baseline.
+- Kept all photo processing local, originals unchanged, Apple Photos as the photo owner, and the established Memory Engine, Layout Engine, Renderer, Export, Share Extension, and durable-configuration boundaries intact.
+
+The earlier full `MemoMarkTests` baseline completed with `1,573` tests: `1,525` passed, `47` failed, and `1` skipped. The current iPhone UI/source-contract focused suite is green at `53/53`; the stale contract expectations previously reported as `10` UI failures have been aligned with the accepted current UI architecture and were not caused by the internal product rename. The renderer/style/mutation focused run is green for the changed behaviors, with three existing fixture-dependent export naming cases still requiring fixture correction. macOS and generic iOS builds passed. Final visual/accessibility acceptance, StoreKit production evidence, TestFlight, App Store Connect, `TX-001`, `BP-001`, and superseding production certification remain separate and open.
+
 ## 2.2.1 (87) Expression, Media Truth, And Configuration Clarity - 2026-08-24
 
 - Added the Minimal card style as a bounded presentation route whose floating information capsule stays within the photo canvas, while preserving Classic White content and Logo configuration when users switch styles.
@@ -8,7 +28,7 @@
 - Refined birthday-day and annual-anchor language so birthdays, anniversaries, and countdowns retain their distinct everyday meaning and use the configured photo-output language.
 - Kept all processing local, originals unchanged, Apple Photos as the photo owner, and the existing Memory Engine, Layout Engine, Renderer, Export, and Share Extension boundaries intact.
 
-This is a controlled V4 refinement candidate. Version fields are locked to `2.2.1 (87)`; full current-build validation, visual/accessibility acceptance, StoreKit, TestFlight, App Store Connect, and production-certification evidence remain separate and open.
+This was the last pushed GitHub source checkpoint and the baseline for build `90`. Its version fields were `2.2.1 (87)`; external distribution and production-certification evidence remained separate.
 
 ## 2.1.3 (86) Multilingual Memory Expression And Delivery Clarity - 2026-08-19
 

@@ -1,128 +1,92 @@
 # MemoMark Project Structure
 
-Last updated: 2026-07-01
+Last updated: 2026-08-26
 
-This document maps the current source tree at a practical level. It is meant to help new sessions find the right file quickly, not to replace architecture or workflow docs.
+This is the practical lookup map for the current repository. Architecture and
+product ownership remain defined by `PROJECT_CONSTITUTION.md`,
+`Docs/MASTER_PLAN.md`, and the accepted PDR/ADR records.
 
-## Repository Root
+## Repository root
 
-- `README.md` - product identity and high-level status
-- `AI_CONTEXT.md` - compact AI working context
-- `AGENTS.md` - repository working rules
-- `HANDOFF.md` - session handoff history
-- `CHANGELOG.md` - release-facing change history
-- `PROJECT_RESET.md` - permanent V2 reset memory
-- `RepositoryAudit.md` - V2 repository audit
-- `App/` - reserved V2 app-facing structure
-- `Docs/` - product, architecture, QA, and session documents
-- `Research/` - V2 research system
-- `DesignSystem/` - reserved V2 design-system assets
-- `LayoutEngine/` - reserved V2 layout-engine boundary
-- `Renderer/` - reserved V2 renderer boundary
-- `Examples/` - public non-private examples
-- `Screenshots/` - public non-private screenshots
-- `Source/PhotoMemo/` - app source and Xcode project
-- `Tests/` - fixtures and Swift test sources
-- `scripts/` - local automation helpers
+- `Source/MemoMark/` — current Xcode project and production source.
+- `Tests/MemoMarkTests/` — Swift Testing suites grouped by system.
+- `Tests/MemoMarkUITests/` — signed-device QA harness tests.
+- `Docs/` — product, architecture, development, release, and historical records.
+- `Research/` — V4 research inputs, methods, and Expression Style foundation.
+- `scripts/` — build, QA, evidence, and synchronization helpers.
+- `QA/` — physical-device QA manifest and operating guidance.
+- `App/`, `DesignSystem/`, `LayoutEngine/`, `Renderer/` — repository-level
+  boundary notes; production implementation remains under `Source/MemoMark/`.
+- `Examples/`, `Screenshots/` — public, non-private example boundaries.
 
-## V2 Target Structure
+## Xcode project
 
-The V2 target structure is now represented non-destructively at the repository root:
+- Project: `Source/MemoMark/MemoMark.xcodeproj`
+- macOS app: `MemoMark`
+- iOS app: `MemoMarkiOS`
+- Share Extension: `MemoMarkShareExtension`
+- Widget Extension: `MemoMarkWidgetExtension`
+- Unit tests: `MemoMarkTests`
+- Physical-device QA: `MemoMarkDeviceQA`
 
-- `App/`
-- `Docs/`
-- `Research/`
-- `DesignSystem/`
-- `LayoutEngine/`
-- `Renderer/`
-- `Examples/`
-- `Screenshots/`
-- `scripts/`
-- `Tests/`
+Published bundle identifiers, App Group values, persistence keys, background
+task identifiers, StoreKit identifiers, and legacy URL parsing intentionally
+retain their historical compatibility values. Internal target and module names
+use MemoMark.
 
-Existing source files remain under `Source/PhotoMemo/` until a reviewed migration slice moves them safely.
+## Production source
 
-## Xcode Workspace
+`Source/MemoMark/MemoMark/` is organized by ownership:
 
-- `Source/PhotoMemo/PhotoMemo.xcodeproj`
-- `Source/PhotoMemo/PhotoMemo/`
-- `Source/PhotoMemo/PhotoMemoWidgetExtension/`
-- `Source/PhotoMemo/ShareExtension-Info.plist`
+- `App/` — app lifecycle, external intake, shared-container state, root scenes,
+  background status, and cross-target workflow summaries.
+- `Architecture/` — small shared architectural primitives.
+- `ConfigurationCenter/` — macOS Configuration Center, configuration session,
+  object editors, inspectors, Memory Card, and configuration models.
+- `Models/` — durable and runtime domain values.
+- `Repositories/` — persistence and data-access boundaries.
+- `Intent/` — explicit user/application intents.
+- `Coordinators/` — orchestration across configuration, preview, queue, export,
+  and share workflows.
+- `Engines/`, `Expression/`, `MemoryEngine/`, `MetadataExpression/`,
+  `LocationExpression/` — deterministic facts, memory calculation, and
+  presentation-expression layers.
+- `LayoutEngine/`, `MediaGeometry/` — measurable layout and media geometry.
+- `Renderers/` — drawing implementations that consume resolved layout/content.
+- `Services/`, `MediaPipelineVNext/` — PhotoKit, metadata, export, Live Photo,
+  queue, notification, and media lifecycle services.
+- `iOS/` — iOS app shell, ActivityKit bridge, Share Extension, and current views.
+- `Views/` — current macOS/shared SwiftUI surfaces. The retired
+  `Views/Main/MainView*` workspace/editor subtree must not be restored.
+- `Assets.xcassets/` and `*.lproj/` — current assets and four-language resources.
 
-## App Source
+## Current app entry points
 
-`Source/PhotoMemo/PhotoMemo/` currently contains:
+- macOS: `ConfigurationCenter/ConfigurationCenterView.swift`
+- iOS root scene: `App/MemoMarkRootSceneView.swift`
+- iOS primary experience: `iOS/Views/MemoMarkiOSV1View.swift`
+- Share Extension controller:
+  `iOS/ShareExtension/MemoMarkShareExtensionViewController.swift`
+- Widget bundle:
+  `MemoMarkWidgetExtension/MemoMarkWidgetExtensionBundle.swift`
 
-- `App/` - app runtime, external intake, shared container, deep links, and share workflow summaries
-- `Architecture/` - lightweight shared app primitives such as result/environment wrappers
-- `Models/` - core data models such as templates, anchors, badges, metadata, record cards, selected photos, and batch state
-- `Repositories/` - repository-facing access boundaries for configuration, settings, queue, diagnostics, and photo-library reads
-- `Intent/` - explicit app-flow, preview, queue, export, and save intents
-- `Coordinators/` - higher-level orchestration for configuration, preview, export, queue, and share flows
-- `Engines/` - deterministic calculation and template engines
-- `MemoryEngine/` - memory-context and memory-variable calculation support
-- `Renderers/` - preview/export renderers and render theme support
-- `Services/` - import, metadata, export, photo-library save, settings, permissions, queue, and notification services
-- `Views/` - macOS SwiftUI views for main calibration, preview, template, anchor, first-run, and shared components
-- `iOS/` - iOS app shell, share extension, activity/live-activity bridge, and iOS-specific views
-- `Extensions/` - small Swift extensions
-- `Assets.xcassets/` - app icons, accent color, and badge assets
-- entitlement files for macOS, iOS, and share extension targets
+There is one accepted iOS production entry. The retired temporary dual-entry
+switcher and legacy MainView workspace path are not part of the current tree.
+Do not merge app, Share Extension, and Widget entry files: they belong to
+different Apple target and lifecycle boundaries.
 
-## Main Editor Flow
+## iOS view map
 
-The main editor has been decomposed into a coordinator shell plus focused extensions:
-
-- `Views/Main/MainView.swift` - coordinator shell and service/state ownership
-- `Views/Main/MainView+StateModels.swift` - grouped local state models
-- `Views/Main/MainView+LayoutSections.swift` - main scene and section composition
-- `Views/Main/MainView+WorkspaceSession.swift` - workspace session wiring
-- `Views/Main/MainView+WorkspaceConfigurationState.swift` - workspace configuration lifecycle
-- `Views/Main/MainView+WorkspaceControls.swift` - workspace controls
-- `Views/Main/MainView+TemplateEditingActions.swift` - template editing actions
-- `Views/Main/MainView+ComposerSession.swift` - composer session state and behavior
-- `Views/Main/MainView+ComposerDisplayEngine.swift` - inline composer display model
-- `Views/Main/EditorProjectionEngine.swift` - editor projection logic
-- `Views/Main/MainView+ExportActions.swift` - save/export actions
-- `Views/Main/MainView+PermissionLifecycle.swift` - permission lifecycle handling
-- `Views/Main/MainView+ModalAndLifecycle.swift` - modal and lifecycle glue
-
-When touching main editor behavior, inspect `MainView.swift` plus the newest relevant `MainView+*.swift` file instead of assuming all logic still lives in one large file.
-
-## iOS Configuration Center And V1 Surface
-
-`Source/PhotoMemo/PhotoMemo/iOS/Views/` is still physically flat, but the current working structure is easiest to read as four logical groups:
-
-- Configuration Center:
-  - `ConfigurationCenteriOSView.swift`
-  - `ConfigurationCenter*`
-  - `IOSConfigurationPanel.swift`
-  - `MemoryWriteOptionPresenter.swift`
-- V1 shell and subject flow:
-  - `PhotoMemoiOSV1View.swift`
-  - `V1Configuration*`
-  - `V1Draft*`
-  - `V1Preview*`
-  - `V1IOSSubject*`
-  - `V1SubjectHomeSummarySupport.swift`
-- Home surface:
-  - `PhotoMemoiOSHomeView.swift`
-  - `PhotoMemoiOSBackgroundStatusSheet.swift`
-  - `V1IOSHome*`
-- Diagnostics and support:
-  - `PhotoMemoiOSProcessingDiagnosticsSnapshot.swift`
-  - `PhotoMemoiOSQueueDiagnosticsProjectionEngine.swift`
-  - `V1DiagnosticsRefreshCoordinator.swift`
-  - `PhotoMemoiOSTemporaryEntryView.swift`
-  - `PhotoMemoiOSModuleCatalog.swift`
-  - `IOSCompactEntryRow.swift`
-
-The folder remains physically flat for now because the Xcode project uses filesystem-synchronized groups and the repository keeps long handoff histories with direct file links. Treat the grouping above as the current lookup map until a dedicated filesystem migration slice is approved.
+`Source/MemoMark/MemoMark/iOS/Views/` remains physically flat because the
+project uses filesystem-synchronized groups. Use the local `README.md` there
+for the current logical grouping. New files should follow existing
+`ConfigurationCenter*`, `V1*`, or `MemoMarkiOS*` responsibility prefixes.
 
 ## Tests
 
-`Tests/PhotoMemoTests/` is organized by system:
+`Tests/MemoMarkTests/` contains:
 
+- `ArchitectureTests/`
 - `BatchTests/`
 - `ExportTests/`
 - `MemoryEngineTests/`
@@ -131,8 +95,12 @@ The folder remains physically flat for now because the Xcode project uses filesy
 - `VariableTests/`
 - `Support/`
 
-`Tests/Fixtures/` holds synthetic image fixtures and renderer snapshot references.
+Source-contract tests must resolve files through `MemoMarkTestPaths`; they must
+not embed a developer-specific absolute checkout path.
 
-## Document Map
+## Document navigation
 
-Use `Docs/DOCUMENT_INDEX.md` as the first stop for deciding which docs are current working references, topic-specific references, or historical notes.
+- Start with `Docs/DOCUMENT_INDEX.md` to distinguish current facts from history.
+- Use `Docs/CURRENT_STATUS.md` for the latest verified state.
+- Use `HANDOFF.md` for chronological continuation.
+- Use `Docs/07_Releases/README.md` for the current release package.

@@ -2,6 +2,8 @@
 
 本目录保存 MemoMark 面向 Product Hunt、软件目录、独立开发者社区、少数派和 Apple 媒体的统一外部资料。
 
+当前发布草稿：[`2026-08-26-MemoMark-2.2.2-XHS.md`](2026-08-26-MemoMark-2.2.2-XHS.md)。
+
 ## 使用顺序
 
 1. 先读 [`OUTREACH_MATERIALS_SPEC.md`](OUTREACH_MATERIALS_SPEC.md)，确认范围和事实边界。

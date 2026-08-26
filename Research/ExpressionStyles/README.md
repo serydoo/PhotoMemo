@@ -2,6 +2,19 @@
 
 Last updated: 2026-07-30
 
+## 2026-08-24 research reserve: Liquid Glass bottom metadata overlay
+
+The supplied iOS 26 Shortcut and paired original/output samples produced a
+bounded research reserve for a possible same-canvas Liquid Glass metadata
+overlay. The evidence, provisional measurements, Shortcut risks, and future
+Renderer ownership direction are recorded in:
+
+`Docs/01_Product/V4_Liquid_Glass_Renderer_Research_Reserve_2026-08-24.md`
+
+This is research only. It does not authorize a Renderer, persistence, Live
+Photo, Share Extension, or Shortcut implementation. Classic White and the
+approved Minimal slice remain unchanged.
+
 ## 2026-08-19 bounded implementation exception
 
 The project owner explicitly authorized the bounded `Minimal` implementation

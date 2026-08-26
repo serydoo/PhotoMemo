@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PROJECT_PATH="${REPO_ROOT}/Source/PhotoMemo/PhotoMemo.xcodeproj"
+PROJECT_PATH="${REPO_ROOT}/Source/MemoMark/MemoMark.xcodeproj"
 MANIFEST_PATH="${REPO_ROOT}/QA/MemoMarkDeviceQA.json"
 VERIFIER_PATH="${REPO_ROOT}/scripts/memomark-device-qa-verify.py"
 SIGNING_DIAGNOSTIC_PATH="${REPO_ROOT}/scripts/memomark-device-qa-signing.py"
@@ -516,7 +516,7 @@ resolve_process_id() {
 
     xcrun devicectl device info processes \
         --device "${DEVICE}" \
-        --search "PhotoMemo" \
+        --search "MemoMark" \
         --json-output "${PROCESS_DETAILS_JSON}" \
         --quiet >/dev/null
 
@@ -530,12 +530,12 @@ with open(sys.argv[1], encoding="utf-8") as file:
 matches = []
 for process in payload.get("result", {}).get("runningProcesses", []):
     executable = process.get("executable", "")
-    if executable.endswith("/PhotoMemoiOS.app/PhotoMemoiOS"):
+    if executable.endswith("/MemoMarkiOS.app/MemoMarkiOS"):
         matches.append(str(process["processIdentifier"]))
 
 if len(matches) != 1:
     raise SystemExit(
-        "Expected exactly one running PhotoMemoiOS process, found "
+        "Expected exactly one running MemoMarkiOS process, found "
         + str(len(matches))
     )
 
@@ -773,7 +773,7 @@ case "${COMMAND}" in
         preflight
         xcrun devicectl device info processes \
             --device "${DEVICE}" \
-            --search "PhotoMemo"
+            --search "MemoMark"
         ;;
     memory-warning)
         preflight

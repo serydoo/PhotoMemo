@@ -1,6 +1,12 @@
 # MemoMark Repository Audit
 
-Last updated: 2026-06-22
+Baseline audit: 2026-06-22
+
+Current-state note: reviewed 2026-08-26. This document remains the historical
+repository-reset audit required by the V4 startup routine. Current product
+stage, source paths, release state, and implementation facts are owned by
+`PROJECT_CONSTITUTION.md`, `Docs/MASTER_PLAN.md`, `Docs/PROJECT_STRUCTURE.md`,
+and `Docs/CURRENT_STATUS.md`.
 
 ## Audit Scope
 
@@ -9,14 +15,14 @@ Reviewed repository entry points, AI instructions, changelog, history file, docu
 Key inputs included:
 
 - `README.md`
-- `AI.md`
+- `AI.md` (now a compatibility pointer)
 - `AI_CONTEXT.md`
 - `AGENTS.md`
 - `HANDOFF.md`
 - `CHANGELOG.md`
 - `PROJECT_HISTORY.md`
 - `Docs/`
-- `Source/PhotoMemo/PhotoMemo/`
+- `Source/MemoMark/MemoMark/`
 - `Tests/`
 - `scripts/`
 

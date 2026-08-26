@@ -41,7 +41,7 @@ def crash_names(path: Path) -> list[str]:
         return []
     names: list[str] = []
     for line in path.read_text(errors="replace").splitlines():
-        match = re.search(r"(PhotoMemo\S+\.ips)", line)
+        match = re.search(r"((?:MemoMark|PhotoMemo)\S+\.ips)", line)
         if match:
             names.append(match.group(1))
     return sorted(set(names))
@@ -696,7 +696,7 @@ def evaluate_scenario(
                 "reason": (
                     f"Found completed shareExtension job with {expected_count} "
                     "saved task(s), matching task duration evidence, and no "
-                    "new PhotoMemo crash."
+                    "new MemoMark crash."
                 ),
             }
         return {
@@ -719,7 +719,7 @@ def evaluate_scenario(
         if new_crashes:
             return {
                 "status": "fail",
-                "reason": "A new PhotoMemo crash appeared during the rejection run.",
+                "reason": "A new MemoMark crash appeared during the rejection run.",
             }
         too_many_events = [
             event
@@ -732,13 +732,13 @@ def evaluate_scenario(
                 "reason": (
                     "The Share Extension recorded the too-many-photos "
                     "preflight rejection, and no new handoff request, batch "
-                    "job, or PhotoMemo crash was found relative to the baseline."
+                    "job, or MemoMark crash was found relative to the baseline."
                 ),
             }
         return {
             "status": "needs-review",
             "reason": (
-                "No new handoff request, batch job, or PhotoMemo crash was "
+                "No new handoff request, batch job, or MemoMark crash was "
                 "found relative to the baseline, but no "
                 "extension.input.tooManyPhotos diagnostic event was found. "
                 "Confirm the UI showed the split-batch rejection copy."
@@ -752,7 +752,7 @@ def evaluate_scenario(
         if new_crashes:
             return {
                 "status": "fail",
-                "reason": "A new PhotoMemo crash appeared during the single Live Photo Share run.",
+                "reason": "A new MemoMark crash appeared during the single Live Photo Share run.",
             }
 
         completed_jobs = [
@@ -818,7 +818,7 @@ def evaluate_scenario(
             "status": "pass",
             "reason": (
                 "Completed Share run includes a single Live Photo route, "
-                "matching task duration evidence, and no new PhotoMemo "
+                "matching task duration evidence, and no new MemoMark "
                 "crash."
             ),
         }
@@ -830,7 +830,7 @@ def evaluate_scenario(
         if new_crashes:
             return {
                 "status": "fail",
-                "reason": "A new PhotoMemo crash appeared during the mixed Live Photo Share run.",
+                "reason": "A new MemoMark crash appeared during the mixed Live Photo Share run.",
             }
 
         completed_jobs = completed_share_extension_jobs(new_jobs)
@@ -892,7 +892,7 @@ def evaluate_scenario(
             "reason": (
                 "Completed Share run includes both Live Photo and still "
                 "routes, matching task duration evidence, and no new "
-                "PhotoMemo crash."
+                "MemoMark crash."
             ),
         }
 
@@ -903,7 +903,7 @@ def evaluate_scenario(
         if new_crashes:
             return {
                 "status": "fail",
-                "reason": "A new PhotoMemo crash appeared during the 48MP Share run.",
+                "reason": "A new MemoMark crash appeared during the 48MP Share run.",
             }
 
         completed_jobs = completed_share_extension_jobs(new_jobs)
@@ -965,7 +965,7 @@ def evaluate_scenario(
                 "reason": (
                     "48MP admission evidence used critical single-lane "
                     "scheduling, the Share job completed with matching task "
-                    "duration evidence, and no new PhotoMemo crash was found."
+                    "duration evidence, and no new MemoMark crash was found."
                 ),
             }
 
@@ -1074,7 +1074,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- External intake requests: {counts['requestCount']} "
         f"(new: {counts['newRequestCount']})",
         f"- Batch jobs: {counts['jobCount']} (new: {counts['newJobCount']})",
-        f"- PhotoMemo crashes: {counts['crashCount']} "
+        f"- MemoMark crashes: {counts['crashCount']} "
         f"(new: {counts['newCrashCount']})",
         "",
         "## New Jobs",

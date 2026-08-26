@@ -1,6 +1,6 @@
 # MemoMark Document Index
 
-Last updated: 2026-08-11
+Last updated: 2026-08-26
 
 ## Product Stage Source Of Truth
 
@@ -47,6 +47,8 @@ Read these first at the start of a new session:
 - `Research/README.md` - research workflow
 - `README.md` - product identity and current project position
 - `AI_CONTEXT.md` - compact AI working context
+- `AI.md` - compatibility pointer for historical links; not an independent
+  source of stage or architecture truth
 - `HANDOFF.md` - chronological session handoff history
 - `AGENTS.md` - repository rules for agent sessions
 - `Docs/FROZEN_REGISTRY.md` - current frozen architecture and interaction registry
@@ -139,9 +141,11 @@ Use these when changing EXIF, import, save-back, album, or metadata retention be
 - `Docs/JPEG_HEIC_Compatibility.md`
 - `Docs/BatchExportReliability.md`
 
-## MainView And UI Refactor Notes
+## Retired MainView Refactor Notes
 
-Use these only when working on the main editor flow or related UI slices:
+These files are historical migration evidence only. The `Views/Main/MainView*`
+workspace/editor path has been removed and must not be used as a current
+implementation guide:
 
 - `Docs/MAINVIEW_MVP_REFACTOR_SPEC.md`
 - `Docs/MAINVIEW_MVP_REFACTOR_PLAN.md`
@@ -151,6 +155,9 @@ Use these only when working on the main editor flow or related UI slices:
 - `Docs/MAINVIEW_PREVIEW_DETAIL_REFACTOR_PLAN.md`
 - `Docs/MAINVIEW_WORKSPACE_CONFIGURATION_SPEC.md`
 - `Docs/MAINVIEW_WORKSPACE_CONFIGURATION_PLAN.md`
+
+For current UI work, inspect `ConfigurationCenterView`, `MemoMarkiOSV1View`,
+their active state owners, and `Docs/PROJECT_STRUCTURE.md`.
 
 ## QA And Release Readiness
 

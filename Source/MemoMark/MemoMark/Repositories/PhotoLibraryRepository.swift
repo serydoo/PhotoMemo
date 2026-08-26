@@ -1,0 +1,179 @@
+#if !MEMOMARK_SHARE_EXTENSION
+import Foundation
+
+final class PhotoLibraryRepository {
+
+    private let photoLibraryExportService:
+        PhotoLibraryExporting
+
+    init(
+        photoLibraryExportService:
+            PhotoLibraryExporting
+    ) {
+        self.photoLibraryExportService =
+            photoLibraryExportService
+    }
+
+    func fetchAlbumOptions()
+    async -> MemoMarkResult<
+        [PhotoAlbumOption]
+    > {
+
+        do {
+            return .success(
+                try await photoLibraryExportService
+                .fetchAlbumOptions()
+            )
+        } catch {
+            return .failure(
+                wrappedPhotoLibraryError(
+                    error,
+                    message:
+                        "Unable to load system photo albums."
+                )
+            )
+        }
+    }
+
+    func ensureAlbum(
+        named title: String
+    ) async -> MemoMarkResult<
+        PhotoAlbumOption
+    > {
+
+        do {
+            return .success(
+                try await photoLibraryExportService
+                .ensureAlbum(
+                    named: title
+                )
+            )
+        } catch {
+            return .failure(
+                wrappedPhotoLibraryError(
+                    error,
+                    message:
+                        "Unable to prepare the destination album."
+                )
+            )
+        }
+    }
+
+    func saveRenderedPhoto(
+        at fileURL: URL,
+        metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String?
+    ) async -> MemoMarkResult<
+        PhotoLibrarySaveResult
+    > {
+
+        do {
+            return .success(
+                try await photoLibraryExportService
+                .saveImageResult(
+                    at: fileURL,
+                    metadata: metadata,
+                    preferredAlbumIdentifier:
+                        normalizedAlbumIdentifier(
+                            preferredAlbumIdentifier
+                        )
+                )
+            )
+        } catch {
+            return .failure(
+                wrappedPhotoLibraryError(
+                    error,
+                    message:
+                        "Unable to save the rendered photo to the system photo library."
+                )
+            )
+        }
+    }
+
+    func saveRenderedPhoto(
+        at fileURL: URL,
+        metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String?,
+        idempotencyKey: String
+    ) async -> MemoMarkResult<PhotoLibrarySaveResult> {
+
+        do {
+            return .success(
+                try await photoLibraryExportService
+                    .saveImageResult(
+                        at: fileURL,
+                        metadata: metadata,
+                        preferredAlbumIdentifier:
+                            normalizedAlbumIdentifier(
+                                preferredAlbumIdentifier
+                            ),
+                        idempotencyKey: idempotencyKey
+                    )
+            )
+        } catch {
+            return .failure(
+                wrappedPhotoLibraryError(
+                    error,
+                    message:
+                        "Unable to save the rendered photo to the system photo library."
+                )
+            )
+        }
+    }
+
+    func saveRenderedPhoto(
+        at fileURL: URL,
+        metadata: PhotoMetadata,
+        preferredAlbumIdentifier: String
+    ) async -> MemoMarkResult<
+        PhotoLibrarySaveResult
+    > {
+
+        await saveRenderedPhoto(
+            at: fileURL,
+            metadata: metadata,
+            preferredAlbumIdentifier:
+                Optional(
+                    preferredAlbumIdentifier
+                )
+        )
+    }
+}
+
+private extension PhotoLibraryRepository {
+
+    func wrappedPhotoLibraryError(
+        _ error: Error,
+        message: String
+    ) -> MemoMarkError {
+
+        MemoMarkError(
+            code: .photoLibrarySaveFailed,
+            message: message,
+            underlyingDescription:
+                String(describing: error),
+            diagnosticCode:
+                (error as? PhotoLibraryExportError)?
+                .diagnosticCode
+        )
+    }
+
+    func normalizedAlbumIdentifier(
+        _ preferredAlbumIdentifier: String?
+    ) -> String? {
+
+        guard
+            let trimmedIdentifier =
+                preferredAlbumIdentifier?
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                ),
+            !trimmedIdentifier.isEmpty
+        else {
+            return nil
+        }
+
+        return trimmedIdentifier
+    }
+}
+#endif

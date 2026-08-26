@@ -14,19 +14,32 @@ Release events:
 
 ## Current Candidate Materials
 
-The current local candidate package is `2.2.1 (87)`, prepared on 2026-08-24
-from the last pushed `2.1.3 (86)` checkpoint. Its version fields are locked,
-but release evidence remains open. It is not a Git commit, TestFlight upload,
-App Store submission, production certification, or public release.
+The current local source-checkpoint package is `2.2.2 (90)`, prepared on
+2026-08-26 from the actual last GitHub push at `c0f11a7`. The comparison range
+is `c0f11a7..current working tree`. It is prepared for review only and is not a
+Git commit, push, TestFlight upload, App Store submission, production
+certification, or public release.
+
+- [`2026-08-26-2.2.2-release-notes.md`](2026-08-26-2.2.2-release-notes.md)
+- [`2026-08-26-2.2.2-app-store-whats-new.md`](2026-08-26-2.2.2-app-store-whats-new.md)
+- [`2026-08-26-2.2.2-testflight-notes.md`](2026-08-26-2.2.2-testflight-notes.md)
+- [`2026-08-26-2.2.2-sync-manifest.md`](2026-08-26-2.2.2-sync-manifest.md)
+- [`2026-08-26-2.2.2-app-review-materials.md`](2026-08-26-2.2.2-app-review-materials.md)
+- [`../Outreach/2026-08-26-MemoMark-2.2.2-XHS.md`](../Outreach/2026-08-26-MemoMark-2.2.2-XHS.md)
+
+The superseded untracked `2026-08-25-2.2.1-*` and
+`2026-08-22-2.1.4-*` draft packages were removed during the 2026-08-26
+repository cleanup. Their accepted release history remains represented by the
+tracked 2026-08-24 package and `CHANGELOG.md`.
+
+The 2026-08-24 package below is retained as cumulative candidate history. It
+starts from `a438e55` and must not be used as the current post-push source-sync
+baseline.
 
 - [`2026-08-24-2.2.1-版本更新说明.md`](2026-08-24-2.2.1-版本更新说明.md)
 - [`2026-08-24-2.2.1-AppStore更新说明.md`](2026-08-24-2.2.1-AppStore更新说明.md)
 - [`2026-08-24-2.2.1-TestFlight测试说明.md`](2026-08-24-2.2.1-TestFlight测试说明.md)
 - [`2026-08-24-2.2.1-同步清单.md`](2026-08-24-2.2.1-同步清单.md)
-
-The `2026-08-22-2.1.4-*` files remain local Draft history only. They were
-prepared before a build was assigned and are explicitly excluded by the current
-sync manifest.
 
 - `2026-08-19-2.1.3-release-notes.md`
 - `2026-08-19-2.1.3-app-store-whats-new.md`

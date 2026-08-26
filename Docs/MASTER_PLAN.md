@@ -491,7 +491,7 @@ Current strengths:
 - Metadata extraction and export preservation have real tests and docs.
 - The retired `MainView` workspace/editor subtree has been removed; current
   runtime entry points are `ConfigurationCenterView` on macOS and
-  `PhotoMemoiOSV1View` on iOS.
+  `MemoMarkiOSV1View` on iOS.
 - iOS and Share Extension groundwork exists.
 - Renderer snapshot tests exist for Classic White.
 
@@ -552,8 +552,9 @@ Highest priority:
 - `RepositoryAudit.md`
 - `Research/README.md`
 - `AGENTS.md`
-- `AI.md`
 - `AI_CONTEXT.md`
+
+`AI.md` remains only as a compatibility pointer for historical links.
 
 Current source-of-truth docs from V1 that remain useful:
 

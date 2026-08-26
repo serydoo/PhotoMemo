@@ -9,7 +9,7 @@ fi
 
 DEVICE_ID="$1"
 STAMP="$(date '+%Y%m%d-%H%M%S')"
-OUTPUT_DIR="${PHOTOMEMO_RUNTIME_EVIDENCE_DIR:-/tmp/PhotoMemoRuntimeEvidence/$STAMP}"
+OUTPUT_DIR="${MEMOMARK_RUNTIME_EVIDENCE_DIR:-${PHOTOMEMO_RUNTIME_EVIDENCE_DIR:-/tmp/MemoMarkRuntimeEvidence/$STAMP}}"
 APP_BUNDLE_ID="com.serydoo.PhotoMemo.iOS"
 APP_GROUP_ID="group.com.serydoo.PhotoMemo"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -68,11 +68,11 @@ xcrun devicectl device info files \
   --device "$DEVICE_ID" \
   --domain-type systemCrashLogs \
   --recurse \
-  --search PhotoMemo \
+  --search MemoMark \
   --columns '*' \
   >"$OUTPUT_DIR/crash-files.txt" 2>&1 || true
 
-awk '/PhotoMemo.*\.ips/ {print $1}' "$OUTPUT_DIR/crash-files.txt" \
+awk '/(MemoMark|PhotoMemo).*\.ips/ {print $1}' "$OUTPUT_DIR/crash-files.txt" \
   | sort -u \
   | while read -r crash_file; do
       [[ -z "$crash_file" ]] && continue
@@ -214,11 +214,13 @@ echo "- $OUTPUT_DIR/decoded/batchQueue.summary.json"
 echo "- $OUTPUT_DIR/crash-files.txt"
 
 SUMMARY_ARGS=("$OUTPUT_DIR" "--write")
-if [[ -n "${PHOTOMEMO_RUNTIME_BASELINE_DIR:-}" ]]; then
-  SUMMARY_ARGS+=("--baseline" "$PHOTOMEMO_RUNTIME_BASELINE_DIR")
+RUNTIME_BASELINE_DIR="${MEMOMARK_RUNTIME_BASELINE_DIR:-${PHOTOMEMO_RUNTIME_BASELINE_DIR:-}}"
+RUNTIME_SCENARIO="${MEMOMARK_RUNTIME_SCENARIO:-${PHOTOMEMO_RUNTIME_SCENARIO:-}}"
+if [[ -n "$RUNTIME_BASELINE_DIR" ]]; then
+  SUMMARY_ARGS+=("--baseline" "$RUNTIME_BASELINE_DIR")
 fi
-if [[ -n "${PHOTOMEMO_RUNTIME_SCENARIO:-}" ]]; then
-  SUMMARY_ARGS+=("--scenario" "$PHOTOMEMO_RUNTIME_SCENARIO")
+if [[ -n "$RUNTIME_SCENARIO" ]]; then
+  SUMMARY_ARGS+=("--scenario" "$RUNTIME_SCENARIO")
 fi
 
 if [[ -f "$SCRIPT_DIR/summarize-ios-runtime-evidence.py" ]]; then

@@ -244,7 +244,7 @@ The legacy `Views/Main/MainView*` and Workspace editor path was removed on
 2026-07-20 after dependency, test, macOS, iOS, and signed-device verification.
 
 - macOS uses `ConfigurationCenterView`
-- iOS uses `PhotoMemoiOSV1View`
+- iOS uses `MemoMarkiOSV1View`
 - do not recreate `MainView`, Workspace Session, the legacy Composer editor,
   or the old photo-import-first workflow
 - shared non-UI utilities must live in their owning service or engine layer,
@@ -358,11 +358,15 @@ For meaningful UI or architecture changes:
 - run a build before closing the task
 - summarize what was verified
 - call out what was **not** manually verified
+- For UI work, use the paired physical iPhone 17 Pro Max as the validation
+  device. Do not invoke iOS Simulator builds, simulator UI tests, or
+  simulator-based visual verification; after implementation, use the signed
+  physical-device build/install/launch flow directly.
 
 Preferred build command:
 
 ```bash
-xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo.xcodeproj -scheme PhotoMemo -configuration Debug -derivedDataPath /tmp/PhotoMemoDerivedData CODE_SIGNING_ALLOWED=NO -quiet build
+xcodebuild -project /Users/rui/Desktop/PhotoMemo/Source/MemoMark/MemoMark.xcodeproj -scheme MemoMark -configuration Debug -derivedDataPath /tmp/MemoMarkDerivedData CODE_SIGNING_ALLOWED=NO -quiet build
 ```
 
 ## Editing Rules

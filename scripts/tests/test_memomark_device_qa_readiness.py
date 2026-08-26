@@ -29,7 +29,7 @@ class ReadinessReportTests(unittest.TestCase):
             "appBundleIdentifier": "com.serydoo.PhotoMemo",
             "defaultScheme": "MemoMarkDeviceQA",
             "qaTarget": "MemoMarkDeviceQA",
-            "qaHostProduct": "PhotoMemoiOS.app",
+            "qaHostProduct": "MemoMarkiOS.app",
             "qaRunnerBundleIdentifier":
                 "com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner",
             "scenarios": [
@@ -304,7 +304,7 @@ class ReadinessReportTests(unittest.TestCase):
                     "configuration": "Debug",
                     "runID": "directory-run",
                     "result": "passed",
-                    "hostProduct": "PhotoMemoiOS.app",
+                    "hostProduct": "MemoMarkiOS.app",
                     "hostBundleIdentifier": "com.serydoo.PhotoMemo",
                     "runnerProduct": "MemoMarkDeviceQA-Runner.app",
                     "runnerBundleIdentifier":
@@ -560,7 +560,7 @@ class ReadinessReportTests(unittest.TestCase):
                         "configuration": "Debug",
                         "runID": "ready-directory-run",
                         "result": "passed",
-                        "hostProduct": "PhotoMemoiOS.app",
+                        "hostProduct": "MemoMarkiOS.app",
                         "hostBundleIdentifier": "com.serydoo.PhotoMemo",
                         "runnerProduct": "MemoMarkDeviceQA-Runner.app",
                         "runnerBundleIdentifier":
@@ -615,7 +615,7 @@ class ReadinessReportTests(unittest.TestCase):
             "runnerBundleIdentifier":
                 "com.serydoo.PhotoMemo.MemoMarkDeviceQA.xctrunner",
             "testBundleIdentifier": "com.serydoo.PhotoMemo.MemoMarkDeviceQA",
-            "hostProduct": "PhotoMemoiOS.app",
+            "hostProduct": "MemoMarkiOS.app",
             "runnerProduct": "MemoMarkDeviceQA-Runner.app",
             "testBundleProduct": "MemoMarkDeviceQA.xctest",
         }
@@ -642,7 +642,7 @@ class ReadinessReportTests(unittest.TestCase):
             "hostBundleIdentifier": "com.serydoo.PhotoMemo",
             "runnerBundleIdentifier": "com.example.Foreign.xctrunner",
             "testBundleIdentifier": "com.serydoo.PhotoMemo.MemoMarkDeviceQA",
-            "hostProduct": "PhotoMemoiOS.app",
+            "hostProduct": "MemoMarkiOS.app",
             "runnerProduct": "MemoMarkDeviceQA-Runner.app",
             "testBundleProduct": "MemoMarkDeviceQA.xctest",
         }
@@ -696,7 +696,7 @@ class ReadinessReportTests(unittest.TestCase):
             "configuration": "Debug",
             "runID": "old-run",
             "result": "passed",
-            "hostProduct": "PhotoMemoiOS.app",
+            "hostProduct": "MemoMarkiOS.app",
             "hostBundleIdentifier": "com.serydoo.PhotoMemo",
             "runnerProduct": "MemoMarkDeviceQA-Runner.app",
             "runnerBundleIdentifier":

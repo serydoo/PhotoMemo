@@ -1,0 +1,315 @@
+#if !MEMOMARK_SHARE_EXTENSION
+import Foundation
+
+enum V1SubjectLibraryFactory {
+
+    static func makeFirstRunSubject(
+        name: String,
+        birthday: Date
+    ) -> MemorySubject {
+        let trimmedName = name.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        let resolvedName = trimmedName.isEmpty
+            ? "记忆主角"
+            : trimmedName
+        let birthdayAnchor = MemorySubject.TimeAnchor(
+            title: "生日",
+            date: birthday,
+            note: "用来回顾照片拍摄时的年龄。",
+            anchorType: .birthday,
+            expressionStyle: .birthdayNatural
+        )
+        let hundredDaysAnchor = MemorySubject.TimeAnchor(
+            title: "百天",
+            date: Calendar.current.date(
+                byAdding: .day,
+                value: 99,
+                to: birthday
+            ) ?? birthday,
+            note: "对象出生后的第 100 天。",
+            anchorType: .birthday,
+            expressionStyle: .birthdayNatural
+        )
+        let customAnchor = MemorySubject.TimeAnchor(
+            title: "重要日子",
+            date: Calendar.current.date(
+                byAdding: .month,
+                value: 6,
+                to: birthday
+            ) ?? birthday,
+            note: "自定义纪念日或重要时间点。",
+            anchorType: .custom,
+            expressionStyle: .customNatural
+        )
+
+        return MemorySubject(
+            identity: .init(
+                displayName: resolvedName,
+                shortName: resolvedName
+            ),
+            relationship: .init(
+                role: "",
+                label: ""
+            ),
+            definition: "围绕这个主角回顾照片中的时间。",
+            referenceDate: birthday,
+            timeAnchors: [
+                birthdayAnchor,
+                hundredDaysAnchor,
+                customAnchor
+            ],
+            activeTimeAnchorID: birthdayAnchor.id,
+            expressionSubjectSource: .shortName,
+            behavior: .init(
+                primaryAnchor: birthdayAnchor.title,
+                iconStrategy: .autoMatch,
+                badgeStrategy: .fixed,
+                memoryExpression: .init(
+                    title: "生日回顾",
+                    blocks: []
+                )
+            ),
+            decorations: []
+        )
+    }
+
+    static func makeDefaultSubject(
+        referenceDate: Date
+    ) -> MemorySubject {
+        let birthdayAnchor =
+            MemorySubject.TimeAnchor(
+                title: "生日",
+                date: referenceDate,
+                note: "请补充这个对象最重要的时间锚点。",
+                anchorType: .birthday,
+                expressionStyle:
+                    .defaultStyle(for: .birthday)
+            )
+        let hundredDaysAnchor =
+            MemorySubject.TimeAnchor(
+                title: "百天",
+                date:
+                    Calendar.current.date(
+                        byAdding: .day,
+                        value: 99,
+                        to: referenceDate
+                    ) ?? referenceDate,
+                note: "对象出生后的第 100 天。",
+                anchorType: .birthday,
+                expressionStyle:
+                    .defaultStyle(for: .birthday)
+            )
+        let customAnchor =
+            MemorySubject.TimeAnchor(
+                title: "重要日子",
+                date:
+                    Calendar.current.date(
+                        byAdding: .month,
+                        value: 6,
+                        to: referenceDate
+                    ) ?? referenceDate,
+                note: "自定义纪念日或重要时间点。",
+                anchorType: .custom,
+                expressionStyle:
+                    .defaultStyle(for: .custom)
+            )
+
+        return MemorySubject(
+            identity: .init(
+                displayName: "新的记忆对象",
+                shortName: ""
+            ),
+            relationship: .init(
+                role: "家人",
+                label: "未设置"
+            ),
+            definition: "在这里补充对象身份、头像与时间锚点。",
+            referenceDate: referenceDate,
+            timeAnchors: [
+                birthdayAnchor,
+                hundredDaysAnchor,
+                customAnchor
+            ],
+            activeTimeAnchorID: birthdayAnchor.id,
+            expressionSubjectSource: .displayName,
+            behavior: .init(
+                primaryAnchor: birthdayAnchor.title,
+                iconStrategy: .autoMatch,
+                badgeStrategy: .fixed,
+                memoryExpression: .init(
+                    title: "生日记忆",
+                    blocks: []
+                )
+            ),
+            decorations: []
+        )
+    }
+}
+
+enum V1SubjectLibraryResolver {
+
+    static func resolvedBootstrapSubject(
+        subjects: [MemorySubject]?,
+        selectedSubjectID: MemorySubject.ID?,
+        fallbackSubject: MemorySubject?
+    ) -> MemorySubject? {
+        if let subjects {
+            let subjects =
+                sanitizedSubjectLibrary(subjects)
+
+            guard !subjects.isEmpty else {
+                return fallbackSubject
+            }
+
+            if let selectedSubjectID,
+               let selectedSubject =
+                subjects.first(
+                    where: {
+                        $0.id == selectedSubjectID
+                    }
+                ) {
+                return selectedSubject
+            }
+
+            return subjects.first
+        }
+
+        return fallbackSubject
+    }
+
+    static func subjectsForSaving(
+        selectedSubject: MemorySubject?,
+        subjects: [MemorySubject]
+    ) -> [MemorySubject] {
+        guard let selectedSubject else {
+            return subjects
+        }
+
+        var resolvedSubjects =
+            sanitizedSubjectLibrary(subjects)
+
+        guard !isLegacyDemoSubject(selectedSubject) else {
+            return resolvedSubjects
+        }
+
+        if let index =
+            resolvedSubjects.firstIndex(
+                where: {
+                    $0.id == selectedSubject.id
+                }
+            ) {
+            resolvedSubjects[index] = selectedSubject
+        } else {
+            resolvedSubjects.append(selectedSubject)
+        }
+
+        return resolvedSubjects
+    }
+
+    static func sanitizedSubjectLibrary(
+        _ subjects: [MemorySubject]
+    ) -> [MemorySubject] {
+        subjects.filter {
+            !isLegacyDemoSubject($0)
+        }
+    }
+
+    private static func isLegacyDemoSubject(
+        _ subject: MemorySubject
+    ) -> Bool {
+        subject.identity.displayName == "Kyoto Spring"
+        && subject.identity.shortName == "Kyoto"
+    }
+
+    static func persist(
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?,
+        coordinator: ConfigurationCoordinator?,
+        memoryPresets: [MemoryPreset] = [],
+        selectedMemoryPresetID: MemoryPreset.ID? = nil
+    ) {
+        guard let coordinator else {
+            return
+        }
+
+        _ =
+            coordinator
+            .saveV1SubjectLibrary(
+                subjects:
+                    sanitizedSubjectLibrary(subjects),
+                selectedSubjectID:
+                    selectedSubjectID,
+                memoryPresets:
+                    memoryPresets,
+                selectedMemoryPresetID:
+                    selectedMemoryPresetID
+            )
+    }
+}
+
+@MainActor
+enum V1SubjectLibraryMutationCoordinator {
+
+    static func selectSubject(
+        _ subjectID: MemorySubject.ID,
+        in session: ConfigurationSession
+    ) -> MemorySubject? {
+        guard let subject =
+            session.state.subjects.first(
+                where: { $0.id == subjectID }
+            ) else {
+            return nil
+        }
+
+        session.selectSubject(subject)
+        return subject
+    }
+
+    static func activateAnchor(
+        _ anchorID: UUID,
+        in session: ConfigurationSession
+    ) -> MemorySubject.TimeAnchor? {
+        guard
+            var subject = session.state.selectedSubject,
+            let anchor = subject.timeAnchor(id: anchorID)
+        else {
+            return nil
+        }
+
+        subject.activeTimeAnchorID = anchor.id
+        subject.behavior.primaryAnchor = anchor.title
+        subject.referenceDate = anchor.date
+        session.updateSelectedSubject(subject)
+        return anchor
+    }
+
+    static func addDefaultSubject(
+        referenceDate: Date,
+        to session: ConfigurationSession
+    ) -> MemorySubject {
+        let newSubject =
+            V1SubjectLibraryFactory
+            .makeDefaultSubject(
+                referenceDate: referenceDate
+            )
+
+        session.appendSubject(newSubject)
+        return newSubject
+    }
+
+    static func deleteCurrentSubject(
+        from session: ConfigurationSession
+    ) -> MemorySubject? {
+        guard let selectedSubjectID =
+            session.state.selectedSubjectID
+            ?? session.state.selectedSubject?.id
+        else {
+            return nil
+        }
+
+        session.removeSubject(id: selectedSubjectID)
+        return session.state.selectedSubject
+    }
+}
+#endif

@@ -41,8 +41,8 @@ class EarlySigningArtifactTests(unittest.TestCase):
             "project": str(
                 Path(__file__).resolve().parents[2]
                 / "Source"
-                / "PhotoMemo"
-                / "PhotoMemo.xcodeproj"
+                / "MemoMark"
+                / "MemoMark.xcodeproj"
             ),
             "scheme": "MemoMarkDeviceQA",
             "configuration": "Debug",
@@ -282,7 +282,7 @@ class RegularRunMetadataIdentityTests(unittest.TestCase):
         self.assertEqual(result["result"], "pass")
 
     def test_rejects_regular_run_for_another_scheme(self) -> None:
-        self.update_metadata(scheme="PhotoMemo")
+        self.update_metadata(scheme="MemoMark")
 
         with self.assertRaisesRegex(ValueError, "scheme"):
             VERIFIER.verify_run(self.run_directory, None)
