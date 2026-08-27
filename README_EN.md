@@ -4,7 +4,7 @@
 
 MemoMark is a local-first memory tool designed for Apple Photos. It does not replace the system library and never edits the original photo. It reads capture time, location, device and other available photo facts, combines them with dates you define, and creates a new memory version of the photo.
 
-Current local release candidate: **MemoMark 2.2.2 (build 95)**. This controlled update follows the last GitHub push at `03a49f1` and fixes Xcode Cloud archive compatibility with older Photos SDKs while preserving Configuration Center, Apple Photos handoff, and local-recovery boundaries. Release evidence remains open; it has not been uploaded to TestFlight or submitted to the App Store. See the [2.2.2 (95) release notes](Docs/07_Releases/2026-08-27-2.2.2-release-notes.md).
+Current local release candidate: **MemoMark 2.2.2 (build 95)**. The formal-release range starts at the user-selected Monday, August 24 morning push wave (about 06:54), aligned to the nearest pushed commit `c0f11a7` at 06:49:40 +0800. User-facing changes delivered in the previous TestFlight candidate are included; App Store submission remains open. See the [2.2.2 (95) release notes](Docs/07_Releases/2026-08-27-2.2.2-release-notes.md).
 
 The everyday flow is intentionally small:
 

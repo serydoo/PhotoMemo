@@ -3,7 +3,7 @@
 # 2026-08-27 2.2.2（构建 95）Xcode Cloud 归档兼容性修复（当前）
 
 - 当前工程：`Source/MemoMark/MemoMark.xcodeproj`；marketing version 保持 `2.2.2`，构建号更新为 `95`。
-- 本轮同步基点为最近一次已推送的 GitHub `03a49f1`；所有正式源码、测试、工程配置和项目状态记录从该基点统一收口到 `main`。
+- 本次正式版范围从用户指定的 2026-08-24（周一）约 06:54 推送波次开始，对齐最近已推送的 `c0f11a7`（06:49:40 +0800）；上一轮 TestFlight 已交付的用户功能与修复均纳入正式版说明，测试证据不直接迁移为正式版认证。
 - Xcode Cloud 构建 94 的唯一阻断是 `PhotoKitResourceFileName.swift:10` 使用了仅新 Photos SDK 可见的 `PHAssetResource.filename`；统一改为通过稳定的 `originalFilename` Objective-C 属性读取，避免旧版 Xcode Cloud SDK 在归档阶段编译失败。
 - Card Content Editor 的普通文字、模块 attachment 和原生 caret 继续遵循同一 content-independent canonical line box；共享输入几何规范已写入 `AGENTS.md` 与 `Docs/03_Engineering/2026-08-27-editor-input-geometry-standard.md`。
 - 已完成静态检查、PhotoKit 兼容性回归验证，以及 macOS、通用 iOS、Share、Widget、Device QA 构建证据；95 号签名包需在同步后重新归档并按实体设备流程复核，不能把 91 号安装证据冒充为 95 号证据。

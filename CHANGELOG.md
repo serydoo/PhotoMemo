@@ -6,7 +6,7 @@
 - Kept PhotoKit resource filename recovery on the stable `originalFilename` Objective-C property through the existing focused helper, preserving filename behavior across current and older toolchains.
 - Raised all App, extension, widget, QA, and test targets from build `91` to build `95` while keeping marketing version `2.2.2` and all product identity values unchanged.
 
-This is a source and build compatibility maintenance checkpoint from the pushed `03a49f1` source checkpoint. Build `94` was an Xcode Cloud archive failure and is not a releasable binary. Build `95` has not been uploaded to TestFlight or submitted to the App Store.
+This build is the formal-release candidate covering the user-selected 2026-08-24 Monday morning push wave, anchored to the nearest pushed commit `c0f11a7` at 06:49:40 +0800 (`c0f11a7..HEAD`). It includes the user-facing changes delivered in the previous TestFlight candidate. Build `94` was an Xcode Cloud archive failure and is not a releasable binary; build `95` has not been uploaded to TestFlight or submitted to the App Store.
 
 ## 2.2.2 (91) Input Geometry Standard And Reliability Maintenance - 2026-08-27
 

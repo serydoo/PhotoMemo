@@ -3,7 +3,7 @@
 ## 2026-08-27 2.2.2（构建 95）Xcode Cloud 归档兼容性修复（当前）
 
 - 本次工程候选保持 marketing version `2.2.2`，所有 App、iOS、Share Extension、Widget、测试和 Device QA target 的 `CURRENT_PROJECT_VERSION` 已统一更新为 `95`。
-- 同步范围从实际最近一次 GitHub 推送 `03a49f1` 开始；构建 91 的上一轮材料保留为历史事实，不改写其原始真机证据。
+- 正式版范围从用户指定的 2026-08-24（周一）约 06:54 推送波次开始；因该时刻没有独立提交，对齐最近已推送的 `c0f11a7`（06:49:40 +0800）。上一轮 TestFlight 已交付的用户功能与修复全部纳入本次正式版，测试证据仍单独核验。
 - Xcode Cloud 构建 94 在归档阶段报 `Value of type 'PHAssetResource' has no member 'filename'`（`PhotoKitResourceFileName.swift:10`）。根因是源码引用了新 Photos SDK 成员，而云端归档工具链不提供该成员；本轮改为读取稳定的 `originalFilename` 属性，保持旧版 SDK 可编译。
 - 本轮同步包含 PhotoKit 兼容性修复、回归契约、2.2.2（95）版本材料和构建号维护；Card Content Editor、Memory Engine、Layout Engine、Renderer、Export、Share Extension 与原始照片保护边界不变。
 - 规范入口为 [编辑输入几何规范](03_Engineering/2026-08-27-editor-input-geometry-standard.md)；未来 Renderer 编辑器和文字/模块组合输入必须复用该 canonical line box 与 geometry ownership，不得各自添加视觉补偿常量。

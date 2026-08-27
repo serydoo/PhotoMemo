@@ -14,11 +14,13 @@ Release events:
 
 ## Current Candidate Materials
 
-The current local source-checkpoint package is `2.2.2 (95)`, prepared on
-2026-08-27 from the actual last GitHub push at `03a49f1`. The comparison range
-is `03a49f1..current working tree`. The source package is authorized for the
-GitHub `main` sync in this task, but it is not a TestFlight upload, App Store
-submission, production certification, or public release.
+The current local source-checkpoint package is `2.2.2 (95)`, prepared as the
+formal-release candidate from the user-selected 2026-08-24 Monday morning push
+wave. Because there was no independent 06:54 commit, the range is anchored to
+the nearest pushed commit `c0f11a7` at 06:49:40 +0800, and covers
+`c0f11a7..HEAD`. It includes the user-facing changes delivered in the previous
+TestFlight candidate; TestFlight evidence is not reused as App Store
+certification evidence.
 
 - [`2026-08-27-2.2.2-release-notes.md`](2026-08-27-2.2.2-release-notes.md)
 - [`2026-08-27-2.2.2-app-store-whats-new.md`](2026-08-27-2.2.2-app-store-whats-new.md)
