@@ -7,7 +7,7 @@
 - 本次合并包含 Card Content Editor 的统一输入几何标准、TextKit line-box/caret 修复、可靠性与本地化审查收口，以及对应的工程测试和项目文档。
 - 规范入口为 [编辑输入几何规范](03_Engineering/2026-08-27-editor-input-geometry-standard.md)；未来 Renderer 编辑器和文字/模块组合输入必须复用该 canonical line box 与 geometry ownership，不得各自添加视觉补偿常量。
 - 当前同步材料入口为 `Docs/07_Releases/2026-08-27-2.2.2-*`。本次授权包含 GitHub `main` 的暂存、提交和推送；不包含 TestFlight、App Store Connect 或 App Store 外部交付。
-- 本轮 macOS、通用 iOS、Share Extension、Widget Extension 和 Device QA 构建均通过；全量 `MemoMarkTests` 为 `1603 passed / 0 failed / 1 skipped`，仅有两条既有 QoS runtime warning。实体 iPhone 17 Pro Max 当前 `unavailable`，91 号包未重新安装，不使用 Simulator 替代；90 号相同代码候选此前已完成签名安装/启动，91 号人工视觉和 Apple Photos 全链路仍待设备恢复后复核。
+- 本轮 macOS、通用 iOS、Share Extension、Widget Extension 和 Device QA 构建均通过；全量 `MemoMarkTests` 为 `1603 passed / 0 failed / 1 skipped`，仅有两条既有 QoS runtime warning。91 号签名包已在配对实体 iPhone 17 Pro Max 上覆盖安装并成功启动，设备端核对为 `2.2.2 / 91`；Card Content Editor 人工视觉矩阵和 Apple Photos 全链路仍待产品负责人操作复核，不使用 Simulator 替代。
 
 ## 2026-08-27 Shared Input Geometry Standard Accepted
 
