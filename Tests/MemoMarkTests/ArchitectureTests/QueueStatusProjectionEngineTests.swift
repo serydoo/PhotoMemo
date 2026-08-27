@@ -183,6 +183,27 @@ struct QueueStatusProjectionEngineTests {
         )
     }
 
+    @Test("Progress projection localizes a semantic stage using the requested interface language")
+    func progressProjectionLocalizesSemanticStageUsingRequestedLanguage() {
+        let backgroundSnapshot =
+            makeBackgroundSnapshot(
+                statusMessage: "正在生成图片",
+                progressStage: .renderingImage
+            )
+
+        let projection =
+            MemoMarkiOSQueueDiagnosticsProjectionEngine
+            .progressProjection(
+                for: backgroundSnapshot,
+                language: .english
+            )
+
+        #expect(
+            projection.statusMessage
+            == "Creating image · family.jpg"
+        )
+    }
+
     @Test("Event display projection deduplicates repeated messaging, ignores unmapped stages, and limits output")
     func eventDisplayProjectionDeduplicatesRepeatedMessagingIgnoresUnmappedStagesAndLimitsOutput() {
 
@@ -308,6 +329,7 @@ private extension QueueStatusProjectionEngineTests {
         title: String = "今天 10:00（2张）",
         presentationState: MemoMarkBackgroundPresentationState = .active,
         statusMessage: String = "正在处理 1 / 2",
+        progressStage: BatchTaskProgressStage? = nil,
         queueLines: [String] = ["队列中的照片"],
         overflowQueueCount: Int = 0,
         failedCount: Int = 0,
@@ -333,6 +355,7 @@ private extension QueueStatusProjectionEngineTests {
             currentPhaseTitle: "生成图片",
             currentFileName: "family.jpg",
             statusMessage: statusMessage,
+            progressStage: progressStage,
             displayMode: .singleTask,
             pipelineSteps: pipelineSteps,
             activePipelineStepIndex: 0,

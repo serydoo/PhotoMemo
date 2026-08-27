@@ -1410,7 +1410,7 @@ struct V1RegionEditorCard: View {
 
     private var compositionField: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 1) {
+            HStack(spacing: V1EditorCapsuleMetrics.inlineItemSpacing) {
                 ForEach(draft.items) { item in
                     if item.id == insertionMarkerID,
                        insertionAnchorBelongsBefore(item) {
@@ -1445,7 +1445,7 @@ struct V1RegionEditorCard: View {
                     )
                 }
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, V1EditorInputMetrics.textContainerHorizontalInset)
             .padding(.vertical, 4)
         }
         .frame(minHeight: 42)
@@ -1774,7 +1774,11 @@ private struct V1SlotATextView: UIViewRepresentable {
 final class V1TextKitModuleAttachment: NSTextAttachment {
     let item: V1ContentItem
 
-    init(item: V1ContentItem) {
+    init(
+        item: V1ContentItem,
+        leadingAdvance: CGFloat = 0,
+        trailingAdvance: CGFloat = V1EditorCapsuleMetrics.attachmentTrailingAdvance
+    ) {
         self.item = item
         super.init(data: nil, ofType: nil)
         let font = UIFont.preferredFont(forTextStyle: .footnote)
@@ -1790,22 +1794,32 @@ final class V1TextKitModuleAttachment: NSTextAttachment {
             ),
             height: V1EditorCapsuleMetrics.height
         )
+        let canvasSize = CGSize(
+            width: size.width + leadingAdvance + trailingAdvance,
+            height: size.height
+        )
         let tintColor = item.isUnresolvedModule
             ? UIColor.systemOrange
             : UIColor.systemBlue
-        image = UIGraphicsImageRenderer(size: size).image { context in
+        image = UIGraphicsImageRenderer(size: canvasSize).image { context in
+            let capsuleRect = CGRect(
+                x: leadingAdvance,
+                y: 0,
+                width: size.width,
+                height: size.height
+            )
             tintColor.withAlphaComponent(0.12).setFill()
             UIBezierPath(
-                roundedRect: CGRect(origin: .zero, size: size),
+                roundedRect: capsuleRect,
                 cornerRadius: V1EditorCapsuleMetrics.cornerRadius
             ).fill()
             tintColor.withAlphaComponent(0.22).setStroke()
             let border = UIBezierPath(
                 roundedRect: CGRect(
-                    x: V1EditorCapsuleMetrics.borderWidth / 2,
+                    x: capsuleRect.minX + V1EditorCapsuleMetrics.borderWidth / 2,
                     y: V1EditorCapsuleMetrics.borderWidth / 2,
-                    width: size.width - V1EditorCapsuleMetrics.borderWidth,
-                    height: size.height - V1EditorCapsuleMetrics.borderWidth
+                    width: capsuleRect.width - V1EditorCapsuleMetrics.borderWidth,
+                    height: capsuleRect.height - V1EditorCapsuleMetrics.borderWidth
                 ),
                 cornerRadius: V1EditorCapsuleMetrics.cornerRadius
                     - V1EditorCapsuleMetrics.borderWidth / 2
@@ -1819,7 +1833,7 @@ final class V1TextKitModuleAttachment: NSTextAttachment {
                 .withTintColor(tintColor, renderingMode: .alwaysOriginal)
                 .draw(
                     in: CGRect(
-                        x: V1EditorCapsuleMetrics.iconLeading,
+                        x: capsuleRect.minX + V1EditorCapsuleMetrics.iconLeading,
                         y: contentY,
                         width: V1EditorCapsuleMetrics.iconSize,
                         height: V1EditorCapsuleMetrics.iconSize
@@ -1828,7 +1842,7 @@ final class V1TextKitModuleAttachment: NSTextAttachment {
             let titleY = floor((size.height - font.lineHeight) / 2)
             title.draw(
                 at: CGPoint(
-                    x: V1EditorCapsuleMetrics.titleLeading,
+                    x: capsuleRect.minX + V1EditorCapsuleMetrics.titleLeading,
                     y: titleY
                 ),
                 withAttributes: [
@@ -1841,16 +1855,18 @@ final class V1TextKitModuleAttachment: NSTextAttachment {
         // Align the capsule's visual center with the subheadline line rather
         // than using a fixed offset that drifts as Dynamic Type changes.
         let editorFont = UIFont.preferredFont(forTextStyle: .subheadline)
-        let baselineOffset = floor((editorFont.capHeight - size.height) / 2)
-        // Keep a small native-looking insertion gap after the capsule. The
-        // transparent trailing advance prevents the caret from visually
-        // merging into the capsule while preserving the attachment itself.
-        let trailingAdvance: CGFloat = 4
+        let baselineOffset = V1EditorInputMetrics.attachmentBaselineOffset(
+            for: editorFont,
+            attachmentHeight: size.height
+        )
+        // Render the transparent boundary inside the attachment image itself.
+        // TextKit then advances by one deterministic canvas width instead of
+        // combining a bounds-origin offset with the font's side bearings.
         bounds = CGRect(
             x: 0,
             y: baselineOffset,
-            width: size.width + trailingAdvance,
-            height: size.height
+            width: canvasSize.width,
+            height: canvasSize.height
         )
         accessibilityLabel = item.editorModuleAccessibilityLabel
     }

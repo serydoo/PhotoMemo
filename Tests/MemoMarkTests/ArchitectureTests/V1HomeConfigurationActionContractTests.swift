@@ -118,14 +118,14 @@ struct V1HomeConfigurationActionContractTests {
         #expect(!cardSource.contains("Image(systemName:"))
     }
 
-    @Test("configuration rows use native non-full-swipe actions")
-    func rowSwipeActionsExposeSaveAndDelete() throws {
+    @Test("configuration actions use one native overflow menu")
+    func configurationActionsUseOverflowMenu() throws {
         let source = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
         )
 
-        #expect(source.contains(".swipeActions("))
-        #expect(source.contains("allowsFullSwipe: false"))
+        #expect(source.contains("private var presetManagementMenu"))
+        #expect(source.contains("Menu {"))
         let normalizedSource = source.replacingOccurrences(
             of: "\\s+",
             with: " ",
@@ -133,17 +133,14 @@ struct V1HomeConfigurationActionContractTests {
         )
         #expect(normalizedSource.contains("home.preset.save"))
         #expect(normalizedSource.contains("MemoMarkSymbol.localStorage.name"))
-        #expect(source.contains(".tint(.blue)"))
         #expect(source.contains("home.preset.delete"))
-        #expect(source.contains(".tint(.red)"))
         #expect(source.contains("Button(role: .destructive)"))
-        #expect(source.contains("showsDeleteConfirmation = true"))
+        #expect(source.contains("showsCurrentPresetDeleteConfirmation = true"))
         #expect(!source.contains("DragGesture(minimumDistance: 12)"))
         #expect(!source.contains("V1HomeConfigurationSwipePresenter"))
-        #expect(source.contains("home.preset.save_accessibility"))
-        #expect(source.contains("home.preset.delete_accessibility"))
-        #expect(source.contains("home.preset.more_actions"))
-        #expect(source.contains("Image(systemName: \"ellipsis.circle\")"))
+        #expect(source.contains("home.presets.manage"))
+        #expect(source.contains("Image(systemName: \"ellipsis\")"))
+        #expect(source.contains(".accessibilityLabel(localized(\"home.presets.manage\"))"))
         #expect(source.contains("home.preset.rename"))
         #expect(!source.contains("accessibilityLabel(\"重命名配置\")"))
         #expect(source.contains("home.preset.delete_confirmation"))
@@ -184,8 +181,9 @@ struct V1HomeConfigurationActionContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
         )
 
-        #expect(source.contains("V1CardHeaderIconButton("))
-        #expect(source.contains("systemImage: \"ellipsis\""))
+        #expect(source.contains("private var presetManagementMenu"))
+        #expect(source.contains("Menu {"))
+        #expect(source.contains("Image(systemName: \"ellipsis\")"))
         #expect(source.contains("home.presets.manage"))
         #expect(source.contains("onOpenLocalConfigurationLibrary"))
         #expect(source.contains("home.presets.manage_hint"))
@@ -211,7 +209,7 @@ struct V1HomeConfigurationActionContractTests {
         #expect(supportSource.contains(".secondarySystemFill"))
         #expect(subjectSource.contains("systemImage: \"pencil\""))
         #expect(taskSource.contains("systemImage: \"ellipsis\""))
-        #expect(taskSource.contains("trailingAccessory:"))
+        #expect(taskSource.contains("if presentation.historyRows.count > inlineHistoryRows.count"))
     }
 
     @Test("home separates blocking failures from non-modal success feedback")

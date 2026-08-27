@@ -1760,7 +1760,9 @@ private extension PhotoLibraryExportService {
         )
 
         let baseName =
-            resource.originalFilename
+            PhotoKitResourceFileName.value(
+                for: resource
+            )
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             )

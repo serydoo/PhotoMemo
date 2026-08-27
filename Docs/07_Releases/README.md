@@ -14,18 +14,26 @@ Release events:
 
 ## Current Candidate Materials
 
-The current local source-checkpoint package is `2.2.2 (90)`, prepared on
-2026-08-26 from the actual last GitHub push at `c0f11a7`. The comparison range
-is `c0f11a7..current working tree`. It is prepared for review only and is not a
-Git commit, push, TestFlight upload, App Store submission, production
-certification, or public release.
+The current local source-checkpoint package is `2.2.2 (91)`, prepared on
+2026-08-27 from the actual last GitHub push at `916fc84`. The comparison range
+is `916fc84..current working tree`. The source package is authorized for the
+GitHub `main` sync in this task, but it is not a TestFlight upload, App Store
+submission, production certification, or public release.
+
+- [`2026-08-27-2.2.2-release-notes.md`](2026-08-27-2.2.2-release-notes.md)
+- [`2026-08-27-2.2.2-app-store-whats-new.md`](2026-08-27-2.2.2-app-store-whats-new.md)
+- [`2026-08-27-2.2.2-testflight-notes.md`](2026-08-27-2.2.2-testflight-notes.md)
+- [`2026-08-27-2.2.2-sync-manifest.md`](2026-08-27-2.2.2-sync-manifest.md)
+- [`2026-08-27-2.2.2-app-review-materials.md`](2026-08-27-2.2.2-app-review-materials.md)
+- [`../Outreach/2026-08-26-MemoMark-2.2.2-XHS.md`](../Outreach/2026-08-26-MemoMark-2.2.2-XHS.md)
+
+The previous `2.2.2 (90)` package is retained as historical candidate evidence:
 
 - [`2026-08-26-2.2.2-release-notes.md`](2026-08-26-2.2.2-release-notes.md)
 - [`2026-08-26-2.2.2-app-store-whats-new.md`](2026-08-26-2.2.2-app-store-whats-new.md)
 - [`2026-08-26-2.2.2-testflight-notes.md`](2026-08-26-2.2.2-testflight-notes.md)
 - [`2026-08-26-2.2.2-sync-manifest.md`](2026-08-26-2.2.2-sync-manifest.md)
 - [`2026-08-26-2.2.2-app-review-materials.md`](2026-08-26-2.2.2-app-review-materials.md)
-- [`../Outreach/2026-08-26-MemoMark-2.2.2-XHS.md`](../Outreach/2026-08-26-MemoMark-2.2.2-XHS.md)
 
 The superseded untracked `2026-08-25-2.2.1-*` and
 `2026-08-22-2.1.4-*` draft packages were removed during the 2026-08-26

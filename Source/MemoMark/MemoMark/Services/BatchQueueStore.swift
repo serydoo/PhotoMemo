@@ -144,9 +144,11 @@ final class BatchQueueStore: ObservableObject {
             )
         self.persistence =
             persistence
-            ?? BatchQueuePersistence(
-                defaults: resolvedDefaults
-            )
+            ?? (defaults == nil
+                ? BatchQueuePersistence()
+                : BatchQueuePersistence(
+                    defaults: resolvedDefaults
+                ))
         self.history =
             BatchQueueHistory(
                 externalIntakeStore:
@@ -556,7 +558,7 @@ final class BatchQueueStore: ObservableObject {
         jobs[jobIndex].tasks[taskIndex].progress = BatchTaskProgress(
             currentUnit: 0,
             totalUnits: 1,
-            statusMessage: "后台处理时间已用尽，请重试"
+            stage: .backgroundExpired
         )
         // Publish the terminal phase last. Observers use the phase as the
         // durable-state boundary; publishing it first could expose a failed
@@ -823,7 +825,7 @@ extension BatchQueueStore {
                 task.progress = BatchTaskProgress(
                     currentUnit: task.progress.totalUnits,
                     totalUnits: task.progress.totalUnits,
-                    statusMessage: "处理完成"
+                    stage: .completed
                 )
             }
             if let completedTask = currentTask(at: reference) {

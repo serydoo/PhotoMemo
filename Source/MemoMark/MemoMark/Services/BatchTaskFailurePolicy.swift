@@ -126,11 +126,9 @@ enum BatchTaskFailurePolicy {
         _ url: URL
     ) -> Bool {
 
-        url.standardizedFileURL.path.hasPrefix(
-            MemoMarkSharedContainer
-            .externalIntakeDirectoryURL
-            .standardizedFileURL
-            .path
+        MemoMarkPathContainment.contains(
+            url,
+            root: MemoMarkSharedContainer.externalIntakeDirectoryURL
         )
     }
 }

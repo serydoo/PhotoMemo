@@ -3264,7 +3264,7 @@ struct RecordCardBuildServiceTests {
 
         let photo = SelectedPhoto(
             sourceURL: URL(fileURLWithPath: "/tmp/MemoMarkNamingFixture.HEIC"),
-            image: NSImage(size: NSSize(width: 32, height: 32)),
+            image: try makeSolidTestImage(width: 32, height: 32),
             metadata: PhotoMetadata(
                 captureDate: Date(),
                 deviceBrand: "Apple",
@@ -3383,7 +3383,7 @@ struct RecordCardBuildServiceTests {
 
         let photo = SelectedPhoto(
             sourceURL: URL(fileURLWithPath: "/tmp/ManagedShareCopy.jpg"),
-            image: NSImage(size: NSSize(width: 32, height: 32)),
+            image: try makeSolidTestImage(width: 32, height: 32),
             metadata: PhotoMetadata(
                 captureDate: Date(),
                 deviceBrand: "Apple",
@@ -3485,7 +3485,7 @@ struct RecordCardBuildServiceTests {
 
         let photo = SelectedPhoto(
             sourceURL: URL(fileURLWithPath: "/tmp/MemoMark Import.JPG"),
-            image: NSImage(size: NSSize(width: 32, height: 32)),
+            image: try makeSolidTestImage(width: 32, height: 32),
             metadata: PhotoMetadata(
                 captureDate: captureDate,
                 captureTimezoneOffsetSeconds:
@@ -3663,6 +3663,47 @@ private extension RecordCardBuildServiceTests {
         try? FileManager.default.removeItem(
             at:
                 temporaryExportFolder()
+        )
+    }
+
+    func makeSolidTestImage(
+        width: Int,
+        height: Int
+    ) throws -> NSImage {
+        let colorSpace = try #require(
+            CGColorSpace(name: CGColorSpace.sRGB)
+        )
+        let context = try #require(
+            CGContext(
+                data: nil,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: width * 4,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        )
+        context.setFillColor(
+            CGColor(
+                red: 0.25,
+                green: 0.5,
+                blue: 0.75,
+                alpha: 1
+            )
+        )
+        context.fill(
+            CGRect(
+                x: 0,
+                y: 0,
+                width: width,
+                height: height
+            )
+        )
+        let image = try #require(context.makeImage())
+        return NSImage(
+            cgImage: image,
+            size: NSSize(width: width, height: height)
         )
     }
 

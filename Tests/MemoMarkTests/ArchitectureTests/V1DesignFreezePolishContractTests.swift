@@ -21,7 +21,8 @@ struct V1DesignFreezePolishContractTests {
 
         #expect(home.contains(".frame(width: 70, height: 70)"))
         #expect(home.contains(".font(.title2.weight(.bold))"))
-        #expect(home.contains(".opacity(isSelected ? 1 : 0.42)"))
+        #expect(home.contains("isSelected\n                ? \"checkmark.circle.fill\""))
+        #expect(home.contains("? Color.accentColor"))
         #expect(!home.contains("上次修改："))
         #expect(subject.contains("subjectAvatar(size: 68)"))
         #expect(subject.contains("subjectAvatar(size: 60)"))
@@ -81,8 +82,8 @@ struct V1DesignFreezePolishContractTests {
         #expect(options.contains("V1OutputDestinationContent("))
         #expect(!options.contains("V1OutputPhotoDescriptionSection("))
         #expect(!options.contains("V1OutputSection("))
-        #expect(options.contains("title: presentation.defaultContentTitle"))
-        #expect(options.contains("title: \"output.destination.title\""))
+        #expect(options.contains("title: \"configuration.photo_description.title\""))
+        #expect(options.contains("title: \"configuration.save_location.title\""))
         #expect(!navigation.contains(".tag(V1EntryTab.output)"))
         #expect(
             output.contains(

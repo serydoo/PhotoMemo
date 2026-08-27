@@ -135,7 +135,9 @@ private extension MemoMarkiOSLiveActivityBridgeService {
                     ?? snapshot.jobState
                     .displayTitle,
                 statusMessage:
-                    snapshot.statusMessage,
+                    snapshot.localizedStatusMessage(
+                        for: .interfaceStored
+                    ),
                 displayModeRawValue:
                     snapshot.displayMode
                     .rawValue,

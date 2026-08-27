@@ -281,7 +281,8 @@ private extension V1SettingsPagePresenter {
                         language: language
                     ),
                 detailText:
-                    snapshot.statusMessage,
+                    progressProjection
+                    .statusMessage,
                 symbolName:
                     header.symbolName,
                 thumbnailSymbolName:

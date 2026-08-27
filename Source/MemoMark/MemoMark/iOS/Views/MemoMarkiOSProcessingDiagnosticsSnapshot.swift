@@ -98,7 +98,9 @@ struct MemoMarkiOSProcessingDiagnosticsSnapshot:
             MemoMarkSharedContainer
             .sharedUserDefaults,
         externalIntakeStore:
-            ExternalPhotoIntakeStore? = nil
+            ExternalPhotoIntakeStore? = nil,
+        sharedQueueSnapshotService:
+            SharedBatchQueueSnapshotService? = nil
     ) -> Self {
 
         let diagnosticsResult =
@@ -107,9 +109,10 @@ struct MemoMarkiOSProcessingDiagnosticsSnapshot:
                 defaults: defaults
             )
         let queueResult =
-            SharedBatchQueueSnapshotService(
-                defaults: defaults
-            )
+            (sharedQueueSnapshotService
+             ?? SharedBatchQueueSnapshotService(
+                 defaults: defaults
+             ))
             .loadJobsResult()
         let intakeResult =
             (

@@ -249,6 +249,32 @@ struct BatchQueueExecutionContractTests {
     }
 
     @MainActor
+    @Test("Failure policy does not treat a sibling path prefix as managed intake")
+    func failurePolicyRejectsManagedIntakeSiblingPrefix() {
+        let intakeRoot =
+            MemoMarkSharedContainer
+            .externalIntakeDirectoryURL
+            .standardizedFileURL
+        let siblingSource =
+            intakeRoot
+            .deletingLastPathComponent()
+            .appendingPathComponent(
+                intakeRoot.lastPathComponent + "Backup",
+                isDirectory: true
+            )
+            .appendingPathComponent(
+                "missing-\(UUID().uuidString).jpg",
+                isDirectory: false
+            )
+
+        #expect(
+            BatchTaskFailurePolicy.canRetryTaskAfterFailure(
+                sourceURL: siblingSource
+            )
+        )
+    }
+
+    @MainActor
     @Test("Memory policy preserves RAW budget and Live Photo fallback routing")
     func memoryPolicyPreservesBudgetAndLivePhotoFallbackRouting() throws {
         let rawTask = BatchTask(
@@ -513,10 +539,12 @@ struct BatchQueueExecutionContractTests {
                 .processingBackgroundExpired
                 .rawValue
         )
-        // The interface language is shared process state and may legitimately
-        // be changed by another localization contract running in parallel.
-        // This test owns the failure semantics, not one translated sentence.
-        #expect(!task.progress.statusMessage.isEmpty)
+        #expect(task.progress.stage == .backgroundExpired)
+        #expect(
+            !task.progress
+                .localizedStatusMessage(for: .interfaceStored)
+                .isEmpty
+        )
         #expect(!context.store.isProcessing)
     }
 
@@ -703,6 +731,38 @@ struct BatchQueueExecutionContractTests {
         #expect(!FileManager.default.fileExists(atPath: temporaryFileURL.path))
         #expect(lifecycle.canPreserveManagedSourceForRetry(at: managedSourceURL))
         #expect(FileManager.default.fileExists(atPath: managedSourceURL.path))
+    }
+
+    @MainActor
+    @Test("Resource lifecycle does not require a sibling path prefix to exist")
+    func resourceLifecycleRejectsManagedIntakeSiblingPrefix() throws {
+        let context = try makeManagedSourceContext()
+        defer { cleanup(context) }
+        let intakeRoot = context.intakeDirectoryURL.standardizedFileURL
+        let missingSiblingSource =
+            intakeRoot
+            .deletingLastPathComponent()
+            .appendingPathComponent(
+                intakeRoot.lastPathComponent + "Backup",
+                isDirectory: true
+            )
+            .appendingPathComponent(
+                "missing-\(UUID().uuidString).jpg",
+                isDirectory: false
+            )
+        let lifecycle = BatchTaskResourceLifecycle(
+            coordinator: BatchProcessingCoordinator(),
+            externalIntakeStore: context.intakeStore,
+            managedIntakeRootURL: intakeRoot,
+            notificationAttachmentsDirectoryURL:
+                context.notificationAttachmentsDirectoryURL
+        )
+
+        #expect(
+            lifecycle.canPreserveManagedSourceForRetry(
+                at: missingSiblingSource
+            )
+        )
     }
 
     @MainActor

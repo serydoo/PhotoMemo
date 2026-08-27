@@ -5,6 +5,74 @@ import Testing
 @Suite("MemoMark shared container")
 struct MemoMarkSharedContainerTests {
 
+    @Test("Legacy migration copies an eligible MemoMark-owned key")
+    func legacyMigrationCopiesEligibleKey() throws {
+        let context = try makeDefaultsMigrationContext()
+        defer { context.removePersistentDomains() }
+        let eligibleKey = "photomemo.selectedTemplate"
+        context.legacy.set("legacy-value", forKey: eligibleKey)
+
+        MemoMarkSharedContainer.migrateLegacyDefaultsIfNeeded(
+            from: context.legacy,
+            into: context.shared
+        )
+
+        #expect(context.shared.string(forKey: eligibleKey) == "legacy-value")
+    }
+
+    @Test("Legacy migration preserves an existing shared value")
+    func legacyMigrationPreservesExistingSharedValue() throws {
+        let context = try makeDefaultsMigrationContext()
+        defer { context.removePersistentDomains() }
+        let eligibleKey = "photomemo.selectedTemplate"
+        context.legacy.set("legacy-value", forKey: eligibleKey)
+        context.shared.set("shared-value", forKey: eligibleKey)
+
+        MemoMarkSharedContainer.migrateLegacyDefaultsIfNeeded(
+            from: context.legacy,
+            into: context.shared
+        )
+
+        #expect(context.shared.string(forKey: eligibleKey) == "shared-value")
+    }
+
+    @Test("Legacy migration excludes unrelated defaults")
+    func legacyMigrationExcludesUnrelatedDefaults() throws {
+        let context = try makeDefaultsMigrationContext()
+        defer { context.removePersistentDomains() }
+        let unrelatedKey = "unrelated.framework.preference"
+        context.legacy.set("private-value", forKey: unrelatedKey)
+
+        MemoMarkSharedContainer.migrateLegacyDefaultsIfNeeded(
+            from: context.legacy,
+            into: context.shared
+        )
+
+        #expect(context.shared.object(forKey: unrelatedKey) == nil)
+    }
+
+    @Test("Legacy migration runs only once")
+    func legacyMigrationIsIdempotent() throws {
+        let context = try makeDefaultsMigrationContext()
+        defer { context.removePersistentDomains() }
+        let firstEligibleKey = "photomemo.selectedTemplate"
+        let laterEligibleKey = "photomemo.selectedBadge"
+        context.legacy.set("first-value", forKey: firstEligibleKey)
+
+        MemoMarkSharedContainer.migrateLegacyDefaultsIfNeeded(
+            from: context.legacy,
+            into: context.shared
+        )
+        context.legacy.set("later-value", forKey: laterEligibleKey)
+        MemoMarkSharedContainer.migrateLegacyDefaultsIfNeeded(
+            from: context.legacy,
+            into: context.shared
+        )
+
+        #expect(context.shared.string(forKey: firstEligibleKey) == "first-value")
+        #expect(context.shared.object(forKey: laterEligibleKey) == nil)
+    }
+
     @Test("handoff readiness is ready only when App Group defaults and container URL resolve")
     func handoffReadinessRequiresAppGroupDefaultsAndContainerURL() {
 
@@ -19,6 +87,8 @@ struct MemoMarkSharedContainerTests {
                 containerURLProvider: { _ in
                     appGroupURL
                 },
+                userDefaultsProbe: { _ in true },
+                containerProbe: { _ in true },
                 fallbackBaseDirectoryURLProvider: {
                     URL(fileURLWithPath: "/tmp/Fallback")
                 }
@@ -165,5 +235,51 @@ struct MemoMarkSharedContainerTests {
         } catch {
             Issue.record("Expected SharedContainerError")
         }
+    }
+}
+
+private extension MemoMarkSharedContainerTests {
+
+    struct DefaultsMigrationContext {
+        let legacy: UserDefaults
+        let shared: UserDefaults
+        let legacySuiteName: String
+        let sharedSuiteName: String
+
+        func removePersistentDomains() {
+            legacy.removePersistentDomain(
+                forName: legacySuiteName
+            )
+            shared.removePersistentDomain(
+                forName: sharedSuiteName
+            )
+        }
+    }
+
+    func makeDefaultsMigrationContext() throws
+    -> DefaultsMigrationContext {
+        let legacySuiteName =
+            "MemoMarkSharedContainerTests.legacy.\(UUID().uuidString)"
+        let sharedSuiteName =
+            "MemoMarkSharedContainerTests.shared.\(UUID().uuidString)"
+        let legacy = try #require(
+            UserDefaults(suiteName: legacySuiteName)
+        )
+        let shared = try #require(
+            UserDefaults(suiteName: sharedSuiteName)
+        )
+        legacy.removePersistentDomain(
+            forName: legacySuiteName
+        )
+        shared.removePersistentDomain(
+            forName: sharedSuiteName
+        )
+
+        return DefaultsMigrationContext(
+            legacy: legacy,
+            shared: shared,
+            legacySuiteName: legacySuiteName,
+            sharedSuiteName: sharedSuiteName
+        )
     }
 }

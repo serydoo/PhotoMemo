@@ -25,6 +25,8 @@ struct SharedBatchTaskSnapshot:
 
     let statusMessage: String
 
+    let progressStage: BatchTaskProgressStage?
+
     let failureMessage: String?
 }
 
@@ -80,7 +82,10 @@ struct SharedBatchQueueSnapshotService {
         "photomemo.batchQueue.jobs"
 
     private let defaults:
-        UserDefaults
+        UserDefaults?
+
+    private let fileURL:
+        URL?
 
     init(
         defaults: UserDefaults =
@@ -88,6 +93,24 @@ struct SharedBatchQueueSnapshotService {
             .sharedUserDefaults
     ) {
         self.defaults = defaults
+        self.fileURL = nil
+    }
+
+    init(
+        fileBaseDirectoryURL: URL,
+        legacyDefaults: UserDefaults
+    ) {
+        self.defaults = legacyDefaults
+        self.fileURL = fileBaseDirectoryURL
+            .standardizedFileURL
+            .appendingPathComponent(
+                "BatchQueue",
+                isDirectory: true
+            )
+            .appendingPathComponent(
+                "jobs-v1.json",
+                isDirectory: false
+            )
     }
 
     func loadSnapshot(
@@ -149,14 +172,35 @@ struct SharedBatchQueueSnapshotService {
         [BatchJob]
     > {
 
-        defaults.synchronize()
-
-        guard let data =
-            defaults.data(
-                forKey:
-                    storageKey
+        let data: Data?
+        do {
+            if let fileURL,
+               FileManager.default.fileExists(
+                   atPath: fileURL.path
+               ) {
+                data = try Data(contentsOf: fileURL)
+            } else {
+                defaults?.synchronize()
+                data = defaults?.data(
+                    forKey:
+                        storageKey
+                )
+            }
+        } catch {
+            return .decodingFailed(
+                MemoMarkSharedDefaultsReadFailure(
+                    storageKey:
+                        storageKey,
+                    payloadByteCount: 0,
+                    underlyingDescription:
+                        String(
+                            describing: error
+                        )
+                )
             )
-        else {
+        }
+
+        guard let data else {
             return .noValue
         }
 
@@ -205,6 +249,9 @@ struct SharedBatchQueueSnapshotService {
                         statusMessage:
                             task.progress
                             .statusMessage,
+                        progressStage:
+                            task.progress
+                            .stage,
                         failureMessage:
                             task.failure?
                             .message

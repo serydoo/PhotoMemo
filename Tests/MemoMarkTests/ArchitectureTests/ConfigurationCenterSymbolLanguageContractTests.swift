@@ -40,14 +40,15 @@ struct ConfigurationCenterSymbolLanguageContractTests {
     func standardActionsKeepAppleSymbols() throws {
         let combined = try [
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterSidebarView.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterTopPreviewSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
         ]
         .map(sourceText)
         .joined(separator: "\n")
 
         #expect(combined.contains("Image(systemName: \"plus\")"))
-        #expect(combined.contains("Image(systemName: \"pencil\")"))
-        #expect(combined.contains("Image(systemName: \"arrow.counterclockwise\")"))
+        #expect(combined.contains("systemImage: \"pencil\""))
+        #expect(combined.contains("systemImage: \"arrow.counterclockwise\""))
     }
 }
 

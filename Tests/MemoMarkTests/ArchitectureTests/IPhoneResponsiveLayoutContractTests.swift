@@ -411,6 +411,9 @@ struct IPhoneResponsiveLayoutContractTests {
         let textKit = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
         )
+        let lineGeometry = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/V1EditorLineBoxGeometry.swift"
+        )
 
         #expect(textKit.contains("enum V1EditorInputMetrics"))
         #expect(textKit.contains("static let controlHeight: CGFloat = 40"))
@@ -419,22 +422,37 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(textKit.contains("static let titleColumnWidth: CGFloat = 60"))
         #expect(textKit.contains("static let multiRegionTitleColumnWidth: CGFloat = 36"))
         #expect(textKit.contains("static let titleInputSpacing: CGFloat = 4"))
-        #expect(textKit.contains("static let caretLinePadding: CGFloat = 10"))
+        #expect(textKit.contains("static let textContainerHorizontalInset: CGFloat = 8"))
         #expect(textKit.contains("private func editingAttributes()"))
         #expect(textKit.contains("private func trailingSentinelAttributes()"))
         #expect(textKit.contains("attributes.merge(editingAttributes())"))
-        #expect(textKit.contains("let lineHeight = max"))
+        #expect(textKit.contains("static func lineHeight(for font: UIFont)"))
+        #expect(textKit.contains("static func textBaselineOffset(for font: UIFont)"))
+        #expect(textKit.contains("static func attachmentBaselineOffset("))
+        #expect(textKit.contains("let lineHeight = V1EditorInputMetrics.lineHeight(for: font)"))
         #expect(textKit.contains("minimumLineHeight = lineHeight"))
         #expect(textKit.contains("maximumLineHeight = lineHeight"))
+        #expect(textKit.contains("V1EditorLineBoxGeometry.attachmentOriginY("))
+        #expect(textKit.contains("fontDescender: font.descender"))
+        #expect(textKit.contains("attributes[.baselineOffset] ="))
+        #expect(textKit.contains("private func attachmentAttributes()"))
+        #expect(textKit.contains("attachmentAttributes(),"))
+        #expect(textKit.contains("private func attributedAttachment("))
+        #expect(textKit.contains("result.addAttributes("))
+        #expect(textKit.contains("result.append(attributedAttachment(for: item))"))
+        #expect(lineGeometry.contains("static func baseline("))
+        #expect(lineGeometry.contains("static func textBaselineOffset("))
+        #expect(lineGeometry.contains("(lineHeight - fontLineHeight) / 2"))
+        #expect(lineGeometry.contains("static func attachmentOriginY("))
+        #expect(lineGeometry.contains("lineHeight + fontDescender"))
         #expect(textKit.contains("V1EditorInputMetrics.moduleAttachmentHeight,"))
         #expect(textKit.contains("updateVerticalTextAlignment()"))
-        #expect(textKit.contains("static let caretLinePadding: CGFloat = 10"))
         #expect(textKit.contains("override func caretRect(for position: UITextPosition) -> CGRect"))
-        #expect(textKit.contains("private let customCaret = UIView()"))
-        #expect(textKit.contains("tintColor = .clear"))
-        #expect(textKit.contains("func refreshCaret()"))
-        #expect(textKit.contains("UIView.animate(withDuration:"))
+        #expect(textKit.contains("tintColor = .tintColor"))
+        #expect(!textKit.contains("customCaret"))
+        #expect(!textKit.contains("UIView.animate(withDuration:"))
         #expect(textKit.contains("static let caretHeight: CGFloat = 16"))
+        #expect(textKit.contains("static let caretWidth: CGFloat = 2"))
         #expect(textKit.contains("textContainer.maximumNumberOfLines = 1"))
         #expect(textKit.contains("textContainer.lineBreakMode = .byClipping"))
         #expect(textKit.contains("let caretHeight = V1EditorInputMetrics.caretHeight"))
@@ -444,6 +462,50 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(textKit.contains(".frame(height: V1EditorInputMetrics.controlHeight)"))
         #expect(textKit.contains(".frame(maxWidth: .infinity, alignment: .leading)"))
         #expect(!textKit.contains("containsAttachment"))
+    }
+
+    @Test("card editor uses one native caret and one inline spacing contract")
+    func cardEditorUsesNativeCaretAndInlineSpacingContract() throws {
+        let textKit = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
+        )
+        let support = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+        )
+
+        #expect(textKit.contains("left: V1EditorInputMetrics.textContainerHorizontalInset"))
+        #expect(textKit.contains("right: V1EditorInputMetrics.textContainerHorizontalInset"))
+        #expect(textKit.contains("static let inlineItemSpacing: CGFloat = 2"))
+        #expect(textKit.contains("static let attachmentTrailingAdvance: CGFloat = 2"))
+        #expect(textKit.contains("static let attachmentLeadingAdvance: CGFloat = 0"))
+        #expect(textKit.contains("V1EditorCapsuleMetrics.attachmentLeadingAdvance"))
+        #expect(textKit.contains("V1EditorCapsuleMetrics.attachmentTrailingAdvance"))
+        #expect(textKit.contains("applyDraft(draft, to: textView, selection: selectedRange)"))
+        #expect(textKit.contains("width: max(systemRect.width, caretWidth)"))
+        #expect(support.contains("HStack(spacing: V1EditorCapsuleMetrics.inlineItemSpacing)"))
+        #expect(support.contains("padding(.horizontal, V1EditorInputMetrics.textContainerHorizontalInset)"))
+        #expect(support.contains("V1EditorCapsuleMetrics.attachmentTrailingAdvance"))
+        #expect(support.contains("leadingAdvance: CGFloat = 0"))
+        #expect(support.contains("let canvasSize = CGSize("))
+        #expect(support.contains("x: leadingAdvance"))
+        #expect(support.contains("width: canvasSize.width"))
+        #expect(support.contains("UIGraphicsImageRenderer(size: canvasSize)"))
+        #expect(support.contains("V1EditorInputMetrics.attachmentBaselineOffset("))
+        #expect(!support.contains("let trailingAdvance: CGFloat = 4"))
+    }
+
+    @Test("card editor normalizes live text attributes around module boundaries")
+    func cardEditorNormalizesLiveTextAttributesAroundModuleBoundaries() throws {
+        let textKit = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
+        )
+
+        #expect(textKit.contains("private func normalizeTextRunAttributes("))
+        #expect(textKit.contains("normalizeTextRunAttributes(in: textView)"))
+        #expect(textKit.contains("private func refreshTypingAttributes("))
+        #expect(textKit.contains("refreshTypingAttributes(in: textView)"))
+        #expect(textKit.contains("textView.textStorage.setAttributes("))
+        #expect(textKit.contains("textView.typingAttributes = editingAttributes()"))
     }
 
     @Test("card editor keeps titles beside compact TextKit inputs")
@@ -591,7 +653,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(module.contains(".frame(height: V1EditorCapsuleMetrics.height)"))
         #expect(module.contains("V1EditorCapsuleMetrics.cornerRadius"))
         #expect(module.contains("V1EditorCapsuleMetrics.borderWidth"))
-        #expect(support.contains("HStack(spacing: 1)"))
+        #expect(support.contains("HStack(spacing: V1EditorCapsuleMetrics.inlineItemSpacing)"))
         #expect(!support.contains("当前插入位置"))
         #expect(!support.contains("Color.accentColor.opacity(0.82)"))
         #expect(support.contains("insertionMarkerID"))

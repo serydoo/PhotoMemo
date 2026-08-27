@@ -61,10 +61,43 @@ enum V1EditorInputMetrics {
     static let titleColumnWidth: CGFloat = 60
     static let multiRegionTitleColumnWidth: CGFloat = 36
     static let titleInputSpacing: CGFloat = 4
-    static let caretLinePadding: CGFloat = 10
+    /// Keeps the insertion point from touching the rounded field border. This
+    /// is the same leading/trailing rhythm used by the native message inputs
+    /// we use as a visual reference, while the field remains a 40pt control.
+    static let textContainerHorizontalInset: CGFloat = 8
+    static let caretWidth: CGFloat = 2
     static let caretHeight: CGFloat = 16
     static let fallbackLineHeight: CGFloat = 22
     static let moduleAttachmentHeight: CGFloat = 28
+
+    /// TextKit's shared line box is the vertical source of truth for both
+    /// ordinary glyphs and module attachments whenever the editor rebuilds its
+    /// attributed content from the current font metrics.
+    static func lineHeight(for font: UIFont) -> CGFloat {
+        max(moduleAttachmentHeight, ceil(font.lineHeight))
+    }
+
+    static func textBaselineOffset(for font: UIFont) -> CGFloat {
+        V1EditorLineBoxGeometry.textBaselineOffset(
+            lineHeight: lineHeight(for: font),
+            fontLineHeight: font.lineHeight
+        )
+    }
+
+    static func attachmentBaselineOffset(
+        for font: UIFont,
+        attachmentHeight: CGFloat
+    ) -> CGFloat {
+        // Keep the attachment canvas inside the same canonical line box as
+        // ordinary glyphs. A cap-height offset contributes a different
+        // descent and lets TextKit move the entire line baseline whenever the
+        // last module is inserted or removed.
+        V1EditorLineBoxGeometry.attachmentOriginY(
+            lineHeight: lineHeight(for: font),
+            attachmentHeight: attachmentHeight,
+            fontDescender: font.descender
+        )
+    }
 }
 
 /// One capsule specification is shared by TextKit attachments and the
@@ -80,6 +113,15 @@ enum V1EditorCapsuleMetrics {
     static let minimumWidth: CGFloat = 58
     static let maximumWidth: CGFloat = 150
     static let contentSpacing: CGFloat = 4
+    /// One inter-item gap is shared by the legacy SwiftUI fallback and the
+    /// TextKit attachment's transparent boundary advance.
+    static let inlineItemSpacing: CGFloat = 2
+    static let attachmentTrailingAdvance: CGFloat = 2
+
+    /// The visible capsule must not be pushed away from preceding text by an
+    /// extra glyph-origin offset. The attachment owns only its outgoing
+    /// boundary; incoming text keeps its native side bearing.
+    static let attachmentLeadingAdvance: CGFloat = 0
 }
 
 /// Owns the lifetime of one unified TextKit editor. SwiftUI sends only
@@ -126,7 +168,12 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
         // The TextKit view calculates its vertical inset after SwiftUI gives
         // it a real height. This centers the empty caret using the natural
         // font line height while still making room for module attachments.
-        textView.textContainerInset = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: 4)
+        textView.textContainerInset = UIEdgeInsets(
+            top: 0,
+            left: V1EditorInputMetrics.textContainerHorizontalInset,
+            bottom: 0,
+            right: V1EditorInputMetrics.textContainerHorizontalInset
+        )
         textView.textContainer.lineFragmentPadding = 0
         textView.textContainer.maximumNumberOfLines = 1
         textView.textContainer.lineBreakMode = .byClipping
@@ -180,7 +227,7 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
             validRange.location + validRange.length
         )
         let range = NSRange(location: insertionLocation, length: 0)
-        let attachment = V1TextKitModuleAttachment(item: item)
+        let attachment = attributedAttachment(for: item)
 
         selectionOwner = .commandBus
         registerUndoSnapshot(
@@ -195,13 +242,18 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
         isApplyingExternalState = true
         textView.textStorage.replaceCharacters(
             in: range,
-            with: NSAttributedString(attachment: attachment)
+            with: attachment
         )
         refreshTextViewLayout(textView)
         selectedRange = NSRange(location: range.location + 1, length: 0)
         textView.selectedRange = selectedRange
         draft = projectedDraft(from: textView)
         draftRevision += 1
+        // Rebuild the complete attributed draft immediately so the inserted
+        // attachment and all existing runs use the canonical line-box and
+        // canvas metrics in the same update, without waiting for SwiftUI's
+        // next update cycle.
+        applyDraft(draft, to: textView, selection: selectedRange)
         V1TextKitTrace.log(
             "insert.end",
             extra: "draftRevision=\(draftRevision) " + stateDescription(for: textView) + " projected=\(draft.items.map { String(describing: $0.kind) })"
@@ -276,6 +328,7 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
         textView.selectedRange = selectedRange
         draft = projectedDraft(from: textView)
         draftRevision += 1
+        applyDraft(draft, to: textView, selection: selectedRange)
         isApplyingExternalState = false
         emitDraftChangeIfNeeded()
         return true
@@ -350,6 +403,9 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
         textView.selectedRange = selectedRange
         draft = projectedDraft(from: textView)
         draftRevision += 1
+        // Rebuild the complete attributed draft immediately so surviving runs
+        // retain the canonical line-box and canvas metrics after deletion.
+        applyDraft(draft, to: textView, selection: selectedRange)
         isApplyingExternalState = false
         emitDraftChangeIfNeeded()
         V1TextKitTrace.log("deleteAttachmentAtCaret", extra: stateDescription(for: textView))
@@ -371,7 +427,11 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
 
     func textViewDidChangeSelection(_ textView: UITextView) {
         selectedRange = textView.selectedRange
-        (textView as? V1TextKitTextView)?.refreshCaret()
+        // UIKit derives typing attributes from the run next to the insertion
+        // point. At an attachment boundary that run is the module itself, so
+        // text inserted immediately before a module can otherwise lose the
+        // editor's font and canonical paragraph line box.
+        refreshTypingAttributes(in: textView)
         V1TextKitTrace.log("selectionChanged", extra: stateDescription(for: textView) + " owner=\(selectionOwner.rawValue)")
     }
 
@@ -384,6 +444,10 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
               textView.markedTextRange == nil else { return }
 
         ensureTrailingSentinel(in: textView)
+        // Normalize committed input before projecting the draft. This repairs
+        // any plain-text run UIKit created from attachment-adjacent attributes
+        // while leaving module attachments and the trailing sentinel intact.
+        normalizeTextRunAttributes(in: textView)
         selectedRange = textView.selectedRange
         if shouldRestoreTrailingCaretAfterDelete {
             let documentLength = max(textView.textStorage.length - 1, 0)
@@ -443,8 +507,60 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
         )
         textView.selectedRange = selectedRange
         selectionOwner = .projectionRestore
+        refreshTypingAttributes(in: textView)
         V1TextKitTrace.log("applyDraft", extra: "textStorageRevision=\(textStorageRevision) " + stateDescription(for: textView))
         isApplyingExternalState = false
+    }
+
+    private func normalizeTextRunAttributes(in textView: UITextView) {
+        let documentLength = max(textView.textStorage.length - 1, 0)
+        guard documentLength > 0 else {
+            refreshTypingAttributes(in: textView)
+            return
+        }
+
+        let documentRange = NSRange(location: 0, length: documentLength)
+        let canonicalAttributes = editingAttributes()
+        var textRanges: [NSRange] = []
+        textView.textStorage.enumerateAttribute(
+            .attachment,
+            in: documentRange
+        ) { value, range, _ in
+            if value == nil {
+                textRanges.append(range)
+            }
+        }
+
+        guard !textRanges.isEmpty else {
+            refreshTypingAttributes(in: textView)
+            return
+        }
+
+        let wasApplyingExternalState = isApplyingExternalState
+        isApplyingExternalState = true
+        textView.textStorage.beginEditing()
+        for range in textRanges {
+            // Ordinary editor text has one owned attribute schema. Replacing
+            // the complete run is intentional: merely merging the canonical
+            // values can leave an inherited baselineOffset (or another rich-
+            // text geometry attribute) behind after attachment-boundary
+            // edits. That stale value disappears only after a full draft
+            // rebuild, which is exactly the insert/delete jump this editor
+            // must prevent.
+            textView.textStorage.setAttributes(
+                canonicalAttributes,
+                range: range
+            )
+        }
+        textView.textStorage.endEditing()
+        isApplyingExternalState = wasApplyingExternalState
+        refreshTypingAttributes(in: textView)
+        refreshTextViewLayout(textView)
+    }
+
+    private func refreshTypingAttributes(in textView: UITextView) {
+        guard textView.markedTextRange == nil else { return }
+        textView.typingAttributes = editingAttributes()
     }
 
     private func projectedDraft(from textView: UITextView) -> V1EditorDraft {
@@ -502,14 +618,31 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
                     )
                 )
             } else {
-                result.append(
-                    NSAttributedString(
-                        attachment: V1TextKitModuleAttachment(item: item)
-                    )
-                )
+                result.append(attributedAttachment(for: item))
             }
         }
 
+        return result
+    }
+
+    private func attributedAttachment(
+        for item: V1ContentItem
+    ) -> NSAttributedString {
+        let result = NSMutableAttributedString(
+            attachment: V1TextKitModuleAttachment(
+                item: item,
+                leadingAdvance: V1EditorCapsuleMetrics.attachmentLeadingAdvance,
+                trailingAdvance: V1EditorCapsuleMetrics.attachmentTrailingAdvance
+            )
+        )
+        // Paragraph style is a paragraph-wide contract. The attachment gets
+        // the canonical line box, but deliberately not the ordinary text's
+        // positive baselineOffset: its 28pt canvas is already centered by its
+        // bounds origin and must not be lifted a second time.
+        result.addAttributes(
+            attachmentAttributes(),
+            range: NSRange(location: 0, length: result.length)
+        )
         return result
     }
 
@@ -616,10 +749,22 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
 
     private func editingAttributes() -> [NSAttributedString.Key: Any] {
         let font = UIFont.preferredFont(forTextStyle: .subheadline)
-        let lineHeight = max(
-            V1EditorInputMetrics.moduleAttachmentHeight,
-            ceil(font.lineHeight)
+        var attributes = lineBoxAttributes(for: font)
+        attributes[.baselineOffset] =
+            V1EditorInputMetrics.textBaselineOffset(for: font)
+        return attributes
+    }
+
+    private func attachmentAttributes() -> [NSAttributedString.Key: Any] {
+        lineBoxAttributes(
+            for: UIFont.preferredFont(forTextStyle: .subheadline)
         )
+    }
+
+    private func lineBoxAttributes(
+        for font: UIFont
+    ) -> [NSAttributedString.Key: Any] {
+        let lineHeight = V1EditorInputMetrics.lineHeight(for: font)
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = lineHeight
         paragraphStyle.maximumLineHeight = lineHeight
@@ -830,9 +975,6 @@ private struct V1SlotATextKitSessionRepresentable: UIViewRepresentable {
 }
 
 private final class V1TextKitTextView: UITextView {
-    private let customCaret = UIView()
-    private var lastCaretFrame: CGRect?
-
     var onTrailingTouch: ((UITextView, CGPoint) -> Void)?
     var onDeleteBackward: ((UITextView) -> Bool)?
     var onCopy: ((UITextView) -> Bool)?
@@ -840,21 +982,12 @@ private final class V1TextKitTextView: UITextView {
 
     override init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
-        configureCaret()
+        tintColor = .tintColor
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        configureCaret()
-    }
-
-    private func configureCaret() {
-        tintColor = .clear
-        customCaret.backgroundColor = .systemBlue
-        customCaret.isUserInteractionEnabled = false
-        customCaret.isAccessibilityElement = false
-        addSubview(customCaret)
-        customCaret.isHidden = true
+        tintColor = .tintColor
     }
 
     override func copy(_ sender: Any?) {
@@ -874,81 +1007,6 @@ private final class V1TextKitTextView: UITextView {
     override func layoutSubviews() {
         super.layoutSubviews()
         updateVerticalTextAlignment()
-        refreshCaret()
-    }
-
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        refreshCaret()
-    }
-
-    override func becomeFirstResponder() -> Bool {
-        let becameFirstResponder = super.becomeFirstResponder()
-        if becameFirstResponder {
-            refreshCaret()
-            restartCaretBlinking()
-        }
-        return becameFirstResponder
-    }
-
-    override func resignFirstResponder() -> Bool {
-        let resigned = super.resignFirstResponder()
-        if resigned {
-            hideCaret()
-        }
-        return resigned
-    }
-
-    /// Replaces only the native caret drawing. UIKit still owns selection,
-    /// input, marked text, accessibility, and horizontal caret placement;
-    /// this view owns the one stable vertical caret geometry for text and
-    /// attachment runs alike.
-    func refreshCaret() {
-        guard bounds.height > 0, isFirstResponder else {
-            hideCaret()
-            return
-        }
-
-        let position = selectedTextRange?.end ?? endOfDocument
-        let systemRect = super.caretRect(for: position)
-        let width: CGFloat = 2
-        let frame = CGRect(
-            x: systemRect.minX,
-            y: bounds.midY - V1EditorInputMetrics.caretHeight / 2,
-            width: width,
-            height: V1EditorInputMetrics.caretHeight
-        )
-        let didMove = lastCaretFrame != frame || customCaret.isHidden
-        customCaret.frame = frame
-        customCaret.isHidden = false
-        lastCaretFrame = frame
-        if didMove {
-            restartCaretBlinking()
-        }
-    }
-
-    private func hideCaret() {
-        customCaret.layer.removeAllAnimations()
-        customCaret.alpha = 0
-        customCaret.isHidden = true
-        lastCaretFrame = nil
-    }
-
-    private func restartCaretBlinking() {
-        guard !customCaret.isHidden else { return }
-        customCaret.layer.removeAllAnimations()
-        customCaret.alpha = 1
-        UIView.animate(withDuration: 0.55,
-            delay: 0,
-            options: [
-                .autoreverse,
-                .repeat,
-                .allowUserInteraction,
-                .beginFromCurrentState
-            ]
-        ) { [weak self] in
-            self?.customCaret.alpha = 0.2
-        }
     }
 
     /// UITextView has no native vertical-alignment mode. Recalculate only the
@@ -963,7 +1021,8 @@ private final class V1TextKitTextView: UITextView {
         // Text and attachment runs share one line box. Recomputing the line
         // height from the current contents made the caret jump vertically as
         // the user moved between plain text and module capsules. The capsule
-        // is the upper bound, so keep that same line box for every draft.
+        // is the lower bound, so keep that same canonical box for every draft;
+        // ordinary glyphs are centered inside it by their own baselineOffset.
         let lineHeight = max(
             V1EditorInputMetrics.moduleAttachmentHeight,
             fontLineHeight
@@ -997,12 +1056,13 @@ private final class V1TextKitTextView: UITextView {
         // The system rect can have different heights for ordinary glyphs and
         // attachments. Use one deliberately shorter caret for every content
         // kind; only the system x-position remains content-dependent.
+        let caretWidth = V1EditorInputMetrics.caretWidth
         let caretHeight = V1EditorInputMetrics.caretHeight
         let editorCenterY = bounds.midY
         return CGRect(
             x: systemRect.minX,
             y: editorCenterY - caretHeight / 2,
-            width: systemRect.width,
+            width: max(systemRect.width, caretWidth),
             height: caretHeight
         )
     }

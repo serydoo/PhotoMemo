@@ -74,7 +74,9 @@ final class BatchTaskProcessor {
             task.progress = BatchTaskProgress(
                 currentUnit: 1,
                 totalUnits: totalProgressUnits,
-                statusMessage: initialPreparationStatusMessage(for: memoryBudget)
+                stage: initialPreparationStage(
+                    for: memoryBudget
+                )
             )
             task.failure = nil
         }) else {
@@ -169,7 +171,9 @@ final class BatchTaskProcessor {
                 task.progress = BatchTaskProgress(
                     currentUnit: requiresExtendedPreviewPreparation ? 3 : 2,
                     totalUnits: totalProgressUnits,
-                    statusMessage: completedPreparationStatusMessage(for: memoryBudget)
+                    stage: completedPreparationStage(
+                        for: memoryBudget
+                    )
                 )
             }
 
@@ -224,7 +228,7 @@ final class BatchTaskProcessor {
                 task.progress = BatchTaskProgress(
                     currentUnit: requiresExtendedPreviewPreparation ? 4 : 3,
                     totalUnits: totalProgressUnits,
-                    statusMessage: "已生成模板内容"
+                    stage: .presentationReady
                 )
             }
             guard store.updateTask(at: reference, mutate: { task in
@@ -232,7 +236,7 @@ final class BatchTaskProcessor {
                 task.progress = BatchTaskProgress(
                     currentUnit: requiresExtendedPreviewPreparation ? 5 : 4,
                     totalUnits: totalProgressUnits,
-                    statusMessage: "正在生成图片"
+                    stage: .renderingImage
                 )
             }) else {
                 return
@@ -270,7 +274,7 @@ final class BatchTaskProcessor {
                 task.progress = BatchTaskProgress(
                     currentUnit: requiresExtendedPreviewPreparation ? 6 : 5,
                     totalUnits: totalProgressUnits,
-                    statusMessage: "正在写入系统图库"
+                    stage: .savingToPhotoLibrary
                 )
             }) else {
                 resourceLifecycle.cleanupTemporaryFile(at: exportedFileURL)
@@ -330,7 +334,7 @@ final class BatchTaskProcessor {
                 task.progress = BatchTaskProgress(
                     currentUnit: totalProgressUnits,
                     totalUnits: totalProgressUnits,
-                    statusMessage: "处理完成"
+                    stage: .completed
                 )
             }) else {
                 return
@@ -400,8 +404,8 @@ final class BatchTaskProcessor {
                             max(task.progress.totalUnits - 1, 0),
                         totalUnits:
                             max(task.progress.totalUnits, 1),
-                        statusMessage:
-                            "正在确认系统图库写入"
+                        stage:
+                            .confirmingPhotoLibrarySave
                     )
                 }) else {
                     return
@@ -445,7 +449,7 @@ final class BatchTaskProcessor {
                 task.progress = BatchTaskProgress(
                     currentUnit: 0,
                     totalUnits: 1,
-                    statusMessage: "处理失败"
+                    stage: .failed
                 )
             }) else {
                 return
@@ -493,9 +497,11 @@ final class BatchTaskProcessor {
             task.progress = BatchTaskProgress(
                 currentUnit: max(totalProgressUnits - 1, 1),
                 totalUnits: totalProgressUnits,
-                statusMessage: configuration.v1MediaOutputMode == .originalFormat
-                    ? "正在生成 Live Photo"
-                    : "正在生成静态图片"
+                stage:
+                    configuration.v1MediaOutputMode
+                    == .originalFormat
+                    ? .renderingLivePhoto
+                    : .renderingStillImage
             )
         }) else {
             return
@@ -540,7 +546,7 @@ final class BatchTaskProcessor {
             task.progress = BatchTaskProgress(
                 currentUnit: totalProgressUnits,
                 totalUnits: totalProgressUnits,
-                statusMessage: "处理完成"
+                stage: .completed
             )
         }) else {
             return
@@ -562,16 +568,28 @@ final class BatchTaskProcessor {
         }
     }
 
-    private func initialPreparationStatusMessage(for budget: MediaMemoryBudget) -> String {
-        if budget.cost.isRAW { return "正在准备 RAW 照片" }
-        if budget.requiresExtendedPreviewPreparation { return "正在准备高分辨率照片" }
-        return "正在读取原图"
+    private func initialPreparationStage(
+        for budget: MediaMemoryBudget
+    ) -> BatchTaskProgressStage {
+        if budget.cost.isRAW {
+            return .preparingRAWPhoto
+        }
+        if budget.requiresExtendedPreviewPreparation {
+            return .preparingHighResolutionPhoto
+        }
+        return .readingOriginal
     }
 
-    private func completedPreparationStatusMessage(for budget: MediaMemoryBudget) -> String {
-        if budget.cost.isRAW { return "已生成 RAW 显示版本" }
-        if budget.requiresExtendedPreviewPreparation { return "已生成高分辨率预览版本" }
-        return "已读取 EXIF 和拍摄时间"
+    private func completedPreparationStage(
+        for budget: MediaMemoryBudget
+    ) -> BatchTaskProgressStage {
+        if budget.cost.isRAW {
+            return .preparedRAWRepresentation
+        }
+        if budget.requiresExtendedPreviewPreparation {
+            return .preparedHighResolutionPreview
+        }
+        return .metadataReady
     }
 }
 

@@ -151,6 +151,34 @@ Always preserve these rules:
 - User-facing configuration language should say Preset, not Template; the internal renderer/template model may keep `Template`
 - Do not reintroduce Workspace, Dashboard, Task Center, Working Area, or Import Flow as user workflow concepts
 
+### Shared Input Geometry Standard
+
+All user-editable text inputs, including future Renderer configuration editors, must
+follow the accepted specification in
+`Docs/03_Engineering/2026-08-27-editor-input-geometry-standard.md`.
+
+The non-negotiable contract is:
+
+- ordinary text, module attachments, and the caret have separate geometry owners;
+- a content-independent canonical line box is established before content is laid out;
+- ordinary text uses a font-derived positive half-leading
+  `max(0, (lineHeight - font.lineHeight) / 2)`;
+- attachments never inherit ordinary-text `.baselineOffset` and center their own canvas
+  inside the canonical line box;
+- UIKit/TextKit owns the single visible caret, selection, IME, undo, accessibility, and
+  module-atomic editing behavior;
+- typing attributes, sentinel, draft rebuild, paste, undo/redo, and post-IME normalization
+  return to the same attribute factories;
+- attachment presence or order must never move an existing ordinary glyph baseline;
+- no per-region vertical constants, screenshot-derived `+1/-1pt` values, duplicate caret,
+  or Renderer-owned input geometry is allowed.
+
+Every new or modified input control requires both automated line-box/attribute tests and
+paired physical iPhone visual acceptance. AppKit/TextKit tests do not replace UIKit device
+verification. Dynamic Type large-content behavior and multi-line controls require a new
+bounded specification before implementation; do not silently stretch the fixed 40pt/28pt
+single-line contract.
+
 ## Narrative Product Language
 
 The canonical product-language source is

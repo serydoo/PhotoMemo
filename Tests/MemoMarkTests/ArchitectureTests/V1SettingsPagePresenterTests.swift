@@ -51,14 +51,14 @@ struct V1SettingsPagePresenterTests {
             assetIdentifier: "asset-id"
         )
 
-        #expect(link.actionTitle(language: .japanese) == "写真を開く")
+        #expect(link.actionTitle(language: .japanese) == "写真アプリで見る")
         #expect(
             link.saveDestinationText(language: .japanese)
             == "「最近的日子」に保存"
         )
         #expect(
             link.accessibilityHint(language: .korean)
-            == "사진을 열어 ‘最近的日子’을(를) 확인하세요."
+            == "사진 앱을 열어 ‘最近的日子’을(를) 확인하세요."
         )
     }
 
@@ -142,7 +142,7 @@ struct V1SettingsPagePresenterTests {
         )
         #expect(
             presentation.currentTask.subtitleText
-            == "基础白 预设"
+            == "经典白 预设"
         )
         #expect(
             presentation.currentTask.statusText
@@ -425,7 +425,7 @@ struct V1SettingsPagePresenterTests {
         )
         #expect(
             presentation.historyRows[0].detailText
-            == "基础白 预设 · 8 张照片"
+            == "经典白样式 · 处理 8 张照片"
         )
         #expect(
             presentation.historyRows[0].statusText

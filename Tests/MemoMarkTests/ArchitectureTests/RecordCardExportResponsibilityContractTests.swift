@@ -69,7 +69,7 @@ struct RecordCardExportResponsibilityContractTests {
             )
 
         #expect(pipeline.contains("private let presentationPlanner = RecordCardPresentationPlanner()"))
-        #expect(pipeline.contains("presentationPlanner.content("))
+        #expect(pipeline.contains("presentationPlanner.artifact("))
         #expect(pipeline.contains("presentationPlanner.outputPixelSize("))
         #expect(pipeline.contains("MemoMarkRenderedImageArtifactGuard"))
         #expect(namingResolver.contains("PhotoFileNameResolver"))
@@ -97,7 +97,9 @@ struct RecordCardExportResponsibilityContractTests {
         let exportPipeline = try serviceSource("RecordCardExportPipeline.swift")
 
         #expect(processor.contains("renderLivePhotoOverlay"))
-        #expect(exportPipeline.contains("sourcePhotoPixelSize"))
+        #expect(processor.contains("overlay: overlay"))
+        #expect(exportPipeline.contains("presentationPlanner.artifact("))
+        #expect(exportPipeline.contains("canvasSize: renderSize"))
         #expect(!exportPipeline.contains("renderMinimalLivePhotoOverlay"))
         #expect(!processor.contains("card.presentationStyle == .minimal"))
     }

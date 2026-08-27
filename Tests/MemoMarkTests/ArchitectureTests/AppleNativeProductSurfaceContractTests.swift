@@ -235,8 +235,8 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(configuration.contains("V1OutputDestinationContent("))
         #expect(!configuration.contains("V1OutputPhotoDescriptionSection("))
         #expect(!configuration.contains("V1OutputSection("))
-        #expect(configuration.contains("title: presentation.defaultContentTitle"))
-        #expect(configuration.contains("title: \"output.destination.title\""))
+        #expect(configuration.contains("title: \"configuration.photo_description.title\""))
+        #expect(configuration.contains("title: \"configuration.save_location.title\""))
         #expect(!output.contains("V1OutputRetentionRow("))
         #expect(!output.contains("private struct V1OutputContentCard"))
         #expect(!output.contains("private struct V1OutputCompactCard"))
@@ -266,8 +266,8 @@ struct AppleNativeProductSurfaceContractTests {
 
         #expect(support.contains("struct V1TitledSectionCard"))
         #expect(support.contains("HStack(alignment: .center, spacing: 8)"))
-        #expect(configuration.contains(".font(.headline.weight(.semibold))"))
-        #expect(configuration.contains(".font(.caption)"))
+        #expect(configuration.contains("V1ConfigurationCompactSectionRow("))
+        #expect(configuration.contains("V1SectionCardMetrics.cardHeaderContentSpacing"))
         #expect(support.contains(".font(.headline.weight(.semibold))"))
         #expect(support.contains(".font(.caption)"))
         #expect(processing.contains("task.recent.title"))
@@ -306,7 +306,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(!home.contains("systemImage: MemoMarkSymbol.memorySubject.name"))
         #expect(!home.contains("systemImage: MemoMarkSymbol.configuration.name"))
         #expect(home.contains("HStack(spacing: 8)"))
-        #expect(home.contains(".frame(width: 30, height: 30)"))
+        #expect(home.contains(".frame(width: 48, height: 48)"))
         #expect(home.contains(".frame(width: 26, height: 30)"))
     }
 
@@ -394,12 +394,12 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(overview.contains(".padding(.vertical, 7)"))
         #expect(editorFlow.contains("title: \"基础资料\""))
         #expect(editorFlow.contains("title: \"时间锚点\""))
-        #expect(editorFlow.contains("V1TitledSectionSurface("))
+        #expect(editorFlow.contains("private func subjectSectionHeader("))
         #expect(!editorFlow.contains("V1TitledSectionCard("))
         #expect(editor.contains("contactAvatarEditor"))
-        #expect(editor.contains("expressionSubjectCard\n                .subjectIdentityInnerCardChrome()"))
-        #expect(editor.contains("compactIdentityFieldsPanel\n                .subjectIdentityInnerCardChrome()"))
-        #expect(editor.contains("func subjectIdentityInnerCardChrome()"))
+        #expect(editor.contains("private var identityOverviewFieldsGroup"))
+        #expect(editor.contains("V1HorizontalDivider(horizontalInset: 12)"))
+        #expect(editor.contains(".v1GroupedSurface()"))
         #expect(settings.contains("case interfacePreferences"))
         #expect(settings.contains("section: .interfacePreferences"))
         #expect(settings.contains("trailingValue: interfacePreferencesSummary"))
@@ -428,6 +428,9 @@ struct AppleNativeProductSurfaceContractTests {
         let configurationPreview = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterTopPreviewSection.swift"
         )
+        let configurationPreviewRenderer = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterIOSSupportViews.swift"
+        )
         let accessory = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/V1AccessoryEntrySection.swift"
         )
@@ -442,7 +445,12 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(!subjectEditor.contains(".fill(Color.white.opacity(0.88))"))
         #expect(!cropSheet.contains(".fill(Color.white)"))
 
-        #expect(configurationPreview.contains(".environment(\\.colorScheme, .light)"))
+        #expect(configurationPreview.contains("IOSMacStyleMemoryCardPreview("))
+        #expect(
+            configurationPreviewRenderer.contains(
+                "RendererConstants.CompactInformationBar.background"
+            )
+        )
         #expect(accessory.contains(".environment(\\.colorScheme, .light)"))
         #expect(home.contains(".environment(\\.colorScheme, .light)"))
     }
@@ -568,7 +576,8 @@ struct AppleNativeProductSurfaceContractTests {
 
         #expect(options.contains("保存当前配置"))
         #expect(options.contains("更多配置操作"))
-        #expect(options.contains("编辑卡片呈现"))
+        #expect(options.contains("configuration.card_style.title"))
+        #expect(options.contains("configuration.layout.title"))
         #expect(!options.contains("index: \"1.\""))
         #expect(center.contains("ConfigurationCenter"))
         #expect(preview.contains("configuration.preview"))
@@ -586,8 +595,8 @@ struct AppleNativeProductSurfaceContractTests {
         )
 
         #expect(!home.contains("CGFloat(memoryPresets.count) * 92"))
-        #expect(processing.contains(".frame(minHeight: 78)"))
-        #expect(!processing.contains(".frame(height: 78)"))
+        #expect(processing.contains(".frame(minHeight: 70)"))
+        #expect(!processing.contains(".frame(height: 70)"))
     }
 
     @Test("card row separators use one symmetric semantic hairline")
@@ -635,7 +644,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(!detail.contains("当前使用"))
         #expect(!detail.contains("mode: .identityOverview"))
         #expect(editor.contains("mode: .identityOverview"))
-        #expect(editor.contains("V1TitledSectionSurface("))
+        #expect(editor.contains("private func subjectSectionHeader("))
         #expect(!editor.contains("V1TitledSectionCard("))
         #expect(editor.contains("删除记忆对象"))
     }
@@ -650,7 +659,8 @@ struct AppleNativeProductSurfaceContractTests {
         )
         let source = detail + anchors
 
-        #expect(source.contains("ForEach(subject.timeAnchors)"))
+        #expect(source.contains("Array(subject.timeAnchors.enumerated())"))
+        #expect(source.contains("id: \\.element.id"))
         #expect(source.contains("V1IOSSubjectAnchorDetailModule"))
         #expect(source.contains("contextMenu"))
         #expect(source.contains("添加锚点"))
@@ -703,7 +713,7 @@ struct AppleNativeProductSurfaceContractTests {
         for source in [home, configuration, subjectEditor, anchors, subject, backups] {
             #expect(source.contains("role: .destructive"))
         }
-        #expect(home.contains(".tint(.red)"))
+        #expect(home.contains("systemImage: \"trash\""))
         #expect(subjectEditor.contains(".tint(.red)"))
         #expect(anchors.contains(".tint(.red)"))
         #expect(backups.contains(".tint(.red)"))
@@ -737,7 +747,10 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/ExpressionEditor.swift"
         )
 
-        for source in [home, subjectEditor, anchors, backups] {
+        #expect(home.contains("role: .destructive"))
+        #expect(home.contains("systemImage: \"trash\""))
+
+        for source in [subjectEditor, anchors, backups] {
             #expect(source.contains("role: .destructive"))
             #expect(source.contains(".tint(.red)"))
         }

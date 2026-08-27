@@ -78,9 +78,9 @@ struct V1TimeAnchorTodayPresenterTests {
             assetIdentifier: "asset-local-id"
         )
 
-        #expect(link.actionTitle == "打开照片 App")
+        #expect(link.actionTitle == "打开照片 App 查看")
         #expect(link.saveDestinationText == "已保存到「整理水印相册」")
-        #expect(link.accessibilityHint == "打开照片 App；请在照片 App 中查看「整理水印相册」")
+        #expect(link.accessibilityHint == "打开照片 App 后查看「整理水印相册」")
     }
 
     private func date(

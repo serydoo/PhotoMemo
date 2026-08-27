@@ -580,7 +580,10 @@ struct ShareDrainMigrationRegressionTests {
         let persistedJobs =
             try #require(
                 BatchQueuePersistence(
-                    defaults: context.defaults
+                    fileBaseDirectoryURL:
+                        context.rootDirectoryURL,
+                    legacyDefaults:
+                        context.defaults
                 )
                 .loadPersistedJobsResult()
                 .value

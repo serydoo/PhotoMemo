@@ -777,8 +777,12 @@ enum V1PhotoIntakeImporter {
             }
 
         let fileName =
-            preferredResource?.originalFilename
-            ?? resources.first?.originalFilename
+            preferredResource.map(
+                PhotoKitResourceFileName.value
+            )
+            ?? resources.first.map(
+                PhotoKitResourceFileName.value
+            )
 
         return photoImportService
             .sanitizedSuggestedFileName(

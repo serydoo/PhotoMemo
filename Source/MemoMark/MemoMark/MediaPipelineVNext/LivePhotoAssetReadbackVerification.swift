@@ -376,7 +376,9 @@ struct PhotoKitLivePhotoAssetReadbackVerifier:
                         resource.type
                         .livePhotoReadbackKind,
                     originalFilename:
-                        resource.originalFilename,
+                        PhotoKitResourceFileName.value(
+                            for: resource
+                        ),
                     uniformTypeIdentifier:
                         resource
                         .uniformTypeIdentifier

@@ -239,6 +239,8 @@ struct MemoMarkBackgroundJobSnapshot: Hashable {
 
     let statusMessage: String
 
+    let progressStage: BatchTaskProgressStage?
+
     let displayMode: MemoMarkBackgroundDisplayMode
 
     let pipelineSteps: [MemoMarkBackgroundPipelineStep]
@@ -286,6 +288,7 @@ struct MemoMarkBackgroundJobSnapshot: Hashable {
         currentPhaseTitle: String?,
         currentFileName: String?,
         statusMessage: String,
+        progressStage: BatchTaskProgressStage? = nil,
         displayMode: MemoMarkBackgroundDisplayMode,
         pipelineSteps:
             [MemoMarkBackgroundPipelineStep],
@@ -319,6 +322,8 @@ struct MemoMarkBackgroundJobSnapshot: Hashable {
             currentFileName
         self.statusMessage =
             statusMessage
+        self.progressStage =
+            progressStage
         self.displayMode = displayMode
         self.pipelineSteps =
             pipelineSteps
@@ -356,6 +361,30 @@ struct MemoMarkBackgroundJobSnapshot: Hashable {
             savedAlbumName
         self.savedAssetIdentifier =
             savedAssetIdentifier
+    }
+
+    func localizedStatusMessage(
+        for language: MemoMarkLanguage
+    ) -> String {
+        guard let progressStage else {
+            return statusMessage
+        }
+
+        let baseMessage =
+            progressStage.localizedStatusMessage(
+                for: language
+            )
+        let trimmedFileName =
+            currentFileName?
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ) ?? ""
+
+        guard !trimmedFileName.isEmpty else {
+            return baseMessage
+        }
+
+        return "\(baseMessage) · \(trimmedFileName)"
     }
 
     var feedbackState:
@@ -613,6 +642,10 @@ private extension MemoMarkBackgroundStatusService {
                     for: job,
                     activeTask: activeTask
                 ),
+            progressStage:
+                activeTask?.failure == nil
+                ? activeTask?.progress.stage
+                : nil,
             displayMode:
                 resolvedDisplayMode(
                     for: job,
@@ -898,16 +931,21 @@ private extension MemoMarkBackgroundStatusService {
             return "这次处理已停止。需要时请从 Apple Photos 重新分享照片。"
         }
 
-        if let activeTask,
-           !activeTask.progress.statusMessage
+        if let activeTask {
+            let localizedStatusMessage =
+                activeTask.progress
+                .localizedStatusMessage(
+                    for: .interfaceStored
+                )
+
+            if !localizedStatusMessage
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             )
             .isEmpty {
 
             let baseMessage =
-                activeTask.progress
-                .statusMessage
+                localizedStatusMessage
 
             let trimmedFileName =
                 activeTask.fileName
@@ -920,6 +958,7 @@ private extension MemoMarkBackgroundStatusService {
             }
 
             return "\(baseMessage) · \(trimmedFileName)"
+            }
         }
 
         switch resolvedFeedbackState(
@@ -1419,13 +1458,12 @@ private extension MemoMarkBackgroundStatusService {
         _ task: BatchTask
     ) -> String {
 
-        let statusMessage =
-            task.progress.statusMessage
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        if statusMessage.contains("RAW") {
+        if task.progress.stage
+            == .preparingRAWPhoto
+            || task.progress.stage
+            == .preparedRAWRepresentation
+            || task.progress.statusMessage
+            .contains("RAW") {
             switch task.phase {
 
             case .importing:

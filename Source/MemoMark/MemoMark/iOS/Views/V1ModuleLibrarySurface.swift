@@ -98,7 +98,14 @@ struct V1ModuleLibrarySurface: View {
             .stroke(Color.primary.opacity(0.06))
         )
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(region.semanticTitle)的模块候选")
+        .accessibilityLabel(
+            MemoMarkDynamicInterfaceText
+            .moduleCandidatesLabel(
+                regionTitle:
+                    region.semanticTitle,
+                language: .interfaceStored
+            )
+        )
     }
 
     private func moduleButton(

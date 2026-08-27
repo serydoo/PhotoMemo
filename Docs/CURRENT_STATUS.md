@@ -1,5 +1,237 @@
 # MemoMark Current Status
 
+## 2026-08-27 2.2.2（构建 91）GitHub 同步收口（当前）
+
+- 本次工程候选保持 marketing version `2.2.2`，所有 App、iOS、Share Extension、Widget、测试和 Device QA target 的 `CURRENT_PROJECT_VERSION` 已统一更新为 `91`。
+- 同步范围从实际最近一次 GitHub 推送 `916fc84` 开始；构建 90 的 2026-08-26 材料保留为历史候选，不改写其原始验证事实。
+- 本次合并包含 Card Content Editor 的统一输入几何标准、TextKit line-box/caret 修复、可靠性与本地化审查收口，以及对应的工程测试和项目文档。
+- 规范入口为 [编辑输入几何规范](03_Engineering/2026-08-27-editor-input-geometry-standard.md)；未来 Renderer 编辑器和文字/模块组合输入必须复用该 canonical line box 与 geometry ownership，不得各自添加视觉补偿常量。
+- 当前同步材料入口为 `Docs/07_Releases/2026-08-27-2.2.2-*`。本次授权包含 GitHub `main` 的暂存、提交和推送；不包含 TestFlight、App Store Connect 或 App Store 外部交付。
+- 本轮 macOS、通用 iOS、Share Extension、Widget Extension 和 Device QA 构建均通过；全量 `MemoMarkTests` 为 `1603 passed / 0 failed / 1 skipped`，仅有两条既有 QoS runtime warning。实体 iPhone 17 Pro Max 当前 `unavailable`，91 号包未重新安装，不使用 Simulator 替代；90 号相同代码候选此前已完成签名安装/启动，91 号人工视觉和 Apple Photos 全链路仍待设备恢复后复核。
+
+## 2026-08-27 Shared Input Geometry Standard Accepted
+
+- 将本次 iPhone 17 Pro Max 已验收的 Card Content Editor 规则提升为全项目输入控件规范：
+  普通文字、模块 attachment 与 caret 分别拥有 geometry owner；所有输入面先建立内容
+  无关的 canonical line box，再由字体度量 half-leading、attachment canvas bounds 和
+  UIKit 原生 caret 各自完成定位。规范适用于未来 Renderer 配置编辑器及任何文字/模块
+  组合输入，不允许把输入补偿下沉到输出 Renderer。
+- 新增 [编辑输入几何规范](03_Engineering/2026-08-27-editor-input-geometry-standard.md)，
+  固化 40/28/6/16pt 默认契约、正向 `max(0, (lineHeight - font.lineHeight) / 2)`、
+  attachment 禁止继承 `.baselineOffset`、单一横向 spacing owner、IME 生命周期、
+  Dynamic Type 边界、禁止事项和实体 iPhone 验收矩阵。`AGENTS.md` 已同步为强制项目规则。
+  未来如需多行、可增长控件或超大 Dynamic Type，必须先提出新的 bounded specification，
+  不得直接复制当前单行常量。
+
+## 2026-08-27 Card Content Editor Ordinary-Text Typographic Centering
+
+- 配对 iPhone 17 Pro Max 的 `IMG_4094`–`IMG_4100` 否定了上一包“取消普通文字
+  baseline 补偿即可得到视觉居中”的假设：模块顺序已经不再改变普通文字位置，但
+  所有普通文字、中文标点和光标邻接文字都稳定落在 40pt 输入框的下半部。上一轮
+  runtime probe 只证明了 plain/mixed baseline 与 28pt line-fragment 高度不随
+  attachment 状态变化，并没有验证普通字体盒本身相对 line-fragment 的垂直中心。
+- canonical line box 继续作为唯一行几何真值。普通文字现在使用字体度量推导的正向
+  half-leading：`max(0, (lineHeight - font.lineHeight) / 2)`，默认 subheadline 约为
+  `+5pt`，只把 ordinary glyph typographic body 移到 28pt line box 中心。attachment
+  字符明确只继承 font、foreground 与 paragraph line-box attributes，不继承普通
+  文字的 `.baselineOffset`；模块 canvas 继续由 descender-based bounds 公式独立
+  居中。尾部 sentinel、typing attributes、IME 提交后的普通文字 normalization 与
+  draft rebuild 均使用同一 ordinary-text attributes，caret 仍独立锁定 40pt 控件
+  中心。没有为中文、符号、模块顺序或左右区域加入特例或截图常量。
+- TDD 先以不存在的 `textBaselineOffset` helper 得到预期编译失败；实现后 AppKit
+  TextKit 1 runtime probe 覆盖 `T`、`文`、`，`、`A文+`，模块在前/后/夹中，以及
+  `10/12/15/18/22/26/32/40pt` 八组字号，结果 `8` 个动态 test run 全部通过、`0`
+  failed。`IPhoneResponsiveLayoutContractTests` 为 `50` passed、`0` failed，完整
+  `MemoMark` Debug build 与 `git diff --check` 通过。最新 `MemoMarkiOS` Debug 使用
+  Apple Development 签名（Team `UK7ZR8G564`）完成 iPhone 17 Pro Max 构建、覆盖
+  安装与启动，bundle identifier 为 `com.serydoo.PhotoMemo.iOS`。该自动化证据证明
+  baseline/line-box 不再依赖模块状态；UIKit 真机的最终视觉接受仍需用户复测纯文字、
+  标点、模块前后/夹中、删除最后模块、重新插入模块及中文 IME。Dynamic Type 运行时
+  重建与辅助功能字号仍为独立 P1，不在本次默认字号结论内。未使用 Simulator，未执行
+  commit、push、TestFlight 或 App Store 提交。
+
+## 2026-08-27 Card Content Editor Content-Independent Line Baseline
+
+- 用户在上一包上完成的状态矩阵给出了决定性证据：模块后继续输入正常；删除最后一个
+  模块后保留文字向下移动；重新插入模块后恢复；纯文字加中文标点、数字或 `+` 仍然
+  向下，而只要行内存在模块就正常。旧文字也会随 attachment 的有无整体移动，因此
+  问题不是新输入 run 的属性缺失，而是 attachment 改变了固定 28pt line fragment
+  内部的共享 baseline。
+- 独立 TextKit 1 几何探针复现了同一关系：普通文字的负 `baselineOffset` 将纯文字
+  下移，而约 `-14pt` 的 attachment bounds 又通过 ascent/descent 把含模块整行的
+  baseline 拉回，形成偶然抵消；删除最后一个 attachment 后抵消消失。普通文字现在
+  回归系统自然 baseline；模块 canvas 使用 `font.descender + (lineHeight -
+  attachmentHeight) / 2` 放入同一个 canonical line box，不再通过 cap-height 或文字
+  offset 改变整行 baseline。attachment 字符也显式获得同一 paragraph line-box
+  attributes，消除模块位于段首时的顺序差异。
+- 普通文字归一化现在使用完整 canonical attribute replacement，而不是把 font、颜色
+  与 paragraph style 叠加到旧 run 上；这会在 IME 组合态结束后清除可能从模块边界或
+  富文本来源继承的旧 `baselineOffset` 等排版属性，同时继续排除 attachment 与尾部
+  sentinel。新增真实 AppKit TextKit 1 排版探针，覆盖纯文字、中文、中文标点、中英
+  符号混排、模块在前/后/夹中，以及 `10–40pt` 八组字号；实际 glyph baseline 与
+  line-fragment height 均保持一致。该 runtime probe 的 `8` 个参数化用例与 `50` 个
+  `IPhoneResponsiveLayoutContractTests` 均通过，`git diff --check` 与新几何源文件
+  解析通过。运行中切换 Dynamic Type 后重建已有 attributed runs/attachment 属于
+  独立 P1 accessibility 生命周期，不在本次默认字号 hotfix 中宣称完成。最新通用
+  iOS Debug 无签名构建通过；设备重新连接后，最新源码又完成配对 iPhone 17 Pro Max
+  的签名 Debug 构建、覆盖安装和应用启动。bundle identifier 为
+  `com.serydoo.PhotoMemo.iOS`，开发签名 Team 为 `UK7ZR8G564`。Test 2/Test 5 的
+  UIKit 真机视觉矩阵仍需用户在已启动应用内最终确认。未使用 Simulator，未执行
+  commit、push、TestFlight 或 App Store 提交。
+
+## 2026-08-27 Card Content Editor Live Text Attribute Normalization
+
+- 此条对 `IMG_4078`–`IMG_4082` 的 typing-attributes 根因判断，已被上方用户完整
+  状态矩阵与 TextKit 几何探针进一步收窄并纠正。配对 iPhone 17 Pro Max 的截图曾将问题限定为
+  attachment 边界处的实时输入状态：模块后输入正常，但在模块前刚录入的文字会继承
+  邻近 attachment 的 typing attributes，因而暂时缺少编辑器统一的 paragraph style
+  与 baseline offset；删除或重新插入模块触发完整 draft 重建后，同一段文字又恢复
+  正常。该状态链证明问题不是另一组视觉偏移常量，也不是区域或内容模型差异。
+- 编辑器现在会在选区移动到模块边界时刷新 canonical typing attributes，并在中文
+  输入法完成 marked-text 提交后，只对正文中的普通文字 run 归一化字体、颜色、行高
+  与 line-box attributes。模块 attachment、私有尾部 sentinel、输入法组合态和结构化 draft 均
+  保持原有所有权；模块前后输入、删除模块和重新插入模块不再依赖下一次全文重建来
+  获得正确的垂直属性。
+- Verification: 新增针对模块边界实时输入属性生命周期的 source-contract 测试，先在
+  旧实现下明确失败，修正后 `IPhoneResponsiveLayoutContractTests` focused suite 为
+  `50` passed、`0` failed；Swift 源码解析与 `git diff --check` 通过。签名实体设备
+  `MemoMarkiOS` Debug build 通过，最终产物已覆盖安装并成功请求启动到配对 iPhone
+  17 Pro Max。模块前输入、模块后输入、删除模块和重新插入模块的最终视觉验收仍需用户
+  在已启动的真机上执行；未使用 Simulator，未执行 commit、push、TestFlight 或
+  App Store 提交。
+
+## 2026-08-27 Card Content Editor Attachment Baseline Direction Correction
+
+- `IMG_4074 2`–`IMG_4077` 的实体 iPhone 17 Pro Max 截图证明上一版 attachment
+  补偿方向错误：纯文字与原生 caret 仍然居中，但模块胶囊被进一步抬高。截图中的
+  前后版本也形成了方向证据——`NSTextAttachment.bounds.origin.y` 从更负变为较不负
+  后，胶囊向上移动，因此 attachment 必须沿普通文字 `baselineOffset` 的同一方向
+  补偿，而不是反向抵消。
+- `attachmentBaselineOffset(for:attachmentHeight:)` 现在将模块自身的视觉中心偏移
+  与 `textBaselineOffset(for:)` 相加。未改变文字 baseline、caret、28pt line-box、
+  输入框位置、模块高度或横向 spacing。回归测试新增同方向补偿契约，并先在旧公式下
+  明确失败，修正后恢复通过。
+- Verification: `IPhoneResponsiveLayoutContractTests` focused suite 为 `49` passed、
+  `0` failed；Swift 源码解析、`git diff --check` 和签名 `MemoMarkiOS` Debug build
+  均通过。最终产物已覆盖安装并成功请求启动到配对实体 iPhone 17 Pro Max；设备截图
+  接口随后仍返回锁屏，因此最新混排位置需要用户在手机上完成最终视觉确认。未使用
+  Simulator，未执行 commit、push、TestFlight 或 App Store 提交。
+
+## 2026-08-27 Card Content Editor Mixed Text-Module Vertical Alignment
+
+- 根据新的 iPhone 17 Pro Max 真机截图 `IMG_4071`–`IMG_4074` 重新定性：纯文字与
+  caret 已经居中，剩余问题是文字和模块混排时的垂直 optical center 不一致。根因
+  是普通文字使用了共享 line-box 的 `baselineOffset`，而 attachment 仍用独立的
+  `capHeight` 偏移公式，导致模块胶囊在文字前后出现上下偏移。
+- 新增统一的 `lineHeight(for:)`、`textBaselineOffset(for:)` 和
+  `attachmentBaselineOffset(for:attachmentHeight:)`。普通文字与模块都由同一个
+  28pt line-box 计算。此条记录中的“反向补偿”结论已被后续 `IMG_4074 2`–`IMG_4077`
+  真机证据推翻并由上方 Direction Correction 条目纠正。横向 advance 仍收敛为模块
+  透明 canvas 内固定的 0pt 前置、2pt 后置边界，不依赖 `bounds.origin.x` 与字体
+  side bearing 叠加。
+- Verification: `IPhoneResponsiveLayoutContractTests` focused suite 为 `49` passed、
+  `0` failed；Swift 源码解析、`git diff --check` 和签名 `MemoMarkiOS` Debug build
+  均通过。最终产物已重新安装到配对实体 iPhone 17 Pro Max；启动请求被系统以设备
+  处于锁定界面拒绝，因此混排 vertical alignment 需要用户解锁后的手机做最终确认。
+  未使用 Simulator，未执行 commit、push、TestFlight 或 App Store 提交。
+
+## 2026-08-27 Card Content Editor Mixed Text-Module Geometry
+
+- 根据 iPhone 17 Pro Max 的 `IMG_4066`–`IMG_4070` 状态复核，纯自定义文字与原生
+  caret 已保持稳定；本次剩余问题限定为文字与模块混排时的相对横向位置。TextKit
+  attachment 现在使用固定的边界归属：模块位于行首不额外向右偏移，每个模块只拥有
+  一次共享 2pt 后置间距，因此文字→模块、模块→文字、模块→模块和行尾到 caret
+  都不会叠加第二套 side bearing 或透明占位。
+- 模块插入和结构化粘贴均使用相同的 attachment 构造路径；操作完成后立即按完整
+  draft 重排，使新增、保留的模块都重新采用固定透明 canvas 几何。模块仍是单一
+  原子 attachment，未改变文本投影、退格、undo、结构化复制粘贴或持久化内容。
+- Verification: `IPhoneResponsiveLayoutContractTests` focused suite 为 `49` passed、
+  `0` failed；`swiftc -frontend -parse`、`git diff --check` 和签名 `MemoMarkiOS`
+  Debug build 均通过。最终构建产物已安装到配对的实体 iPhone 17 Pro Max；启动
+  请求因设备处于锁定界面被系统拒绝，因此文字→模块、模块→文字、连续模块与键盘态
+  仍需用户解锁后在手机上做最终视觉确认。未使用 Simulator，未执行 commit、push、
+  TestFlight 或 App Store 提交。
+
+## 2026-08-27 Card Content Editor Plain-Text Baseline Correction
+
+- Followed the new iPhone 17 Pro Max screenshots without reopening the Card
+  Content Editor architecture. The remaining visual mismatch was isolated to
+  ordinary text glyphs inside the shared 28pt TextKit line box: the caret was
+  centered, but the default paragraph baseline left pure custom text optically
+  high in the field. `editingAttributes()` now applies a dynamic negative half
+  leading baseline offset, derived from the current preferred font and shared
+  line height. This corrects the text baseline for Chinese and Latin input
+  without adding a left/right-region-specific offset or changing attachment
+  identity, caret ownership, module deletion, copy/paste, undo, or rendering.
+- Verification: the focused `IPhoneResponsiveLayoutContractTests` suite passed
+  with `49` passed and `0` failures after adding the baseline contract;
+  `swiftc -frontend -parse` and `git diff --check` passed. The final signed
+  iOS build was installed and launched successfully on the paired physical
+  iPhone 17 Pro Max from this source state. Pure-text, text-plus-module, empty,
+  and mixed-content visual acceptance remains a direct iPhone check; no
+  Simulator verification or remote synchronization was performed.
+
+## 2026-08-27 Card Content Editor Caret And Inline Spacing
+
+- Completed the bounded Product Loop P1 visual pass derived from the 2026-08-26
+  Card Content Editor research and the paired iPhone 17 Pro Max screenshots.
+  The editor now uses UIKit's native caret rendering and blinking as its single
+  visible caret owner; the former custom `UIView` caret, manual refresh/hide
+  lifecycle, and custom animation path were removed. TextKit still provides the
+  native insertion x-position, selection, input, undo, accessibility, and
+  module-atomic editing behavior, while the existing stable line-box geometry
+  remains in place for ordinary text and attachments.
+- TextKit's horizontal text-container inset is now an explicit shared 8pt
+  metric. The active SwiftUI fallback and TextKit attachment path share a 2pt
+  inline spacing contract, including the attachment's transparent trailing
+  advance. This closes the previously separate text-to-module, module-to-caret,
+  and fallback-preview spacing paths without changing module data, four-region
+  focus routing, structured copy/paste, renderer, persistence, or Apple Photos
+  behavior.
+- Verification: the focused `IPhoneResponsiveLayoutContractTests` suite passed
+  with `49` passed and `0` failures, `git diff --check` passed, generic iOS Debug compilation
+  completed, and signed `MemoMarkiOS` Debug version `2.2.2 (90)` was installed
+  and launched successfully on the paired physical iPhone 17 Pro Max. A device
+  screenshot was captured at `/tmp/MemoMarkCursorPass17ProMax.png`; the device
+  was locked at capture time, so empty/text/module/mixed-content caret states
+  still require the user's direct visual acceptance on the phone. No Simulator
+  verification, commit, push, TestFlight upload, or App Store submission was
+  performed.
+
+## 2026-08-27 Post-release code audit remediation
+
+- Completed the bounded Engineering Loop remediation defined in
+  `Docs/03_Engineering/2026-08-27-post-release-code-audit-remediation-spec.md`.
+  The pass fixes path-prefix containment, restricts legacy App Group
+  `UserDefaults` migration to a MemoMark-owned allowlist, moves the production
+  batch queue snapshot to atomic file-backed persistence with legacy import and
+  read-back verification, and keeps iOS diagnostics on the same durable queue
+  source.
+- Batch progress now persists semantic `BatchTaskProgressStage` values and
+  localizes them at presentation time across the four supported interface
+  languages. Bundle resource membership was tightened so source README files
+  and the Share Extension source plist are not copied into the main app
+  product. No Renderer/Layout Engine, EXIF timezone, or high-resolution memory
+  policy behavior was changed.
+- Verification on the stable post-remediation worktree: full
+  `MemoMarkTests` passed with `1,600` passed, `0` failed, and `1` pre-existing
+  skipped test. The focused queue, migration, progress-localization, and
+  contract suites also passed. macOS `MemoMark` and generic iOS `MemoMarkiOS`
+  Debug builds completed with code signing disabled; plist validation and
+  `git diff --check` passed. The builds still report existing macOS 26/27 API
+  deprecation warnings for the detailed `CLGeocoder` compatibility path; the
+  PhotoKit resource filename reads now use the new `filename` API with an old
+  OS fallback. The full test run reports two QoS runtime warnings; these are
+  tracked follow-up work, not failures.
+- The paired physical iPhone 17 Pro Max, Photos/share-extension lifecycle,
+  memory-pressure behavior, and VoiceOver/Dynamic Type paths were not manually
+  re-certified in this pass. A signed `MemoMarkiOS` Debug build was installed
+  and launched successfully on the paired physical iPhone 17 Pro Max
+  (`com.serydoo.PhotoMemo.iOS`, version `2.2.2 (90)`); scenario-level Photos,
+  Share Extension, memory-pressure, and accessibility acceptance remain open.
+  No Git commit, push, TestFlight upload, or App Store submission was
+  performed.
+
 ## 2026-08-26 2.2.2 收尾、仓库治理与同步准备（当前）
 
 - 当前候选为 `MemoMark 2.2.2 (90)`；最近一次 GitHub 推送基点是

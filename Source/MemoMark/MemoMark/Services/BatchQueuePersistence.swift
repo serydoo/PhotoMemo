@@ -59,6 +59,91 @@ struct UserDefaultsBatchQueuePersistenceBackend:
     }
 }
 
+struct FileBatchQueuePersistenceBackend:
+    BatchQueuePersistenceBackend {
+
+    private let baseDirectoryURL: URL
+
+    init(
+        baseDirectoryURL: URL
+    ) {
+        self.baseDirectoryURL =
+            baseDirectoryURL.standardizedFileURL
+    }
+
+    func loadData(
+        forKey key: String
+    ) throws -> Data? {
+        let fileURL = try snapshotURL(forKey: key)
+        guard FileManager.default.fileExists(
+            atPath: fileURL.path
+        ) else {
+            return nil
+        }
+
+        return try Data(contentsOf: fileURL)
+    }
+
+    func saveData(
+        _ data: Data,
+        forKey key: String
+    ) throws {
+        let fileURL = try snapshotURL(forKey: key)
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try data.write(
+            to: fileURL,
+            options: .atomic
+        )
+
+        guard try Data(contentsOf: fileURL) == data else {
+            throw FileBatchQueuePersistenceError
+                .readBackMismatch(
+                    fileURL
+                )
+        }
+    }
+
+    private func snapshotURL(
+        forKey key: String
+    ) throws -> URL {
+        guard key == BatchQueuePersistence.storageKey else {
+            throw FileBatchQueuePersistenceError
+                .unsupportedStorageKey(
+                    key
+                )
+        }
+
+        return baseDirectoryURL
+            .appendingPathComponent(
+                "BatchQueue",
+                isDirectory: true
+            )
+            .appendingPathComponent(
+                "jobs-v1.json",
+                isDirectory: false
+            )
+    }
+}
+
+private enum FileBatchQueuePersistenceError:
+    LocalizedError {
+
+    case unsupportedStorageKey(String)
+    case readBackMismatch(URL)
+
+    var errorDescription: String? {
+        switch self {
+        case .unsupportedStorageKey(let key):
+            return "Unsupported batch queue storage key: \(key)."
+        case .readBackMismatch(let url):
+            return "Batch queue file read-back verification failed at \(url.path)."
+        }
+    }
+}
+
 private enum UserDefaultsBatchQueuePersistenceError:
     LocalizedError {
 
@@ -87,11 +172,14 @@ private enum BatchQueuePersistenceVerificationError:
 
 struct BatchQueuePersistence {
 
-    private let storageKey =
+    static let storageKey =
         "photomemo.batchQueue.jobs"
 
     private let backend:
         BatchQueuePersistenceBackend
+
+    private let legacyBackend:
+        BatchQueuePersistenceBackend?
 
     private let encodeJobs:
         ([BatchJob]) throws -> Data
@@ -103,13 +191,50 @@ struct BatchQueuePersistence {
                 try JSONEncoder().encode($0)
             }
     ) {
+        // The production queue is file-backed in the shared App Group. The
+        // explicit defaults initializer remains available for compatibility
+        // and focused tests.
+        if let defaults {
+            self.init(
+                backend:
+                    UserDefaultsBatchQueuePersistenceBackend(
+                        defaults: defaults
+                    ),
+                legacyBackend: nil,
+                encodeJobs: encodeJobs
+            )
+            return
+        }
+
+        self.init(
+            backend: FileBatchQueuePersistenceBackend(
+                baseDirectoryURL: MemoMarkSharedContainer.baseDirectoryURL
+            ),
+            legacyBackend: UserDefaultsBatchQueuePersistenceBackend(
+                defaults: MemoMarkSharedContainer.sharedUserDefaults
+            ),
+            encodeJobs: encodeJobs
+        )
+    }
+
+    init(
+        fileBaseDirectoryURL: URL,
+        legacyDefaults: UserDefaults,
+        encodeJobs:
+            @escaping ([BatchJob]) throws -> Data = {
+                try JSONEncoder().encode($0)
+            }
+    ) {
         self.init(
             backend:
+                FileBatchQueuePersistenceBackend(
+                    baseDirectoryURL:
+                        fileBaseDirectoryURL
+                ),
+            legacyBackend:
                 UserDefaultsBatchQueuePersistenceBackend(
                     defaults:
-                        defaults
-                        ?? MemoMarkSharedContainer
-                        .sharedUserDefaults
+                        legacyDefaults
                 ),
             encodeJobs: encodeJobs
         )
@@ -122,18 +247,32 @@ struct BatchQueuePersistence {
                 try JSONEncoder().encode($0)
             }
     ) {
-        self.backend =
-            backend
-        self.encodeJobs =
-            encodeJobs
+        self.init(
+            backend: backend,
+            legacyBackend: nil,
+            encodeJobs: encodeJobs
+        )
+    }
+
+    private init(
+        backend: BatchQueuePersistenceBackend,
+        legacyBackend: BatchQueuePersistenceBackend?,
+        encodeJobs:
+            @escaping ([BatchJob]) throws -> Data
+    ) {
+        self.backend = backend
+        self.legacyBackend = legacyBackend
+        self.encodeJobs = encodeJobs
     }
 
     func loadPersistedJobsResult()
     -> MemoMarkResult<[BatchJob]> {
 
-        let data: Data?
+        let primaryData: Data?
         do {
-            data = try backend.loadData(forKey: storageKey)
+            primaryData = try backend.loadData(
+                forKey: Self.storageKey
+            )
         } catch {
             return .failure(
                 MemoMarkError.wrapped(
@@ -145,27 +284,68 @@ struct BatchQueuePersistence {
             )
         }
 
-        guard let data else {
+        if let primaryData {
+            return decodeJobs(
+                from: primaryData
+            )
+        }
+
+        guard let legacyBackend else {
             return .success([])
         }
 
+        let legacyData: Data?
         do {
-            return .success(
-                try JSONDecoder().decode(
-                    [BatchJob].self,
-                    from: data
-                )
+            legacyData = try legacyBackend.loadData(
+                forKey: Self.storageKey
             )
         } catch {
             return .failure(
                 MemoMarkError.wrapped(
                     error,
                     code: .persistenceReadFailed,
-                    message: "批处理队列数据已损坏，已停止自动恢复。",
+                    message: "无法读取旧版批处理队列。",
                     underlyingDescription: "photomemo.batchQueue.jobs: \(String(describing: error))"
                 )
             )
         }
+
+        guard let legacyData else {
+            return .success([])
+        }
+
+        let decodedLegacyJobs = decodeJobs(
+            from: legacyData
+        )
+        guard let jobs = decodedLegacyJobs.value else {
+            return decodedLegacyJobs
+        }
+
+        do {
+            try backend.saveData(
+                legacyData,
+                forKey: Self.storageKey
+            )
+            guard try backend.loadData(
+                forKey: Self.storageKey
+            ) == legacyData else {
+                throw BatchQueuePersistenceVerificationError
+                    .readBackMismatch(
+                        key: Self.storageKey
+                    )
+            }
+        } catch {
+            return .failure(
+                MemoMarkError.wrapped(
+                    error,
+                    code: .persistenceWriteFailed,
+                    message:
+                        "无法迁移批处理队列。"
+                )
+            )
+        }
+
+        return .success(jobs)
     }
 
     func loadPersistedJobs() -> [BatchJob] {
@@ -247,8 +427,7 @@ struct BatchQueuePersistence {
                         BatchTaskProgress(
                             currentUnit: 0,
                             totalUnits: 1,
-                            statusMessage:
-                                failure.userMessage
+                            stage: .failed
                         )
                     changed = true
                     continue
@@ -266,8 +445,7 @@ struct BatchQueuePersistence {
                     BatchTaskProgress(
                         currentUnit: 0,
                         totalUnits: 1,
-                        statusMessage:
-                            "等待恢复处理"
+                        stage: .waitingToResume
                     )
                 changed = true
             }
@@ -310,13 +488,13 @@ struct BatchQueuePersistence {
         do {
             try backend.saveData(
                 data,
-                forKey: storageKey
+                forKey: Self.storageKey
             )
 
-            guard try backend.loadData(forKey: storageKey) == data else {
+            guard try backend.loadData(forKey: Self.storageKey) == data else {
                 throw BatchQueuePersistenceVerificationError
                     .readBackMismatch(
-                        key: storageKey
+                        key: Self.storageKey
                     )
             }
 
@@ -332,6 +510,28 @@ struct BatchQueuePersistence {
             )
         }
     }
+
+    private func decodeJobs(
+        from data: Data
+    ) -> MemoMarkResult<[BatchJob]> {
+        do {
+            return .success(
+                try JSONDecoder().decode(
+                    [BatchJob].self,
+                    from: data
+                )
+            )
+        } catch {
+            return .failure(
+                MemoMarkError.wrapped(
+                    error,
+                    code: .persistenceReadFailed,
+                    message: "批处理队列数据已损坏，已停止自动恢复。",
+                    underlyingDescription: "photomemo.batchQueue.jobs: \(String(describing: error))"
+                )
+            )
+        }
+    }
 }
 
 private extension BatchQueuePersistence {
@@ -342,14 +542,9 @@ private extension BatchQueuePersistence {
 
         let normalizedURL =
             url.standardizedFileURL
-        let intakeDirectoryPath =
-            MemoMarkSharedContainer
-            .externalIntakeDirectoryURL
-            .standardizedFileURL
-            .path
-
-        guard normalizedURL.path.hasPrefix(
-            intakeDirectoryPath
+        guard MemoMarkPathContainment.contains(
+            normalizedURL,
+            root: MemoMarkSharedContainer.externalIntakeDirectoryURL
         ) else {
             return false
         }
@@ -360,4 +555,5 @@ private extension BatchQueuePersistence {
         )
     }
 }
+
 #endif

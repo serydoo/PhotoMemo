@@ -75,6 +75,58 @@ enum MemoMarkSharedContainer {
     nonisolated private static let migrationFlagKey =
         "photomemo.sharedDefaults.didMigrate"
 
+    /// Only MemoMark-owned, cross-process configuration is eligible for the
+    /// one-time legacy migration. System and unrelated defaults stay private.
+    nonisolated static let legacyMigrationAllowlist: Set<String> = [
+        // User preferences and first-run state.
+        "photomemo.language",
+        "photomemo.language.preference",
+        "photomemo.interface.language.preference",
+        "photomemo.interface.appearance.preference",
+        "photomemo.personalProfile.firstRunCompleted",
+        "photomemo.permissions.didPresentPrimer",
+        // Legacy configuration projection.
+        "photomemo.selectedTemplate",
+        "photomemo.selectedBadge",
+        "photomemo.selectedAnchorID",
+        "photomemo.selectedMemorySubject",
+        "photomemo.selectedMemorySubjectText",
+        "photomemo.selectedAlbumIdentifier",
+        "photomemo.selectedAlbumTitle",
+        "photomemo.photoDescriptionOverride",
+        "photomemo.shouldWritePhotoDescription",
+        "photomemo.v1.mediaOutputMode",
+        "photomemo.timeDisplayConfiguration",
+        "photomemo.locationDisplayConfiguration",
+        "photomemo.personalProfile",
+        "photomemo.productionConfigurationReference",
+        "photomemo.v1.subjectLibrary",
+        "photomemo.anchors",
+        "photomemo.configurationSlots",
+        "photomemo.activeConfigurationSlotID",
+        "photomemo.configurationLibrary.primary",
+        "photomemo.configurationLibrary.lastKnownGood",
+        // Cross-process intake and PhotoKit transaction recovery.
+        "photomemo.externalIntake.requests",
+        "photomemo.photoLibrarySaveIntent.v1",
+        "photomemo.photoLibrarySaveReceipt.v1",
+        // Small, user-visible V1 presentation preferences.
+        "photomemo.v1.welcomeSeen",
+        "photomemo.v1.applePhotosGuideDismissed",
+        "photomemo.v1.homeFeedbackExpanded",
+        "photomemo.v1.configurationCenter.cardLayoutExpanded",
+        "photomemo.v1.configurationCenter.memoryExpressionExpanded",
+        "photomemo.v1.configurationCenter.memorySourceExpanded",
+        "photomemo.v1.configurationCenter.outputDestinationExpanded",
+        "photomemo.v1.configurationCenter.photoDescriptionExpanded",
+        "photomemo.v1.configurationCenter.presentationStyleExpanded",
+        "photomemo.v1.moduleUsageCounts",
+        "photomemo.ui.didUseApplePhotosShare",
+        // Legacy queue data is imported into the file snapshot by
+        // BatchQueuePersistence on first access.
+        "photomemo.batchQueue.jobs"
+    ]
+
     nonisolated static var sharedUserDefaults: UserDefaults {
 
         let sharedDefaults =
@@ -198,6 +250,17 @@ enum MemoMarkSharedContainer {
         into sharedDefaults: UserDefaults
     ) {
 
+        migrateLegacyDefaultsIfNeeded(
+            from: UserDefaults.standard,
+            into: sharedDefaults
+        )
+    }
+
+    nonisolated static func migrateLegacyDefaultsIfNeeded(
+        from legacyDefaults: UserDefaults,
+        into sharedDefaults: UserDefaults
+    ) {
+
         guard sharedDefaults != .standard else {
             return
         }
@@ -208,11 +271,9 @@ enum MemoMarkSharedContainer {
             return
         }
 
-        let standardDefaults =
-            UserDefaults.standard
-
         for (key, value) in
-            standardDefaults.dictionaryRepresentation() {
+            legacyDefaults.dictionaryRepresentation()
+            where legacyMigrationAllowlist.contains(key) {
 
             guard sharedDefaults.object(
                 forKey: key

@@ -600,7 +600,8 @@ struct V1IOSSubjectOverviewPresenterTests {
             options: .regularExpression
         )
         #expect(railSource.contains("V1IOSSubjectOverviewSubjectRail"))
-        #expect(railSource.contains("accessibilityLabel(\"切换到"))
+        #expect(railSource.contains("MemoMarkDynamicInterfaceText"))
+        #expect(railSource.contains(".subjectSwitchLabel("))
         #expect(!normalizedRail.contains("保存"))
         #expect(!normalizedRail.contains("当前使用"))
     }

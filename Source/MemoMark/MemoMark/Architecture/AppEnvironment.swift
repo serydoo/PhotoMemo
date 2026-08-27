@@ -166,7 +166,9 @@ final class AppEnvironment {
             )
         let sharedQueueSnapshotService =
             SharedBatchQueueSnapshotService(
-                defaults: defaults
+                fileBaseDirectoryURL:
+                    configurationLibraryBaseDirectoryURL,
+                legacyDefaults: defaults
             )
         let sharedConfigurationSnapshotService =
             SharedBatchConfigurationSnapshotService(
@@ -240,6 +242,12 @@ final class AppEnvironment {
                     previewCoordinator,
                 exportCoordinator:
                     exportCoordinator,
+                persistence:
+                    BatchQueuePersistence(
+                        fileBaseDirectoryURL:
+                            configurationLibraryBaseDirectoryURL,
+                        legacyDefaults: defaults
+                    ),
                 productionDiagnostics:
                     productionDiagnosticsRepository,
                 automaticallyStartsProcessing:

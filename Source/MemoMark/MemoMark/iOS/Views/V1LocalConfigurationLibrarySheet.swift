@@ -36,7 +36,15 @@ struct V1LocalConfigurationLibrarySheet: View {
                         }
                     }
                 } header: {
-                    Text("\(subjectName)的配置")
+                    Text(
+                        MemoMarkDynamicInterfaceText
+                        .subjectConfigurationTitle(
+                            subjectName:
+                                subjectName,
+                            language:
+                                .interfaceStored
+                        )
+                    )
                 } footer: {
                     Text(
                         "最近保存的配置会留在这里。恢复时会保留当前配置；恢复并设为当前会立即切换到该备份。"

@@ -92,6 +92,48 @@ struct BatchQueueRecoveryTests {
         )
         #expect(jobs[0].state == BatchJobState.failed)
     }
+
+    @Test("Resume does not treat a sibling path prefix as managed intake")
+    func resumeRejectsManagedIntakeSiblingPrefix() {
+        let intakeRoot =
+            MemoMarkSharedContainer
+            .externalIntakeDirectoryURL
+            .standardizedFileURL
+        let missingSiblingURL =
+            intakeRoot
+            .deletingLastPathComponent()
+            .appendingPathComponent(
+                intakeRoot.lastPathComponent + "Backup",
+                isDirectory: true
+            )
+            .appendingPathComponent(
+                "missing-\(UUID().uuidString).jpg",
+                isDirectory: false
+            )
+        var jobs = [
+            Self.makeJob(
+                title: "09:05（1张）",
+                createdAt:
+                    Date(timeIntervalSince1970: 100),
+                sourceURL:
+                    missingSiblingURL
+            )
+        ]
+
+        let changed =
+            BatchQueuePersistence()
+            .normalizeJobsForResume(
+                &jobs,
+                deriveJobState:
+                    BatchQueueExecution()
+                    .derivedJobState(from:)
+            )
+
+        #expect(changed)
+        #expect(jobs[0].tasks[0].phase == BatchTaskPhase.queued)
+        #expect(jobs[0].tasks[0].failure == nil)
+        #expect(jobs[0].state == BatchJobState.queued)
+    }
 }
 
 private extension BatchQueueRecoveryTests {

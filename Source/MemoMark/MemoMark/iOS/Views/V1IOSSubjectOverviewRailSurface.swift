@@ -79,7 +79,14 @@ struct V1IOSSubjectOverviewSubjectRail: View {
             )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("切换到\(displayName(subject))")
+        .accessibilityLabel(
+            MemoMarkDynamicInterfaceText
+            .subjectSwitchLabel(
+                subjectName:
+                    displayName(subject),
+                language: .interfaceStored
+            )
+        )
         .accessibilityAddTraits(
             subject.id == selectedSubjectID
             ? .isSelected

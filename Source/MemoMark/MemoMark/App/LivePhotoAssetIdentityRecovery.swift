@@ -301,7 +301,11 @@ struct PhotoKitLivePhotoAssetIdentityResolver:
                         asset.localIdentifier,
                     originalFileNames:
                         resources.map(
-                            \.originalFilename
+                            {
+                                PhotoKitResourceFileName.value(
+                                    for: $0
+                                )
+                            }
                         ),
                     creationDate:
                         asset.creationDate,

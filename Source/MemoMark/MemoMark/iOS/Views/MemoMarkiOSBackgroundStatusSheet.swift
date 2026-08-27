@@ -341,7 +341,9 @@ private extension MemoMarkiOSBackgroundStatusSheet {
             snapshotTitle:
                 snapshot.title,
             statusMessage:
-                snapshot.statusMessage,
+                snapshot.localizedStatusMessage(
+                    for: .interfaceStored
+                ),
             displayMode:
                 snapshot.displayMode,
             queueLines:

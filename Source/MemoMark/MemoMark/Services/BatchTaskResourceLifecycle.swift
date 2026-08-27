@@ -65,8 +65,9 @@ final class BatchTaskResourceLifecycle {
     ) -> Bool {
         let normalizedURL = url.standardizedFileURL
 
-        guard normalizedURL.path.hasPrefix(
-            managedIntakeRootURL.standardizedFileURL.path
+        guard MemoMarkPathContainment.contains(
+            normalizedURL,
+            root: managedIntakeRootURL
         ) else {
             return true
         }

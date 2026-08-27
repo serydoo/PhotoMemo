@@ -185,8 +185,8 @@ struct OutputFileNamingResolver {
                 default:
                     return false
                 }
-            }?.originalFilename
-            ?? resources.first?.originalFilename
+            }.map(PhotoKitResourceFileName.value)
+            ?? resources.first.map(PhotoKitResourceFileName.value)
 
         return PhotoFileNameResolver
             .sanitizedOriginalFileName(

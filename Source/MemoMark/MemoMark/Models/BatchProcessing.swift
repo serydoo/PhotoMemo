@@ -814,6 +814,126 @@ extension BatchTaskFailure {
     }
 }
 
+enum BatchTaskProgressStage:
+    String,
+    Codable,
+    Hashable {
+
+    case preparingRAWPhoto
+    case preparingHighResolutionPhoto
+    case readingOriginal
+    case preparedRAWRepresentation
+    case preparedHighResolutionPreview
+    case metadataReady
+    case presentationReady
+    case renderingImage
+    case savingToPhotoLibrary
+    case confirmingPhotoLibrarySave
+    case renderingLivePhoto
+    case renderingStillImage
+    case waitingToResume
+    case completed
+    case failed
+    case cancelled
+    case backgroundExpired
+
+    init?(legacyStatusMessage: String) {
+        switch legacyStatusMessage
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ) {
+        case "正在准备 RAW 照片":
+            self = .preparingRAWPhoto
+        case "正在准备高分辨率照片":
+            self = .preparingHighResolutionPhoto
+        case "正在读取原图":
+            self = .readingOriginal
+        case "已生成 RAW 显示版本":
+            self = .preparedRAWRepresentation
+        case "已生成高分辨率预览版本":
+            self = .preparedHighResolutionPreview
+        case "已读取 EXIF 和拍摄时间":
+            self = .metadataReady
+        case "已生成模板内容":
+            self = .presentationReady
+        case "正在生成图片":
+            self = .renderingImage
+        case "正在写入系统图库":
+            self = .savingToPhotoLibrary
+        case "正在确认系统图库写入":
+            self = .confirmingPhotoLibrarySave
+        case "正在生成 Live Photo":
+            self = .renderingLivePhoto
+        case "正在生成静态图片":
+            self = .renderingStillImage
+        case "等待恢复处理":
+            self = .waitingToResume
+        case "处理完成":
+            self = .completed
+        case "处理失败":
+            self = .failed
+        case "已取消":
+            self = .cancelled
+        case "后台处理时间已用尽，请重试":
+            self = .backgroundExpired
+        default:
+            return nil
+        }
+    }
+
+    func localizedStatusMessage(
+        for language: MemoMarkLanguage
+    ) -> String {
+        language.localized(
+            key: localizationKey,
+            fallback: fallbackMessage
+        )
+    }
+
+    private var localizationKey: String {
+        "task.progress.stage.\(rawValue)"
+    }
+
+    private var fallbackMessage: String {
+        switch self {
+        case .preparingRAWPhoto:
+            return "Preparing RAW photo"
+        case .preparingHighResolutionPhoto:
+            return "Preparing high-resolution photo"
+        case .readingOriginal:
+            return "Reading original photo"
+        case .preparedRAWRepresentation:
+            return "RAW preview ready"
+        case .preparedHighResolutionPreview:
+            return "High-resolution preview ready"
+        case .metadataReady:
+            return "Photo information ready"
+        case .presentationReady:
+            return "Memory content ready"
+        case .renderingImage:
+            return "Creating image"
+        case .savingToPhotoLibrary:
+            return "Saving to Apple Photos"
+        case .confirmingPhotoLibrarySave:
+            return "Confirming save in Apple Photos"
+        case .renderingLivePhoto:
+            return "Creating Live Photo"
+        case .renderingStillImage:
+            return "Creating still image"
+        case .waitingToResume:
+            return "Waiting to resume"
+        case .completed:
+            return "Completed"
+        case .failed:
+            return "Processing failed"
+        case .cancelled:
+            return "Cancelled"
+        case .backgroundExpired:
+            return "Background time ended. Try again."
+        }
+    }
+}
+
 struct BatchTaskProgress:
     Codable,
     Hashable {
@@ -824,14 +944,68 @@ struct BatchTaskProgress:
 
     var statusMessage: String
 
+    var stage: BatchTaskProgressStage?
+
     init(
         currentUnit: Int = 0,
         totalUnits: Int = 1,
-        statusMessage: String = ""
+        statusMessage: String = "",
+        stage: BatchTaskProgressStage? = nil
     ) {
         self.currentUnit = max(currentUnit, 0)
         self.totalUnits = max(totalUnits, 1)
         self.statusMessage = statusMessage
+        self.stage = stage
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(
+            keyedBy: CodingKeys.self
+        )
+        let decodedStatusMessage =
+            try container.decodeIfPresent(
+                String.self,
+                forKey: .statusMessage
+            ) ?? ""
+
+        currentUnit = max(
+            try container.decodeIfPresent(
+                Int.self,
+                forKey: .currentUnit
+            ) ?? 0,
+            0
+        )
+        totalUnits = max(
+            try container.decodeIfPresent(
+                Int.self,
+                forKey: .totalUnits
+            ) ?? 1,
+            1
+        )
+        statusMessage = decodedStatusMessage
+        stage =
+            try container.decodeIfPresent(
+                BatchTaskProgressStage.self,
+                forKey: .stage
+            )
+            ?? BatchTaskProgressStage(
+                legacyStatusMessage:
+                    decodedStatusMessage
+            )
+    }
+
+    func localizedStatusMessage(
+        for language: MemoMarkLanguage
+    ) -> String {
+        if let stage {
+            return stage.localizedStatusMessage(
+                for: language
+            )
+        }
+
+        return statusMessage.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
     }
 
     var fractionCompleted: Double {

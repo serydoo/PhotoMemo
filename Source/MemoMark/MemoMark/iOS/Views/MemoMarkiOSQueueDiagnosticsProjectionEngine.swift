@@ -145,7 +145,7 @@ enum MemoMarkiOSQueueDiagnosticsProjectionEngine {
                 headline:
                     progressProjection.title,
                 subheadline:
-                    backgroundSnapshot.statusMessage,
+                    progressProjection.statusMessage,
                 symbolName:
                     progressProjection.symbolName,
                 tint:
@@ -257,7 +257,9 @@ enum MemoMarkiOSQueueDiagnosticsProjectionEngine {
             progressPercentText:
                 "\(Int(round(clampedProgress * 100)))%",
             statusMessage:
-                snapshot.statusMessage,
+                snapshot.localizedStatusMessage(
+                    for: language
+                ),
             showsPipeline:
                 snapshot.overflowQueueCount == 0
                 && snapshot.queueLines.count <= 1,

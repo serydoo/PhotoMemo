@@ -98,7 +98,9 @@ final class DiagnosticsRepository {
         .success(
             MemoMarkiOSProcessingDiagnosticsSnapshot
             .load(
-                defaults: defaults
+                defaults: defaults,
+                sharedQueueSnapshotService:
+                    sharedQueueSnapshotService
             )
         )
     }

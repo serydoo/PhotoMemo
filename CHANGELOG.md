@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.2 (91) Input Geometry Standard And Reliability Maintenance - 2026-08-27
+
+- Promoted the accepted Card Content Editor line-box and caret behavior into a shared input geometry standard for future Renderer configuration editors and every text/module input surface.
+- Kept ordinary text, module attachments, and the native caret under separate geometry ownership while using one content-independent canonical line box, preventing module insertion order from changing vertical alignment.
+- Added dynamic font half-leading, explicit attachment attributes, and a bounded 40/28/6/16pt contract with IME, Dynamic Type, accessibility, and physical-device acceptance rules.
+- Preserved the local-first Memory Presentation Engine, Apple Photos ownership, original-photo protection, and all published identity and persistence compatibility values.
+
+This build-only maintenance checkpoint starts from the pushed `916fc84` source checkpoint. Build `90` remains the historical 2026-08-26 candidate record; build `91` has not been uploaded to TestFlight or submitted to the App Store.
+
 ## 2.2.2 (90) Configuration Center And Apple Photos Reliability - 2026-08-26
 
 - Consolidated the iPhone experience around Home, Configuration, and Progress, with Photo Description and Output Destination now edited alongside the Memory Card configuration.

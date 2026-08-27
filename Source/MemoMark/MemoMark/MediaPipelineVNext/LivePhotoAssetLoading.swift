@@ -363,7 +363,9 @@ struct PhotoKitLivePhotoAssetResourceProvider:
                             resource.type
                     ),
                 originalFilename:
-                    resource.originalFilename,
+                    PhotoKitResourceFileName.value(
+                        for: resource
+                    ),
                 uniformTypeIdentifier:
                     resource.uniformTypeIdentifier
             )

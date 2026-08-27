@@ -270,7 +270,9 @@ struct V1ConfigurationOptionListContractTests {
         #expect(!optionListSource.contains("Image(systemName: \"ellipsis.circle\")"))
         #expect(editorSurfaceSource.contains(".safeAreaInset(edge: .bottom, spacing: 0)"))
         #expect(!editorSurfaceSource.contains(".overlay(alignment: .bottom)"))
-        #expect(optionListSource.contains(".ultraThinMaterial"))
+        #expect(optionListSource.contains("@Environment(\\.accessibilityReduceTransparency)"))
+        #expect(optionListSource.contains(".fill(.regularMaterial)"))
+        #expect(optionListSource.contains(".fill(ConfigurationUI.panelBackground)"))
         #expect(configurationPageSource.contains("V1ConfigurationActionFooter("))
         #expect(configurationPageSource.contains("configurationStatus: configurationStatus"))
         #expect(rootSource.contains("V1ConfigurationPageSurface("))
@@ -499,6 +501,9 @@ struct V1ConfigurationOptionListContractTests {
         let rootSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
         )
+        let regionSource = try sourceText(
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Models/CardRegion.swift"
+        )
         let styleRange = try #require(
             optionListSource.range(of: "expressionStyleSection")
         )
@@ -552,8 +557,9 @@ struct V1ConfigurationOptionListContractTests {
                 "subtitle: \"configuration.layout.subtitle\""
             )
         )
-        #expect(rootSource.contains("presentationStyle == .minimal"))
-        #expect(rootSource.contains("? [.slotA]"))
+        #expect(rootSource.contains("CardRegion.editableRegions("))
+        #expect(rootSource.contains("for: presentationStyle"))
+        #expect(regionSource.contains("presentationStyle.contentContract.editableTextAreas"))
     }
 
     @Test("advanced modules move location display behind the card-content-style editor")
@@ -804,7 +810,7 @@ struct V1ConfigurationOptionListContractTests {
                 "configuration.card_editor.subtitle"
             )
         )
-        #expect(editorSource.contains(".padding(.top, 12)"))
+        #expect(editorSource.contains(".padding(.top, 8)"))
         #expect(editorSource.contains(".padding(.bottom, 10)"))
         #expect(!editorSource.contains(".padding(.top, 16)"))
         #expect(entryRowSource.contains("dynamicTypeSize.isAccessibilitySize"))

@@ -117,7 +117,7 @@ final class BatchQueueCoordinator {
             job.tasks[index].progress = BatchTaskProgress(
                 currentUnit: 1,
                 totalUnits: 1,
-                statusMessage: "已取消"
+                stage: .cancelled
             )
             didCancelTask = true
         }
