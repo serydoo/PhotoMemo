@@ -1,11 +1,12 @@
 # MemoMark Handoff
 
-# 2026-08-27 2.2.2（构建 91）同步收口（当前）
+# 2026-08-27 2.2.2（构建 95）Xcode Cloud 归档兼容性修复（当前）
 
-- 当前工程：`Source/MemoMark/MemoMark.xcodeproj`；marketing version 保持 `2.2.2`，构建号更新为 `91`。
-- 本轮同步基点为最近一次已推送的 GitHub `916fc84`；所有正式源码、测试、工程配置和项目状态记录从该基点统一收口到 `main`。
+- 当前工程：`Source/MemoMark/MemoMark.xcodeproj`；marketing version 保持 `2.2.2`，构建号更新为 `95`。
+- 本轮同步基点为最近一次已推送的 GitHub `03a49f1`；所有正式源码、测试、工程配置和项目状态记录从该基点统一收口到 `main`。
+- Xcode Cloud 构建 94 的唯一阻断是 `PhotoKitResourceFileName.swift:10` 使用了仅新 Photos SDK 可见的 `PHAssetResource.filename`；统一改为通过稳定的 `originalFilename` Objective-C 属性读取，避免旧版 Xcode Cloud SDK 在归档阶段编译失败。
 - Card Content Editor 的普通文字、模块 attachment 和原生 caret 继续遵循同一 content-independent canonical line box；共享输入几何规范已写入 `AGENTS.md` 与 `Docs/03_Engineering/2026-08-27-editor-input-geometry-standard.md`。
-- 已完成静态检查、聚焦几何/编辑器契约验证，以及 macOS、通用 iOS、Share、Widget、Device QA 构建证据；91 号签名包已覆盖安装并成功启动到配对实体 iPhone 17 Pro Max，设备端核对为 `2.2.2 / 91`。
+- 已完成静态检查、PhotoKit 兼容性回归验证，以及 macOS、通用 iOS、Share、Widget、Device QA 构建证据；95 号签名包需在同步后重新归档并按实体设备流程复核，不能把 91 号安装证据冒充为 95 号证据。
 - 本次授权范围包含 Git 暂存、提交和推送 GitHub；不包含 TestFlight 上传、App Store Connect 上传或 App Store 提交。真机最终视觉验收仍以产品负责人在实体 iPhone 17 Pro Max 上的复测为准。
 - 当前材料入口：`Docs/07_Releases/2026-08-27-2.2.2-*`；旧 `2026-08-26-2.2.2-*` 保留为构建 90 历史候选事实。
 

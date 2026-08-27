@@ -1,13 +1,14 @@
 # MemoMark Current Status
 
-## 2026-08-27 2.2.2（构建 91）GitHub 同步收口（当前）
+## 2026-08-27 2.2.2（构建 95）Xcode Cloud 归档兼容性修复（当前）
 
-- 本次工程候选保持 marketing version `2.2.2`，所有 App、iOS、Share Extension、Widget、测试和 Device QA target 的 `CURRENT_PROJECT_VERSION` 已统一更新为 `91`。
-- 同步范围从实际最近一次 GitHub 推送 `916fc84` 开始；构建 90 的 2026-08-26 材料保留为历史候选，不改写其原始验证事实。
-- 本次合并包含 Card Content Editor 的统一输入几何标准、TextKit line-box/caret 修复、可靠性与本地化审查收口，以及对应的工程测试和项目文档。
+- 本次工程候选保持 marketing version `2.2.2`，所有 App、iOS、Share Extension、Widget、测试和 Device QA target 的 `CURRENT_PROJECT_VERSION` 已统一更新为 `95`。
+- 同步范围从实际最近一次 GitHub 推送 `03a49f1` 开始；构建 91 的上一轮材料保留为历史事实，不改写其原始真机证据。
+- Xcode Cloud 构建 94 在归档阶段报 `Value of type 'PHAssetResource' has no member 'filename'`（`PhotoKitResourceFileName.swift:10`）。根因是源码引用了新 Photos SDK 成员，而云端归档工具链不提供该成员；本轮改为读取稳定的 `originalFilename` 属性，保持旧版 SDK 可编译。
+- 本轮同步包含 PhotoKit 兼容性修复、回归契约、2.2.2（95）版本材料和构建号维护；Card Content Editor、Memory Engine、Layout Engine、Renderer、Export、Share Extension 与原始照片保护边界不变。
 - 规范入口为 [编辑输入几何规范](03_Engineering/2026-08-27-editor-input-geometry-standard.md)；未来 Renderer 编辑器和文字/模块组合输入必须复用该 canonical line box 与 geometry ownership，不得各自添加视觉补偿常量。
 - 当前同步材料入口为 `Docs/07_Releases/2026-08-27-2.2.2-*`。本次授权包含 GitHub `main` 的暂存、提交和推送；不包含 TestFlight、App Store Connect 或 App Store 外部交付。
-- 本轮 macOS、通用 iOS、Share Extension、Widget Extension 和 Device QA 构建均通过；全量 `MemoMarkTests` 为 `1603 passed / 0 failed / 1 skipped`，仅有两条既有 QoS runtime warning。91 号签名包已在配对实体 iPhone 17 Pro Max 上覆盖安装并成功启动，设备端核对为 `2.2.2 / 91`；Card Content Editor 人工视觉矩阵和 Apple Photos 全链路仍待产品负责人操作复核，不使用 Simulator 替代。
+- 本轮 macOS、通用 iOS Archive、Share Extension、Widget Extension 和 Device QA 构建均通过；全量 `MemoMarkTests` 为 `1604 passed / 0 failed / 1 skipped`，仅有两条既有 QoS runtime warning。95 号签名包尚未在配对实体 iPhone 17 Pro Max 上重新安装，91 号安装证据不迁移为 95 号证据；Card Content Editor 人工视觉矩阵和 Apple Photos 全链路仍待产品负责人操作复核，不使用 Simulator 替代。
 
 ## 2026-08-27 Shared Input Geometry Standard Accepted
 

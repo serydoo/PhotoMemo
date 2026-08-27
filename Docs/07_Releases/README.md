@@ -14,9 +14,9 @@ Release events:
 
 ## Current Candidate Materials
 
-The current local source-checkpoint package is `2.2.2 (91)`, prepared on
-2026-08-27 from the actual last GitHub push at `916fc84`. The comparison range
-is `916fc84..current working tree`. The source package is authorized for the
+The current local source-checkpoint package is `2.2.2 (95)`, prepared on
+2026-08-27 from the actual last GitHub push at `03a49f1`. The comparison range
+is `03a49f1..current working tree`. The source package is authorized for the
 GitHub `main` sync in this task, but it is not a TestFlight upload, App Store
 submission, production certification, or public release.
 

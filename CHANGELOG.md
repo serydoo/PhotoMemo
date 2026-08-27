@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.2 (95) Xcode Cloud Compatibility Maintenance - 2026-08-27
+
+- Fixed the Xcode Cloud archive failure caused by referencing `PHAssetResource.filename`, an API member unavailable in the cloud's older Photos SDK.
+- Kept PhotoKit resource filename recovery on the stable `originalFilename` Objective-C property through the existing focused helper, preserving filename behavior across current and older toolchains.
+- Raised all App, extension, widget, QA, and test targets from build `91` to build `95` while keeping marketing version `2.2.2` and all product identity values unchanged.
+
+This is a source and build compatibility maintenance checkpoint from the pushed `03a49f1` source checkpoint. Build `94` was an Xcode Cloud archive failure and is not a releasable binary. Build `95` has not been uploaded to TestFlight or submitted to the App Store.
+
 ## 2.2.2 (91) Input Geometry Standard And Reliability Maintenance - 2026-08-27
 
 - Promoted the accepted Card Content Editor line-box and caret behavior into a shared input geometry standard for future Renderer configuration editors and every text/module input surface.

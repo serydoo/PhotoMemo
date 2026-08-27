@@ -91,6 +91,14 @@ struct RecordCardExportResponsibilityContractTests {
         #expect(pipeline.contains("MemoMarkRenderedImageArtifactGuard"))
     }
 
+    @Test("PhotoKit resource filename lookup compiles against older Photos SDKs")
+    func photoKitResourceFilenameLookupCompilesAgainstOlderPhotosSDKs() throws {
+        let source = try serviceSource("PhotoKitResourceFileName.swift")
+
+        #expect(!source.contains("resource.filename"))
+        #expect(source.contains("forKey: \"originalFilename\""))
+    }
+
     @Test("Motion-preserving Live Photo derives one appended output geometry")
     func motionPreservingLivePhotoUsesSharedOutputGeometry() throws {
         let processor = try serviceSource("LivePhotoBatchTaskProcessor.swift")

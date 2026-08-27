@@ -6,14 +6,10 @@ enum PhotoKitResourceFileName {
     nonisolated static func value(
         for resource: PHAssetResource
     ) -> String {
-        if #available(iOS 27, macOS 27, *) {
-            return resource.filename ?? ""
-        }
-
-        // `filename` is unavailable before iOS/macOS 27, while the legacy
-        // property is deprecated in the current SDK. Keep the old-runtime
-        // fallback dynamically addressed so this compatibility path remains
-        // warning-free when compiling against the new SDK.
+        // `filename` is only present in newer Photos SDKs. Reading the
+        // long-standing Objective-C property through KVC keeps this helper
+        // source-compatible with Xcode Cloud toolchains that predate that
+        // API while preserving the same filename value on current systems.
         return (resource.value(
             forKey: "originalFilename"
         ) as? String) ?? ""
