@@ -1,5 +1,73 @@
 # MemoMark Current Status
 
+## 2026-08-28 Skill Naming Migration: PhotoMemo -> MemoMark
+
+- 将当前可触发的五个领域 Skill 统一为 MemoMark 命名：
+  `memomark-ui-reviewer`、`memomark-product-manager`、`memomark-media-fidelity`、
+  `memomark-renderer-contract` 和 `memomark-release-readiness`。同步更新了各自的
+  `agents/openai.yaml`、`.codex/skills/README.md`、GitHub 研究记录、PhotoKit 引用和治理检查器。
+- 当前活动 Skill 与治理文档不再使用旧的 `photomemo-*` Skill 名称。治理检查器保留旧名称列表，
+  仅用于检测未来误恢复旧目录或旧触发名；该列表不是可用 Skill。
+- 未改动历史 HANDOFF、历史发布证据、Xcode target/product 名称、bundle identifier、真实仓库路径
+  和源代码中的兼容性符号。它们属于构建、归档或历史证据边界，不能仅为显示统一而修改。
+
+## 2026-08-28 Existing Skills Necessary Maintenance Pass
+
+- 依据用户审核意见第 3–16 条和 GitHub 研究结果，对现有本地 Skill 完成必要维护：MemoMark
+  UI Reviewer、Product Manager、Media Fidelity、Renderer Contract、Release Readiness、
+  SwiftUI Patterns、PhotoKit、Swift Testing、Verification Loop、Background Processing 和
+  ActivityKit 均增加了适用边界、证据分类、条件触发或生命周期检查。
+- 新规则重点包括：UI 一次性 bounded pass、VoiceOver/Dynamic Type/Localization/Reduce Motion、
+  Preview invalidation 性能假设、Swift 6 actor ownership、PhotoKit late callback/cancellation、
+  Preview/Export parity、App Review 当前来源、StoreKit/MetricKit 条件 gate，以及 Liquid Glass 和
+  ActivityKit 不得默认扩张为产品架构。
+- 没有批量安装 GitHub 第三方 Skill；没有复制 PolyForm 许可证内容；没有新增生产代码、外部依赖或
+  发布变更。`validate_codex_governance.py`、现有 `119` 项脚本测试和所有受影响 Skill 的
+  `quick_validate.py` 均已通过。
+
+## 2026-08-28 GitHub iOS / Apple Skills Research And Routing
+
+- 将用户提供的 Skill 审核意见与 GitHub 复核、本地 `.codex/skills` 实际清单和 V4 边界合并为
+  `Docs/03_Engineering/2026-08-28-github-ios-skills-research.md`。研究结论不是批量引入 80+
+  iOS Skills，而是保持本地 MemoMark contract，按真实任务选择窄能力参考，并把 Product Loop
+  与 Engineering Loop 的证据要求保留在项目内。
+- 核正了外部来源归属：`openai/skills` 已 deprecated，本次未从 OpenAI GitHub 仓库核验出审核
+  意见所称的官方 iOS Skill Bundle；`dpearson2699/swift-ios-skills` 是高覆盖第三方候选但使用
+  PolyForm Perimeter 许可证；`ios-skills-matrix` 是人工知识清单，不是可安装 Agent Skill。
+- 当前 GitHub 候选只作为按需参考：`swiftui-uikit-interop`、`ios-accessibility`、
+  `swiftui-navigation`、`swiftui-performance`、`swift-concurrency`、
+  `debugging-instruments`、`ios-localization` 和 `app-store-review`。未执行外部 Skill 安装，
+  未复制第三方内容，未改变生产代码、V4 架构所有权或实体设备验收规则。
+- `agent-reach check-update` 因 GitHub API rate limit 连续重试后仍无法确认更新；本次研究结果应在
+  下次联网正常时重新检查仓库维护状态和许可证变化。
+
+## 2026-08-28 Codex Governance And Skill Routing Baseline
+
+- Completed the first bounded governance slice for the V4 Engineering Loop.
+  Added `Docs/CURRENT_BRIEF.md` as a compact routing index while preserving
+  `HANDOFF.md` and `Docs/CURRENT_STATUS.md` as complete on-demand records; no
+  historical files were moved or deleted.
+- Updated the project startup guidance so the constitution, current brief,
+  compact AI context, and task-relevant specification are loaded by default.
+  Broad history, release records, and research are selected by task relevance.
+- Corrected the existing UI, Product Manager, Release Manager, Renderer, and
+  EXIF/Media Fidelity Skill instructions for current `Source/MemoMark` paths,
+  V4 ownership boundaries, audit-first behavior, physical iPhone 17 Pro Max
+  acceptance, and explicit external-release authorization.
+- Corrected the generic SwiftUI guidance so `@MainActor` is applied to
+  UI-bound state rather than used as a blanket rule for media, I/O, rendering,
+  or metadata work. Restricted the Simulator Skill to explicit simulator-only
+  diagnostics and added the on-demand `memomark-quality-gates` audit Skill for
+  accessibility, localization, performance, and device evidence.
+- Added the governance specification and a deterministic checker at
+  `scripts/validate_codex_governance.py` with focused tests. Verification:
+  governance checks passed, all `119` script tests passed, all `8` modified or
+  added Skills passed `quick_validate.py`, `git diff --check` passed, and the
+  macOS arm64 Debug build succeeded with Xcode's existing MapKit deprecation
+  warnings. No production source, Photos data, commit, push, TestFlight upload,
+  App Store submission, or physical-device installation was performed in this
+  documentation/Skill-only slice.
+
 ## 2026-08-27 2.2.2（构建 95）Xcode Cloud 归档兼容性修复（当前）
 
 - 本次工程候选保持 marketing version `2.2.2`，所有 App、iOS、Share Extension、Widget、测试和 Device QA target 的 `CURRENT_PROJECT_VERSION` 已统一更新为 `95`。

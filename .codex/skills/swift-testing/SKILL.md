@@ -7,6 +7,19 @@ description: "Writes and migrates Swift Testing framework tests with @Test, @Sui
 
 Swift Testing is the modern testing framework for Swift (Xcode 16+, Swift 6+). Prefer it over XCTest for all new unit tests. Use XCTest only for UI tests, performance benchmarks, and snapshot tests.
 
+For MemoMark, classify evidence before choosing a test tool:
+
+| Evidence | Preferred tool | What it cannot prove |
+| --- | --- | --- |
+| Memory/metadata/layout contracts | Swift Testing | UIKit rendering or Photos permission UI |
+| Async cancellation and late callbacks | Swift Testing with injected clocks/confirmation | Actual device scheduling |
+| UI automation, snapshots, performance | XCTest/XCUITest or Instruments | Production certification by itself |
+| Photos/Live Photo/save-back lifecycle | Signed physical-device run | Unit-test behavior on another build |
+
+Never promote simulator or host-only results to physical-device acceptance.
+Keep the exact build number with device evidence and mark missing evidence
+`NOT VERIFIED` rather than inferring a pass.
+
 ## Contents
 
 - [Basic Tests](#basic-tests)
@@ -255,6 +268,8 @@ When reviewing stale or beta-era Swift Testing samples, include the exact correc
 - [ ] Tests do not rely on declaration order or shared suite instances
 - [ ] `.serialized` used only for truly exclusive state, not to model workflow sequencing
 - [ ] Cancellation tested for cancellable async operations
+- [ ] Evidence class is named (unit, UI, performance, physical device, or certification)
+- [ ] Photos/media lifecycle claims have a signed physical-device result when required
 
 ## References
 

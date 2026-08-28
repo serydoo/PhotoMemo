@@ -5,6 +5,11 @@ description: "Implement, review, or improve photo picking, camera capture, and m
 
 # PhotoKit
 
+For MemoMark, this is the Apple API mechanics layer. Pair it with
+`.codex/skills/memomark-media-fidelity/SKILL.md` for the product media-fidelity
+contract; do not duplicate or silently redefine the Memory Engine, Renderer,
+Export, or original-photo ownership rules here.
+
 Modern patterns for photo picking, camera capture, image loading, and media permissions targeting iOS 26+ with Swift 6.3. Patterns are backward-compatible to iOS 16 unless noted. See [references/photokit-patterns.md](references/photokit-patterns.md) for complete picker recipes and [references/camera-capture.md](references/camera-capture.md) for AVCaptureSession patterns.
 
 ## Contents
@@ -490,6 +495,10 @@ Use `.original` for photos and artwork. Use `.template` for icons that should ad
 - [ ] Permission denial handled with Settings deep link
 - [ ] `AVCaptureSession` owned by model, not created inside `UIViewRepresentable`
 - [ ] Media asset types and picker results are `Sendable` across concurrency boundaries
+- [ ] PhotoKit callbacks have a relevance/cancellation path and cannot overwrite a newer Configuration Session
+- [ ] Limited-library, iCloud degraded/final, Live Photo pairing, and resource lifetime are tested separately when in scope
+- [ ] Full-resolution loading is bounded to the owning task and released after rendering/export
+- [ ] Physical iPhone evidence is reported separately from picker/API unit tests
 
 ## References
 

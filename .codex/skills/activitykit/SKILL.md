@@ -1,9 +1,15 @@
 ---
 name: activitykit
-description: "Implement, review, or improve Live Activities and Dynamic Island experiences in iOS apps using ActivityKit. Use when building real-time updating widgets for the Lock Screen and Dynamic Island — delivery tracking, sports scores, ride-sharing status, workout timers, media playback, or any time-sensitive information that updates in real time. Also use when working with ActivityKit, ActivityAttributes, Activity lifecycle (request/update/end), Dynamic Island layouts (compact/minimal/expanded), push-to-update Live Activities, or Lock Screen live widgets."
+description: "Implement or review ActivityKit Live Activities and Dynamic Island only for an explicit time-sensitive MemoMark scenario. Use for ActivityAttributes, request/update/end, push updates, or Lock Screen/Dynamic Island layout; do not trigger for ordinary Configuration Center or timeline UI."
 ---
 
 # ActivityKit
+
+ActivityKit is a conditional capability for MemoMark, not a default Home
+Screen/timeline pattern. Introduce it only for a concrete time-sensitive
+processing or delivery scenario with a defined privacy boundary and device
+acceptance plan. It must not replace the Configuration Center or turn the app
+into a dashboard.
 
 ActivityKit owns real-time, glanceable Live Activities displayed on the Lock
 Screen and, on supported devices, Dynamic Island. StandBy, CarPlay, and a
@@ -483,6 +489,11 @@ let activity = try Activity.request(
 - [ ] ActivityKit push priority and `aps.alert` behavior are handled separately
 - [ ] Live Activity views avoid direct network/location work
 - [ ] Tested on device for push delivery and Dynamic Island behavior
+- [ ] A current V4 scenario justifies the Live Activity and its lifecycle cost
+- [ ] Lock Screen/Dynamic Island output contains only the minimum user-approved
+  state; no photo upload or hidden network dependency is introduced
+- [ ] Fallback behavior is defined for devices without Dynamic Island and for
+  authorization-disabled states
 
 ## References
 

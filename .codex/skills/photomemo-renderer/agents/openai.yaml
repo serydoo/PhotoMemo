@@ -1,4 +1,0 @@
-interface:
-  display_name: "PhotoMemo Renderer"
-  short_description: "Inspect card rendering and export fidelity"
-  default_prompt: "Use $photomemo-renderer to inspect PhotoMemo rendering and export behavior."

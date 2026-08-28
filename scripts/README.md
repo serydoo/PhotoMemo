@@ -5,6 +5,9 @@ This folder contains local automation helpers.
 Current scripts:
 
 - `auto_sync_to_github.sh`
+- `validate_codex_governance.py` - checks the compact Codex routing entry,
+  project Skill boundaries, physical-device evidence rule, and explicit release
+  authorization contract.
 - `install_autosync.sh`
 - `com.serydoo.memomark.autosync.plist` (the installer also boots out the
   legacy `com.serydoo.photomemo.autosync` label if it is installed)

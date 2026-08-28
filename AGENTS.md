@@ -32,13 +32,21 @@ Engine, configuration aggregate, or other accepted domain ownership.
 Before any modification, read:
 
 1. `PROJECT_CONSTITUTION.md`
-2. `Docs/MASTER_PLAN.md`
-3. `Docs/PRODUCT_VERSION_HISTORY.md`
-4. `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
-5. `Docs/CURRENT_STATUS.md`
-6. `PROJECT_RESET.md`
-7. `RepositoryAudit.md`
-8. `Research/README.md`
+2. `Docs/CURRENT_BRIEF.md`
+3. `AI_CONTEXT.md`
+4. the task-relevant specification, contract, audit, or release manifest
+
+Read the following historical or broad documents when the task actually needs
+their context; do not load them as a default startup bundle:
+
+- `Docs/MASTER_PLAN.md`
+- `Docs/PRODUCT_VERSION_HISTORY.md`
+- `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
+- `Docs/CURRENT_STATUS.md`
+- `PROJECT_RESET.md`
+- `RepositoryAudit.md`
+- `Research/README.md`
+- `HANDOFF.md`
 
 MemoMark V1 MVP, V2 Product Definition And Realization, and V3 Production
 Quality And Delivery are concluded.
@@ -108,19 +116,19 @@ It is:
 
 At the start of any new session:
 
-1. Read `PROJECT_CONSTITUTION.md`
-2. Read `Docs/MASTER_PLAN.md`
-3. Read `Docs/PRODUCT_VERSION_HISTORY.md`
-4. Read `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
-5. Read `Docs/CURRENT_STATUS.md`
-6. Read `PROJECT_RESET.md`
-7. Read `RepositoryAudit.md`
-8. Read `Research/README.md`
-9. Read `README.md`
-10. Read `AI_CONTEXT.md`
-11. Read `HANDOFF.md`
-12. Read `AGENTS.md`
-13. Check `git status`
+1. Read `PROJECT_CONSTITUTION.md`.
+2. Read `Docs/CURRENT_BRIEF.md` and `AI_CONTEXT.md`.
+3. Check `git status`.
+4. Identify the current task's owner, risk, source of truth, and required
+   evidence.
+5. Read only the task-relevant specification and supporting evidence. For a
+   stage, architecture, release, or historical question, follow the routing
+   list above and load the relevant source documents explicitly.
+6. Read `AGENTS.md` rules that apply to the task (including this section).
+
+This routine preserves the complete project history while preventing every
+session from paying the cost of loading the complete handoff and status
+chronicle. The brief is a routing index, not a second product authority.
 
 If the task touches the main editor flow, inspect the current Configuration
 Center implementation. Do not restore the retired `Views/Main/MainView*`

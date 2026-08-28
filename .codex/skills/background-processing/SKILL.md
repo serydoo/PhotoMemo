@@ -1,9 +1,14 @@
 ---
 name: background-processing
-description: "Schedule and execute background work on iOS using BGTaskScheduler. Use when registering BGAppRefreshTask for short background fetches, BGProcessingTask for long-running maintenance, BGContinuedProcessingTask (iOS 26+) for foreground-started work that continues in background, background URLSession downloads, or background push notifications. Covers Info.plist configuration, expiration handling, task completion, and debugging with simulated launches."
+description: "Schedule or review iOS background work with BGTaskScheduler only for a bounded MemoMark lifecycle requirement. Use for BGAppRefreshTask, BGProcessingTask, BGContinuedProcessingTask, background URLSession, or background push; do not trigger for ordinary foreground Configuration Center work."
 ---
 
 # Background Processing
+
+Use this skill only when MemoMark has a bounded, user-understandable background
+scenario. The daily product loop remains `Apple Photos -> Share -> MemoMark ->
+Processing -> Notification -> Apple Photos`; BackgroundTasks is not a reason to
+recreate a batch dashboard or make the app network-dependent.
 
 Register, schedule, and execute background work on iOS using the BackgroundTasks
 framework, background URLSession, and background push notifications.
@@ -484,6 +489,10 @@ func handleRefresh(task: BGAppRefreshTask) {
 - [ ] BGContinuedProcessingTask reports progress via `ProgressReporting`
 - [ ] Work is incremental and cancellation-safe (`Task.checkCancellation()`)
 - [ ] No blocking synchronous work in task handlers
+- [ ] Background work has an explicit owner, cancellation/expiration path, and relevance check
+- [ ] Core processing still works locally when the system does not grant background time
+- [ ] User-visible notification is emitted only after the corresponding output/save operation succeeds
+- [ ] Physical-device lifecycle evidence is separated from simulated task launches
 
 ## References
 

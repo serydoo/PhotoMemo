@@ -43,13 +43,15 @@ Photo -> Metadata Engine -> Memory Engine -> Presentation Engine -> Layout Engin
 Read these first:
 
 1. `PROJECT_CONSTITUTION.md`
-2. `Docs/MASTER_PLAN.md`
-3. `Docs/PRODUCT_VERSION_HISTORY.md`
-4. `Docs/01_Product/V4_Product_Stage_Kickoff_2026-07-30.md`
-5. `Docs/CURRENT_STATUS.md`
-6. `PROJECT_RESET.md`
-7. `RepositoryAudit.md`
-8. `Research/README.md`
+2. `Docs/CURRENT_BRIEF.md`
+3. this file
+4. the specification or evidence document relevant to the task
+
+Load `Docs/MASTER_PLAN.md`, `Docs/PRODUCT_VERSION_HISTORY.md`, the V4 kickoff,
+`Docs/CURRENT_STATUS.md`, `PROJECT_RESET.md`, `RepositoryAudit.md`,
+`Research/README.md`, `README.md`, and `HANDOFF.md` only when the task needs
+their specific context. `HANDOFF.md` and `Docs/CURRENT_STATUS.md` are complete
+records, not default startup prompts.
 
 Renderer must not own layout decisions. New layout work must move through research, specification, Layout Engine, renderer, validation, and release.
 

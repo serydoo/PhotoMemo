@@ -80,7 +80,11 @@ For MV pattern rationale, app wiring, and lightweight client examples, see [refe
 
 ### `@Observable` Ownership Rules
 
-**Important:** Always annotate `@Observable` view model classes with `@MainActor` to ensure UI-bound state is updated on the main thread. Required for Swift 6 concurrency safety.
+**Important:** Annotate an `@Observable` model with `@MainActor` when it owns
+UI-bound state or is otherwise required to run on the main actor. Do not use
+`@MainActor` as a blanket Swift 6 concurrency fix: media decoding, metadata,
+file I/O, rendering, export, and other domain work must keep the actor or
+`Sendable` boundary that matches its ownership and lifecycle.
 
 | Wrapper | When to Use |
 |---------|-------------|
@@ -94,7 +98,7 @@ For MV pattern rationale, app wiring, and lightweight client examples, see [refe
 ### Ownership Pattern
 
 ```swift
-// @Observable view model -- always @MainActor
+// UI-bound @Observable view model -- @MainActor is appropriate here
 @MainActor
 @Observable final class ItemStore {
     var title = ""
@@ -297,6 +301,18 @@ Never create manual `Task` in `onAppear` unless you need to store a reference fo
 - **Avoid body recomputation:** Move filtering and sorting to computed properties or the model, not inline in `body`.
 - **Equatable views:** For complex views that re-render unnecessarily, conform to `Equatable`.
 
+For MemoMark preview work, treat performance as a hypothesis to measure, not a
+styling preference. Keep PhotoKit loading, metadata parsing, Memory Engine
+resolution, Layout Engine calculation, and Renderer/export work outside the
+view `body` and outside `@MainActor` unless the API requires it. First identify
+which state changed, then verify that unrelated Objects do not invalidate the
+Interactive Memory Card.
+
+Use Instruments or an equivalent measured trace on a Release/signed build and
+the paired physical iPhone when making a performance claim. A stable-looking
+60/120 FPS is not sufficient evidence for CPU, memory, image decode, or body
+recomputation cost.
+
 ## HIG Alignment
 
 Follow Apple Human Interface Guidelines for layout, typography, color, and accessibility. Key rules:
@@ -309,6 +325,12 @@ Follow Apple Human Interface Guidelines for layout, typography, color, and acces
 - Provide VoiceOver labels (`.accessibilityLabel`) and support Dynamic Type accessibility sizes by switching layout orientation
 
 See [references/design-polish.md](references/design-polish.md) for HIG, theming, haptics, focus, transitions, and loading patterns.
+
+Liquid Glass is an opt-in surface treatment, not a default styling rule. Use it
+only when a transient control, navigation chrome, or over-photo action gains a
+clear hierarchy benefit and the target OS/device supports it. Preserve
+semantic surfaces for Settings, Subject, Anchor, and ordinary Configuration
+content.
 
 ## Writing Tools (iOS 18+)
 
@@ -384,9 +406,11 @@ TextField("Search…", text: $query)
 - [ ] `.sheet(item:)` preferred over `.sheet(isPresented:)`
 - [ ] Sheets own their actions and call `dismiss()` internally
 - [ ] MV pattern followed -- no unnecessary view models
-- [ ] `@Observable` view model classes are `@MainActor`-isolated
+- [ ] UI-bound `@Observable` state is `@MainActor`-isolated; domain/media work is not isolated there merely for convenience
 - [ ] Model types passed across concurrency boundaries are `Sendable`
 - [ ] Stack `spacing:` omitted unless a specific value is required (prefer adaptive default)
+- [ ] Preview invalidation is scoped to the changed object and does not pull media/I/O/render work onto the UI actor
+- [ ] Liquid Glass use, if any, has a scenario, availability guard, contrast result, and fallback
 
 ## References
 
@@ -394,4 +418,3 @@ TextField("Search…", text: $query)
 - Design polish (HIG, theming, haptics, transitions, loading, focus): [references/design-polish.md](references/design-polish.md)
 - Deprecated API migration: [references/deprecated-migration.md](references/deprecated-migration.md)
 - Platform and sharing patterns (Transferable, media, menus, macOS settings): [references/platform-and-sharing.md](references/platform-and-sharing.md)
-

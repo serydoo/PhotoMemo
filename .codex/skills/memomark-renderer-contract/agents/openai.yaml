@@ -1,0 +1,4 @@
+interface:
+  display_name: "MemoMark Renderer Contract"
+  short_description: "Inspect MemoMark rendering and export fidelity"
+  default_prompt: "Use $memomark-renderer-contract to inspect MemoMark rendering and export behavior."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "MemoMark UI Reviewer"
+  short_description: "Review MemoMark SwiftUI layout and state"
+  default_prompt: "Use $memomark-ui-reviewer to review the current MemoMark SwiftUI implementation."

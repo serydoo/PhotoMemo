@@ -1,0 +1,4 @@
+interface:
+  display_name: "MemoMark Product Manager"
+  short_description: "Plan V4 work for the MemoMark app"
+  default_prompt: "Use $memomark-product-manager to plan the next MemoMark milestone."

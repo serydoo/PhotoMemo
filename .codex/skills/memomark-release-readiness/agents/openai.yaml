@@ -1,0 +1,4 @@
+interface:
+  display_name: "MemoMark Release Readiness"
+  short_description: "Verify MemoMark release readiness safely"
+  default_prompt: "Use $memomark-release-readiness to verify the current MemoMark changes."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "MemoMark Media Fidelity"
+  short_description: "Check MemoMark media and metadata fidelity"
+  default_prompt: "Use $memomark-media-fidelity to inspect MemoMark media and metadata flow."

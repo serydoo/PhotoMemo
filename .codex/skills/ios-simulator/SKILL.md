@@ -1,11 +1,16 @@
 ---
 name: ios-simulator
-description: "Manages iOS Simulator devices and tests app behavior using xcrun simctl. Covers device lifecycle (create, boot, shutdown, erase, delete), app install and launch, push notification simulation, location simulation, permission grants via privacy subcommand, deep link testing via openurl, status bar overrides, screenshot and video recording, log streaming with os_log filtering, get_app_container paths, and #if targetEnvironment(simulator) compile-time checks. Use when creating or managing simulator devices, testing push notifications without APNs, simulating GPS locations, granting or resetting privacy permissions, capturing screenshots or screen recordings from the command line, streaming device logs, debugging simulator boot failures, troubleshooting CoreSimulator issues, or checking simulator hardware limitations."
+description: "Manages iOS Simulator devices with xcrun simctl for bounded automation and simulator-only diagnostics. Do not use it as MemoMark's UI, media-lifecycle, or physical-device acceptance path; use the paired iPhone 17 Pro Max when the project rules require real-device evidence."
 ---
 
 # iOS Simulator
 
-Manage iOS Simulator devices and test app behavior from the command line using `xcrun simctl`. Covers the full device lifecycle, app deployment, push and location simulation, permission control, screenshot and video recording, log streaming, and compile-time simulator detection.
+Manage iOS Simulator devices and test app behavior from the command line using
+`xcrun simctl` when a task explicitly needs simulator-only automation. For
+MemoMark, simulator builds, UI tests, screenshots, and performance results are
+not substitutes for required signed physical-device acceptance. Prefer the
+paired iPhone 17 Pro Max for UI, PhotoKit, Live Photo, memory, and export
+evidence.
 
 For common subcommands, syntax, and examples, see [references/simctl-commands.md](references/simctl-commands.md).
 
