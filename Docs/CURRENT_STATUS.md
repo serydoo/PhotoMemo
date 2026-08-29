@@ -1,5 +1,12 @@
 # MemoMark Current Status
 
+## 2026-08-29 Build 100 New TestFlight Train Preparation
+
+- 发现 App Store Connect 已关闭 `2.2.2` 预发布列车：上一轮 build 99 的归档与导出阶段通过，但上传阶段返回 `90062`（`CFBundleShortVersionString 2.2.2` 不高于已批准版本）和 `90186`（`2.2.2` 列车已关闭）。这不是源码编译或加密合规失败；经用户授权，本轮开启新的 marketing version `2.2.3`、build `100`。
+- 已将工程中 10 个 `MARKETING_VERSION` 统一为 `2.2.3`，12 个 `CURRENT_PROJECT_VERSION` 统一为 `100`，覆盖 App、iOS、Share Extension、Widget、Device QA 与测试 target；同步更新 README、CHANGELOG、当前简报、发布材料和发布契约测试。
+- 本轮全量 `MemoMarkTests` 通过：`1611 passed / 0 failed / 1 skipped`，含参数化执行共 `1634` 次；generic macOS、iOS、Share Extension、Widget Extension 和 Device QA Debug 构建均通过，iOS 产物确认版本为 `2.2.3 (100)`。治理检查、119 项 Python 脚本测试、四语言资源 lint、版本字段静态核对和 `git diff --check` 通过。
+- 按用户指令跳过 build 100 的实体 iPhone 17 Pro Max 覆盖安装与人工验收；本记录不把旧 build 99 的真机证据迁移为 100 号证据。下一步为提交并推送 GitHub `main`，由 Xcode Cloud 自动归档，再在 TestFlight 处理出口合规提示；项目实际仅使用 CryptoKit 做本地 SHA-256 完整性校验，遇到“非豁免加密”问题选择“否”。App Store 正式提交仍未执行。
+
 ## 2026-08-29 Build 99 GitHub Sync And Xcode Cloud Handoff
 
 - 按用户确认锁定 marketing version `2.2.2`、构建号 `99`；`project.pbxproj` 中 App、iOS、Share Extension、Widget、Device QA 和测试 target 的 12 个 `CURRENT_PROJECT_VERSION` 已统一为 `99`，10 个 `MARKETING_VERSION` 保持 `2.2.2`。

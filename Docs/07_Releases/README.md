@@ -14,19 +14,25 @@ Release events:
 
 ## Current Candidate Materials
 
-The current local source-checkpoint package is `2.2.2 (99)`, prepared as the
-formal-release candidate from the user-selected 2026-08-24 Monday morning push
-wave. Because there was no independent 06:54 commit, the range is anchored to
-the nearest pushed commit `c0f11a7` at 06:49:40 +0800, and covers
-`c0f11a7..HEAD`. It includes the user-facing changes delivered in the previous
-TestFlight candidate; TestFlight evidence is not reused as App Store
-certification evidence.
+The current local source-checkpoint package is `2.2.3 (100)`. It opens a new
+App Store Connect version train after `2.2.2` was closed and carries the
+settings, welcome-guidance, avatar, editor, and persistence maintenance from
+the `2.2.2 (99)` source checkpoint. TestFlight evidence is not reused as App
+Store certification evidence.
+
+- [`2026-08-29-2.2.3-release-notes.md`](2026-08-29-2.2.3-release-notes.md)
+- [`2026-08-29-2.2.3-app-store-whats-new.md`](2026-08-29-2.2.3-app-store-whats-new.md)
+- [`2026-08-29-2.2.3-testflight-notes.md`](2026-08-29-2.2.3-testflight-notes.md)
+- [`2026-08-29-2.2.3-sync-manifest.md`](2026-08-29-2.2.3-sync-manifest.md)
+- [`2026-08-29-2.2.3-app-review-materials.md`](2026-08-29-2.2.3-app-review-materials.md)
+
+The previous `2.2.2 (99)` package is retained as the closed-train candidate
+that produced the accepted source checkpoint but could not receive new
+submissions from App Store Connect.
 
 - [`2026-08-29-2.2.2-release-notes.md`](2026-08-29-2.2.2-release-notes.md)
-- [`2026-08-29-2.2.2-app-store-whats-new.md`](2026-08-29-2.2.2-app-store-whats-new.md)
 - [`2026-08-29-2.2.2-testflight-notes.md`](2026-08-29-2.2.2-testflight-notes.md)
 - [`2026-08-29-2.2.2-sync-manifest.md`](2026-08-29-2.2.2-sync-manifest.md)
-- [`2026-08-29-2.2.2-app-review-materials.md`](2026-08-29-2.2.2-app-review-materials.md)
 - [`../Outreach/2026-08-26-MemoMark-2.2.2-XHS.md`](../Outreach/2026-08-26-MemoMark-2.2.2-XHS.md)
 
 The previous `2.2.2 (90)` package is retained as historical candidate evidence:

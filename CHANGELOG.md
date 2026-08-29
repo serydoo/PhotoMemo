@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.3 (100) New TestFlight Version Train - 2026-08-29
+
+- Opened a new App Store Connect version train after the `2.2.2` train closed for new submissions.
+- Kept the current settings, welcome guidance, avatar crop interaction, TextKit editor, latest-request-wins persistence, localization, and Apple Photos original-protection maintenance in the candidate.
+- Raised all App, extension, widget, QA, and test target configurations to build `100` while setting marketing version `2.2.3` consistently across the project.
+- Prepared refreshed App Store, TestFlight, App Review, release-note, and synchronization materials for the new version train.
+
+This is a maintenance candidate. GitHub synchronization and the Xcode Cloud/TestFlight workflow are authorized; App Store submission remains a separate action.
+
 ## 2.2.2 (99) Settings, Welcome, And Editor Maintenance - 2026-08-29
 
 - Updated Settings, Start Using, and Replay Welcome guidance to match the current V4 product language and the local-first `Apple Photos -> Share -> MemoMark -> local processing -> Apple Photos` workflow.

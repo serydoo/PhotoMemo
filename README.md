@@ -5,7 +5,7 @@
 MemoMark（时光记）是一款为 Apple Photos 设计的本地优先照片记忆工具。
 它不会替代系统相册，也不会修改你的原始照片。MemoMark 读取照片已有的拍摄时间、地点、设备和拍摄信息，再结合你设定的重要日期，为照片生成一份新的记忆版本。
 
-当前本地源码候选版本：**MemoMark 2.2.2（构建 99）**。本次正式版从 2026-08-24（周一）约 06:54 的推送波次开始计算，并对齐最近已推送提交 `c0f11a7`（06:49:40）；本轮设置、欢迎介绍和编辑交互维护均纳入本次候选。当前等待 Xcode Cloud 构建与 TestFlight 外部状态确认。详见 [2.2.2（99）版本更新说明](Docs/07_Releases/2026-08-29-2.2.2-release-notes.md)。
+当前本地源码候选版本：**MemoMark 2.2.3（构建 100）**。本轮在 2.2.2 版本列车关闭后新建 2.2.3，纳入设置、欢迎介绍和编辑交互维护；等待 Xcode Cloud 构建与 TestFlight 外部状态确认。详见 [2.2.3（100）版本更新说明](Docs/07_Releases/2026-08-29-2.2.3-release-notes.md)。
 
 例如，一张普通的宝宝照片，除了拍摄日期，还可以留下：
 
@@ -127,7 +127,7 @@ MemoMark 是一个独立开发项目。它使用 Swift、SwiftUI、PhotoKit 等 
 
 进一步了解项目内部设计，可阅读 `PROJECT_CONSTITUTION.md`、`Docs/MASTER_PLAN.md`、`Docs/PRODUCT_VERSION_HISTORY.md`、`Docs/CURRENT_STATUS.md` 与 `PROJECT_PHILOSOPHY.md`。
 
-发布与同步遵循 [MemoMark 发布同步规范](Docs/07_Releases/RELEASE_SYNC_STANDARD.md)。版本号、更新范围、GitHub 同步、TestFlight 和 App Store 提交分别确认，不把源码检查点等同于正式发布。当前本地候选为 MemoMark `2.2.2`（构建 `99`），正式版同步范围为 `c0f11a7..HEAD`；Xcode Cloud 将在 GitHub `main` 推送后自动构建，尚未提交 App Store。
+发布与同步遵循 [MemoMark 发布同步规范](Docs/07_Releases/RELEASE_SYNC_STANDARD.md)。版本号、更新范围、GitHub 同步、TestFlight 和 App Store 提交分别确认，不把源码检查点等同于正式发布。当前本地候选为 MemoMark `2.2.3`（构建 `100`）；Xcode Cloud 将在 GitHub `main` 推送后自动构建，尚未提交 App Store。
 
 ## English
 

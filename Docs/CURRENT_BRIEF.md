@@ -21,13 +21,13 @@ follow the linked source-of-truth document.
 ## Current Candidate
 
 - Project: `Source/MemoMark/MemoMark.xcodeproj`
-- Marketing version: `2.2.2`
-- Build: `99`
+- Marketing version: `2.2.3`
+- Build: `100`
 - Latest current-state record: `Docs/CURRENT_STATUS.md`
 - Latest handoff record: `HANDOFF.md` (historical continuity; read on demand)
 
-The build and test evidence for build 99 does not imply physical-device visual
-acceptance or production certification. The 99 package still needs installation
+The build and test evidence for build 100 does not imply physical-device visual
+acceptance or production certification. The 100 package still needs installation
 and review on the paired physical iPhone 17 Pro Max where the task requires it.
 
 ## Frozen Boundaries
