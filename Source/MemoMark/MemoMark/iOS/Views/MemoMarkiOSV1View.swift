@@ -187,6 +187,10 @@ struct MemoMarkiOSV1View: View {
     private var rootLifecycleState =
         V1RootLifecycleState()
 
+    @State
+    private var subjectPersistenceRequestGate =
+        V1SubjectPersistenceRequestGate()
+
     private var isSavingConfiguration: Bool {
         get { rootLifecycleState.isSavingConfiguration }
         nonmutating set {
@@ -1827,50 +1831,53 @@ struct MemoMarkiOSV1View: View {
 
     @MainActor
     private func persistCurrentSubjectChanges() {
-        guard !isPersistingSubjectChanges,
-              let subject = session.state.selectedSubject else {
-            return
-        }
+        guard let subject = session.state.selectedSubject else { return }
 
         V1SubjectLibraryPersistenceCoordinator
-            .persistSubjectLibrary(
-                subjects: session.state.subjects,
-                selectedSubjectID: session.state.selectedSubjectID,
-                selectedSubject: subject,
-                memoryPresets: session.state.memoryPresets,
-                selectedMemoryPresetID:
-                    session.state.selectedMemoryPresetID,
-                shouldSaveSubjectLibrary: shouldSaveSubjectLibrary,
-                configurationCoordinator: configurationCoordinator
-            )
+            .persistSubjectLibrary(subjects: session.state.subjects,
+                                  selectedSubjectID: session.state.selectedSubjectID,
+                                  selectedSubject: subject,
+                                  memoryPresets: session.state.memoryPresets,
+                                  selectedMemoryPresetID: session.state.selectedMemoryPresetID,
+                                  shouldSaveSubjectLibrary: shouldSaveSubjectLibrary,
+                                  configurationCoordinator: configurationCoordinator)
 
         if let anchor = subject.primaryTimeAnchor {
             birthdayDate = anchor.date
         }
-        activeConfigurationStatus = .subjectSynced
         refreshDynamicPreview()
+
+        let request = subjectPersistenceRequestGate.begin()
+        guard case .started(let requestGeneration) = request else {
+            activeConfigurationStatus = .dirty
+            return
+        }
 
         guard let aggregate = session.state.configurationLibrary,
               let configurationCoordinator,
-              let candidate = V1LocalConfigurationLibraryPresenter
-                .updatingSubject(
-                    subject: subject,
-                    in: aggregate
-                ),
+              let candidate = V1LocalConfigurationLibraryPresenter.updatingSubject(subject: subject, in: aggregate),
               candidate != aggregate else {
+            subjectPersistenceRequestGate.cancel(generation: requestGeneration)
+            activeConfigurationStatus = .subjectSynced
             return
         }
 
         isPersistingSubjectChanges = true
         activeConfigurationStatus = .saving
         Task { @MainActor in
-            defer {
-                isPersistingSubjectChanges = false
-            }
-
             do {
                 let receipt = try await configurationCoordinator
                     .saveConfigurationLibrary(candidate)
+
+                let completion = subjectPersistenceRequestGate.complete(generation: requestGeneration)
+                isPersistingSubjectChanges = false
+
+                guard completion == .current else {
+                    activeConfigurationStatus = .dirty
+                    persistCurrentSubjectChanges()
+                    return
+                }
+
                 var durableCandidate = candidate
                 durableCandidate.revision = receipt.revision
                 session.updateConfigurationLibraryReference(
@@ -1893,6 +1900,15 @@ struct MemoMarkiOSV1View: View {
                 }
                 refreshDynamicPreview()
             } catch {
+                let completion = subjectPersistenceRequestGate.complete(generation: requestGeneration)
+                isPersistingSubjectChanges = false
+
+                guard completion == .current else {
+                    activeConfigurationStatus = .dirty
+                    persistCurrentSubjectChanges()
+                    return
+                }
+
                 activeConfigurationStatus = .failure(
                     message:
                         (error as? MemoMarkError)?.message
@@ -2492,12 +2508,10 @@ struct MemoMarkiOSV1View: View {
         )
         outputDraftState.activeAlbumLoadRequest = request
         outputDraftState.isLoadingAlbums = true
-        isApplyingSavedOutputConfiguration = true
         defer {
             if outputDraftState.activeAlbumLoadRequest == request {
                 outputDraftState.activeAlbumLoadRequest = nil
                 outputDraftState.isLoadingAlbums = false
-                isApplyingSavedOutputConfiguration = false
             }
         }
 
@@ -3293,7 +3307,7 @@ private struct V1ScrollOffsetPreferenceKey:
     }
 }
 
-#Preview("iOS V1.0 预览") {
+#Preview("iOS V4 预览") {
     let runtime =
         MemoMarkAppRuntime()
 

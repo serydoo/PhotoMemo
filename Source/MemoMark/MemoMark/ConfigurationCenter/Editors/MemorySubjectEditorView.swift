@@ -9,6 +9,7 @@ import AppKit
 import UIKit
 #endif
 
+@MainActor
 struct MemorySubjectEditorView: View {
 
     enum Mode {

@@ -14,7 +14,7 @@ Release events:
 
 ## Current Candidate Materials
 
-The current local source-checkpoint package is `2.2.2 (95)`, prepared as the
+The current local source-checkpoint package is `2.2.2 (99)`, prepared as the
 formal-release candidate from the user-selected 2026-08-24 Monday morning push
 wave. Because there was no independent 06:54 commit, the range is anchored to
 the nearest pushed commit `c0f11a7` at 06:49:40 +0800, and covers
@@ -22,11 +22,11 @@ the nearest pushed commit `c0f11a7` at 06:49:40 +0800, and covers
 TestFlight candidate; TestFlight evidence is not reused as App Store
 certification evidence.
 
-- [`2026-08-27-2.2.2-release-notes.md`](2026-08-27-2.2.2-release-notes.md)
-- [`2026-08-27-2.2.2-app-store-whats-new.md`](2026-08-27-2.2.2-app-store-whats-new.md)
-- [`2026-08-27-2.2.2-testflight-notes.md`](2026-08-27-2.2.2-testflight-notes.md)
-- [`2026-08-27-2.2.2-sync-manifest.md`](2026-08-27-2.2.2-sync-manifest.md)
-- [`2026-08-27-2.2.2-app-review-materials.md`](2026-08-27-2.2.2-app-review-materials.md)
+- [`2026-08-29-2.2.2-release-notes.md`](2026-08-29-2.2.2-release-notes.md)
+- [`2026-08-29-2.2.2-app-store-whats-new.md`](2026-08-29-2.2.2-app-store-whats-new.md)
+- [`2026-08-29-2.2.2-testflight-notes.md`](2026-08-29-2.2.2-testflight-notes.md)
+- [`2026-08-29-2.2.2-sync-manifest.md`](2026-08-29-2.2.2-sync-manifest.md)
+- [`2026-08-29-2.2.2-app-review-materials.md`](2026-08-29-2.2.2-app-review-materials.md)
 - [`../Outreach/2026-08-26-MemoMark-2.2.2-XHS.md`](../Outreach/2026-08-26-MemoMark-2.2.2-XHS.md)
 
 The previous `2.2.2 (90)` package is retained as historical candidate evidence:

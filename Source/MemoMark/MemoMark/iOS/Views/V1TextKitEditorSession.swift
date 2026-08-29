@@ -181,8 +181,10 @@ final class V1TextKitEditorSession: NSObject, UITextViewDelegate {
         textView.showsHorizontalScrollIndicator = false
         textView.showsVerticalScrollIndicator = false
         textView.isScrollEnabled = true
-        textView.accessibilityLabel = "\(region.displayTitle)内容"
-        textView.accessibilityHint = region.editorSubtitle
+        textView.accessibilityLabel =
+            region.localizedEditorAccessibilityLabel
+        textView.accessibilityHint =
+            region.localizedEditorAccessibilityHint
         attachedTextView = textView
         V1TextKitTrace.log("attach", extra: stateDescription(for: textView))
         applyDraft(draft, to: textView, selection: selectedRange)
@@ -911,6 +913,7 @@ private struct V1SlotATextKitSessionRepresentable: UIViewRepresentable {
 
     func makeUIView(context: Context) -> UITextView {
         let view = V1TextKitTextView()
+        let bus = commandBus
         view.onTrailingTouch = { [weak session] textView, point in
             let shouldUseTrailing = session?.moveCaretToEndIfNeeded(
                 in: textView,
@@ -935,11 +938,11 @@ private struct V1SlotATextKitSessionRepresentable: UIViewRepresentable {
         view.onPaste = { [weak session] textView in
             session?.pasteStructuredContent(in: textView) ?? false
         }
-        commandBus.insertHandler = { [weak session, weak view] item in
-            guard let session, let view else { return }
-            if commandBus.prefersTrailingInsertion {
+        bus.insertHandler = { [weak bus, weak session, weak view] item in
+            guard let bus, let session, let view else { return }
+            if bus.prefersTrailingInsertion {
                 session.selectTrailingPosition(in: view)
-                commandBus.prefersTrailingInsertion = false
+                bus.prefersTrailingInsertion = false
             }
             session.insert(item, in: view)
         }
@@ -955,11 +958,12 @@ private struct V1SlotATextKitSessionRepresentable: UIViewRepresentable {
 
     func updateUIView(_ view: UITextView, context: Context) {
         V1TextKitTrace.log("updateUIView", extra: "session=\(ObjectIdentifier(session)) textView=\(ObjectIdentifier(view)) range=\(NSStringFromRange(view.selectedRange))")
-        commandBus.insertHandler = { [weak session, weak view] item in
-            guard let session, let view else { return }
-            if commandBus.prefersTrailingInsertion {
+        let bus = commandBus
+        bus.insertHandler = { [weak bus, weak session, weak view] item in
+            guard let bus, let session, let view else { return }
+            if bus.prefersTrailingInsertion {
                 session.selectTrailingPosition(in: view)
-                commandBus.prefersTrailingInsertion = false
+                bus.prefersTrailingInsertion = false
             }
             session.insert(item, in: view)
         }

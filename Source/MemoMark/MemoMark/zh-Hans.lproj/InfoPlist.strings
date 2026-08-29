@@ -1,0 +1,4 @@
+/* 系统授权界面使用的名称和权限说明。 */
+CFBundleDisplayName = "时光记";
+NSPhotoLibraryUsageDescription = "时光记需要读取你选择的照片与相册，并把处理后的照片保存进去。";
+NSPhotoLibraryAddUsageDescription = "时光记需要把处理后的照片存回你的系统相册。";

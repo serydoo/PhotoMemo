@@ -1,0 +1,4 @@
+/* システムの権限画面で使用する表示名と説明。 */
+CFBundleDisplayName = "MemoMark";
+NSPhotoLibraryUsageDescription = "MemoMarkは、選択した写真とアルバムを読み取り、メモリーカードを作成して保存するためにアクセスを求めます。";
+NSPhotoLibraryAddUsageDescription = "処理した写真を写真ライブラリに保存するために、MemoMarkへの許可が必要です。";

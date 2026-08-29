@@ -32,62 +32,92 @@ struct SubjectAvatarCropSheet: View {
         CGSize(width: 320, height: 320)
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("拖动头像位置，双指缩放画面。确认后会同步生成头像、标识和预览资源。")
+        ZStack {
+            ConfigurationUI.appBackground
+                .ignoresSafeArea()
+
+            NavigationStack {
+                VStack(alignment: .leading, spacing: 18) {
+                    Text(
+                        MemoMarkLanguage.interfaceStored.localized(
+                            key: "avatar.crop.instructions",
+                            fallback: "拖动照片调整位置，双指缩放。完成后会用于对象头像和卡片预览。"
+                        )
+                    )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                cropCanvas
+                    cropCanvas
 
-                zoomControl
+                    zoomControl
 
-                HStack(spacing: 10) {
-                    statPill(
-                        title: "缩放",
-                        value: "\(Int(effectiveZoomScale * 100))%"
+                    Button(
+                        MemoMarkLanguage.interfaceStored.localized(
+                            key: "avatar.crop.reset",
+                            fallback: "恢复默认位置"
+                        )
+                    ) {
+                        committedZoomScale = 1
+                        interactiveZoomScale = 1
+                        committedTranslation = .zero
+                        interactiveTranslation = .zero
+                    }
+                    .buttonStyle(.borderless)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 20)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(ConfigurationUI.appBackground.ignoresSafeArea())
+                .navigationTitle(
+                    MemoMarkLanguage.interfaceStored.localized(
+                        key: "avatar.crop.title",
+                        fallback: "调整对象头像"
                     )
-                    statPill(
-                        title: "模式",
-                        value: "圆形裁切"
-                    )
-                }
-
-                Button("恢复默认位置") {
-                    committedZoomScale = 1
-                    interactiveZoomScale = 1
-                    committedTranslation = .zero
-                    interactiveTranslation = .zero
-                }
-                .buttonStyle(.borderless)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-                Spacer(minLength: 0)
-            }
-            .padding(20)
-            .navigationTitle("调整对象头像")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("取消", action: onCancel)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("应用") {
-                        onConfirm(
-                            SubjectAvatarCropConfiguration(
-                                zoomScale: effectiveZoomScale,
-                                normalizedOffset:
-                                    currentNormalizedOffset
-                            )
+                )
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(ConfigurationUI.appBackground, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(
+                            MemoMarkLanguage.interfaceStored.localized(
+                                key: "common.cancel",
+                                fallback: "取消"
+                            ),
+                            action: onCancel
                         )
                     }
-                    .fontWeight(.semibold)
+
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(
+                            MemoMarkLanguage.interfaceStored.localized(
+                                key: "avatar.crop.done",
+                                fallback: "完成"
+                            )
+                        ) {
+                            onConfirm(
+                                SubjectAvatarCropConfiguration(
+                                    zoomScale: effectiveZoomScale,
+                                    normalizedOffset:
+                                        currentNormalizedOffset
+                                )
+                            )
+                        }
+                        .fontWeight(.semibold)
+                    }
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(ConfigurationUI.appBackground.ignoresSafeArea())
+        .presentationBackground(ConfigurationUI.appBackground)
     }
 
     private var cropCanvas: some View {
@@ -115,11 +145,7 @@ struct SubjectAvatarCropSheet: View {
                 )
 
             ZStack {
-                RoundedRectangle(
-                    cornerRadius: 30,
-                    style: .continuous
-                )
-                .fill(ConfigurationUI.controlBackground)
+                Color.black
 
                 Image(uiImage: image)
                     .resizable()
@@ -142,22 +168,6 @@ struct SubjectAvatarCropSheet: View {
             .onChange(of: side) { _, _ in
                 latestCanvasSize = canvasSize
             }
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: 30,
-                    style: .continuous
-                )
-            )
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 30,
-                    style: .continuous
-                )
-                    .stroke(
-                        ConfigurationUI.faintHairline,
-                        lineWidth: 1
-                    )
-            )
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -351,30 +361,5 @@ struct SubjectAvatarCropSheet: View {
             )
     }
 
-    private func statPill(
-        title: String,
-        value: String
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-
-            Text(value)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.primary)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(
-            Capsule(style: .continuous)
-                .fill(ConfigurationUI.panelBackground)
-        )
-        .overlay(
-            Capsule(style: .continuous)
-                .stroke(ConfigurationUI.faintHairline)
-        )
-    }
 }
 #endif

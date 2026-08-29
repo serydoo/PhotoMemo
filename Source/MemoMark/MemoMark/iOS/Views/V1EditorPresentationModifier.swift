@@ -14,6 +14,9 @@ struct V1EditorPresentationModifier<EditorContent: View>: ViewModifier {
     let isModuleLibraryPresented: Bool
     let onDismissEditor: () -> Void
 
+    @Environment(\.accessibilityReduceMotion)
+    private var accessibilityReduceMotion
+
     func body(content: Content) -> some View {
         content
             .overlay {
@@ -30,10 +33,19 @@ struct V1EditorPresentationModifier<EditorContent: View>: ViewModifier {
                         canToggleModuleLibrary: canToggleModuleLibrary,
                         isModuleLibraryPresented: isModuleLibraryPresented
                     )
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .transition(
+                        accessibilityReduceMotion
+                        ? .opacity
+                        : .move(edge: .bottom).combined(with: .opacity)
+                    )
                 }
             }
-            .animation(.easeOut(duration: 0.22), value: showsRegionContentSheet)
+            .animation(
+                accessibilityReduceMotion
+                ? nil
+                : .easeOut(duration: 0.22),
+                value: showsRegionContentSheet
+            )
     }
 }
 
@@ -42,6 +54,9 @@ private struct V1CardEditorOverlay<EditorContent: View>: View {
     @State private var keyboardBottomInset: CGFloat = 0
     @State private var editorViewportBottom: CGFloat = 0
     @State private var pullDownOffset: CGFloat = 0
+
+    @Environment(\.accessibilityReduceMotion)
+    private var accessibilityReduceMotion
 
     let editorContent: EditorContent
     let onDismiss: () -> Void
@@ -221,6 +236,7 @@ private struct V1CardEditorOverlay<EditorContent: View>: View {
         }
         .ignoresSafeArea(.keyboard)
         .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
         .accessibilityLabel(
             MemoMarkLanguage.interfaceStored.localized(
                 key: "configuration.card_editor.accessibility_label",
@@ -258,7 +274,11 @@ private struct V1CardEditorOverlay<EditorContent: View>: View {
                     || predictedHeight >= ConfigurationUI.cardEditorDismissThreshold * 1.35
 
                 guard translation.height > abs(translation.width), shouldDismiss else {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
+                    withAnimation(
+                        accessibilityReduceMotion
+                        ? nil
+                        : .spring(response: 0.3, dampingFraction: 0.86)
+                    ) {
                         pullDownOffset = 0
                     }
                     return

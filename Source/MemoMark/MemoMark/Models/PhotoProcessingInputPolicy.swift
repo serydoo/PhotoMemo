@@ -35,7 +35,7 @@ struct PhotoProcessingInputPolicy: Hashable {
     let allowsLivePhoto:
         Bool
 
-    init(
+    nonisolated init(
         maximumPixelDimension: Int = 8064,
         maximumPixelCount: Int = 8064 * 6048,
         maximumAspectRatio: Double = 3,

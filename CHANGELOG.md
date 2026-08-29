@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.2 (99) Settings, Welcome, And Editor Maintenance - 2026-08-29
+
+- Updated Settings, Start Using, and Replay Welcome guidance to match the current V4 product language and the local-first `Apple Photos -> Share -> MemoMark -> local processing -> Apple Photos` workflow.
+- Clarified that Memory Subject and Time Anchor support family, travel, anniversaries, pets, and other personal memories instead of presenting the early child-only example as the product boundary.
+- Kept the accepted avatar crop interaction, TextKit input geometry, latest-request-wins subject persistence, localization, and Apple Photos original-protection behavior from the current working tree.
+- Raised all App, extension, widget, QA, and test target configurations to build `99` while keeping marketing version `2.2.2` and all bundle identities unchanged.
+
+This is a maintenance candidate. GitHub `main` is being synchronized under explicit user authorization so the configured Xcode Cloud workflow can build the same source checkpoint. TestFlight availability, processing, and production certification remain separate external evidence.
+
 ## 2.2.2 (95) Xcode Cloud Compatibility Maintenance - 2026-08-27
 
 - Fixed the Xcode Cloud archive failure caused by referencing `PHAssetResource.filename`, an API member unavailable in the cloud's older Photos SDK.

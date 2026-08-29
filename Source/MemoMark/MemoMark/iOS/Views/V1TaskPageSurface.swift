@@ -184,7 +184,7 @@ struct V1TaskPageSurface: View {
             ),
             subtitle: interfaceLanguage.localized(
                 key: "task.processing.subtitle",
-                fallback: "完成后会自动保存到 Apple Photos。"
+                fallback: "完成后会保存到 Apple Photos。"
             )
         ) {
             taskStatusPill(

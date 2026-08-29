@@ -68,7 +68,7 @@ struct V1ReleaseNotesContractTests {
             "Source/MemoMark/MemoMark.xcodeproj/project.pbxproj"
         )
         let releaseManifest = try sourceText(
-            "Docs/07_Releases/2026-08-27-2.2.2-sync-manifest.md"
+            "Docs/07_Releases/2026-08-29-2.2.2-sync-manifest.md"
         )
         let releaseIdentity = try #require(
             releaseManifest

@@ -97,6 +97,21 @@ extension CardRegion {
             : nil
     }
 
+    var localizedEditorAccessibilityLabel: String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: "accessibility.editor.\(rawValue).label",
+            fallback: "\(displayTitle)内容"
+        )
+    }
+
+    var localizedEditorAccessibilityHint: String? {
+        guard self == .slotD else { return nil }
+        return MemoMarkLanguage.interfaceStored.localized(
+            key: "accessibility.editor.slotD.hint",
+            fallback: "内容也会写入 Apple Photos 的照片说明，方便之后查找。"
+        )
+    }
+
     var semanticTitle: String {
         switch self {
         case .subject:

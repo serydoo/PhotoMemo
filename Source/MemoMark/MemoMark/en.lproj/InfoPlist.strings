@@ -1,0 +1,4 @@
+/* Permission and display-name strings for the system authorization surfaces. */
+CFBundleDisplayName = "MemoMark";
+NSPhotoLibraryUsageDescription = "MemoMark needs access to the photos and albums you choose, so it can create a memory card and save the result.";
+NSPhotoLibraryAddUsageDescription = "MemoMark needs permission to save the processed photo back to your Photos library.";

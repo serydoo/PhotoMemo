@@ -1,5 +1,101 @@
 # MemoMark Current Status
 
+## 2026-08-29 Build 99 GitHub Sync And Xcode Cloud Handoff
+
+- 按用户确认锁定 marketing version `2.2.2`、构建号 `99`；`project.pbxproj` 中 App、iOS、Share Extension、Widget、Device QA 和测试 target 的 12 个 `CURRENT_PROJECT_VERSION` 已统一为 `99`，10 个 `MARKETING_VERSION` 保持 `2.2.2`。
+- 本轮正式同步范围包含设置/开始使用/重看欢迎介绍的 V4 文案对齐、头像裁切交互修复及验收后的编辑器与持久化维护；不改变 Memory Engine、Layout Engine、Renderer、PhotoKit 原图保护或本地处理边界。
+- 已新增并切换 `2026-08-29-2.2.2-*` 五份版本材料，同时更新 `CHANGELOG.md`、`README.md`、`README_EN.md`、`Docs/07_Releases/README.md` 和本文件；TestFlight 说明补充了本轮维护重点与本地隐私边界。
+- 治理检查、`git diff --check`、四语言 `Localizable.strings`/`InfoPlist.strings` lint 和版本静态核对通过。完整 `MemoMarkTests` 通过：`1611 passed / 0 failed / 1 skipped`，含参数化执行共 `1634` 次；保留 2 条既有 QoS runtime warning，不影响测试结果。
+- 已按用户最新指令跳过本轮实体 iPhone 17 Pro Max 覆盖安装与启动；真机/Photos 手动链路不由本次测试通过替代。GitHub `main` 推送后由现有 Xcode Cloud 工作流自动构建，App Store Connect 页面当前最近成功构建为 `98`，`99` 待本次推送触发。
+- 用户已明确授权本轮 GitHub 同步及由 Xcode Cloud 进入 TestFlight 流程；未授权 App Store 正式提交。若 App Store Connect 出现出口合规/加密提示，本项目实际使用 CryptoKit 仅做本地 SHA-256 完整性校验，不实现加密通信或用户数据加密；在“是否使用非豁免加密”问题上选择“否”，其他无法由项目事实确认的材料暂停人工确认。
+
+## 2026-08-29 Settings And Welcome Content Alignment
+
+- 依据当前 `README.md`、`Docs/CURRENT_BRIEF.md` 与 iOS 实际入口，重新核对了“设置 → 开始使用 → 重看欢迎介绍”、首次配置、日常流程说明和处理中提示。确认旧内容主要来自早期 V1 文案，而不是业务逻辑：欢迎页仍显示 `V1.0`，首次配置把实际创建的默认生日预设写成“表达语气 / 自然”，并把保存行为写成“自动保存”。
+- 已将欢迎页版本标识更新为 `V4`，首次配置改为“记忆卡预设 / 生日回顾”，并改写为“完成后保存到 Apple Photos”，避免把默认值误导成用户已经做出的选择或对照片权限、目标相册作绝对承诺。
+- 设置中的关于说明从“孩子”这一单一场景收敛到 README 当前的“记忆对象 + 时间锚点”模型；欢迎流程统一明确为 `Apple Photos -> 分享 -> MemoMark -> 本地处理 -> Apple Photos`，并在四语言资源中同步更新。
+- 新增 `V1WelcomeCurrentContentContractTests`，锁定 V4 标识、首次配置事实和四语言关键文案；同时更新处理中页面的中文 fallback，避免重复出现过时的“自动保存”承诺。
+- 本轮已完成源码与资源层更新；`git diff --check`、四语言 `plutil -lint`、欢迎/本地化定向测试（13 个测试用例，0 failed、0 skipped）、无签名 iOS Debug 构建和实体 iPhone 17 Pro Max 签名构建均通过。签名包已安装到设备；启动命令因设备当时处于锁定状态被系统拒绝，欢迎页和设置页的实体 iPhone 视觉验收尚未由用户完成，不能把构建或安装成功当作视觉验收。
+- 没有改变 Configuration Center、Memory Engine、Renderer、PhotoKit 保存路径或 Apple Photos 原图；没有 commit、push 或发布。
+
+## 2026-08-28 Physical Device Clean Install Baseline
+
+- 规定的 iPhone 17 Pro Max 已恢复为 `available (paired)`，设备 ID 为
+  `863C2747-6742-5E93-B715-6F89DBF90B31`。使用当前工作树构建并签名了 `MemoMarkiOS` Debug 包，
+  目标 Bundle ID 为 `com.serydoo.PhotoMemo.iOS`。
+- 已按用户要求卸载旧安装、安装新包并成功启动：`xcodebuild` signed device build、
+  `devicectl device uninstall app`、`devicectl device install app`、`devicectl device process launch`
+  全部成功。安装包来自 `/tmp/MemoMarkDeviceInstall/Build/Products/Debug-iphoneos/MemoMarkiOS.app`。
+- 设备现在是本轮完整人工验收的干净起点。尚未替用户操作 Photos、授权弹窗、Share Extension 或输入内容；
+  后续测试结果必须按下方场景单独记录，不能把“安装/启动成功”当成产品认证。
+
+## 2026-08-28 Subject Avatar Crop Interaction Fix And Device Acceptance
+
+- 根据 iPhone 截图定位到头像编辑问题：`MemorySubjectEditorView` 在父级“编辑记忆对象” sheet
+  内以 `fullScreenCover` 打开 `SubjectAvatarCropSheet`，但裁切视图此前没有自己的全屏不透明背景和
+  导航栏背景。父级标题、取消/完成按钮、基础资料与时间锚点因此穿透到裁切层，形成重复控件和内容重叠；
+  这不是头像资源或裁切数据重复写入。
+- 在 `SubjectAvatarCropSheet.swift` 内完成一次有界的 Apple Contacts 风格交互收敛：增加系统分组背景、
+  `.presentationBackground` 与可见导航栏背景，裁切舞台改为独立黑色画布；保留拖动、双指缩放、滑杆和恢复位置，
+  移除“模式/圆形裁切”状态胶囊，将主动作从“应用”改为“完成”。现有裁切配置以及头像、标识、预览三份资源
+  的同步生成路径未改变。
+- 新增四语言裁切文案，并加入 `SubjectAvatarCropSheetContractTests`，与既有
+  `SubjectAvatarCropSupportTests` 一起通过：7 个测试用例、0 failed、0 skipped。四语言 strings 通过
+  `plutil -lint`，`git diff --check` 通过。
+- 使用 Apple Development 签名构建 `MemoMarkiOS`，设备构建成功；已卸载原有
+  `com.serydoo.PhotoMemo.iOS`，重新安装并启动，`codesign --verify --deep --strict` 通过。
+  用户已在实体 iPhone 17 Pro Max 上完成头像编辑人工验收，确认裁切页面、按钮层级、操作和结果均无问题。
+- 本轮没有操作 Apple Photos 原图、没有修改 Swift 语言模式、没有 commit/push 或发布；Swift 6 迁移、TX-001、
+  BP-001 与生产认证 carryover 状态保持原记录。
+
+## 2026-08-28 Bounded Optimization Slice And Swift 6 Readiness Follow-Up
+
+- 依据上一条 Skills 审查，完成一个保持 V4 架构边界的 Engineering Loop 切片：新增
+  `V1SubjectPersistenceRequestGate`，让对象保存采用 latest-request-wins，避免在异步保存期间
+  丢弃后续编辑或让旧快照覆盖最新状态；同时移除相册选项异步加载对用户输出修改的 dirty 状态抑制。
+- 修正 TextKit 插入命令闭包对 command bus 的隐式强引用，编辑器浮层增加 `.isModal`、本地化的
+  VoiceOver label/hint，并尊重 Reduce Motion。编辑器辅助文案已补齐 English、简体中文、日文、韩文
+  四套资源；资源 key 集合保持一致（本切片后各 1,442 keys）。
+- 新增保存请求门控的 3 个 Swift Testing 测试。完整 `MemoMarkTests` 在 macOS 宿主通过；当前切片相关
+  契约测试共 69 个测试用例、含参数化共 76 次执行、0 failed、0 skipped。macOS Debug 构建和 generic
+  iOS Debug unsigned 构建均通过；脚本测试 119 项、治理检查和 diff 检查通过。
+- 做了 Swift 6.0 命令行覆盖探测：`PhotoProcessingInputPolicy` 的 initializer 已改为 `nonisolated`，
+  `MemorySubjectEditorView` 明确标注 `@MainActor`，原首个阻塞消失；下一阻塞位于
+  `PhotoKitLivePhotoAssetWriter` 将主线程闭包送入 `PhotoLibrarySaveGate` 的真实 Sendable/actor 边界。
+  没有使用 `@unchecked Sendable`、`nonisolated(unsafe)` 或切换全工程语言模式来掩盖该问题。
+- 真机验收仍留到最后；本轮没有安装/启动新包、操作照片、执行 VoiceOver 或声称关闭 TX-001/BP-001。
+  没有切换项目 `SWIFT_VERSION`、升级部署目标、修改 CI、commit、push 或发布。
+- 在本条记录生成后，规定的 iPhone 17 Pro Max 已恢复连接并完成一次干净安装/启动；具体人工验收场景和
+  结果以顶部的 Physical Device Clean Install Baseline 及后续记录为准。
+
+## 2026-08-28 Skills-Guided UI, Interaction And Code Audit
+
+- 新增[基于更新后 Skills 的 UI、交互与代码审查](03_Engineering/2026-08-28-skills-guided-ui-interaction-code-audit.md)，
+  基于 `053abc9 / 2.2.2 (95)` 核对配置/锚点保存、相册加载、TextKit、编辑浮层及既有媒体边界。
+  标记在途对象保存丢弃后续请求与旧快照回写的 P0 耐久性风险，以及相册等待期间 dirty 标记被屏蔽；
+  这些路径尚未做持久化延迟注入或真机丢失复现，不宣称已有用户数据事故。
+- 从生产文件提取 TextKit command bus 与 insert handler 的独立 Swift ARC 探针确认引用环：
+  owner 结束后 bus/session 仍存活，清除 handler 后释放。该结果不是完整 App Memory Graph 或 BP-001 测量。
+  同时记录自定义编辑浮层的模态/焦点、Reduce Motion、UIKit 辅助功能本地化与大字号验收缺口。
+- 本轮五组 macOS 宿主测试通过：66 个测试用例、含参数化共 73 次执行、0 failed、0 skipped；
+  四语言资源各 1,437 keys 且 key 集合一致；governance checker、119 个脚本测试和 diff 检查通过。
+  代码契约通过不替代 UIKit/VoiceOver/Photos 真机验收。
+- 配对实体 iPhone 17 Pro Max 开发者模式已开启，但当前连接不可用；未安装/启动新包、操作照片或做视觉验收。
+  本轮只改审查/状态文档，未改生产代码、项目配置、Skills 或测试；未迁移 Swift、commit、push 或发布。
+  TX-001/BP-001 carryover、已停止内存采样和 `FAIL (Conditional)` 认证结论保持不变。
+
+## 2026-08-28 Swift Language Migration And Optimization Assessment
+
+- 新增[工程优化与 Swift 6 评估](03_Engineering/2026-08-28-engineering-optimization-and-swift6-assessment.md)，
+  合并同一提交 `053abc9` 的代码审查核对、远端 Xcode Cloud/门禁事实及编译器迁移证据。
+  本机为 Xcode 27 Beta 5 / Apple Swift 6.4；六个 native target 的 Debug/Release 仍为 Swift 5 语言模式。
+- 未修改源码或项目设置，以命令行覆盖参数完成通用 iOS Debug unsigned 构建对照：当前配置通过；
+  Swift 6 模式失败于 Share Extension 编译中的 `PhotoProcessingInputPolicy.swift:30`；
+  Swift 5 + complete checking 构建通过，产生 33 条按位置/消息去重的警告，涉及 10 个文件。
+  其中 11 条明确提示为 Swift 6 模式错误；该数量不是全项目迁移错误总数或已复现缺陷数。
+- 本轮只记录评估和建议顺序，未升级工具链、切换生产语言模式、运行测试或安装真机包。
+  TX-001/BP-001 carryover、已停止的内存采样项目及生产认证状态保持不变；没有 commit、push 或外部配置变更。
+
 ## 2026-08-28 Skill Naming Migration: PhotoMemo -> MemoMark
 
 - 将当前可触发的五个领域 Skill 统一为 MemoMark 命名：

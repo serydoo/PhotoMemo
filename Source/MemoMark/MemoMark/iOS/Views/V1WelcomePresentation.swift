@@ -177,11 +177,11 @@ struct V1WelcomePresentation: Equatable {
                 id: "processing",
                 title: language.localized(
                     key: "welcome.workflow.processing.title",
-                    fallback: "时光记在后台整理"
+                    fallback: "在设备上本地处理"
                 ),
                 detail: language.localized(
                     key: "welcome.workflow.processing.detail",
-                    fallback: "它会按你保存的预设，完成这次记录。"
+                    fallback: "它会按你保存的预设，在设备上完成这次记录。"
                 ),
                 systemImage: "arrow.trianglehead.2.clockwise.circle"
             ),
@@ -250,7 +250,7 @@ struct V1WelcomePageSurface: View {
                             Text(
                                 language.localized(
                                     key: "welcome.workflow.pipeline",
-                                    fallback: "Apple Photos -> 分享 -> 时光记 -> 处理 -> Apple Photos"
+                                    fallback: "Apple Photos -> 分享 -> 时光记 -> 本地处理 -> Apple Photos"
                                 )
                             )
                                 .font(.subheadline.weight(.semibold))
@@ -349,7 +349,7 @@ struct V1FirstRunConfigurationSheet: View {
 
                         Text(language.localized(
                             key: "welcome.first_run.intro_detail",
-                            fallback: "告诉时光记这段回忆围绕谁，以及哪个重要日子最重要。"
+                            fallback: "告诉时光记这段回忆围绕谁，以及从哪一天开始。"
                         ))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -416,11 +416,11 @@ struct V1FirstRunConfigurationSheet: View {
                     LabeledContent(
                         language.localized(
                             key: "welcome.first_run.expression_style",
-                            fallback: "表达语气"
+                            fallback: "记忆卡预设"
                         ),
                         value: language.localized(
                             key: "welcome.first_run.natural_style",
-                            fallback: "自然"
+                            fallback: "生日回顾"
                         )
                     )
                 }
@@ -439,7 +439,7 @@ struct V1FirstRunConfigurationSheet: View {
                     Label(
                         language.localized(
                             key: "welcome.first_run.next_save",
-                            fallback: "自动保存到 Apple Photos"
+                            fallback: "完成后保存到 Apple Photos"
                         ),
                         systemImage: "photo.on.rectangle"
                     )
@@ -576,7 +576,7 @@ struct V1WorkflowGuideSurface: View {
                             Text(
                                 language.localized(
                                     key: "welcome.workflow.introduction",
-                                    fallback: "日常记录从 Apple Photos 开始：选择照片，分享给时光记，完成后再回到相册查看。"
+                                    fallback: "日常记录从 Apple Photos 开始：选择照片，分享给时光记，在设备上完成处理后再回到相册查看。"
                                 )
                             )
                                 .font(.subheadline)
@@ -699,7 +699,7 @@ private struct V1WelcomeHeroSection: View {
                     Text(
                         language.localized(
                             key: "welcome.hero.detail",
-                            fallback: "让照片沿着时间与对象重新被阅读。"
+                            fallback: "让照片不只留下那一刻，也留下那一刻在生命里的位置。"
                         )
                     )
                         .font(.caption)
@@ -715,7 +715,7 @@ private struct V1WelcomeHeroSection: View {
                     systemImage: "sparkles",
                     title: language.localized(
                         key: "welcome.hero.version",
-                        fallback: "V1.0"
+                        fallback: "V4"
                     )
                 )
 
