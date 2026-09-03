@@ -40,10 +40,10 @@ struct ProductionConfigurationContractTests {
             == MemoryConfigurationRecord.Presentation.Route
                 .classicWhite.rawValue
         )
-        #expect(snapshot.logoModeRawValue == V1LogoMode.appleMini.rawValue)
+        #expect(snapshot.logoModeRawValue == ConfigurationLogoMode.appleMini.rawValue)
         #expect(
             snapshot.mediaOutputModeRawValue
-            == V1MediaOutputMode.originalFormat.rawValue
+            == MediaOutputMode.originalFormat.rawValue
         )
         #expect(
             snapshot.livePhotoPolicyRawValue
@@ -117,7 +117,7 @@ struct ProductionConfigurationContractTests {
             from: aggregate
         )
 
-        #expect(snapshot.logoModeRawValue == V1LogoMode.subjectAvatar.rawValue)
+        #expect(snapshot.logoModeRawValue == ConfigurationLogoMode.subjectAvatar.rawValue)
         #expect(snapshot.badge?.name == "对象头像")
         #expect(
             snapshot.badge?.imagePath
@@ -214,7 +214,7 @@ struct ProductionConfigurationContractTests {
 
     @MainActor
     @Test("every launch source rejects the same invalid production snapshot")
-    func allLaunchSourcesUseProductionAdmissionContract() throws {
+    func allLaunchSourcesUseProductionAdmissionContract() async throws {
         let context = try Self.makeEnvironment()
         defer { Self.cleanup(context) }
         let sourceURL = try SyntheticFixtureLibrary.fixtureURL(
@@ -238,7 +238,7 @@ struct ProductionConfigurationContractTests {
         ]
 
         for source in sources {
-            let job = context.environment.repositories.queue.enqueue(
+            let job = await context.environment.repositories.queue.enqueue(
                 payloads: [
                     BatchTaskIntakePayload(
                         sourceURL: sourceURL
@@ -388,9 +388,9 @@ struct ProductionConfigurationContractTests {
     @Test("save-current draft keeps configuration identity and advances its revision")
     func saveCurrentPreservesIdentityAndAdvancesRevision() throws {
         let fixture = try Self.makeFixture()
-        let draft = V1ConfigurationAggregateDraft(
+        let draft = ConfigurationAggregateDraft(
             title: "重命名后的配置",
-            regionDrafts: V1ConfigurationDraftProjection(
+            regionDrafts: ConfigurationDraftProjection(
                 configuration: fixture.configuration
             ).regionDrafts,
             regionTemplateIDs:
@@ -413,7 +413,7 @@ struct ProductionConfigurationContractTests {
             savedAt: fixture.captureDate
         )
 
-        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
             from: fixture.aggregate,
             draft: draft
         )
@@ -781,7 +781,7 @@ struct ProductionConfigurationContractTests {
         let sourceURL = try SyntheticFixtureLibrary.fixtureURL(
             .iphoneJPEG
         )
-        let result = context.environment.coordinators.share.process(
+        let result = await context.environment.coordinators.share.process(
             request: ExternalPhotoIntakeRequest(
                 launchSource: .shareExtension,
                 urls: [sourceURL],
@@ -832,7 +832,7 @@ struct ProductionConfigurationContractTests {
             )
         )
 
-        let result = context.environment.coordinators.share.process(
+        let result = await context.environment.coordinators.share.process(
             request: ExternalPhotoIntakeRequest(
                 launchSource: .shareExtension,
                 urls: [sourceURL],
@@ -886,7 +886,7 @@ struct ProductionConfigurationContractTests {
             urls: [sourceURL],
             configurationSnapshot: frozenSnapshot
         )
-        let result = context.environment.coordinators.share.process(
+        let result = await context.environment.coordinators.share.process(
             request: request,
             consumedPayloadKeys: []
         )
@@ -927,8 +927,8 @@ struct ProductionConfigurationContractTests {
     }
 
     @MainActor
-    @Test("legacy versioned request recovers only the missing canonical memory snapshot")
-    func legacyVersionedRequestRecoversMissingCanonicalSnapshot() async throws {
+    @Test("legacy versioned request keeps its frozen transport when canonical memory is unavailable")
+    func legacyVersionedRequestKeepsFrozenTransportWhenCanonicalSnapshotIsMissing() async throws {
         let fixture = try Self.makeFixture()
         let context = try Self.makeEnvironment()
         defer { Self.cleanup(context) }
@@ -968,7 +968,7 @@ struct ProductionConfigurationContractTests {
             configurationSnapshot: legacyTransport
         )
 
-        let result = context.environment.coordinators.share.process(
+        let result = await context.environment.coordinators.share.process(
             request: request,
             consumedPayloadKeys: []
         )
@@ -978,18 +978,13 @@ struct ProductionConfigurationContractTests {
             job.configuration.selectedAlbumIdentifier
             == "legacy-album"
         )
-        #expect(
-            job.configuration.configurationRevision
-            == fixture.configuration.revision
-        )
+        #expect(job.configuration.productionConfigurationReference == nil)
         #expect(
             job.configuration.canonicalProductionSnapshot
-            != nil
+            == nil
         )
         #expect(
-            job.configuration.canonicalProductionSnapshot?
-                .memorySubject?
-                .resolvedExpressionSubjectText
+            job.configuration.memorySubjectText
             == fixture.subject.resolvedExpressionSubjectText
         )
 
@@ -1001,7 +996,7 @@ struct ProductionConfigurationContractTests {
                 $0.stage
                 == .configurationCompatibilityRecovery
                 && $0.message.contains(
-                    "recoveredLegacyCanonical=true"
+                    "usingFrozenLegacyTransport=true"
                 )
             }
         )

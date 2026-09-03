@@ -154,6 +154,11 @@ struct MemoMarkShareIntakeDiagnosticsTests {
                 relativePath:
                     "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift"
             )
+        let capacityPolicySource =
+            try sourceText(
+                relativePath:
+                    "Source/MemoMark/MemoMark/App/ShareIntakeCapacityPolicy.swift"
+            )
         let chineseLocalization =
             try sourceText(
                 relativePath:
@@ -167,13 +172,13 @@ struct MemoMarkShareIntakeDiagnosticsTests {
             )
         )
         #expect(
-            intakeSource
+            capacityPolicySource
             .contains(
                 "snapshot.batchLimit"
             )
         )
         #expect(
-            intakeSource
+            capacityPolicySource
             .contains(
                 "snapshot.remainingRecords"
             )
@@ -184,7 +189,8 @@ struct MemoMarkShareIntakeDiagnosticsTests {
                 "case tooManySharedItems"
             )
         )
-        #expect(intakeSource.contains("providers.count <= maxSupportedPhotoCount"))
+        #expect(intakeSource.contains("providers.count <= requestCapacity"))
+        #expect(intakeSource.contains("let commerceSnapshot ="))
         #expect(
             intakeSource
             .contains(
@@ -362,28 +368,33 @@ struct MemoMarkShareIntakeDiagnosticsTests {
 
     @Test("Share Extension data fallback does not invent a Live Photo asset identity")
     func shareExtensionDataFallbackDoesNotInventLivePhotoAssetIdentity() throws {
-        let intakeSource =
+        let importerSource =
             try sourceText(
                 relativePath:
                     "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareManagedFileImporter.swift"
             )
+        let materializerSource =
+            try sourceText(
+                relativePath:
+                    "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareManagedImportMaterializer.swift"
+            )
 
         #expect(
-            intakeSource
+            importerSource
             .contains(
-                ".fallbackDataSourceIdentifier("
+                ".materializeData("
             )
         )
         #expect(
-            intakeSource
+            materializerSource
             .contains(
                 "func fallbackDataSourceIdentifier("
             )
         )
         #expect(
-            !intakeSource
+            !materializerSource
             .contains(
-                "sourceIdentifier:\n                                                Self\n                                                .dedupeKey("
+                "sourceIdentifier:\n                                    dedupeKey("
             )
         )
     }
@@ -455,6 +466,145 @@ struct MemoMarkShareIntakeDiagnosticsTests {
             source: importerSource,
             earlier: "let inPlaceLoadResult =",
             later: "await loadFallbackItem("
+        )
+    }
+
+    @Test("Motion-preserving Live Photo intake attempts in-place retrieval before it can fail")
+    func motionPreservingLivePhotoAttemptsInPlaceRetrievalBeforeFailure() throws {
+        let importerSource = try sourceText(
+            relativePath:
+                "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareManagedFileImporter.swift"
+        )
+        let liveFileStart = try #require(
+            importerSource.range(
+                of: "let liveFileLoadResult ="
+            )
+        )
+        let liveInPlaceStart = try #require(
+            importerSource.range(
+                of: "let liveInPlaceLoadResult ="
+            )
+        )
+
+        let firstLivePhotoAttempt = String(
+            importerSource[
+                liveFileStart.lowerBound..<liveInPlaceStart.lowerBound
+            ]
+        )
+
+        #expect(
+            !firstLivePhotoAttempt.contains(
+                "shouldStopAfterLiveRepresentationFailure("
+            )
+        )
+    }
+
+    @Test("Motion-preserving Live Photo intake uses the provider object representation after file routes fail")
+    func motionPreservingLivePhotoUsesObjectRepresentationAfterFileRoutesFail() throws {
+        let importerSource = try sourceText(
+            relativePath:
+                "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareManagedFileImporter.swift"
+        )
+
+        try expectOrdered(
+            source: importerSource,
+            earlier: "let liveInPlaceLoadResult =",
+            later: "let liveObjectLoadResult ="
+        )
+        try expectOrdered(
+            source: importerSource,
+            earlier: "let liveObjectLoadResult =",
+            later: "LivePhotoStaticFallbackPolicy"
+        )
+        #expect(
+            importerSource.contains(
+                "livePhotoObjectClass:\n            NSItemProviderReading.Type =\n            PHLivePhoto.self"
+            )
+        )
+        #expect(
+            importerSource.contains(
+                "provider.loadObject(\n                ofClass: livePhotoObjectClass"
+            )
+        )
+        #expect(
+            importerSource.contains(
+                "let providerResponseGate =\n                ShareProviderCompletionGate()"
+            )
+        )
+        #expect(
+            importerSource.contains(
+                "let completionGate =\n                ShareProviderCompletionGate()"
+            )
+        )
+        #expect(
+            importerSource.contains(
+                "guard completionGate.claim() else {\n                        return\n                    }\n                    timeoutTask.cancel()"
+            )
+        )
+        #expect(
+            importerSource.contains(
+                "materializationTask.cancel()"
+            )
+        )
+
+        let materializerSource = try sourceText(
+            relativePath:
+                "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareManagedImportMaterializer.swift"
+        )
+
+        #expect(
+            materializerSource.contains(
+                "PHAssetResource.assetResources(\n                for: livePhoto"
+            )
+        )
+        #expect(
+            materializerSource.contains(
+                "PHAssetResourceManager.default()\n                .writeData("
+            )
+        )
+        #expect(
+            materializerSource.contains(
+                "try Task.checkCancellation()"
+            )
+        )
+        #expect(
+            materializerSource.contains(
+                "requiresReadableImage:\n                    false"
+            )
+        )
+    }
+
+    @Test("Live Photo file representation diagnostics name the actual API and requested type")
+    func livePhotoFileRepresentationDiagnosticsNameActualAPIAndType() throws {
+        let importerSource = try sourceText(
+            relativePath:
+                "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareManagedFileImporter.swift"
+        )
+        let fileRepresentationStart = try #require(
+            importerSource.range(
+                of: "func loadFileRepresentationResult("
+            )
+        )
+        let inPlaceRepresentationStart = try #require(
+            importerSource.range(
+                of: "func loadInPlaceFileRepresentationResult("
+            )
+        )
+        let fileRepresentationSource = String(
+            importerSource[
+                fileRepresentationStart.lowerBound..<inPlaceRepresentationStart.lowerBound
+            ]
+        )
+
+        #expect(
+            fileRepresentationSource.contains(
+                "operation:\n                                    \"loadFileRepresentation\","
+            )
+        )
+        #expect(
+            fileRepresentationSource.contains(
+                "typeIdentifier:\n                                    requestedTypeIdentifier,"
+            )
         )
     }
 

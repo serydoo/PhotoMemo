@@ -505,7 +505,7 @@ private extension ConfigurationAssetPackagerTests {
     }
 
     static func makeConfiguration(
-        logoMode: V1LogoMode = .customUpload
+        logoMode: ConfigurationLogoMode = .customUpload
     ) -> MemoryConfigurationRecord {
         MemoryConfigurationRecord(
             id: UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!,

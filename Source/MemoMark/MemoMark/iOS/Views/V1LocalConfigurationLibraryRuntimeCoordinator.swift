@@ -1,7 +1,7 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1LocalConfigurationLibraryRuntimeSnapshot {
+struct LocalConfigurationLibraryRuntimeSnapshot {
     let aggregate: ConfigurationLibraryRecord?
     let selectedSubjectID: MemorySubject.ID?
     let availablePresets: [MemoryPreset]
@@ -13,15 +13,15 @@ struct V1LocalConfigurationLibraryRuntimeSnapshot {
 }
 
 @MainActor
-struct V1LocalConfigurationLibraryRuntimeCoordinator {
+struct LocalConfigurationLibraryRuntimeCoordinator {
     private let actions: ConfigurationLibraryActions
     private let backupRestoreCoordinator:
         ConfigurationBackupRestoreCoordinator
-    private let snapshot: () -> V1LocalConfigurationLibraryRuntimeSnapshot
+    private let snapshot: () -> LocalConfigurationLibraryRuntimeSnapshot
     private let presentation:
-        () -> V1LocalConfigurationLibraryPresentationState
+        () -> LocalConfigurationLibraryPresentationState
     private let updatePresentation:
-        (V1LocalConfigurationLibraryPresentationState) -> Void
+        (LocalConfigurationLibraryPresentationState) -> Void
     private let applyCurrentConfiguration: () async -> Bool
     private let restoreAggregate: (ConfigurationLibraryRecord) -> Void
     private let applyRestoredCurrentConfiguration: () -> Void
@@ -30,10 +30,10 @@ struct V1LocalConfigurationLibraryRuntimeCoordinator {
     init(
         actions: ConfigurationLibraryActions,
         backupRestoreCoordinator: ConfigurationBackupRestoreCoordinator,
-        snapshot: @escaping () -> V1LocalConfigurationLibraryRuntimeSnapshot,
-        presentation: @escaping () -> V1LocalConfigurationLibraryPresentationState,
+        snapshot: @escaping () -> LocalConfigurationLibraryRuntimeSnapshot,
+        presentation: @escaping () -> LocalConfigurationLibraryPresentationState,
         updatePresentation: @escaping (
-            V1LocalConfigurationLibraryPresentationState
+            LocalConfigurationLibraryPresentationState
         ) -> Void,
         applyCurrentConfiguration: @escaping () async -> Bool,
         restoreAggregate: @escaping (ConfigurationLibraryRecord) -> Void,
@@ -192,7 +192,7 @@ struct V1LocalConfigurationLibraryRuntimeCoordinator {
     }
 }
 
-private extension V1LocalConfigurationLibraryRuntimeCoordinator {
+private extension LocalConfigurationLibraryRuntimeCoordinator {
     func beginWork() -> Bool {
         var next = presentation()
         guard !next.isWorking else { return false }

@@ -2,14 +2,14 @@
 import SwiftUI
 import UIKit
 
-struct V1OutputPageSurface: View {
+struct ConfigurationOutputPageSurface: View {
 
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
     }
 
     @Binding
-    var outputTarget: V1IOSOutputTarget
+    var outputTarget: ConfigurationOutputTarget
 
     let availableAlbums: [PhotoAlbumOption]
 
@@ -23,7 +23,7 @@ struct V1OutputPageSurface: View {
     let albumStatusMessage: String
     let onReloadAlbums: () -> Void
     let isSavingConfiguration: Bool
-    let configurationStatus: V1ConfigurationStatus
+    let configurationStatus: ConfigurationPersistenceStatus
     let onSaveConfiguration: () -> Void
 
     @Binding
@@ -40,13 +40,13 @@ struct V1OutputPageSurface: View {
             VStack(alignment: .leading, spacing: 12) {
                 pageHeader
 
-                V1OutputPhotoDescriptionSection(
+                OutputPhotoDescriptionSection(
                     usesCustomMemoryWriteText: $usesCustomMemoryWriteText,
                     customMemoryWriteText: $customMemoryWriteText,
                     resolvedMemoryWriteText: resolvedMemoryWriteText
                 )
 
-                V1OutputSection(
+                OutputDestinationSection(
                     outputTarget: $outputTarget,
                     availableAlbums: availableAlbums,
                     selectedExistingAlbumIdentifier: $selectedExistingAlbumIdentifier,
@@ -58,7 +58,7 @@ struct V1OutputPageSurface: View {
             }
             .padding(.top, 10)
             .padding(.bottom, 76)
-            .v1AdaptiveScrollContent(
+            .adaptiveScrollContent(
                 horizontalPadding: ConfigurationUI.contentColumnPadding
             )
         }
@@ -81,14 +81,14 @@ struct V1OutputPageSurface: View {
     }
 
     private var pageHeader: some View {
-        V1PageHeader(
+        ConfigurationPageHeader(
             "output.page.title",
             subtitle: "output.page.subtitle"
         )
     }
 
     private var outputConfigurationFooter: some View {
-        V1OutputSaveConfigurationButton(
+        OutputSaveConfigurationButton(
             isSaving: isSavingConfiguration,
             configurationStatus: configurationStatus,
             action: onSaveConfiguration
@@ -104,14 +104,14 @@ struct V1OutputPageSurface: View {
     }
 }
 
-private struct V1OutputSaveConfigurationButton: View {
+private struct OutputSaveConfigurationButton: View {
 
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
     }
 
     let isSaving: Bool
-    let configurationStatus: V1ConfigurationStatus
+    let configurationStatus: ConfigurationPersistenceStatus
     let action: () -> Void
 
     var body: some View {
@@ -130,7 +130,7 @@ private struct V1OutputSaveConfigurationButton: View {
             }
         }
         .buttonStyle(
-            V1OutputSaveButtonStyle(
+            OutputSaveButtonStyle(
                 isSaved: configurationStatus == .saved
             )
         )
@@ -183,7 +183,7 @@ private struct V1OutputSaveConfigurationButton: View {
     }
 }
 
-private struct V1OutputSaveButtonStyle: ButtonStyle {
+private struct OutputSaveButtonStyle: ButtonStyle {
 
     let isSaved: Bool
 
@@ -202,12 +202,12 @@ private struct V1OutputSaveButtonStyle: ButtonStyle {
             )
             .padding(.horizontal, 14)
             .frame(
-                width: V1CompactBottomActionMetrics.width,
-                height: V1CompactBottomActionMetrics.height
+                width: CompactBottomActionMetrics.width,
+                height: CompactBottomActionMetrics.height
             )
             .background(
                 RoundedRectangle(
-                    cornerRadius: V1CompactBottomActionMetrics.cornerRadius,
+                    cornerRadius: CompactBottomActionMetrics.cornerRadius,
                     style: .continuous
                 )
                 .fill(
@@ -221,7 +221,7 @@ private struct V1OutputSaveButtonStyle: ButtonStyle {
             )
             .overlay(
                 RoundedRectangle(
-                    cornerRadius: V1CompactBottomActionMetrics.cornerRadius,
+                    cornerRadius: CompactBottomActionMetrics.cornerRadius,
                     style: .continuous
                 )
                 .stroke(ConfigurationUI.faintHairline)
@@ -238,7 +238,7 @@ private struct V1OutputSaveButtonStyle: ButtonStyle {
     }
 }
 
-struct V1OutputPhotoDescriptionSection: View {
+struct OutputPhotoDescriptionSection: View {
 
     @Binding
     var usesCustomMemoryWriteText: Bool
@@ -254,11 +254,11 @@ struct V1OutputPhotoDescriptionSection: View {
             resolvedText: resolvedMemoryWriteText
         )
 
-        V1TitledSectionCard(
+        ConfigurationTitledSectionCard(
             title: presentation.defaultContentTitle,
             subtitle: presentation.defaultContentDescription
         ) {
-            V1OutputPhotoDescriptionContent(
+            OutputPhotoDescriptionContent(
                 usesCustomMemoryWriteText: $usesCustomMemoryWriteText,
                 customMemoryWriteText: $customMemoryWriteText,
                 resolvedMemoryWriteText: resolvedMemoryWriteText
@@ -267,7 +267,7 @@ struct V1OutputPhotoDescriptionSection: View {
     }
 }
 
-struct V1OutputPhotoDescriptionContent: View {
+struct OutputPhotoDescriptionContent: View {
 
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
@@ -308,10 +308,10 @@ struct V1OutputPhotoDescriptionContent: View {
             }
             .padding(.vertical, 2)
 
-            V1HorizontalDivider()
+            HorizontalDivider()
 
             Toggle(isOn: $usesCustomMemoryWriteText) {
-                V1OutputRetentionLabel(
+                OutputRetentionLabel(
                     title: presentation.toggleTitle,
                     subtitle: presentation.toggleDescription
                 )
@@ -358,7 +358,7 @@ struct V1OutputPhotoDescriptionContent: View {
     }
 }
 
-private struct V1OutputRetentionLabel: View {
+private struct OutputRetentionLabel: View {
 
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
@@ -380,10 +380,10 @@ private struct V1OutputRetentionLabel: View {
     }
 }
 
-struct V1OutputSection: View {
+struct OutputDestinationSection: View {
 
     @Binding
-    var outputTarget: V1IOSOutputTarget
+    var outputTarget: ConfigurationOutputTarget
 
     let availableAlbums: [PhotoAlbumOption]
 
@@ -398,11 +398,11 @@ struct V1OutputSection: View {
     let onReloadAlbums: () -> Void
 
     var body: some View {
-        V1TitledSectionCard(
+        ConfigurationTitledSectionCard(
             title: "output.destination.title",
             subtitle: "output.destination.subtitle"
         ) {
-            V1OutputDestinationContent(
+            OutputDestinationContent(
                 outputTarget: $outputTarget,
                 availableAlbums: availableAlbums,
                 selectedExistingAlbumIdentifier:
@@ -416,7 +416,7 @@ struct V1OutputSection: View {
     }
 }
 
-struct V1OutputDestinationContent: View {
+struct OutputDestinationContent: View {
 
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
@@ -431,7 +431,7 @@ struct V1OutputDestinationContent: View {
     var automaticallyFocusesNewAlbumName = true
 
     @Binding
-    var outputTarget: V1IOSOutputTarget
+    var outputTarget: ConfigurationOutputTarget
 
     let availableAlbums: [PhotoAlbumOption]
 
@@ -453,7 +453,7 @@ struct V1OutputDestinationContent: View {
         }
     }
 
-    private var presentedOutputTarget: V1IOSOutputTarget {
+    private var presentedOutputTarget: ConfigurationOutputTarget {
         outputTarget == .automatic ? .applePhotos : outputTarget
     }
 
@@ -490,11 +490,11 @@ struct V1OutputDestinationContent: View {
         }
     }
 
-    private var selectableOutputTargets: [V1IOSOutputTarget] {
+    private var selectableOutputTargets: [ConfigurationOutputTarget] {
         [.applePhotos, .existingAlbum, .newAlbum]
     }
 
-    private var presentedOutputTargetBinding: Binding<V1IOSOutputTarget> {
+    private var presentedOutputTargetBinding: Binding<ConfigurationOutputTarget> {
         Binding(
             get: { presentedOutputTarget },
             set: { outputTarget = $0 }
@@ -623,7 +623,7 @@ struct V1OutputDestinationContent: View {
     }
 }
 
-private extension V1IOSOutputTarget {
+private extension ConfigurationOutputTarget {
 
     func localizedTitle(for language: MemoMarkLanguage) -> String {
         let key: String

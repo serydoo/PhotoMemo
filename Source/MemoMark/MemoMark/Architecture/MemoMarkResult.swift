@@ -1,6 +1,6 @@
 import Foundation
 
-enum MemoMarkErrorCode:
+nonisolated enum MemoMarkErrorCode:
     String,
     Codable,
     Hashable,
@@ -19,7 +19,7 @@ enum MemoMarkErrorCode:
     case unexpected
 }
 
-struct MemoMarkError:
+nonisolated struct MemoMarkError:
     Error,
     Hashable,
     Sendable {
@@ -96,7 +96,7 @@ struct MemoMarkError:
     }
 }
 
-enum MemoMarkResult<Value> {
+nonisolated enum MemoMarkResult<Value> {
     case success(Value)
     case failure(MemoMarkError)
 

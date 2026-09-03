@@ -239,7 +239,7 @@ private extension ConfigurationCenterInitialLibraryTests {
     static func makeBootstrapState(
         defaults: UserDefaults,
         rootURL: URL
-    ) -> V1ConfigurationBootstrapState {
+    ) -> ConfigurationBootstrapState {
         let storage = FileConfigurationLibraryStorage(
             baseDirectoryURL: rootURL,
             legacyDefaults: nil
@@ -258,7 +258,7 @@ private extension ConfigurationCenterInitialLibraryTests {
 
         return SettingsRepository(
             settingsService: settings
-        ).loadV1ConfigurationBootstrapState()
+        ).loadConfigurationBootstrapState()
     }
 }
 #endif

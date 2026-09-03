@@ -64,6 +64,15 @@ struct BatchQueueExecutionContractTests {
         #expect(context.startedAt == startedAt)
     }
 
+    @Test("production snapshots expose media output through the stable name")
+    func productionSnapshotUsesStableMediaOutputName() {
+        var snapshot = makeConfiguration()
+        snapshot.mediaOutputModeRawValue =
+            MediaOutputMode.staticImage.rawValue
+
+        #expect(snapshot.mediaOutputMode == .staticImage)
+    }
+
     @MainActor
     @Test("Failure policy preserves classification and terminal-state decisions")
     func failurePolicyPreservesClassificationAndTerminalStateDecisions() {
@@ -203,7 +212,7 @@ struct BatchQueueExecutionContractTests {
         defer { cleanup(context) }
 
         _ = try #require(
-            context.store.enqueue(
+            await context.store.enqueue(
                 payloads: [
                     BatchTaskIntakePayload(
                         sourceURL:
@@ -379,7 +388,7 @@ struct BatchQueueExecutionContractTests {
 
     @MainActor
     @Test("Stable task references survive insertion of a newer job")
-    func stableTaskReferenceSurvivesNewJobInsertion() throws {
+    func stableTaskReferenceSurvivesNewJobInsertion() async throws {
         let suiteName = "MemoMark.BatchQueueExecutionContractTests.Reference.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         let intakeDirectoryURL = FileManager.default.temporaryDirectory
@@ -390,7 +399,8 @@ struct BatchQueueExecutionContractTests {
             externalIntakeStore: ExternalPhotoIntakeStore(
                 defaults: defaults,
                 intakeDirectoryURL: intakeDirectoryURL
-            )
+            ),
+            automaticallyStartsProcessing: false
         )
         defer {
             defaults.removePersistentDomain(forName: suiteName)
@@ -398,18 +408,26 @@ struct BatchQueueExecutionContractTests {
         }
 
         let firstJob = try #require(
-            store.enqueue(
+            await store.enqueue(
                 urls: [URL(fileURLWithPath: "/tmp/reference-first.jpg")]
             )
         )
         let reference = try #require(store.nextPendingTaskReference())
         let firstTaskID = try #require(firstJob.tasks.first?.id)
-        _ = store.enqueue(urls: [URL(fileURLWithPath: "/tmp/reference-newer.jpg")])
+        _ = await store.enqueue(urls: [URL(fileURLWithPath: "/tmp/reference-newer.jpg")])
 
-        store.updateTask(at: reference) { task in
-            task.progress.statusMessage = "stable-reference"
-        }
+        let accepted = await store.applyExecutionEvent(
+            .processingStarted(
+                progress: BatchTaskProgress(
+                    currentUnit: 1,
+                    totalUnits: 5,
+                    statusMessage: "stable-reference"
+                )
+            ),
+            at: reference
+        )
 
+        #expect(accepted)
         let matchedTask = store.jobs
             .first(where: { $0.id == firstJob.id })?.tasks
             .first(where: { $0.id == firstTaskID })
@@ -431,7 +449,7 @@ struct BatchQueueExecutionContractTests {
         )
         try Data("source".utf8).write(to: sourceURL)
 
-        _ = context.store.enqueue(
+        _ = await context.store.enqueue(
             payloads: [
                 BatchTaskIntakePayload(
                     sourceURL: sourceURL,
@@ -457,6 +475,63 @@ struct BatchQueueExecutionContractTests {
     }
 
     @MainActor
+    @Test("Retry commits before starting a new processing owner")
+    func retryCommitsBeforeStartingProcessingOwner() async throws {
+        let context = try makeStoreContext(
+            livePhotoProcessor: FailingLivePhotoProcessor(),
+            automaticallyStartsProcessing: false
+        )
+        defer { cleanup(context) }
+        try FileManager.default.createDirectory(
+            at: context.intakeDirectoryURL,
+            withIntermediateDirectories: true
+        )
+        let sourceURL = context.intakeDirectoryURL
+            .appendingPathComponent("retry-live-photo.HEIC")
+        try Data("source".utf8).write(to: sourceURL)
+        let livePhotoTypeIdentifier = try #require(
+            UTType("com.apple.live-photo")
+        ).identifier
+        let job = try #require(
+            await context.store.enqueue(
+                payloads: [
+                    BatchTaskIntakePayload(
+                        sourceURL: sourceURL,
+                        sourceIdentifier: "retry-live-photo",
+                        contentTypeIdentifier:
+                            livePhotoTypeIdentifier
+                    )
+                ],
+                configuration: makeConfiguration(),
+                launchSource: .shareExtension
+            )
+        )
+        let reference = BatchTaskReference(
+            jobID: job.id,
+            taskID: try #require(job.tasks.first?.id)
+        )
+        let seededFailure = await context.store.applyExecutionEvent(
+            .failed(
+                BatchTaskFailure(
+                    phase: .queued,
+                    message: "retry seed",
+                    canRetry: true
+                )
+            ),
+            at: reference
+        )
+        #expect(seededFailure)
+
+        await context.store.retryFailedTasks(in: job.id)
+        let retriedTask = try await terminalTask(in: context.store)
+        try await processingOwnerStops(in: context.store)
+
+        #expect(retriedTask.phase == .failed)
+        #expect(retriedTask.retryCount == 1)
+        #expect(!context.store.isProcessing)
+    }
+
+    @MainActor
     @Test("Cancellation errors leave work queued for the next processing owner")
     func cancellationErrorLeavesTaskQueued() async throws {
         let context = try makeStoreContext(
@@ -472,7 +547,7 @@ struct BatchQueueExecutionContractTests {
         )
         try Data("source".utf8).write(to: sourceURL)
 
-        _ = context.store.enqueue(
+        _ = await context.store.enqueue(
             payloads: [
                 BatchTaskIntakePayload(
                     sourceURL: sourceURL,
@@ -485,7 +560,7 @@ struct BatchQueueExecutionContractTests {
             configuration: makeConfiguration(),
             launchSource: .shareExtension
         )
-        context.store.startProcessingIfNeeded()
+        await context.store.startProcessingIfNeeded()
 
         let task = try await resumableTask(in: context.store)
 
@@ -512,7 +587,7 @@ struct BatchQueueExecutionContractTests {
         )
         try Data("source".utf8).write(to: sourceURL)
 
-        _ = context.store.enqueue(
+        _ = await context.store.enqueue(
             payloads: [
                 BatchTaskIntakePayload(
                     sourceURL: sourceURL,
@@ -525,7 +600,7 @@ struct BatchQueueExecutionContractTests {
             configuration: makeConfiguration(),
             launchSource: .shareExtension
         )
-        context.store.startProcessingIfNeeded()
+        await context.store.startProcessingIfNeeded()
 
         let task = try await terminalTask(in: context.store)
         try await processingOwnerStops(in: context.store)
@@ -559,7 +634,7 @@ struct BatchQueueExecutionContractTests {
         )
         defer { cleanup(context) }
         let sourceURL = try SyntheticFixtureLibrary.fixtureURL(.portraitJPEG)
-        _ = context.store.enqueue(
+        _ = await context.store.enqueue(
             payloads: [BatchTaskIntakePayload(sourceURL: sourceURL)],
             configuration: makeConfiguration(),
             launchSource: .shareExtension
@@ -582,7 +657,7 @@ struct BatchQueueExecutionContractTests {
             renderHealthValidator: { _, _ in
                 if let store = probe.store,
                    let jobID = probe.jobID {
-                    store.cancelJob(jobID)
+                    await store.cancelJob(jobID)
                 }
                 return []
             }
@@ -591,7 +666,7 @@ struct BatchQueueExecutionContractTests {
         probe.store = context.store
 
         let job = try #require(
-            context.store.enqueue(
+            await context.store.enqueue(
                 payloads: [
                     BatchTaskIntakePayload(
                         sourceURL:
@@ -719,7 +794,6 @@ struct BatchQueueExecutionContractTests {
             )
         )
         let lifecycle = BatchTaskResourceLifecycle(
-            coordinator: BatchProcessingCoordinator(),
             externalIntakeStore: context.intakeStore,
             managedIntakeRootURL: context.intakeDirectoryURL,
             notificationAttachmentsDirectoryURL:
@@ -749,9 +823,8 @@ struct BatchQueueExecutionContractTests {
             .appendingPathComponent(
                 "missing-\(UUID().uuidString).jpg",
                 isDirectory: false
-            )
+        )
         let lifecycle = BatchTaskResourceLifecycle(
-            coordinator: BatchProcessingCoordinator(),
             externalIntakeStore: context.intakeStore,
             managedIntakeRootURL: intakeRoot,
             notificationAttachmentsDirectoryURL:
@@ -767,11 +840,10 @@ struct BatchQueueExecutionContractTests {
 
     @MainActor
     @Test("Notification attachment generation is replaceable and isolated")
-    func notificationAttachmentGenerationIsReplaceableAndIsolated() throws {
+    func notificationAttachmentGenerationIsReplaceableAndIsolated() async throws {
         let context = try makeManagedSourceContext()
         defer { cleanup(context) }
         let lifecycle = BatchTaskResourceLifecycle(
-            coordinator: BatchProcessingCoordinator(),
             externalIntakeStore: context.intakeStore,
             managedIntakeRootURL: context.intakeDirectoryURL,
             notificationAttachmentsDirectoryURL:
@@ -795,6 +867,14 @@ struct BatchQueueExecutionContractTests {
         #expect(firstURL == secondURL)
         #expect(firstURL.deletingLastPathComponent() == context.notificationAttachmentsDirectoryURL)
         #expect(FileManager.default.fileExists(atPath: secondURL.path))
+
+        let detachedURL = try #require(
+            await lifecycle.makeNotificationAttachmentOffMainThreadIfNeeded(
+                from: SyntheticFixtureLibrary.fixtureURL(.portraitJPEG),
+                taskID: taskID
+            )
+        )
+        #expect(detachedURL == firstURL)
     }
 
     @MainActor
@@ -836,7 +916,7 @@ struct BatchQueueExecutionContractTests {
             try? FileManager.default.removeItem(at: intakeDirectoryURL)
         }
 
-        store.markFinalNotificationSent(at: 0)
+        await store.markFinalNotificationSent(for: job.id)
         let firstDeliverySentAt = try #require(
             store.jobs.first?.finalNotificationSentAt
         )
@@ -886,8 +966,14 @@ private extension BatchQueueExecutionContractTests {
         livePhotoProcessor: any LivePhotoBatchTaskProcessing,
         automaticallyStartsProcessing: Bool = true,
         renderHealthValidator: @escaping
-            @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
-                ProductionRenderHealthCheck.validate
+            @MainActor (RecordCard, BatchConfigurationSnapshot) async throws -> [CardTextBlock] = {
+                card,
+                configuration in
+                try ProductionRenderHealthCheck.validate(
+                    card: card,
+                    configuration: configuration
+                )
+            }
     ) throws -> StoreContext {
         let suiteName =
             "MemoMark.BatchQueueExecutionContractTests.\(UUID().uuidString)"
@@ -1049,7 +1135,7 @@ private final class BackgroundExpiringLivePhotoProcessor:
         task: BatchTask,
         configuration: BatchConfigurationSnapshot
     ) async throws -> LivePhotoBatchTaskResult {
-        store?.stopProcessingForBackgroundExpiration()
+        await store?.stopProcessingForBackgroundExpiration()
         throw CancellationError()
     }
 }

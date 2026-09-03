@@ -52,6 +52,18 @@ enum SubjectAvatarAssetOptimizationError: LocalizedError {
     }
 }
 
+/// The editor depends on this narrow capability rather than the concrete
+/// asset writer. Keeping optimization behind a protocol makes request
+/// identity, cancellation and stale-result behavior testable without
+/// touching PhotoKit or the shared asset directory.
+protocol SubjectAvatarAssetOptimizing {
+
+    func optimize(
+        data: Data,
+        cropConfiguration: SubjectAvatarCropConfiguration
+    ) async throws -> OptimizedSubjectAvatarAsset
+}
+
 final class SubjectAvatarAssetOptimizationService {
 
     nonisolated static let displayPixelSize = 512
@@ -68,7 +80,7 @@ final class SubjectAvatarAssetOptimizationService {
     nonisolated static let temporaryAssetPrefix =
         ".memomark-subject-avatar-"
 
-    init() {
+    nonisolated init() {
         Self.cleanupTemporaryAssetDirectories()
     }
 
@@ -280,6 +292,9 @@ final class SubjectAvatarAssetOptimizationService {
         )
     }
 }
+
+extension SubjectAvatarAssetOptimizationService:
+    SubjectAvatarAssetOptimizing {}
 
 private extension SubjectAvatarAssetOptimizationService {
 

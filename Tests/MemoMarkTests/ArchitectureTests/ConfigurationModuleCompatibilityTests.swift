@@ -43,8 +43,8 @@ struct ConfigurationModuleCompatibilityTests {
 
     @Test("Dynamic modules persist production tokens instead of preview samples")
     func dynamicModulesPersistProductionTokensInsteadOfPreviewSamples() {
-        let engine = V1PreviewCompositionEngine()
-        let context = V1PreviewCompositionContext(
+        let engine = MemoryCardPreviewCompositionEngine()
+        let context = MemoryCardPreviewCompositionContext(
             subject: nil,
             birthdayDate: Date(timeIntervalSince1970: 0)
         )
@@ -69,7 +69,7 @@ struct ConfigurationModuleCompatibilityTests {
             template: .classicWhite
         )
 
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: configuration,
             interfaceLanguage: .simplifiedChinese
         )
@@ -92,7 +92,7 @@ struct ConfigurationModuleCompatibilityTests {
         #expect(
             recorderItems.map(\.kind)
             == [
-                V1ContentItem.Kind.token,
+                MemoryCardContentItem.Kind.token,
                 .text,
                 .token,
                 .text
@@ -124,11 +124,11 @@ struct ConfigurationModuleCompatibilityTests {
             template: .classicWhite
         )
 
-        let first = V1ConfigurationDraftProjection(
+        let first = ConfigurationDraftProjection(
             configuration: configuration,
             interfaceLanguage: .simplifiedChinese
         )
-        let second = V1ConfigurationDraftProjection(
+        let second = ConfigurationDraftProjection(
             configuration: configuration,
             interfaceLanguage: .simplifiedChinese
         )
@@ -150,7 +150,7 @@ struct ConfigurationModuleCompatibilityTests {
         let configuration = Self.configuration(
             template: .classicWhite
         )
-        let englishProjection = V1ConfigurationDraftProjection(
+        let englishProjection = ConfigurationDraftProjection(
             configuration: configuration,
             interfaceLanguage: .english
         )
@@ -196,11 +196,11 @@ struct ConfigurationModuleCompatibilityTests {
             leftTopItems: [unknownItem]
         )
 
-        let chineseProjection = V1ConfigurationDraftProjection(
+        let chineseProjection = ConfigurationDraftProjection(
             configuration: Self.configuration(template: template),
             interfaceLanguage: .simplifiedChinese
         )
-        let englishProjection = V1ConfigurationDraftProjection(
+        let englishProjection = ConfigurationDraftProjection(
             configuration: Self.configuration(template: template),
             interfaceLanguage: .english
         )
@@ -241,7 +241,7 @@ struct ConfigurationModuleCompatibilityTests {
         ]
 
         for sourceItem in compositeItems {
-            let projection = V1ConfigurationDraftProjection(
+            let projection = ConfigurationDraftProjection(
                 configuration: Self.configuration(
                     template: Self.template(
                         leftTopItems: [sourceItem]
@@ -277,13 +277,13 @@ struct ConfigurationModuleCompatibilityTests {
 
     @Test("Known metadata tokens resolve from preview context without title fallback")
     func knownMetadataTokensResolveFromPreviewContextWithoutTitleFallback() {
-        let engine = V1PreviewCompositionEngine()
-        let context = V1PreviewCompositionContext(
+        let engine = MemoryCardPreviewCompositionEngine()
+        let context = MemoryCardPreviewCompositionContext(
             subject: nil,
             birthdayDate: Date(timeIntervalSince1970: 0),
             language: .english
         )
-        let draft = V1PreviewDraft(
+        let draft = MemoryCardPreviewDraft(
             items: [
                 .token(
                     "Aspect ratio",
@@ -316,7 +316,7 @@ struct ConfigurationModuleCompatibilityTests {
             name: "Image Size",
             value: IOSInsertableModule.imageSize.rendererToken
         )
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: Self.configuration(
                 template: Self.template(
                     leftTopItems: [imageSizeItem]
@@ -344,17 +344,17 @@ struct ConfigurationModuleCompatibilityTests {
             MemoryConfigurationRecord.self,
             from: data
         )
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: restored,
             interfaceLanguage: .english
         )
         let recorderDraft = try #require(
             projection.regionDrafts[.slotA]
         )
-        let engine = V1PreviewCompositionEngine()
+        let engine = MemoryCardPreviewCompositionEngine()
         let renderModel = engine.renderModel(
-            for: V1DraftBridge.previewDraft(from: recorderDraft),
-            context: V1PreviewCompositionContext(
+            for: DraftBridge.previewDraft(from: recorderDraft),
+            context: MemoryCardPreviewCompositionContext(
                 subject: nil,
                 birthdayDate: Date(timeIntervalSince1970: 0),
                 language: restored.language
@@ -385,7 +385,7 @@ struct ConfigurationModuleCompatibilityTests {
         let originalAreaID = template.leftTopArea.id
         template.leftTopArea.items.append(disabledItem)
         let configuration = Self.configuration(template: template)
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: configuration,
             interfaceLanguage: .simplifiedChinese
         )
@@ -402,7 +402,7 @@ struct ConfigurationModuleCompatibilityTests {
             activeSubjectID: subject.id,
             activeConfigurationID: configuration.id
         )
-        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
             from: aggregate,
             draft: Self.aggregateDraft(from: projection)
         )
@@ -433,7 +433,7 @@ struct ConfigurationModuleCompatibilityTests {
                 ]
             )
             let configuration = Self.configuration(template: template)
-            let projection = V1ConfigurationDraftProjection(
+            let projection = ConfigurationDraftProjection(
                 configuration: configuration,
                 interfaceLanguage: .english
             )
@@ -450,7 +450,7 @@ struct ConfigurationModuleCompatibilityTests {
                 activeSubjectID: subject.id,
                 activeConfigurationID: configuration.id
             )
-            let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+            let candidate = try ConfigurationAggregateCandidateBuilder.build(
                 from: aggregate,
                 draft: Self.aggregateDraft(from: projection)
             )
@@ -476,14 +476,14 @@ struct ConfigurationModuleCompatibilityTests {
             ]
         )
         let configuration = Self.configuration(template: template)
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: configuration
         )
         let projectedDraft = try #require(
             projection.regionDrafts[.slotA]
         )
-        let bridgedDraft = V1DraftBridge.editorDraft(
-            from: V1DraftBridge.previewDraft(from: projectedDraft)
+        let bridgedDraft = DraftBridge.editorDraft(
+            from: DraftBridge.previewDraft(from: projectedDraft)
         )
         #expect(
             bridgedDraft.items.map(\.sourceItemID)
@@ -504,7 +504,7 @@ struct ConfigurationModuleCompatibilityTests {
             activeConfigurationID: configuration.id
         )
 
-        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
             from: aggregate,
             draft: draft
         )
@@ -529,7 +529,7 @@ struct ConfigurationModuleCompatibilityTests {
                 )
             ]
         )
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: Self.configuration(template: template),
             interfaceLanguage: .simplifiedChinese
         )
@@ -552,7 +552,7 @@ struct ConfigurationModuleCompatibilityTests {
                 )
             ]
         )
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: Self.configuration(template: template)
         )
         let item = try #require(
@@ -604,7 +604,7 @@ struct ConfigurationModuleCompatibilityTests {
             ]
         )
         let configuration = Self.configuration(template: template)
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: configuration
         )
         let subject = Self.subject()
@@ -620,7 +620,7 @@ struct ConfigurationModuleCompatibilityTests {
             activeSubjectID: subject.id,
             activeConfigurationID: configuration.id
         )
-        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
             from: aggregate,
             draft: Self.aggregateDraft(from: projection)
         )
@@ -770,9 +770,9 @@ struct ConfigurationModuleCompatibilityTests {
     }
 
     private static func aggregateDraft(
-        from projection: V1ConfigurationDraftProjection
-    ) -> V1ConfigurationAggregateDraft {
-        V1ConfigurationAggregateDraft(
+        from projection: ConfigurationDraftProjection
+    ) -> ConfigurationAggregateDraft {
+        ConfigurationAggregateDraft(
             title: projection.title,
             regionDrafts: projection.regionDrafts,
             regionTemplateIDs: projection.regionTemplateIDs,

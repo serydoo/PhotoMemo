@@ -19,10 +19,10 @@ struct V1NativeSystemInteractionContractTests {
     @Test("recent task history uses a native list sheet")
     func recentTasksUseNativeListSheet() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskRecentHistorySurface.swift"
         )
 
-        #expect(source.contains("List(presentation.historyRows)"))
+        #expect(source.contains("List(rows)"))
         #expect(source.contains(".listStyle(.plain)"))
         #expect(source.contains("task.recent.sheet.title"))
         #expect(source.contains("common.done"))
@@ -31,7 +31,7 @@ struct V1NativeSystemInteractionContractTests {
     @Test("backup swipe confirmation avoids destructive precommit")
     func backupSwipeAvoidsDestructivePrecommit() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/LocalConfigurationLibrarySheet.swift"
         )
 
         #expect(source.contains(".tint(.red)"))
@@ -41,14 +41,20 @@ struct V1NativeSystemInteractionContractTests {
     @Test("configuration controls keep native states while location stays preselectable")
     func configurationUnavailableControlsUseNativeStates() throws {
         let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
+        )
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+        let bindingsSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Bindings.swift"
         )
         let optionListSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
 
         #expect(!rootSource.contains(".disabled(!isLocationSelectable)"))
-        #expect(rootSource.contains(".saveLocationDisplayConfiguration("))
+        #expect((rootSource + pagesSource + bindingsSource).contains(".saveLocationDisplayConfiguration("))
         #expect(optionListSource.contains("ProgressView()"))
         #expect(optionListSource.contains(".buttonStyle(.bordered)"))
     }
@@ -56,7 +62,7 @@ struct V1NativeSystemInteractionContractTests {
     @Test("configuration destructive actions require confirmation")
     func configurationDestructiveActionsRequireConfirmation() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
         )
 
         #expect(source.contains("showsResetConfigurationConfirmation"))
@@ -74,36 +80,39 @@ struct V1NativeSystemInteractionContractTests {
     @Test("compact primary actions share state and press feedback")
     func compactPrimaryActionsShareStateAndFeedback() throws {
         let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
+        )
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
         )
         let homeSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
         let outputSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift"
         )
         let supportSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
         )
 
-        #expect(rootSource.contains("configurationStatus: activeConfigurationStatus"))
-        #expect(outputSource.contains("let configurationStatus: V1ConfigurationStatus"))
+        #expect((rootSource + pagesSource).contains("configurationStatus: activeConfigurationStatus"))
+        #expect(outputSource.contains("let configurationStatus: ConfigurationPersistenceStatus"))
         #expect(outputSource.contains("output.save.saved"))
         #expect(outputSource.contains("output.save.retry"))
         #expect(
             homeSource.contains(
-                ".buttonStyle(V1CompactPrimaryActionButtonStyle())"
+                ".buttonStyle(CompactPrimaryActionButtonStyle())"
             )
         )
         #expect(homeSource.contains("home.process.choose_photo"))
         #expect(!homeSource.contains("备用：App 内选择照片"))
-        #expect(outputSource.contains("V1OutputSaveButtonStyle"))
+        #expect(outputSource.contains("OutputSaveButtonStyle"))
         #expect(
             outputSource.contains(
                 ".disabled(isSaving || configurationStatus == .saved)"
             )
         )
-        #expect(supportSource.contains("struct V1CompactPrimaryActionButtonStyle"))
+        #expect(supportSource.contains("struct CompactPrimaryActionButtonStyle"))
         #expect(supportSource.contains("accessibilityReduceMotion"))
     }
 

@@ -262,7 +262,7 @@ struct MemoMarkiOSBackgroundProcessingFocusCard:
                 MemoMarkiOSBackgroundInfoRow(
                     title: language.localized(key: "processing.focus.updated", fallback: "最近更新"),
                     value:
-                        V1UserFacingDateFormatter.dateTime(
+                        UserFacingDateFormatter.dateTime(
                             updatedAt
                         )
                 )
@@ -325,7 +325,7 @@ struct MemoMarkiOSBackgroundLatestFailureCard:
                         fallback: "最近更新：%@"
                     ),
                     locale: language.locale,
-                    V1UserFacingDateFormatter.dateTime(updatedAt)
+                    UserFacingDateFormatter.dateTime(updatedAt)
                 ))
                 .font(.caption)
                 .foregroundStyle(.secondary)

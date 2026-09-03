@@ -237,8 +237,8 @@ final class LivePhotoBatchTaskProcessor:
         any LivePhotoAssetWriting
     private let importService:
         PhotoImportService
-    private let cardBuildService:
-        RecordCardBuildService
+    private let buildRecordCard:
+        BuildRecordCardTransaction
     private let exportService:
         RecordCardExportService
     private let photoLibraryExportService:
@@ -270,8 +270,8 @@ final class LivePhotoBatchTaskProcessor:
             (any LivePhotoAssetWriting)? = nil,
         importService:
             PhotoImportService? = nil,
-        cardBuildService:
-            RecordCardBuildService? = nil,
+        buildRecordCard:
+            BuildRecordCardTransaction? = nil,
         exportService:
             RecordCardExportService? = nil,
         photoLibraryExportService:
@@ -319,9 +319,11 @@ final class LivePhotoBatchTaskProcessor:
                         allowsLivePhoto: true
                     )
             )
-        self.cardBuildService =
-            cardBuildService
-            ?? RecordCardBuildService()
+        self.buildRecordCard =
+            buildRecordCard
+            ?? BuildRecordCardTransaction(
+                buildService: RecordCardBuildService()
+            )
         self.exportService =
             exportService
             ?? RecordCardExportService(
@@ -353,7 +355,7 @@ final class LivePhotoBatchTaskProcessor:
                     ),
                 intent:
                     configuration
-                    .v1MediaOutputMode
+                    .mediaOutputMode
                     .mediaProcessingIntent
             )
 
@@ -425,6 +427,21 @@ extension LivePhotoBatchTaskProcessor {
 
 private extension LivePhotoBatchTaskProcessor {
 
+    func buildCard(
+        from photo: SelectedPhoto,
+        configuration: BatchConfigurationSnapshot
+    ) async throws -> RecordCard {
+        switch await buildRecordCard.buildCardOffMainThread(
+            from: photo,
+            configuration: configuration
+        ) {
+        case let .success(card):
+            return card
+        case let .failure(error):
+            throw error
+        }
+    }
+
     func validateRenderHealth(
         card: RecordCard,
         configuration: BatchConfigurationSnapshot,
@@ -471,7 +488,7 @@ private extension LivePhotoBatchTaskProcessor {
                 originalFileName: bundle.stillPhotoResource.originalFilename,
                 contentTypeIdentifier: bundle.stillPhotoResource.uniformTypeIdentifier
             )
-            let card = cardBuildService.buildCard(
+            let card = try await buildCard(
                 from: importedPhoto,
                 configuration: configuration
             )
@@ -538,12 +555,10 @@ private extension LivePhotoBatchTaskProcessor {
                         ?? task
                         .contentTypeIdentifier
                 )
-            let card =
-                cardBuildService.buildCard(
-                    from: importedPhoto,
-                    configuration:
-                        configuration
-                )
+            let card = try await buildCard(
+                from: importedPhoto,
+                configuration: configuration
+            )
             try validateRenderHealth(
                 card: card,
                 configuration: configuration,

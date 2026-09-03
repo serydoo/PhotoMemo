@@ -41,9 +41,9 @@ struct SettingsServiceTests {
         )
     }
 
-    @Test("loadV1BootstrapReadState preserves typed badge read failures while still surfacing editor-state values")
+    @Test("configuration bootstrap read preserves typed badge read failures while still surfacing editor-state values")
     @MainActor
-    func loadV1BootstrapReadStatePreservesTypedBadgeFailures() throws {
+    func configurationBootstrapReadPreservesTypedBadgeFailures() throws {
 
         let suiteName =
             "MemoMark.SettingsServiceTests.bootstrapReadState.\(UUID().uuidString)"
@@ -79,7 +79,7 @@ struct SettingsServiceTests {
         let settings =
             SettingsService(defaults: defaults)
         let readState =
-            settings.loadV1BootstrapReadState()
+            settings.loadConfigurationBootstrapReadState()
 
         switch readState.badgeResult {
         case .decodingFailed(let failure):
@@ -108,9 +108,9 @@ struct SettingsServiceTests {
         )
     }
 
-    @Test("loadV1BootstrapReadState restores the persisted memory subject")
+    @Test("configuration bootstrap read restores the persisted memory subject")
     @MainActor
-    func loadV1BootstrapReadStateRestoresPersistedMemorySubject() throws {
+    func configurationBootstrapReadRestoresPersistedMemorySubject() throws {
 
         let suiteName =
             "MemoMark.SettingsServiceTests.bootstrapSubject.\(UUID().uuidString)"
@@ -143,7 +143,7 @@ struct SettingsServiceTests {
 
         let readState =
             SettingsService(defaults: defaults)
-            .loadV1BootstrapReadState()
+            .loadConfigurationBootstrapReadState()
 
         switch readState.subjectResult {
         case .success(let restoredSubject):

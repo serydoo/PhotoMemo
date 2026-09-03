@@ -208,7 +208,7 @@ struct SettingsPersistenceLayerTests {
         #expect(saveProjectionCallCount == 0)
         #expect(service.configurationLibraryStartupRecoveryError == nil)
         #expect(
-            service.loadV1BootstrapReadState()
+            service.loadConfigurationBootstrapReadState()
                 .configurationLibrary?.revision == 42
         )
         #expect(

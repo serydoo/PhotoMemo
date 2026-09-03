@@ -123,8 +123,9 @@ private extension MemoMarkiOSLiveActivityBridgeService {
                 jobTitle:
                     snapshot.title,
                 launchSourceTitle:
-                    snapshot.launchSource
-                    .displayTitle
+                    localizedLaunchSourceTitle(
+                        snapshot.launchSource
+                    )
             )
 
         let contentState =
@@ -132,8 +133,9 @@ private extension MemoMarkiOSLiveActivityBridgeService {
             .ContentState(
                 phaseTitle:
                     snapshot.currentPhaseTitle
-                    ?? snapshot.jobState
-                    .displayTitle,
+                    ?? localizedJobStateTitle(
+                        snapshot.jobState
+                    ),
                 statusMessage:
                     snapshot.localizedStatusMessage(
                         for: .interfaceStored
@@ -246,6 +248,24 @@ private extension MemoMarkiOSLiveActivityBridgeService {
         case .completed:
             return "completed"
         }
+    }
+
+    func localizedLaunchSourceTitle(
+        _ source: BatchJobLaunchSource
+    ) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: "legacy.home.recent.source.\(source.rawValue)",
+            fallback: source.displayTitle
+        )
+    }
+
+    func localizedJobStateTitle(
+        _ state: BatchJobState
+    ) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: "processing.background.job_state.\(state.rawValue)",
+            fallback: state.displayTitle
+        )
     }
 }
 #endif

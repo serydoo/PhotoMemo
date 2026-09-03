@@ -99,8 +99,9 @@ Photo, and QA-05 selects the highest-quality RAW/ProRAW input through the
 production picker route; each requires exactly one new output and original
 input preservation. QA-07 and QA-08 enable a Debug-only test seam after the
 PhotoKit transaction is accepted and before local commit acknowledgement, then
-terminate and relaunch the host to check that the output count does not grow a
-second time. These are direct device evidence slices, not a declaration that
+terminate and relaunch the host. After that first recovery, each scenario makes
+two additional cold launches and requires the output count to remain unchanged.
+These are direct device evidence slices, not a declaration that
 the full TX-001 D1-D5 matrix is closed. In particular, they do not replace
 delayed-visibility, permission-change, cancellation, or receipt-persistence
 failure evidence. The QA-07/08 UI-test termination is recorded separately from

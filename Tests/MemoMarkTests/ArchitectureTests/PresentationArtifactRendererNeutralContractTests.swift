@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import Testing
+import UniformTypeIdentifiers
 @testable import MemoMark
 
 @Suite("Presentation artifact renderer-neutral contract")
@@ -160,6 +161,99 @@ struct PresentationArtifactRendererNeutralContractTests {
         )
     }
 
+    @Test("Static and Live still callers compose identical artifact pixels")
+    func staticAndLiveStillCallersComposeIdenticalArtifactPixels() throws {
+        let sourceImage = try makeHorizontalBandsImage(
+            width: 60,
+            height: 30
+        )
+        let lowerLayer = try makeSolidImage(
+            width: 16,
+            height: 12,
+            color: .red
+        )
+        let upperLayer = try makeSolidImage(
+            width: 12,
+            height: 8,
+            color: .blue
+        )
+        let lowerFrame = CGRect(
+            x: 4,
+            y: 4,
+            width: 16,
+            height: 12
+        )
+        let upperFrame = CGRect(
+            x: 8,
+            y: 6,
+            width: 12,
+            height: 8
+        )
+        let artifact = try PresentationArtifact(
+            canvasSize: CGSize(width: 40, height: 40),
+            photoFrame: CGRect(x: 10, y: 10, width: 20, height: 20),
+            footerFrame: lowerFrame,
+            footerImage: lowerLayer,
+            placement: .floating,
+            canvasBackground: .transparent,
+            layers: [
+                .init(
+                    frame: upperFrame,
+                    image: upperLayer,
+                    zIndex: 20
+                ),
+                .init(
+                    frame: lowerFrame,
+                    image: lowerLayer,
+                    zIndex: 10
+                )
+            ]
+        )
+
+        let staticImage = try #require(
+            MemoMarkRenderedImageArtifactGuard.composingSourcePhoto(
+                sourceImage,
+                with: artifact
+            )
+        )
+        let writer = CapturingStillImageWriter()
+        _ = try LivePhotoStillImageCompositionService(
+            sourcePreparer: FixedStillImageSourcePreparer(
+                image: sourceImage
+            ),
+            writer: writer
+        )
+        .composeStillImage(
+            sourceStillURL: URL(fileURLWithPath: "/tmp/source.png"),
+            overlay: artifact,
+            outputURL: URL(fileURLWithPath: "/tmp/output.png"),
+            outputType: .png
+        )
+        let liveStillImage = try #require(writer.image)
+
+        #expect(staticImage.width == liveStillImage.width)
+        #expect(staticImage.height == liveStillImage.height)
+        #expect(
+            canonicalPixels(in: staticImage)
+            == canonicalPixels(in: liveStillImage)
+        )
+        #expect(
+            averageColor(
+                in: liveStillImage,
+                rect: CGRect(x: 0, y: 30, width: 4, height: 4)
+            ).alpha == 0
+        )
+        #expect(
+            colorDistance(
+                averageColor(
+                    in: liveStillImage,
+                    rect: CGRect(x: 10, y: 8, width: 4, height: 4)
+                ),
+                .blue
+            ) == 0
+        )
+    }
+
     @Test("Still and video composers consume artifact layers and background policy")
     func stillAndVideoComposersConsumeArtifactLayersAndBackgroundPolicy() throws {
         let stillSource = try sourceFile(
@@ -228,6 +322,7 @@ private extension PresentationArtifactRendererNeutralContractTests {
         static let white = RGBAColor(red: 255, green: 255, blue: 255, alpha: 255)
         static let red = RGBAColor(red: 255, green: 0, blue: 0, alpha: 255)
         static let blue = RGBAColor(red: 0, green: 0, blue: 255, alpha: 255)
+        static let green = RGBAColor(red: 0, green: 255, blue: 0, alpha: 255)
     }
 
     func makeSolidImage(
@@ -263,6 +358,85 @@ private extension PresentationArtifactRendererNeutralContractTests {
                 intent: .defaultIntent
             )
         )
+    }
+
+    func makeHorizontalBandsImage(
+        width: Int,
+        height: Int
+    ) throws -> CGImage {
+        let bytesPerRow = width * 4
+        var data = [UInt8](
+            repeating: 0,
+            count: bytesPerRow * height
+        )
+        for row in 0..<height {
+            for column in 0..<width {
+                let color: RGBAColor
+                if column < width / 3 {
+                    color = .red
+                } else if column < width * 2 / 3 {
+                    color = .green
+                } else {
+                    color = .blue
+                }
+                let offset = row * bytesPerRow + column * 4
+                data[offset] = color.red
+                data[offset + 1] = color.green
+                data[offset + 2] = color.blue
+                data[offset + 3] = color.alpha
+            }
+        }
+        let provider = try #require(
+            CGDataProvider(data: Data(data) as CFData)
+        )
+        return try #require(
+            CGImage(
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bitsPerPixel: 32,
+                bytesPerRow: bytesPerRow,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGBitmapInfo(
+                    rawValue: CGImageAlphaInfo.premultipliedLast.rawValue
+                ),
+                provider: provider,
+                decode: nil,
+                shouldInterpolate: false,
+                intent: .defaultIntent
+            )
+        )
+    }
+
+    func canonicalPixels(
+        in image: CGImage
+    ) -> [UInt8] {
+        let bytesPerRow = image.width * 4
+        var data = [UInt8](
+            repeating: 0,
+            count: bytesPerRow * image.height
+        )
+        guard let context = CGContext(
+            data: &data,
+            width: image.width,
+            height: image.height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return []
+        }
+        context.draw(
+            image,
+            in: CGRect(
+                x: 0,
+                y: 0,
+                width: image.width,
+                height: image.height
+            )
+        )
+        return data
     }
 
     func averageColor(
@@ -328,5 +502,39 @@ private extension PresentationArtifactRendererNeutralContractTests {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
         return repositoryRoot.appendingPathComponent(relativePath)
+    }
+}
+
+private struct FixedStillImageSourcePreparer:
+    LivePhotoStillImageSourcePreparing {
+
+    let image: CGImage
+
+    func preparedStillImage(
+        sourceStillURL: URL,
+        targetFrame: CGRect
+    ) throws -> LivePhotoPreparedStillImage {
+        LivePhotoPreparedStillImage(
+            image: image,
+            properties: [:]
+        )
+    }
+}
+
+private final class CapturingStillImageWriter:
+    LivePhotoStillImageWriting {
+
+    private(set) var image: CGImage?
+
+    func writeComposedStillImage(
+        _ image: CGImage,
+        sourceProperties: [CFString: Any],
+        outputURL: URL,
+        outputType: UTType,
+        outputDescription: String?,
+        pairingIdentifier: String?
+    ) throws -> URL {
+        self.image = image
+        return outputURL
     }
 }

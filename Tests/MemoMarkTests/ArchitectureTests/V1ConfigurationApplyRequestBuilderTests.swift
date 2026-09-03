@@ -4,7 +4,7 @@ import Testing
 @testable import MemoMark
 
 @Suite("V1 configuration apply request builder")
-struct V1ConfigurationApplyRequestBuilderTests {
+struct SaveConfigurationCommandBuilderTests {
 
     @Test("subject avatar logo does not reuse its asset as a custom logo")
     func subjectAvatarLogoDoesNotReuseAssetAsCustomLogo() throws {
@@ -70,7 +70,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             .appendingPathComponent(relativePath)
             .standardizedFileURL
             .path
-        let draft = V1ConfigurationAggregateDraft(
+        let draft = ConfigurationAggregateDraft(
             title: "对象头像",
             regionDrafts: [:],
             regionTemplateIDs: [:],
@@ -96,7 +96,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             savedAt: Date(timeIntervalSince1970: 200)
         )
 
-        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
             from: aggregate,
             draft: draft
         )
@@ -153,7 +153,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             activeSubjectID: subject.id,
             activeConfigurationID: configurationID
         )
-        let draft = V1ConfigurationAggregateDraft(
+        let draft = ConfigurationAggregateDraft(
             title: "无头像对象",
             regionDrafts: [:],
             regionTemplateIDs: [:],
@@ -178,7 +178,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             savedAt: Date(timeIntervalSince1970: 200)
         )
 
-        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
             from: aggregate,
             draft: draft
         )
@@ -264,7 +264,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             activeConfigurationID: configurationID
         )
 
-        let avatarDraft = V1ConfigurationAggregateDraft(
+        let avatarDraft = ConfigurationAggregateDraft(
             title: "头像 Logo",
             regionDrafts: [:],
             regionTemplateIDs: [:],
@@ -291,7 +291,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
             savedAt: Date(timeIntervalSince1970: 200)
         )
-        let avatarCandidate = try V1ConfigurationAggregateCandidateBuilder
+        let avatarCandidate = try ConfigurationAggregateCandidateBuilder
             .build(from: aggregate, draft: avatarDraft)
 
         #expect(avatarCandidate.aggregate.validationResult == .valid)
@@ -311,7 +311,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 }
         )
 
-        let customDraft = V1ConfigurationAggregateDraft(
+        let customDraft = ConfigurationAggregateDraft(
             title: "自选 Logo",
             regionDrafts: [:],
             regionTemplateIDs: [:],
@@ -338,7 +338,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
             savedAt: Date(timeIntervalSince1970: 300)
         )
-        let customCandidate = try V1ConfigurationAggregateCandidateBuilder
+        let customCandidate = try ConfigurationAggregateCandidateBuilder
             .build(
                 from: avatarCandidate.aggregate,
                 draft: customDraft
@@ -357,7 +357,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 }
         )
 
-        let appleDraft = V1ConfigurationAggregateDraft(
+        let appleDraft = ConfigurationAggregateDraft(
             title: "Apple Logo",
             regionDrafts: [:],
             regionTemplateIDs: [:],
@@ -376,7 +376,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
             savedAt: Date(timeIntervalSince1970: 400)
         )
-        let appleCandidate = try V1ConfigurationAggregateCandidateBuilder
+        let appleCandidate = try ConfigurationAggregateCandidateBuilder
             .build(from: customCandidate.aggregate, draft: appleDraft)
 
         #expect(appleCandidate.aggregate.validationResult == .valid)
@@ -432,7 +432,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             )
         )
 
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: configuration
         )
 
@@ -485,7 +485,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             .appendingPathComponent(relativePath)
             .standardizedFileURL
             .path
-        let draft = V1ConfigurationAggregateDraft(
+        let draft = ConfigurationAggregateDraft(
             title: "自选标识",
             regionDrafts: [:],
             regionTemplateIDs: [:],
@@ -509,7 +509,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             savedAt: Date(timeIntervalSince1970: 200)
         )
 
-        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
             from: aggregate,
             draft: draft
         )
@@ -526,7 +526,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                 }) == true
         )
 
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: candidate.configuration
         )
         #expect(projection.badge?.imagePath == runtimePath)
@@ -575,7 +575,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             activeSubjectID: subject.id,
             activeConfigurationID: configurationID
         )
-        let draft = V1ConfigurationAggregateDraft(
+        let draft = ConfigurationAggregateDraft(
             title: "未选择自选标识",
             regionDrafts: [:],
             regionTemplateIDs: [:],
@@ -595,7 +595,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             savedAt: Date(timeIntervalSince1970: 200)
         )
 
-        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
             from: aggregate,
             draft: draft
         )
@@ -652,10 +652,10 @@ struct V1ConfigurationApplyRequestBuilderTests {
         )
         let locationConfiguration = LocationDisplayInspectorPresenter
             .configuration(for: "cityDistrict")
-        let draft = V1ConfigurationAggregateDraft(
+        let draft = ConfigurationAggregateDraft(
             title: "模块配置",
             regionDrafts: [
-                .slotA: V1EditorDraft(items: [
+                .slotA: MemoryCardEditorDraft(items: [
                     .text("他爹手持"),
                     .token(
                         IOSInsertableModule.cameraModel.title,
@@ -664,7 +664,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                         systemImage: IOSInsertableModule.cameraModel.systemImage
                     )
                 ]),
-                .slotB: V1EditorDraft(items: [
+                .slotB: MemoryCardEditorDraft(items: [
                     .text("记录于"),
                     .token(
                         IOSInsertableModule.captureDate.title,
@@ -673,7 +673,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                         systemImage: IOSInsertableModule.captureDate.systemImage
                     )
                 ]),
-                .slotC: V1EditorDraft(items: [
+                .slotC: MemoryCardEditorDraft(items: [
                     .token(
                         IOSInsertableModule.location.title,
                         value: "示例市 · 示例区",
@@ -681,7 +681,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                         systemImage: IOSInsertableModule.location.systemImage
                     )
                 ]),
-                .slotD: V1EditorDraft(items: [
+                .slotD: MemoryCardEditorDraft(items: [
                     .token(
                         IOSInsertableModule.smartTime.title,
                         value: "今天小宝1岁1个月15天",
@@ -708,7 +708,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             savedAt: Date(timeIntervalSince1970: 200)
         )
 
-        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
             from: aggregate,
             draft: draft
         )
@@ -731,7 +731,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             reloadedConfiguration.editor.template.rightBottomArea.items.map(\.value)
             == [IOSInsertableModule.smartTime.rendererToken, "啦！"]
         )
-        let projection = V1ConfigurationDraftProjection(
+        let projection = ConfigurationDraftProjection(
             configuration: reloadedConfiguration
         )
 
@@ -795,12 +795,12 @@ struct V1ConfigurationApplyRequestBuilderTests {
             imagePath: customLogoPath,
             isSystemDefault: false
         )
-        let input = V1ConfigurationAggregateDraft(
+        let input = ConfigurationAggregateDraft(
             title: "After",
             regionDrafts: [
-                .slotA: V1EditorDraft(items: [
+                .slotA: MemoryCardEditorDraft(items: [
                     .text("Recorder "),
-                    V1ContentItem(
+                    MemoryCardContentItem(
                         id: UUID(),
                         kind: .token,
                         title: "Date",
@@ -809,7 +809,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
                         systemImage: "calendar"
                     )
                 ]),
-                .slotD: V1EditorDraft(items: [.text("Memory")])
+                .slotD: MemoryCardEditorDraft(items: [.text("Memory")])
             ],
             regionTemplateIDs: [.slotA: "after.recorder"],
             locationConfiguration: .init(
@@ -831,7 +831,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             savedAt: Date(timeIntervalSince1970: 800)
         )
 
-        let result = try V1ConfigurationAggregateCandidateBuilder.build(
+        let result = try ConfigurationAggregateCandidateBuilder.build(
             from: aggregate,
             draft: input
         )
@@ -921,8 +921,8 @@ struct V1ConfigurationApplyRequestBuilderTests {
             )
         )
 
-        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
-            from: V1ConfigurationApplyBuildInput(
+        let request = SaveConfigurationCommandBuilder.buildRequest(
+            from: ConfigurationSaveCommandInput(
                 selectedSubject: subject,
                 subjects: state.subjects,
                 selectedSubjectID: subject.id,
@@ -971,7 +971,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             imagePath: "/tmp/stale-logo.png"
         )
 
-        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
+        let request = SaveConfigurationCommandBuilder.buildRequest(
             from: Self.makeLogoBuildInput(
                 subject: subject,
                 candidate: candidate,
@@ -994,7 +994,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
         let subject = try #require(
             ConfigurationCenterState.mock.selectedSubject
         )
-        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
+        let request = SaveConfigurationCommandBuilder.buildRequest(
             from: Self.makeLogoBuildInput(
                 subject: subject,
                 candidate: Self.makeLogoCandidate(
@@ -1024,7 +1024,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
             imagePath: "/tmp/stale-logo.png"
         )
 
-        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
+        let request = SaveConfigurationCommandBuilder.buildRequest(
             from: Self.makeLogoBuildInput(
                 subject: subject,
                 candidate: candidate,
@@ -1053,8 +1053,8 @@ struct V1ConfigurationApplyRequestBuilderTests {
             .date
             ?? birthdayDate
 
-        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
-            from: V1ConfigurationApplyBuildInput(
+        let request = SaveConfigurationCommandBuilder.buildRequest(
+            from: ConfigurationSaveCommandInput(
                 selectedSubject: baseState.selectedSubject,
                 subjects: baseState.subjects,
                 selectedSubjectID: baseState.selectedSubjectID,
@@ -1087,7 +1087,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
         )
 
         let expectedSubject =
-            V1ConfigurationApplyRequestBuilder
+            SaveConfigurationCommandBuilder
             .alignedSelectedSubject(
                 from: baseState.selectedSubject,
                 birthdayDate: resolvedAnchorDate
@@ -1096,7 +1096,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
         #expect(request.subject == expectedSubject)
         #expect(
             request.subjects
-            == V1SubjectLibraryResolver.subjectsForSaving(
+            == SubjectLibraryResolver.subjectsForSaving(
                 selectedSubject: expectedSubject,
                 subjects: baseState.subjects
             )
@@ -1126,7 +1126,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
         #expect(request.newAlbumName == "成长记录")
         #expect(
             request.timeAnchorTitle
-            == V1ResolvedMemoryWriteTextPresenter
+            == MemoryWriteTextPresenter
             .legacyBirthdayAnchorTitle(
                 subject: expectedSubject
             )
@@ -1141,8 +1141,8 @@ struct V1ConfigurationApplyRequestBuilderTests {
             LocationDisplayInspectorPresenter
             .configuration(for: "cityDistrict")
 
-        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
-            from: V1ConfigurationApplyBuildInput(
+        let request = SaveConfigurationCommandBuilder.buildRequest(
+            from: ConfigurationSaveCommandInput(
                 selectedSubject: baseState.selectedSubject,
                 subjects: baseState.subjects,
                 selectedSubjectID: baseState.selectedSubjectID,
@@ -1223,9 +1223,9 @@ struct V1ConfigurationApplyRequestBuilderTests {
         subject.behavior.primaryAnchor = anchor.title
 
         let request =
-            V1ConfigurationApplyRequestBuilder
+            SaveConfigurationCommandBuilder
             .buildRequest(
-                from: V1ConfigurationApplyBuildInput(
+                from: ConfigurationSaveCommandInput(
                     selectedSubject: subject,
                     subjects: [subject],
                     selectedSubjectID: subject.id,
@@ -1293,9 +1293,9 @@ struct V1ConfigurationApplyRequestBuilderTests {
             )
 
         let request =
-            V1ConfigurationApplyRequestBuilder
+            SaveConfigurationCommandBuilder
             .buildRequest(
-                from: V1ConfigurationApplyBuildInput(
+                from: ConfigurationSaveCommandInput(
                     selectedSubject: selectedSubject,
                     subjects: [staleSubject],
                     selectedSubjectID: selectedSubject.id,
@@ -1343,8 +1343,8 @@ struct V1ConfigurationApplyRequestBuilderTests {
     func buildRequestKeepsSmartMemoryWritingEnabledByDefaultAndFallsBackToStoredSelectionWhenSubjectIsNil() {
         let baseState = ConfigurationCenterState.mock
 
-        let request = V1ConfigurationApplyRequestBuilder.buildRequest(
-            from: V1ConfigurationApplyBuildInput(
+        let request = SaveConfigurationCommandBuilder.buildRequest(
+            from: ConfigurationSaveCommandInput(
                 selectedSubject: nil,
                 subjects: baseState.subjects,
                 selectedSubjectID: baseState.selectedSubjectID,
@@ -1380,7 +1380,7 @@ struct V1ConfigurationApplyRequestBuilderTests {
     }
 
     private static func makeLogoCandidate(
-        mode: V1LogoMode,
+        mode: ConfigurationLogoMode,
         badge: Badge?
     ) -> MemoryConfigurationRecord {
         MemoryConfigurationRecord(
@@ -1431,8 +1431,8 @@ struct V1ConfigurationApplyRequestBuilderTests {
         badge: Badge?,
         presentationRoute:
             MemoryConfigurationRecord.Presentation.Route = .classicWhite
-    ) -> V1ConfigurationApplyBuildInput {
-        V1ConfigurationApplyBuildInput(
+    ) -> ConfigurationSaveCommandInput {
+        ConfigurationSaveCommandInput(
             selectedSubject: subject,
             subjects: [subject],
             selectedSubjectID: subject.id,

@@ -1,29 +1,29 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1DraftOrchestrationCoordinator {
+struct DraftOrchestrationCoordinator {
 
     struct ViewState: Hashable {
-        var regionDrafts: [CardRegion: V1EditorDraft]
+        var regionDrafts: [CardRegion: MemoryCardEditorDraft]
         var activeTextItemIDs: [CardRegion: UUID]
         var activeConfigurationStatus:
-            V1ConfigurationStatus
+            ConfigurationPersistenceStatus
     }
 
     struct MutationApplication: Hashable {
         var viewState: ViewState
         var previewDraftsByRegion:
-            [CardRegion: V1PreviewDraft]
+            [CardRegion: MemoryCardPreviewDraft]
     }
 
     static func draft(
         for region: CardRegion,
         viewState: ViewState,
-        makeDefaultDraft: (CardRegion) -> V1EditorDraft
-    ) -> V1EditorDraft {
-        V1DraftBridge.editorDraft(
+        makeDefaultDraft: (CardRegion) -> MemoryCardEditorDraft
+    ) -> MemoryCardEditorDraft {
+        DraftBridge.editorDraft(
             from:
-                V1DraftMutationCoordinator
+                DraftMutationCoordinator
                 .draft(
                     for: region,
                     state:
@@ -31,7 +31,7 @@ struct V1DraftOrchestrationCoordinator {
                             from: viewState
                         ),
                     makeDefaultDraft: {
-                        V1DraftBridge
+                        DraftBridge
                             .mutationDraft(
                                 from:
                                     makeDefaultDraft(
@@ -44,7 +44,7 @@ struct V1DraftOrchestrationCoordinator {
     }
 
     static func applyMutationUpdate(
-        _ update: V1DraftMutationCoordinator.Update
+        _ update: DraftMutationCoordinator.Update
     ) -> MutationApplication {
         let viewState =
             viewState(
@@ -64,14 +64,14 @@ struct V1DraftOrchestrationCoordinator {
     static func dynamicPreviewDrafts(
         for regions: [CardRegion],
         viewState: ViewState,
-        makeDefaultDraft: (CardRegion) -> V1EditorDraft
-    ) -> [CardRegion: V1PreviewDraft] {
+        makeDefaultDraft: (CardRegion) -> MemoryCardEditorDraft
+    ) -> [CardRegion: MemoryCardPreviewDraft] {
         Dictionary(
             uniqueKeysWithValues:
                 regions.map { region in
                     (
                         region,
-                        V1DraftBridge.previewDraft(
+                        DraftBridge.previewDraft(
                             from:
                                 viewState.regionDrafts[
                                     region
@@ -86,10 +86,10 @@ struct V1DraftOrchestrationCoordinator {
     }
 
     static func viewState(
-        from state: V1DraftMutationCoordinator.State
+        from state: DraftMutationCoordinator.State
     ) -> ViewState {
         let bridgedState =
-            V1DraftBridge.viewState(
+            DraftBridge.viewState(
                 from: state
             )
 
@@ -106,8 +106,8 @@ struct V1DraftOrchestrationCoordinator {
 
     static func mutationState(
         from viewState: ViewState
-    ) -> V1DraftMutationCoordinator.State {
-        V1DraftBridge.mutationState(
+    ) -> DraftMutationCoordinator.State {
+        DraftBridge.mutationState(
             regionDrafts:
                 viewState.regionDrafts,
             activeTextItemIDs:
@@ -121,7 +121,7 @@ struct V1DraftOrchestrationCoordinator {
     private static func previewDrafts(
         for regions: Set<CardRegion>,
         viewState: ViewState
-    ) -> [CardRegion: V1PreviewDraft] {
+    ) -> [CardRegion: MemoryCardPreviewDraft] {
         Dictionary(
             uniqueKeysWithValues:
                 regions.compactMap { region in
@@ -135,7 +135,7 @@ struct V1DraftOrchestrationCoordinator {
 
                     return (
                         region,
-                        V1DraftBridge.previewDraft(
+                        DraftBridge.previewDraft(
                             from: draft
                         )
                     )

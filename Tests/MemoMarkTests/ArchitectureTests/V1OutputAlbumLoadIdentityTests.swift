@@ -10,8 +10,7 @@ struct V1OutputAlbumLoadIdentityTests {
     func albumResultsAreBoundToTheRequestingIdentity() {
         let subjectID = UUID()
         let configurationID = UUID()
-        let request = V1OutputAlbumLoadRequest(
-            generation: 3,
+        let context = OutputAlbumLoadContext(
             subjectID: subjectID,
             configurationID: configurationID,
             outputTarget: .existingAlbum,
@@ -19,48 +18,43 @@ struct V1OutputAlbumLoadIdentityTests {
         )
 
         #expect(
-            request.matches(
+            context == OutputAlbumLoadContext(
                 subjectID: subjectID,
-                configurationID: configurationID
+                configurationID: configurationID,
+                outputTarget: .existingAlbum,
+                selectedExistingAlbumIdentifier: "album-1"
             )
         )
         #expect(
-            !request.matches(
+            context != OutputAlbumLoadContext(
                 subjectID: UUID(),
-                configurationID: configurationID
-            )
-        )
-        #expect(
-            !request.matches(
-                subjectID: subjectID,
-                configurationID: UUID()
-            )
-        )
-        #expect(
-            request.matches(
-                generation: 3,
-                subjectID: subjectID,
                 configurationID: configurationID,
                 outputTarget: .existingAlbum,
                 selectedExistingAlbumIdentifier: "album-1"
             )
         )
         #expect(
-            !request.matches(
-                generation: 2,
+            context != OutputAlbumLoadContext(
                 subjectID: subjectID,
-                configurationID: configurationID,
+                configurationID: UUID(),
                 outputTarget: .existingAlbum,
                 selectedExistingAlbumIdentifier: "album-1"
             )
         )
         #expect(
-            !request.matches(
-                generation: 3,
+            context != OutputAlbumLoadContext(
                 subjectID: subjectID,
                 configurationID: configurationID,
                 outputTarget: .automatic,
                 selectedExistingAlbumIdentifier: "album-1"
+            )
+        )
+        #expect(
+            context != OutputAlbumLoadContext(
+                subjectID: subjectID,
+                configurationID: configurationID,
+                outputTarget: .existingAlbum,
+                selectedExistingAlbumIdentifier: "album-2"
             )
         )
     }

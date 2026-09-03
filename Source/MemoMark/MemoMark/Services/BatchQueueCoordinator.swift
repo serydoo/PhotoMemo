@@ -3,15 +3,16 @@ import Foundation
 
 @MainActor
 final class BatchQueueCoordinator {
-    struct TaskReference {
-        let jobID: UUID
-        let taskID: UUID
-    }
+    typealias TaskReference =
+        BatchTaskReference
 
     private let diagnosticsDefaults: UserDefaults
     private let diagnosticsRecorder: BatchTaskDiagnosticsRecorder
     private let resourceLifecycle: BatchTaskResourceLifecycle
     private let taskProcessor: BatchTaskProcessor
+
+    private let transitionPolicy =
+        BatchQueueTransitionPolicy()
 
     init(
         diagnosticsDefaults: UserDefaults,
@@ -77,55 +78,19 @@ final class BatchQueueCoordinator {
     }
 
     func retryFailedTasks(in jobs: inout [BatchJob], jobID: UUID) -> Bool {
-        guard let jobIndex = jobs.firstIndex(where: { $0.id == jobID }) else { return false }
-        var job = jobs[jobIndex]
-        var didQueueRetry = false
-        for index in job.tasks.indices {
-            guard job.tasks[index].phase == .failed,
-                  job.tasks[index].failure?.canRetry ?? true else {
-                continue
-            }
-            job.tasks[index].phase = .queued
-            job.tasks[index].failure = nil
-            job.tasks[index].renderedFileURL = nil
-            job.tasks[index].notificationAttachmentURL = nil
-            job.tasks[index].savedAlbumName = nil
-            job.tasks[index].savedAssetIdentifier = nil
-            job.tasks[index].progress = BatchTaskProgress()
-            job.tasks[index].retryCount += 1
-            didQueueRetry = true
-        }
-        guard didQueueRetry else { return false }
-        job.updatedAt = Date()
-        job.finalNotificationSentAt = nil
-        job.state = derivedJobState(from: job.tasks)
-        jobs[jobIndex] = job
-        return true
+        transitionPolicy.retryFailedTasks(
+            in: &jobs,
+            jobID: jobID,
+            now: Date()
+        )
     }
 
     func cancelJob(in jobs: inout [BatchJob], jobID: UUID) -> Bool {
-        guard let jobIndex = jobs.firstIndex(where: { $0.id == jobID }) else { return false }
-        var job = jobs[jobIndex]
-        var didCancelTask = false
-        for index in job.tasks.indices {
-            guard !job.tasks[index].phase.isTerminal else { continue }
-            let phase = job.tasks[index].phase
-            guard phase != .savingToPhotoLibrary else {
-                continue
-            }
-            job.tasks[index].phase = .cancelled
-            job.tasks[index].progress = BatchTaskProgress(
-                currentUnit: 1,
-                totalUnits: 1,
-                stage: .cancelled
-            )
-            didCancelTask = true
-        }
-        guard didCancelTask else { return false }
-        job.updatedAt = Date()
-        job.state = derivedJobState(from: job.tasks)
-        jobs[jobIndex] = job
-        return true
+        transitionPolicy.cancelJob(
+            in: &jobs,
+            jobID: jobID,
+            now: Date()
+        )
     }
 
     func cleanupManagedSourceIfNeeded(
@@ -146,25 +111,30 @@ final class BatchQueueCoordinator {
             )
     }
 
-    func processingLoop(in store: BatchQueueStore) async {
-        store.markProcessingStarted()
-        defer {
-            store.processingLoopDidFinish(
-                shouldRestart: !Task.isCancelled
-            )
-        }
+    func processingLoop(
+        in runtime: any BatchQueueProcessingRuntime
+    ) async {
+        runtime.markProcessingStarted()
         while !Task.isCancelled,
-              store.canContinueProcessing,
-              let reference = nextPendingTaskReference(in: store.jobs) {
-            await processTask(at: reference, in: store)
+              runtime.canContinueProcessing,
+              let reference = runtime.nextPendingTaskReference() {
+            await processTask(at: reference, in: runtime)
         }
+        await runtime.processingLoopDidFinish(
+            shouldRestart: !Task.isCancelled
+        )
     }
 
-    func processTask(at reference: TaskReference, in store: BatchQueueStore) async {
-        guard let initialTask = store.currentTask(at: reference) else { return }
+    func processTask(
+        at reference: TaskReference,
+        in runtime: any BatchQueueProcessingRuntime
+    ) async {
+        guard let initialTask = runtime.processingTask(at: reference) else { return }
         let memoryBudget = mediaMemoryBudget(for: initialTask)
         let totalProgressUnits = memoryBudget.requiresExtendedPreviewPreparation ? 6 : 5
-        guard let configuration = store.currentJob(at: reference)?.configuration else {
+        guard let configuration = runtime.processingConfiguration(
+            at: reference
+        ) else {
             return
         }
         let route = BatchTaskMemoryPolicy.processingRoute(
@@ -180,7 +150,7 @@ final class BatchQueueCoordinator {
                 totalProgressUnits: totalProgressUnits,
                 startedAt: Date()
             ),
-            in: store
+            runtime: runtime
         )
     }
 
@@ -198,21 +168,9 @@ final class BatchQueueCoordinator {
     }
 
     func derivedJobState(from tasks: [BatchTask]) -> BatchJobState {
-        guard !tasks.isEmpty else { return .draft }
-        if tasks.allSatisfy({ $0.phase == .completed }) { return .completed }
-        if tasks.allSatisfy({ $0.phase == .cancelled }) { return .cancelled }
-        if tasks.contains(where: { $0.phase == .savingToPhotoLibrary || $0.phase == .exporting }) {
-            return .running
-        }
-        if tasks.contains(where: {
-            $0.phase == .previewReady || $0.phase == .waitingForExport || $0.phase == .metadataReady
-        }) {
-            return .ready
-        }
-        if tasks.contains(where: { $0.phase == .importing }) { return .preparing }
-        if tasks.contains(where: { $0.phase == .queued }) { return .queued }
-        if tasks.contains(where: { $0.phase == .failed }) { return .failed }
-        return .draft
+        transitionPolicy.derivedJobState(
+            from: tasks.map(\.phase)
+        )
     }
 
     func mediaMemoryBudget(for task: BatchTask) -> MediaMemoryBudget {

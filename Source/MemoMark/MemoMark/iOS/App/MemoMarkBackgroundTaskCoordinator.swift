@@ -12,11 +12,11 @@ final class MemoMarkBackgroundTaskCoordinator {
     private let worker: BackgroundBatchQueueWorker
 
     init(
-        batchQueueStore: BatchQueueStore,
-        prepareQueue: @escaping @MainActor () -> BackgroundQueuePreparationResult
+        queueRuntime: any BackgroundQueueRuntime,
+        prepareQueue: @escaping @MainActor () async -> BackgroundQueuePreparationResult
     ) {
         self.worker = BackgroundBatchQueueWorker(
-            batchQueueStore: batchQueueStore,
+            queueRuntime: queueRuntime,
             prepareQueue: prepareQueue
         )
     }
@@ -52,7 +52,7 @@ final class MemoMarkBackgroundTaskCoordinator {
     private func handle(_ task: BGProcessingTask) async {
         task.expirationHandler = { [weak self] in
             Task { @MainActor in
-                self?.worker.cancel()
+                await self?.worker.cancel()
             }
         }
 

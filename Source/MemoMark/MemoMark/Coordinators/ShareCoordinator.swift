@@ -118,7 +118,7 @@ final class ShareCoordinator {
         request: ExternalPhotoIntakeRequest,
         consumedPayloadKeys:
             Set<String>
-    ) -> MemoMarkResult<
+    ) async -> MemoMarkResult<
         ProcessedShareRequest
     > {
 
@@ -136,7 +136,19 @@ final class ShareCoordinator {
                 recoveredPayloadContext(
                     $0,
                     requestID:
-                        request.id
+                        request.id,
+                    permitsStaticFallback:
+                        LivePhotoStaticFallbackPolicy
+                        .allowsStaticFallback(
+                            mediaOutputModeRawValue:
+                                request
+                                .configurationSnapshot
+                                .mediaOutputModeRawValue,
+                            livePhotoPolicyRawValue:
+                                request
+                                .configurationSnapshot
+                                .livePhotoPolicyRawValue
+                        )
                 )
             }
         let uniquePayloadsResult =
@@ -232,7 +244,7 @@ final class ShareCoordinator {
         }
 
         let job =
-            queueRepository.enqueue(
+            await queueRepository.enqueue(
                 payloads: uniquePayloads,
                 configuration: resolvedJobConfiguration,
                 launchSource:
@@ -342,57 +354,28 @@ final class ShareCoordinator {
                     return transportConfiguration
                 }
 
-                // Older Share Extensions intentionally stripped the app-only
-                // canonical snapshot before encoding the request. Preserve
-                // every transport field (template, album, copy, language),
-                // and recover only the missing Memory canonical data when the
-                // active configuration still proves the same configuration
-                // identity and subject semantics.
-                let currentConfiguration =
-                    configurationRepository
-                    .loadDefaultBatchConfigurationSnapshot()
-                let requestedSubject = normalizedSubjectText(
-                    transportConfiguration.memorySubjectText
-                )
-                let currentSubject = normalizedSubjectText(
-                    currentConfiguration
-                        .canonicalProductionSnapshot?
-                        .memorySubject?
-                        .resolvedExpressionSubjectText
-                )
-                guard
-                    transportConfiguration.configurationID
-                    == configurationID,
-                    currentConfiguration.configurationID
-                    == configurationID,
-                    !requestedSubject.isEmpty,
-                    requestedSubject == currentSubject,
-                    var recoveredCanonical =
-                        currentConfiguration
-                        .canonicalProductionSnapshot
-                else {
-                    throw ProductionConfigurationContractError
-                        .missingCanonicalSnapshot
+                // A request for the current or a future revision is not a
+                // historical transport artifact. Keep the versioned contract
+                // strict so an invalid reference cannot enter production via
+                // the compatibility adapter.
+                guard requested < durable else {
+                    throw error
                 }
 
-                recoveredCanonical.configurationID = configurationID
-                recoveredCanonical.configurationRevision = requested
-                let recoveredConfiguration =
-                    transportConfiguration
-                    .withCanonicalProductionSnapshot(
-                        recoveredCanonical
-                    )
-                try ProductionConfigurationSnapshotContract
-                    .validate(recoveredConfiguration)
-
+                // Older Share Extensions can carry a versioned request that
+                // predates the app-only canonical payload. Its transport is
+                // the only frozen truth available after the durable revision
+                // advances: substituting the user's current configuration
+                // would silently change an already accepted task.
                 _ = MemoMarkShareDiagnostics.recordResult(
                     stage: .configurationCompatibilityRecovery,
                     message:
-                        "revisionMismatch configurationID=\(configurationID.uuidString) requested=\(requested) durable=\(durable) source=\(request.launchSource.rawValue) recoveredLegacyCanonical=true",
+                        "revisionMismatch configurationID=\(configurationID.uuidString) requested=\(requested) durable=\(durable) source=\(request.launchSource.rawValue) usingFrozenLegacyTransport=true",
                     requestID: request.id,
                     defaults: diagnosticsDefaults
                 )
-                return recoveredConfiguration
+                return transportConfiguration
+                    .asLegacyTransportCompatibility()
             }
         }
 
@@ -409,58 +392,13 @@ final class ShareCoordinator {
             defaults: diagnosticsDefaults
         )
 
-        guard
-            transportConfiguration
-            .canonicalProductionSnapshot == nil
-        else {
-            return transportConfiguration
-        }
-
-        let currentConfiguration =
-            configurationRepository
-            .loadDefaultBatchConfigurationSnapshot()
-
-        guard let canonicalSnapshot =
-            currentConfiguration
-            .canonicalProductionSnapshot
-        else {
-            return transportConfiguration
-        }
-
-        var restoredConfiguration =
-            transportConfiguration
-            .withCanonicalProductionSnapshot(
-                canonicalSnapshot
-            )
-
-        if
-            let configurationID =
-                currentConfiguration
-                .configurationID,
-            let configurationRevision =
-                currentConfiguration
-                .configurationRevision
-        {
-            restoredConfiguration =
-                restoredConfiguration
-                .withConfigurationIdentity(
-                    id: configurationID,
-                    revision:
-                        configurationRevision
-                )
-        }
-
-        return restoredConfiguration
+        // Requests created before production references existed have no
+        // durable configuration identity to resolve. Keep their original
+        // transport intact so legacy processing remains deterministic rather
+        // than borrowing whichever configuration the user selected later.
+        return transportConfiguration
     }
 
-    func normalizedSubjectText(
-        _ value: String?
-    ) -> String {
-        (value ?? "")
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-    }
 }
 
 private extension ShareCoordinator {
@@ -513,7 +451,8 @@ private extension ShareCoordinator {
 
     func recoveredPayloadContext(
         _ context: PayloadContext,
-        requestID: UUID
+        requestID: UUID,
+        permitsStaticFallback: Bool
     ) -> PayloadContext {
 
         guard let hint =
@@ -557,10 +496,13 @@ private extension ShareCoordinator {
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
-                    "result=notFound, motionUnavailable=true",
+                    "result=notFound, motionUnavailable=true, permitsStaticFallback=\(permitsStaticFallback)",
                 requestID: requestID,
                 defaults: diagnosticsDefaults
             )
+            guard !permitsStaticFallback else {
+                return context
+            }
             return contextPreservingLivePhotoMediaTruth(
                 context,
                 hint: hint
@@ -571,10 +513,13 @@ private extension ShareCoordinator {
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
-                    "result=ambiguous, candidateCount=\(candidateCount), motionUnavailable=true",
+                    "result=ambiguous, candidateCount=\(candidateCount), motionUnavailable=true, permitsStaticFallback=\(permitsStaticFallback)",
                 requestID: requestID,
                 defaults: diagnosticsDefaults
             )
+            guard !permitsStaticFallback else {
+                return context
+            }
             return contextPreservingLivePhotoMediaTruth(
                 context,
                 hint: hint
@@ -585,10 +530,13 @@ private extension ShareCoordinator {
                 stage:
                     .appLivePhotoIdentityRecovery,
                 message:
-                    "result=unavailable, reason=\(reason), motionUnavailable=true",
+                    "result=unavailable, reason=\(reason), motionUnavailable=true, permitsStaticFallback=\(permitsStaticFallback)",
                 requestID: requestID,
                 defaults: diagnosticsDefaults
             )
+            guard !permitsStaticFallback else {
+                return context
+            }
             return contextPreservingLivePhotoMediaTruth(
                 context,
                 hint: hint

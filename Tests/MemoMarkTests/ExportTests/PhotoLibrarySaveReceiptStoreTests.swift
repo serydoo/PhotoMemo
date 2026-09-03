@@ -5,6 +5,45 @@ import Testing
 @Suite("Photo library save receipts")
 struct PhotoLibrarySaveReceiptStoreTests {
 
+    @Test("static save completion requires exact PhotoKit readback")
+    func staticSaveCompletionRequiresExactPhotoKitReadback() {
+        let policy = PhotoLibraryStaticSaveReadbackPolicy()
+
+        #expect(
+            policy.decision(
+                assetExists: true
+            ) == .complete
+        )
+        #expect(
+            policy.decision(
+                assetExists: false
+            ) == .awaitVisibility
+        )
+    }
+
+    @Test("static PhotoKit save waits for exact readback before queue completion")
+    func staticPhotoKitSaveWaitsForExactReadbackBeforeQueueCompletion() throws {
+        let exportSource = try sourceText(
+            "Source/MemoMark/MemoMark/Services/PhotoLibraryExportService.swift"
+        )
+
+        #expect(
+            exportSource.contains(
+                "PhotoLibraryStaticSaveReadbackPolicy()"
+            )
+        )
+        #expect(
+            exportSource.contains(
+                "photoLibraryGateway.asset(\n                                with: savedAssetIdentifier"
+            )
+        )
+        #expect(
+            exportSource.contains(
+                "throw PhotoLibraryExportError.savedAssetReadbackPending"
+            )
+        )
+    }
+
     @Test("visible recorded asset is reused")
     func visibleRecordedAssetIsReused() {
         let policy =
@@ -72,7 +111,47 @@ struct PhotoLibrarySaveReceiptStoreTests {
         #expect(
             policy.decision(
                 assetExists: true
-            ) == .recoverExistingAsset
+        ) == .recoverExistingAsset
+        )
+    }
+
+    @Test("placeholder visibility gaps preserve exact recovery evidence")
+    func placeholderVisibilityGapPreservesRecoveryEvidence() async throws {
+        let suiteName =
+            "PhotoLibrarySaveReceiptStoreTests.AmbiguousRecovery.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let store = PhotoLibrarySaveReceiptStore(defaults: defaults)
+        #expect(store.recordIntent(for: "job/ambiguous"))
+        #expect(
+            store.recordIntentAssetIdentifier(
+                "placeholder-ambiguous",
+                for: "job/ambiguous"
+            )
+        )
+        let ledger = PhotoLibrarySaveReceiptLedger(store: store)
+
+        let decision = await PhotoLibrarySaveTransactionRecovery.resolve(
+            idempotencyKey: "job/ambiguous",
+            placeholderIdentifier: "placeholder-ambiguous",
+            assetExists: false,
+            receiptLedger: ledger
+        )
+
+        #expect(decision == .awaitReadback)
+        #expect(
+            await ledger.assetIdentifier(
+                for: "job/ambiguous"
+            ) == "placeholder-ambiguous"
+        )
+        #expect(
+            await ledger.receipt(
+                for: "job/ambiguous"
+            )?.phase == .transactionSubmitted
         )
     }
 
@@ -706,6 +785,9 @@ struct PhotoLibrarySaveReceiptStoreTests {
         let livePhotoSource = try sourceText(
             "Source/MemoMark/MemoMark/MediaPipelineVNext/PhotoKitLivePhotoAssetWriter.swift"
         )
+        let gatewaySource = try sourceText(
+            "Source/MemoMark/MemoMark/Infrastructure/PhotoLibrary/PhotoLibraryTransactionGateway.swift"
+        )
 
         #expect(
             !exportSource.contains(
@@ -719,12 +801,22 @@ struct PhotoLibrarySaveReceiptStoreTests {
         )
         #expect(
             exportSource.contains(
-                "fetchAssets(\n            withLocalIdentifiers:"
+                "photoLibraryGateway.asset("
             )
         )
         #expect(
             livePhotoSource.contains(
-                "fetchAssets(\n                withLocalIdentifiers:"
+                "photoLibraryGateway.asset("
+            )
+        )
+        #expect(
+            gatewaySource.contains(
+                "PHAsset.fetchAssets("
+            )
+        )
+        #expect(
+            gatewaySource.contains(
+                "withLocalIdentifiers: [localIdentifier]"
             )
         )
     }
@@ -767,12 +859,12 @@ struct PhotoLibrarySaveReceiptStoreTests {
         )
         #expect(
             exportSource.contains(
-                "receiptStore.markCommitted("
+                "receiptLedger.markCommitted("
             )
         )
         #expect(
             livePhotoSource.contains(
-                "receiptStore.markCommitted("
+                "receiptLedger.markCommitted("
             )
         )
         #expect(
@@ -793,7 +885,7 @@ struct PhotoLibrarySaveReceiptStoreTests {
 
         #expect(
             exportSource.contains(
-                "guard receiptStore.markCommitted(for: idempotencyKey) else"
+                "guard await receiptLedger.markCommitted("
             )
         )
         #expect(
@@ -803,12 +895,64 @@ struct PhotoLibrarySaveReceiptStoreTests {
         )
         #expect(
             livePhotoSource.contains(
-                "guard receiptStore.markCommitted(for: idempotencyKey) else"
+                "guard await receiptLedger.markCommitted("
             )
         )
         #expect(
             livePhotoSource.contains(
                 "throw LivePhotoAssetWritingError.savedAssetReadbackPending"
+            )
+        )
+    }
+
+    @Test("receipt write failure after a PhotoKit commit retains idempotency evidence for both writers")
+    func postCommitReceiptWriteFailureRetainsEvidence() throws {
+        let exportSource = try sourceText(
+            "Source/MemoMark/MemoMark/Services/PhotoLibraryExportService.swift"
+        )
+        let livePhotoSource = try sourceText(
+            "Source/MemoMark/MemoMark/MediaPipelineVNext/PhotoKitLivePhotoAssetWriter.swift"
+        )
+
+        let exportPostCommitBlock = try postCommitReceiptBlock(
+            in: exportSource
+        )
+        let livePhotoPostCommitBlock = try postCommitReceiptBlock(
+            in: livePhotoSource
+        )
+
+        #expect(exportPostCommitBlock.contains("removeReceipt(") == false)
+        #expect(livePhotoPostCommitBlock.contains("removeReceipt(") == false)
+    }
+
+    @Test("missing placeholders after a PhotoKit transaction preserve pending evidence")
+    func missingPlaceholderAfterTransactionPreservesEvidence() throws {
+        let exportSource = try sourceText(
+            "Source/MemoMark/MemoMark/Services/PhotoLibraryExportService.swift"
+        )
+        let livePhotoSource = try sourceText(
+            "Source/MemoMark/MemoMark/MediaPipelineVNext/PhotoKitLivePhotoAssetWriter.swift"
+        )
+
+        let exportPostTransaction = try postTransactionPlaceholderGuard(
+            in: exportSource,
+            guardText: "guard placeholderIdentifier != nil else"
+        )
+        let livePostTransaction = try postTransactionPlaceholderGuard(
+            in: livePhotoSource,
+            guardText: "guard let placeholderIdentifier else"
+        )
+
+        #expect(exportPostTransaction.contains("removeReceipt(") == false)
+        #expect(livePostTransaction.contains("removeReceipt(") == false)
+        #expect(
+            exportPostTransaction.contains(
+                "PhotoLibraryExportError\n                        .savedAssetReadbackPending"
+            )
+        )
+        #expect(
+            livePostTransaction.contains(
+                "LivePhotoAssetWritingError\n                        .savedAssetReadbackPending"
             )
         )
     }
@@ -824,12 +968,12 @@ struct PhotoLibrarySaveReceiptStoreTests {
 
         #expect(
             exportSource.contains(
-                "guard receiptStore.materializePendingIntent("
+                "guard await receiptLedger.materializePendingIntent("
             )
         )
         #expect(
             exportSource.contains(
-                "receiptStore.ensureCommitted("
+                "receiptLedger.ensureCommitted("
             )
         )
         #expect(
@@ -839,12 +983,12 @@ struct PhotoLibrarySaveReceiptStoreTests {
         )
         #expect(
             livePhotoSource.contains(
-                "guard receiptStore.materializePendingIntent("
+                "guard await receiptLedger.materializePendingIntent("
             )
         )
         #expect(
             livePhotoSource.contains(
-                "receiptStore.ensureCommitted("
+                "receiptLedger.ensureCommitted("
             )
         )
         #expect(
@@ -854,12 +998,12 @@ struct PhotoLibrarySaveReceiptStoreTests {
         )
         #expect(
             exportSource.contains(
-                "recordIntentAssetIdentifier"
+                "placeholderIntentWriter.record("
             )
         )
         #expect(
             livePhotoSource.contains(
-                "recordIntentAssetIdentifier"
+                "placeholderIntentWriter.record("
             )
         )
     }
@@ -900,11 +1044,46 @@ struct PhotoLibrarySaveReceiptStoreTests {
         )
     }
 
+    @Test("static and Live Photo album-creation failures retain album-specific recovery semantics")
+    func albumCreationFailuresUseAlbumSpecificErrors() throws {
+        let expectations = [
+            (
+                "Source/MemoMark/MemoMark/Services/PhotoLibraryExportService.swift",
+                "PhotoLibraryExportError.albumCreateFailed",
+                "PhotoLibraryExportError.assetSaveFailed"
+            ),
+            (
+                "Source/MemoMark/MemoMark/MediaPipelineVNext/PhotoKitLivePhotoAssetWriter.swift",
+                "LivePhotoAssetWritingError\n                .albumCreateFailed",
+                "LivePhotoAssetWritingError.assetSaveFailed"
+            )
+        ]
+
+        for (path, expectedError, forbiddenError) in expectations {
+            let source = try sourceText(path)
+            let createAlbumStart = try #require(
+                source.range(of: "func createAlbum(\n        named title: String")
+            )
+            let createAlbumEnd = try #require(
+                source.range(
+                    of: "\n    func performChanges(",
+                    range: createAlbumStart.upperBound..<source.endIndex
+                )
+            )
+            let createAlbumSource = source[
+                createAlbumStart.lowerBound..<createAlbumEnd.lowerBound
+            ]
+
+            #expect(createAlbumSource.contains(expectedError))
+            #expect(!createAlbumSource.contains(forbiddenError))
+        }
+    }
+
     private func assertPreCommitIntentBeforeTransaction(
         in source: String
     ) throws {
         let intentStart = try #require(
-            source.range(of: "receiptStore.recordIntent(")
+            source.range(of: "receiptLedger.recordIntent(")
         )
         let transactionStart = try #require(
             source.range(
@@ -915,6 +1094,36 @@ struct PhotoLibrarySaveReceiptStoreTests {
         #expect(
             intentStart.lowerBound < transactionStart.lowerBound
         )
+    }
+
+    private func postCommitReceiptBlock(
+        in source: String
+    ) throws -> Substring {
+        let start = try #require(
+            source.range(
+                of: "guard didPersistPlaceholderIntent,"
+            )
+        )
+        let remainingSource = source[start.lowerBound...]
+        let end = try #require(
+            remainingSource.range(
+                of: "PhotoLibraryCommitInterruptionTestHook"
+            )
+        )
+        return remainingSource[..<end.lowerBound]
+    }
+
+    private func postTransactionPlaceholderGuard(
+        in source: String,
+        guardText: String
+    ) throws -> Substring {
+        let guardStart = try #require(
+            source.range(of: guardText, options: .backwards)
+        )
+        let remainingSource = source[guardStart.lowerBound...]
+        let end = remainingSource.range(of: "\n\n            if")?.lowerBound
+            ?? remainingSource.endIndex
+        return remainingSource[..<end]
     }
 
     private func assertCancellationRecheckAfterTransaction(
@@ -937,11 +1146,11 @@ struct PhotoLibrarySaveReceiptStoreTests {
 
         #expect(
             transactionSource[..<transactionEnd.lowerBound]
-                .contains("recordIntentAssetIdentifier")
+                .contains("placeholderIntentWriter.record(")
         )
         #expect(
             !transactionSource[..<transactionEnd.lowerBound]
-                .contains("receiptStore.record(")
+                .contains("receiptLedger.record(")
         )
     }
 
@@ -962,11 +1171,11 @@ struct PhotoLibrarySaveReceiptStoreTests {
 
         #expect(
             transaction[..<commitBoundary.lowerBound]
-                .contains("recordIntentAssetIdentifier")
+                .contains("placeholderIntentWriter.record(")
         )
         #expect(
             !transaction[..<commitBoundary.lowerBound]
-                .contains("receiptStore.record(")
+                .contains("receiptLedger.record(")
         )
     }
 

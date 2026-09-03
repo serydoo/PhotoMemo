@@ -3,13 +3,13 @@ import Foundation
 import Testing
 @testable import MemoMark
 
-@Suite("V1 module panel coordinator")
-struct V1ModulePanelCoordinatorTests {
+@Suite("module panel coordinator")
+struct ModulePanelCoordinatorTests {
 
     @Test("focusEditor dismisses the active module panel")
     func focusEditorDismissesTheActiveModulePanel() {
         let state =
-            V1ModulePanelCoordinator
+            ModulePanelCoordinator
             .State(
                 focusedRegion: .slotD,
                 activeRegion: .slotD,
@@ -17,7 +17,7 @@ struct V1ModulePanelCoordinatorTests {
             )
 
         let nextState =
-            V1ModulePanelCoordinator
+            ModulePanelCoordinator
             .focusEditor(
                 state: state
             )
@@ -33,7 +33,7 @@ struct V1ModulePanelCoordinatorTests {
     @Test("focusRegion keeps the active insertion region without presenting the panel")
     func focusRegionKeepsTheActiveInsertionRegionWithoutPresentingThePanel() {
         let state =
-            V1ModulePanelCoordinator
+            ModulePanelCoordinator
             .State(
                 focusedRegion: nil,
                 activeRegion: nil,
@@ -41,7 +41,7 @@ struct V1ModulePanelCoordinatorTests {
             )
 
         let nextState =
-            V1ModulePanelCoordinator
+            ModulePanelCoordinator
             .focusRegion(
                 .slotD,
                 state: state
@@ -54,13 +54,13 @@ struct V1ModulePanelCoordinatorTests {
 
     @Test("focusRegion retargets an already open module panel")
     func focusRegionRetargetsAnAlreadyOpenModulePanel() {
-        let state = V1ModulePanelCoordinator.State(
+        let state = ModulePanelCoordinator.State(
             focusedRegion: .slotA,
             activeRegion: .slotA,
             usageStorage: "{}"
         )
 
-        let nextState = V1ModulePanelCoordinator.focusRegion(.slotB, state: state)
+        let nextState = ModulePanelCoordinator.focusRegion(.slotB, state: state)
 
         #expect(nextState.focusedRegion == .slotB)
         #expect(nextState.activeRegion == .slotB)
@@ -69,7 +69,7 @@ struct V1ModulePanelCoordinatorTests {
     @Test("setSheetPresented false preserves the existing dismissal rule")
     func setSheetPresentedFalsePreservesTheExistingDismissalRule() {
         let state =
-            V1ModulePanelCoordinator
+            ModulePanelCoordinator
             .State(
                 focusedRegion: .slotA,
                 activeRegion: .slotA,
@@ -77,7 +77,7 @@ struct V1ModulePanelCoordinatorTests {
             )
 
         let nextState =
-            V1ModulePanelCoordinator
+            ModulePanelCoordinator
             .setSheetPresented(
                 false,
                 state: state
@@ -90,7 +90,7 @@ struct V1ModulePanelCoordinatorTests {
     @Test("selectModule records usage and keeps the panel open")
     func selectModuleRecordsUsageAndKeepsThePanelOpen() {
         let state =
-            V1ModulePanelCoordinator
+            ModulePanelCoordinator
             .State(
                 focusedRegion: .slotC,
                 activeRegion: .slotC,
@@ -98,13 +98,13 @@ struct V1ModulePanelCoordinatorTests {
             )
 
         let nextState =
-            V1ModulePanelCoordinator
+            ModulePanelCoordinator
             .selectModule(
                 .cameraModel,
                 state: state
             )
         let counts =
-            V1ModuleUsageTracker
+            ModuleUsageTracker
             .counts(
                 from:
                     nextState.usageStorage

@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1ConfigurationSelectionPersistencePatch: Equatable {
+struct ConfigurationSelectionPersistencePatch: Equatable {
     let expectedRevision: Int
     let expectedSubjectID: UUID?
     let expectedConfigurationID: UUID?
@@ -21,12 +21,12 @@ struct V1ConfigurationSelectionPersistencePatch: Equatable {
     }
 }
 
-enum V1ConfigurationSelectionPersistenceResult: Equatable {
-    case saved(V1ConfigurationSelectionPersistencePatch)
+enum ConfigurationSelectionPersistenceResult: Equatable {
+    case saved(ConfigurationSelectionPersistencePatch)
     case failed(message: String)
 }
 
-struct V1ConfigurationSelectionPersistenceCoordinator {
+struct ConfigurationSelectionPersistenceCoordinator {
 
     private let saveConfigurationLibrary:
         (ConfigurationLibraryRecord) async throws ->
@@ -42,11 +42,11 @@ struct V1ConfigurationSelectionPersistenceCoordinator {
 
     func persist(
         _ candidate: ConfigurationLibraryRecord
-    ) async -> V1ConfigurationSelectionPersistenceResult {
+    ) async -> ConfigurationSelectionPersistenceResult {
         do {
             let receipt = try await saveConfigurationLibrary(candidate)
             return .saved(
-                V1ConfigurationSelectionPersistencePatch(
+                ConfigurationSelectionPersistencePatch(
                     expectedRevision: candidate.revision,
                     expectedSubjectID: candidate.activeSubjectID,
                     expectedConfigurationID:

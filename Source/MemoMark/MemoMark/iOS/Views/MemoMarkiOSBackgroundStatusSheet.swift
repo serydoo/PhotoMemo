@@ -129,11 +129,13 @@ private extension MemoMarkiOSBackgroundStatusSheet {
                         key: "processing.retry_failed",
                         fallback: "重试失败项"
                     )) {
-                        batchQueueStore
-                            .retryFailedTasks(
-                        in:
-                            snapshot.jobID
-                        )
+                        Task { @MainActor in
+                            await batchQueueStore
+                                .retryFailedTasks(
+                                    in:
+                                        snapshot.jobID
+                                )
+                        }
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -147,7 +149,7 @@ private extension MemoMarkiOSBackgroundStatusSheet {
                 }
             }
             .padding(.vertical, 20)
-            .v1AdaptiveScrollContent(
+            .adaptiveScrollContent(
                 horizontalPadding: 20
             )
         }
@@ -312,7 +314,10 @@ private extension MemoMarkiOSBackgroundStatusSheet {
                     fallback: "重试保存进度"
                 )
             ) {
-                batchQueueStore.retryPersistence()
+                Task {
+                    await batchQueueStore
+                        .retryPersistence()
+                }
             }
             .buttonStyle(.borderedProminent)
         }
@@ -362,7 +367,9 @@ private extension MemoMarkiOSBackgroundStatusSheet {
                 ),
             phaseTitle:
                 snapshot.currentPhaseTitle
-                ?? snapshot.jobState.displayTitle
+                ?? localizedJobStateTitle(
+                    snapshot.jobState
+                )
         )
     }
 
@@ -407,8 +414,9 @@ private extension MemoMarkiOSBackgroundStatusSheet {
             currentFileName:
                 resolvedCurrentFileName,
             jobStateTitle:
-                snapshot.jobState
-                .displayTitle,
+                localizedJobStateTitle(
+                    snapshot.jobState
+                ),
             updatedAt:
                 snapshot.updatedAt,
             attentionSummary:
@@ -497,7 +505,19 @@ private extension MemoMarkiOSBackgroundStatusSheet {
         _ source:
             BatchJobLaunchSource
     ) -> String {
-        source.displayTitle
+        localized(
+            "legacy.home.recent.source.\(source.rawValue)",
+            fallback: source.displayTitle
+        )
+    }
+
+    func localizedJobStateTitle(
+        _ state: BatchJobState
+    ) -> String {
+        localized(
+            "processing.background.job_state.\(state.rawValue)",
+            fallback: state.displayTitle
+        )
     }
 
     func progressSummary(

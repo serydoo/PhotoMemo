@@ -6,9 +6,6 @@ import Combine
 final class ExternalPhotoIntakeCenter:
     ObservableObject {
 
-    static let shared =
-        ExternalPhotoIntakeCenter()
-
     @Published private(set) var revision =
         UUID()
 
@@ -26,19 +23,6 @@ final class ExternalPhotoIntakeCenter:
 
     private let shareUsageDefaults:
         UserDefaults
-
-    init() {
-
-        self.intakeStore =
-            .shared
-        self.shareUsageDefaults =
-            MemoMarkSharedContainer.sharedUserDefaults
-
-        self.defaultConfigurationSnapshot =
-            SettingsService()
-            .buildBatchConfigurationSnapshot()
-        self.intakePersistenceError = nil
-    }
 
     init(
         intakeStore:

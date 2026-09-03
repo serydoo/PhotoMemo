@@ -121,99 +121,111 @@ struct SubjectAvatarCropSheet: View {
     }
 
     private var cropCanvas: some View {
-        GeometryReader { proxy in
-            let side =
-                min(proxy.size.width, proxy.size.height)
-            let canvasSize =
-                CGSize(width: side, height: side)
-            let drawRect =
-                SubjectAvatarCropSupport
-                .resolvedDrawRect(
-                    sourceSize: image.size,
-                    canvasSize: canvasSize,
-                    safeInsetRatio:
-                        SubjectAvatarAssetOptimizationService
-                        .safeInsetRatio,
-                    configuration:
-                        SubjectAvatarCropConfiguration(
-                            zoomScale: effectiveZoomScale,
-                            normalizedOffset:
-                                normalizedOffset(
-                                    in: canvasSize
+        // Establish the square canvas before GeometryReader measures its
+        // contents. A bare GeometryReader inside the vertical editor can
+        // otherwise consume the remaining height, making a portrait image
+        // and the circular crop guide appear vertically misaligned.
+        Color.clear
+            .aspectRatio(1, contentMode: .fit)
+            .overlay {
+                GeometryReader { proxy in
+                    let canvasSize = proxy.size
+                    let drawRect =
+                        SubjectAvatarCropSupport
+                        .resolvedDrawRect(
+                            sourceSize: image.size,
+                            canvasSize: canvasSize,
+                            safeInsetRatio:
+                                SubjectAvatarAssetOptimizationService
+                                .safeInsetRatio,
+                            configuration:
+                                SubjectAvatarCropConfiguration(
+                                    zoomScale: effectiveZoomScale,
+                                    normalizedOffset:
+                                        normalizedOffset(
+                                            in: canvasSize
+                                        )
                                 )
                         )
-                )
 
-            ZStack {
-                Color.black
+                    ZStack {
+                        Color.black
 
-                Image(uiImage: image)
-                    .resizable()
-                    .interpolation(.high)
+                        Image(uiImage: image)
+                            .resizable()
+                            .interpolation(.high)
+                            .frame(
+                                width: drawRect.width,
+                                height: drawRect.height
+                            )
+                            .position(
+                                x: drawRect.midX,
+                                y: drawRect.midY
+                            )
+
+                        avatarCropMask
+                    }
                     .frame(
-                        width: drawRect.width,
-                        height: drawRect.height
+                        width: canvasSize.width,
+                        height: canvasSize.height
                     )
-                    .position(
-                        x: drawRect.midX,
-                        y: drawRect.midY
+                    .clipped()
+                    .onAppear {
+                        latestCanvasSize = canvasSize
+                    }
+                    .onChange(of: canvasSize) { _, newSize in
+                        latestCanvasSize = newSize
+                    }
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                interactiveTranslation = value.translation
+                            }
+                            .onEnded { value in
+                                committedTranslation =
+                                    clampedTranslation(
+                                        proposed:
+                                            CGSize(
+                                                width:
+                                                    committedTranslation.width
+                                                    + value.translation.width,
+                                                height:
+                                                    committedTranslation.height
+                                                    + value.translation.height
+                                            ),
+                                        canvasSize: canvasSize,
+                                        zoomScale: effectiveZoomScale
+                                    )
+                                interactiveTranslation = .zero
+                            }
                     )
-
-                avatarCropMask
+                    .simultaneousGesture(
+                        MagnificationGesture()
+                            .onChanged { value in
+                                interactiveZoomScale = value
+                            }
+                            .onEnded { value in
+                                committedZoomScale =
+                                    SubjectAvatarCropConfiguration
+                                    .clampedZoomScale(
+                                        committedZoomScale * value
+                                    )
+                                interactiveZoomScale = 1
+                                committedTranslation =
+                                    clampedTranslation(
+                                        proposed: currentTranslation,
+                                        canvasSize: canvasSize,
+                                        zoomScale: committedZoomScale
+                                    )
+                            }
+                    )
+                    .accessibilityIdentifier(
+                        "subject-avatar-crop-canvas"
+                    )
+                }
             }
-            .frame(width: side, height: side)
-            .onAppear {
-                latestCanvasSize = canvasSize
-            }
-            .onChange(of: side) { _, _ in
-                latestCanvasSize = canvasSize
-            }
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        interactiveTranslation = value.translation
-                    }
-                    .onEnded { value in
-                        committedTranslation =
-                            clampedTranslation(
-                                proposed:
-                                    CGSize(
-                                        width:
-                                            committedTranslation.width
-                                            + value.translation.width,
-                                        height:
-                                            committedTranslation.height
-                                            + value.translation.height
-                                    ),
-                                canvasSize: canvasSize,
-                                zoomScale: effectiveZoomScale
-                            )
-                        interactiveTranslation = .zero
-                    }
-            )
-            .simultaneousGesture(
-                MagnificationGesture()
-                    .onChanged { value in
-                        interactiveZoomScale = value
-                    }
-                    .onEnded { value in
-                        committedZoomScale =
-                            SubjectAvatarCropConfiguration
-                            .clampedZoomScale(
-                                committedZoomScale * value
-                            )
-                        interactiveZoomScale = 1
-                        committedTranslation =
-                            clampedTranslation(
-                                proposed: currentTranslation,
-                                canvasSize: canvasSize,
-                                zoomScale: committedZoomScale
-                            )
-                    }
-            )
-        }
-        .aspectRatio(1, contentMode: .fit)
+            .clipped()
     }
 
     private var avatarCropMask: some View {

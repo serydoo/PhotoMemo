@@ -3,12 +3,12 @@ import Testing
 @testable import MemoMark
 
 @Suite("V1 adaptive page layout")
-struct V1AdaptivePageLayoutTests {
+struct AdaptivePageLayoutTests {
 
     @Test("regular-height iPhone keeps the bottom tab bar")
     func regularHeightIPhoneKeepsBottomTabBar() {
         #expect(
-            V1AdaptivePageLayout
+            AdaptivePageLayout
                 .navigationStyle(
                     isPad: false,
                     hasRegularHorizontalSizeClass: false,
@@ -21,7 +21,7 @@ struct V1AdaptivePageLayoutTests {
     @Test("compact-height iPhone moves navigation to a compact sidebar")
     func compactHeightIPhoneUsesCompactSidebar() {
         #expect(
-            V1AdaptivePageLayout
+            AdaptivePageLayout
                 .navigationStyle(
                     isPad: false,
                     hasRegularHorizontalSizeClass: true,
@@ -34,7 +34,7 @@ struct V1AdaptivePageLayoutTests {
     @Test("regular-width iPad uses the full sidebar")
     func regularWidthIPadUsesRegularSidebar() {
         #expect(
-            V1AdaptivePageLayout
+            AdaptivePageLayout
                 .navigationStyle(
                     isPad: true,
                     hasRegularHorizontalSizeClass: true,
@@ -47,7 +47,7 @@ struct V1AdaptivePageLayoutTests {
     @Test("regular-height compact iPad window keeps the bottom tab bar")
     func regularHeightCompactIPadKeepsBottomTabBar() {
         #expect(
-            V1AdaptivePageLayout
+            AdaptivePageLayout
                 .navigationStyle(
                     isPad: true,
                     hasRegularHorizontalSizeClass: false,
@@ -60,7 +60,7 @@ struct V1AdaptivePageLayoutTests {
     @Test("short compact iPad window uses the compact sidebar")
     func shortCompactIPadUsesCompactSidebar() {
         #expect(
-            V1AdaptivePageLayout
+            AdaptivePageLayout
                 .navigationStyle(
                     isPad: true,
                     hasRegularHorizontalSizeClass: false,
@@ -73,7 +73,7 @@ struct V1AdaptivePageLayoutTests {
     @Test("bottom tab bar keeps scroll content clear of navigation")
     func bottomTabBarUsesExpandedBottomPadding() {
         #expect(
-            V1AdaptivePageLayout
+            AdaptivePageLayout
                 .scrollBottomPadding(
                     for: .bottomTabBar
                 )
@@ -84,14 +84,14 @@ struct V1AdaptivePageLayoutTests {
     @Test("sidebars avoid unnecessary bottom whitespace")
     func sidebarsUseStandardBottomPadding() {
         #expect(
-            V1AdaptivePageLayout
+            AdaptivePageLayout
                 .scrollBottomPadding(
                     for: .compactSidebar
                 )
             == 26
         )
         #expect(
-            V1AdaptivePageLayout
+            AdaptivePageLayout
                 .scrollBottomPadding(
                     for: .regularSidebar
                 )

@@ -6,14 +6,12 @@ import UniformTypeIdentifiers
 @MainActor
 final class BatchTaskResourceLifecycle {
 
-    private let coordinator: BatchProcessingCoordinator
     private let externalIntakeStore: ExternalPhotoIntakeStore
     private let managedIntakeRootURL: URL
     private let notificationAttachmentsDirectoryURL: URL
     private let historyCoversDirectoryURL: URL
 
     init(
-        coordinator: BatchProcessingCoordinator,
         externalIntakeStore: ExternalPhotoIntakeStore,
         managedIntakeRootURL: URL =
             MemoMarkSharedContainer.externalIntakeDirectoryURL,
@@ -28,7 +26,6 @@ final class BatchTaskResourceLifecycle {
                 isDirectory: true
             )
     ) {
-        self.coordinator = coordinator
         self.externalIntakeStore = externalIntakeStore
         self.managedIntakeRootURL = managedIntakeRootURL
         self.notificationAttachmentsDirectoryURL =
@@ -39,7 +36,11 @@ final class BatchTaskResourceLifecycle {
     func cleanupTemporaryFile(
         at url: URL?
     ) {
-        coordinator.cleanupTemporaryFile(at: url)
+        guard let url else {
+            return
+        }
+
+        try? FileManager.default.removeItem(at: url)
     }
 
     func cleanupTemporaryFiles(
@@ -81,15 +82,45 @@ final class BatchTaskResourceLifecycle {
         from exportedFileURL: URL,
         taskID: UUID
     ) -> URL? {
+        Self.generateNotificationAttachment(
+            from: exportedFileURL,
+            taskID: taskID,
+            directoryURL: notificationAttachmentsDirectoryURL
+        )
+    }
+
+    /// Generates the notification thumbnail away from the UI actor. The
+    /// synchronous method above remains as a compatibility seam for existing
+    /// callers and tests, while production queue execution uses this method so
+    /// ImageIO decoding/encoding cannot block the main actor.
+    func makeNotificationAttachmentOffMainThreadIfNeeded(
+        from exportedFileURL: URL,
+        taskID: UUID
+    ) async -> URL? {
+        let directoryURL = notificationAttachmentsDirectoryURL
+        return await Task.detached(priority: .utility) {
+            Self.generateNotificationAttachment(
+                from: exportedFileURL,
+                taskID: taskID,
+                directoryURL: directoryURL
+            )
+        }.value
+    }
+
+    nonisolated private static func generateNotificationAttachment(
+        from exportedFileURL: URL,
+        taskID: UUID,
+        directoryURL: URL
+    ) -> URL? {
         do {
             try MemoMarkSharedContainer.ensureDirectory(
-                at: notificationAttachmentsDirectoryURL
+                at: directoryURL
             )
         } catch {
             return nil
         }
 
-        let destinationURL = notificationAttachmentsDirectoryURL
+        let destinationURL = directoryURL
             .appendingPathComponent(
                 "\(taskID.uuidString).jpg",
                 isDirectory: false
@@ -223,7 +254,7 @@ final class BatchTaskResourceLifecycle {
         )
     }
 
-    static func historyCoverURL(
+    nonisolated static func historyCoverURL(
         for cover: BatchJobHistoryCover,
         baseDirectoryURL: URL = MemoMarkSharedContainer.baseDirectoryURL
     ) -> URL? {

@@ -9,9 +9,9 @@ struct V1BootstrapFlowCoordinatorTests {
     @Test("corrupt canonical recovery never projects transient preview drafts")
     func corruptCanonicalRecoveryClearsTransientPreviewDrafts() {
         var didLoadDrafts = false
-        let coordinator = V1BootstrapFlowCoordinator(
+        let coordinator = ConfigurationBootstrapFlowCoordinator(
             loadConfigurationState: {
-                V1ConfigurationBootstrapState(
+                ConfigurationBootstrapState(
                     configurationLibraryRecoveryFailed: true,
                     subjects: [],
                     memoryPresets: [],
@@ -25,7 +25,7 @@ struct V1BootstrapFlowCoordinatorTests {
             loadDrafts: { _, _ in
                 didLoadDrafts = true
                 return [
-                    .slotA: V1EditorDraft(items: [.text("Mock")])
+                    .slotA: MemoryCardEditorDraft(items: [.text("Mock")])
                 ]
             }
         )
@@ -34,7 +34,7 @@ struct V1BootstrapFlowCoordinatorTests {
             hasSeenWelcome: true,
             fallbackBirthdayDate: Date(timeIntervalSince1970: 0),
             makeDefaultDraft: { _ in
-                V1EditorDraft(items: [.text("Default")])
+                MemoryCardEditorDraft(items: [.text("Default")])
             }
         )
 
@@ -105,8 +105,8 @@ struct V1BootstrapFlowCoordinatorTests {
             activeConfigurationID: configuration.id
         )
         var events: [String] = []
-        var appliedProjection: V1ConfigurationDraftProjection?
-        let runtime = V1BootstrapRuntimeCoordinator(
+        var appliedProjection: ConfigurationDraftProjection?
+        let runtime = ConfigurationBootstrapRuntimeCoordinator(
             setApplyingBootstrapState: { _ in },
             updateProjection: { _ in },
             restoreSubjectLibrary: { _, _, _, _ in },
@@ -124,7 +124,7 @@ struct V1BootstrapFlowCoordinatorTests {
         )
 
         runtime.apply(
-            V1BootstrapFlowPatch(
+            ConfigurationBootstrapFlowPatch(
                 shouldSaveSubjectLibrary: true,
                 customLogoBadge: nil,
                 logoMode: .appleMini,
@@ -203,7 +203,7 @@ struct V1BootstrapFlowCoordinatorTests {
             activeSubjectID: subject.id,
             activeConfigurationID: configuration.id
         )
-        let bootstrapState = V1ConfigurationBootstrapState(
+        let bootstrapState = ConfigurationBootstrapState(
             configurationLibrary: aggregate,
             draftProjection: .init(configuration: configuration),
             subjects: [subject],
@@ -217,7 +217,7 @@ struct V1BootstrapFlowCoordinatorTests {
             selectedExistingAlbumIdentifier: "",
             suggestedNewAlbumName: nil
         )
-        let coordinator = V1BootstrapFlowCoordinator(
+        let coordinator = ConfigurationBootstrapFlowCoordinator(
             loadConfigurationState: { bootstrapState },
             loadDrafts: { _, makeDefaultDraft in
                 Dictionary(
@@ -231,7 +231,7 @@ struct V1BootstrapFlowCoordinatorTests {
         let patch = coordinator.bootstrap(
             hasSeenWelcome: true,
             fallbackBirthdayDate: Date(timeIntervalSince1970: 1),
-            makeDefaultDraft: { _ in V1EditorDraft(items: []) }
+            makeDefaultDraft: { _ in MemoryCardEditorDraft(items: []) }
         )
 
         guard case .restoreConfigurationLibrary(let restored) =
@@ -269,7 +269,7 @@ struct V1BootstrapFlowCoordinatorTests {
                 imagePath: "/tmp/custom-logo.png"
             )
         let state =
-            V1ConfigurationBootstrapState(
+            ConfigurationBootstrapState(
                 subjects: [earlierSubject, selectedSubject],
                 selectedSubjectID: selectedSubject.id,
                 selectedSubject: nil,
@@ -285,16 +285,16 @@ struct V1BootstrapFlowCoordinatorTests {
                         for: "provinceCityDistrict"
                     )
             )
-        let expectedDrafts: [CardRegion: V1EditorDraft] = [
-            .slotA: V1EditorDraft(items: [.text("A 区")]),
-            .slotD: V1EditorDraft(items: [.text("D 区")])
+        let expectedDrafts: [CardRegion: MemoryCardEditorDraft] = [
+            .slotA: MemoryCardEditorDraft(items: [.text("A 区")]),
+            .slotD: MemoryCardEditorDraft(items: [.text("D 区")])
         ]
         let fallbackBirthdayDate =
             Date(timeIntervalSince1970: 999_999)
-        var capturedContext: V1PreviewCompositionContext?
+        var capturedContext: MemoryCardPreviewCompositionContext?
 
         let coordinator =
-            V1BootstrapFlowCoordinator(
+            ConfigurationBootstrapFlowCoordinator(
                 loadConfigurationState: {
                     state
                 },
@@ -303,7 +303,7 @@ struct V1BootstrapFlowCoordinatorTests {
                     return expectedDrafts
                 },
                 presentWelcome: { hasSeenWelcome in
-                    V1WelcomeFlowCoordinator
+                    WelcomeFlowCoordinator
                         .presentWelcome(
                             hasSeenWelcome: hasSeenWelcome
                         )
@@ -315,7 +315,7 @@ struct V1BootstrapFlowCoordinatorTests {
                 hasSeenWelcome: false,
                 fallbackBirthdayDate: fallbackBirthdayDate,
                 makeDefaultDraft: { _ in
-                    V1EditorDraft(items: [.text("默认")])
+                    MemoryCardEditorDraft(items: [.text("默认")])
                 }
             )
 
@@ -342,7 +342,7 @@ struct V1BootstrapFlowCoordinatorTests {
         #expect(patch.birthdayDate == selectedAnchorDate)
         #expect(
             patch.welcomeState
-            == V1WelcomeFlowState(
+            == WelcomeFlowState(
                 hasSeenWelcome: false,
                 showsWelcomePage: true,
                 showsWorkflowGuide: false
@@ -404,12 +404,12 @@ struct V1BootstrapFlowCoordinatorTests {
                 payloadByteCount: 256,
                 underlyingDescription: "Corrupted payload"
             )
-        var capturedContext: V1PreviewCompositionContext?
+        var capturedContext: MemoryCardPreviewCompositionContext?
 
         let coordinator =
-            V1BootstrapFlowCoordinator(
+            ConfigurationBootstrapFlowCoordinator(
                 loadConfigurationState: {
-                    V1ConfigurationBootstrapState(
+                    ConfigurationBootstrapState(
                         subjects: nil,
                         selectedSubjectID: nil,
                         selectedSubject: fallbackSubject,
@@ -428,7 +428,7 @@ struct V1BootstrapFlowCoordinatorTests {
                     return [:]
                 },
                 presentWelcome: { hasSeenWelcome in
-                    V1WelcomeFlowCoordinator
+                    WelcomeFlowCoordinator
                         .presentWelcome(
                             hasSeenWelcome: hasSeenWelcome
                         )
@@ -442,7 +442,7 @@ struct V1BootstrapFlowCoordinatorTests {
                     timeIntervalSince1970: 0
                 ),
                 makeDefaultDraft: { _ in
-                    V1EditorDraft(items: [.text("默认")])
+                    MemoryCardEditorDraft(items: [.text("默认")])
                 }
             )
 
@@ -461,7 +461,7 @@ struct V1BootstrapFlowCoordinatorTests {
         )
         #expect(
             patch.welcomeState
-            == V1WelcomeFlowState(
+            == WelcomeFlowState(
                 hasSeenWelcome: true,
                 showsWelcomePage: false,
                 showsWorkflowGuide: false
@@ -489,9 +489,9 @@ struct V1BootstrapFlowCoordinatorTests {
 
     @Test("canonical recovery failure clears transient mock content")
     func canonicalRecoveryFailureClearsTransientMockContent() {
-        let coordinator = V1BootstrapFlowCoordinator(
+        let coordinator = ConfigurationBootstrapFlowCoordinator(
             loadConfigurationState: {
-                V1ConfigurationBootstrapState(
+                ConfigurationBootstrapState(
                     configurationLibraryRecoveryFailed: true,
                     customLogoBadge: nil,
                     logoMode: .appleMini,
@@ -507,7 +507,7 @@ struct V1BootstrapFlowCoordinatorTests {
             hasSeenWelcome: true,
             fallbackBirthdayDate: Date(timeIntervalSince1970: 0),
             makeDefaultDraft: { _ in
-                V1EditorDraft(items: [.text("默认")])
+                MemoryCardEditorDraft(items: [.text("默认")])
             }
         )
 
@@ -524,9 +524,9 @@ struct V1BootstrapFlowCoordinatorTests {
             payloadByteCount: 128,
             underlyingDescription: "Corrupted payload"
         )
-        let coordinator = V1BootstrapFlowCoordinator(
+        let coordinator = ConfigurationBootstrapFlowCoordinator(
             loadConfigurationState: {
-                V1ConfigurationBootstrapState(
+                ConfigurationBootstrapState(
                     subjectLibraryReadFailure: readFailure,
                     customLogoBadge: nil,
                     logoMode: .appleMini,
@@ -542,7 +542,7 @@ struct V1BootstrapFlowCoordinatorTests {
             hasSeenWelcome: true,
             fallbackBirthdayDate: Date(timeIntervalSince1970: 0),
             makeDefaultDraft: { _ in
-                V1EditorDraft(items: [.text("默认")])
+                MemoryCardEditorDraft(items: [.text("默认")])
             }
         )
 

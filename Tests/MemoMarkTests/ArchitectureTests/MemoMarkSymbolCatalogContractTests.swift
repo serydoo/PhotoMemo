@@ -62,32 +62,33 @@ struct MemoMarkSymbolCatalogContractTests {
     @Test("compact card headings accept a semantic leading icon")
     func compactCardHeadingsAcceptASemanticLeadingIcon() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
         )
 
         #expect(source.contains("let systemImage: String?"))
-        #expect(source.contains("V1CompactInformationRowMetrics.iconSize"))
-        #expect(source.contains("V1CompactInformationRowMetrics.iconCornerRadius"))
+        #expect(source.contains("CompactInformationRowMetrics.iconSize"))
+        #expect(source.contains("CompactInformationRowMetrics.iconCornerRadius"))
     }
 
     @Test("approved headings and entries keep their semantic icons outside text-only settings disclosures")
     func approvedHeadingsAndEntriesKeepTheirSemanticIcons() throws {
         let expectations = [
-            ("iOS/Views/V1HomePageSurface.swift", "home.presets.title", "MemoMarkSymbol.configuration.name"),
-            ("iOS/Views/V1HomePageSurface.swift", "home.profile.title", "MemoMarkSymbol.memorySubject.name"),
-            ("iOS/Views/V1HomeFeedbackSection.swift", "home.feedback.title", "MemoMarkSymbol.feedback.name"),
-            ("iOS/Views/V1WelcomePresentation.swift", "welcome.introduction.title", "MemoMarkSymbol.welcome.name"),
-            ("iOS/Views/V1WelcomePresentation.swift", "welcome.workflow.title", "MemoMarkSymbol.workflow.name")
+            (["iOS/Views/HomePageSurface.swift"], "home.presets.title", "MemoMarkSymbol.configuration.name"),
+            (["iOS/Views/HomePageSurface.swift", "iOS/Views/SubjectHomeSummarySupport.swift"], "home.profile.title", "MemoMarkSymbol.memorySubject.name"),
+            (["iOS/Views/HomeFeedbackSection.swift"], "home.feedback.title", "MemoMarkSymbol.feedback.name"),
+            (["iOS/Views/WelcomePresentation.swift"], "welcome.introduction.title", "MemoMarkSymbol.welcome.name"),
+            (["iOS/Views/WelcomePresentation.swift"], "welcome.workflow.title", "MemoMarkSymbol.workflow.name")
         ]
 
         let simplifiedChinese = try sourceText(
             "Source/MemoMark/MemoMark/zh-Hans.lproj/Localizable.strings"
         )
 
-        for (path, titleKey, symbol) in expectations {
-            let source = try sourceText(
-                "Source/MemoMark/MemoMark/\(path)"
-            )
+        for (paths, titleKey, symbol) in expectations {
+            let source = try paths.map {
+                try sourceText("Source/MemoMark/MemoMark/\($0)")
+            }
+            .joined(separator: "\n")
             // The stable contract is the localization key at the semantic
             // heading site, not an incidental fallback literal or an
             // unrelated call to a generic localized helper.
@@ -97,9 +98,9 @@ struct MemoMarkSymbolCatalogContractTests {
         }
 
         let settingsSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
         )
-        #expect(!settingsSource.contains("V1CompactHeadingIcon"))
+        #expect(!settingsSource.contains("CompactHeadingIcon"))
         #expect(settingsSource.contains("settings.getting_started.title"))
         #expect(settingsSource.contains("settings.expression_guide.title"))
         #expect(settingsSource.contains("settings.feedback.section_title"))
@@ -108,11 +109,11 @@ struct MemoMarkSymbolCatalogContractTests {
     @Test("existing configuration rows use the same iconography vocabulary")
     func existingConfigurationRowsUseTheSameIconographyVocabulary() throws {
         let sources = try [
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1AccessoryEntrySection.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1SubjectHomeSummarySupport.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenteriOSView.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/AccessoryEntrySection.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectHomeSummarySupport.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterDetailPresenter.swift"
         ]
         .map(sourceText)
         .joined(separator: "\n")
@@ -130,11 +131,12 @@ struct MemoMarkSymbolCatalogContractTests {
     @Test("non-configuration surfaces preserve approved semantic symbols")
     func nonConfigurationSurfacesPreserveApprovedSemanticSymbols() throws {
         let paths = [
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/HomeMemoryPresetRow.swift",
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/LocalConfigurationLibrarySheet.swift"
         ]
         let combined = try paths.map(sourceText).joined(separator: "\n")
 

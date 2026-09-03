@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-enum V1ModuleUsageTracker {
+enum ModuleUsageTracker {
 
     static func sortedModules(
         defaults: [IOSInsertableModule],

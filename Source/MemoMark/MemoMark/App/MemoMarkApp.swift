@@ -35,6 +35,14 @@ struct MemoMarkApp: App {
             MemoMarkRootSceneView(
                 runtime: runtime
             )
+            .onAppear {
+                appDelegate.install { urls in
+                    runtime.handleExternalURLs(
+                        urls,
+                        source: .fileOpen
+                    )
+                }
+            }
         }
     }
 }

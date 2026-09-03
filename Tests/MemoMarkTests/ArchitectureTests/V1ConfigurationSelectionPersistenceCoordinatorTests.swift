@@ -3,13 +3,13 @@ import Foundation
 import Testing
 @testable import MemoMark
 
-@Suite("V1 configuration selection persistence coordinator")
-struct V1ConfigurationSelectionPersistenceCoordinatorTests {
+@Suite("configuration selection persistence coordinator")
+struct ConfigurationSelectionPersistenceCoordinatorTests {
 
     @Test("durable receipt reconciles only the unchanged selection snapshot")
     func durableReceiptReconcilesOnlyUnchangedSelection() async throws {
         let aggregate = try Self.makeAggregate()
-        let coordinator = V1ConfigurationSelectionPersistenceCoordinator {
+        let coordinator = ConfigurationSelectionPersistenceCoordinator {
             candidate in
             ConfigurationLibrarySaveReceipt(
                 revision: candidate.revision + 1,
@@ -41,7 +41,7 @@ struct V1ConfigurationSelectionPersistenceCoordinatorTests {
     @Test("persistence failure returns the existing user-facing failure")
     func persistenceFailureReturnsFailurePatch() async throws {
         let aggregate = try Self.makeAggregate()
-        let coordinator = V1ConfigurationSelectionPersistenceCoordinator {
+        let coordinator = ConfigurationSelectionPersistenceCoordinator {
             _ in throw TestFailure()
         }
 
@@ -52,7 +52,7 @@ struct V1ConfigurationSelectionPersistenceCoordinatorTests {
     }
 }
 
-private extension V1ConfigurationSelectionPersistenceCoordinatorTests {
+private extension ConfigurationSelectionPersistenceCoordinatorTests {
     struct TestFailure: Error {}
 
     static func makeAggregate() throws -> ConfigurationLibraryRecord {

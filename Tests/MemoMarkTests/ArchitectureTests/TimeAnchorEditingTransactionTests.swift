@@ -9,10 +9,10 @@ struct TimeAnchorEditingTransactionTests {
     @Test("iOS add and edit share a titled compact Time Anchor editor")
     func iosAddAndEditShareTitledCompactEditor() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
 
-        #expect(source.contains("private struct V1IOSSubjectAnchorCompactEditor: View"))
+        #expect(source.contains("private struct SubjectAnchorCompactEditor: View"))
         #expect(
             source.components(
                 separatedBy: "editingDraft = AnchorDraft("
@@ -20,13 +20,13 @@ struct TimeAnchorEditingTransactionTests {
         )
         #expect(
             source.components(
-                separatedBy: "V1IOSSubjectAnchorCompactEditor("
+                separatedBy: "SubjectAnchorCompactEditor("
             ).count == 2
         )
         #expect(source.contains("NavigationStack {"))
         #expect(source.contains(".navigationTitle(\"时间锚点\")"))
         #expect(source.contains(".navigationBarTitleDisplayMode(.inline)"))
-        #expect(source.contains("V1ConfigurationSheetSubtitle("))
+        #expect(source.contains("ConfigurationSheetSubtitle("))
         #expect(source.contains(".safeAreaInset(edge: .top, spacing: 0)"))
         #expect(
             source.contains(
@@ -62,24 +62,28 @@ struct TimeAnchorEditingTransactionTests {
             "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
         )
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let rowSource = try sourceText(
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectTimeAnchorRow.swift"
+        )
         let nativeListSource = try sourceSection(
             in: source,
             from: "private var timeAnchorListEditor",
-            to: "private var timeAnchorSelectionCard"
+            to: "private var anchorBinding"
         )
-        let disablesFullSwipe = source.contains("allowsFullSwipe: false")
+        let presentationSource = source + rowSource
+        let disablesFullSwipe = presentationSource.contains("allowsFullSwipe: false")
         let usesRootNativeList = nativeListSource.contains("List {")
             && !nativeListSource.contains("ScrollView")
-        let usesNativeConfigureAction = source.contains(
+        let usesNativeConfigureAction = presentationSource.contains(
             "Label(\"配置\", systemImage: \"slider.horizontal.3\")"
         )
-        let usesNativeDeleteAction = source.contains(
+        let usesNativeDeleteAction = presentationSource.contains(
             "Label(\"删除\", systemImage: \"trash\")"
         )
         let usesReadableRowHeight =
-            source.contains("SubjectTimeAnchorMetrics.rowHeight")
-            && source.contains("static let rowHeight: CGFloat = 52")
-            && source.contains(
+            rowSource.contains("SubjectTimeAnchorMetrics.rowHeight")
+            && rowSource.contains("static let rowHeight: CGFloat = 52")
+            && rowSource.contains(
                 ".frame(minHeight: SubjectTimeAnchorMetrics.rowHeight)"
             )
         let usesExplicitCustomNameLabel = source.contains(
@@ -89,7 +93,7 @@ struct TimeAnchorEditingTransactionTests {
         #expect(disablesFullSwipe)
         #expect(usesRootNativeList)
         #expect(usesNativeConfigureAction)
-        #expect(source.contains(".tint(.blue)"))
+        #expect(presentationSource.contains(".tint(.blue)"))
         #expect(usesNativeDeleteAction)
         #expect(usesReadableRowHeight)
         #expect(!source.contains("Text(\"配置\")"))
@@ -101,13 +105,8 @@ struct TimeAnchorEditingTransactionTests {
 
     @Test("anchor date wheel exposes surrounding choices at native readable height")
     func anchorDateWheelExposesSurroundingChoicesAtReadableHeight() throws {
-        let source = try sourceText(
-            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
-        )
-        let pickerSource = try sourceSection(
-            in: source,
-            from: "private struct CompactAnchorDatePicker",
-            to: "private struct SubjectTimeAnchorRow"
+        let pickerSource = try sourceText(
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/CompactAnchorDatePicker.swift"
         )
 
         #expect(pickerSource.contains("static let wheelHeight: CGFloat = 144"))
@@ -143,22 +142,14 @@ struct TimeAnchorEditingTransactionTests {
 
     @Test("anchor list uses neutral chrome and semantic-color compact type labels")
     func anchorListUsesSemanticColorCompactTypeLabels() throws {
-        let source = try sourceText(
-            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+        let rowSource = try sourceText(
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectTimeAnchorRow.swift"
         )
-        let listSource = try sourceSection(
-            in: source,
-            from: "private var timeAnchorSelectionCard",
-            to: "private var addTimeAnchorRow"
+        let listSource = try sourceText(
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectTimeAnchorPresentationSurfaces.swift"
         )
-        let rowSource = try sourceSection(
-            in: source,
-            from: "private struct SubjectTimeAnchorRow",
-            to: "private struct PlatformAvatarImage"
-        )
-
         #expect(!listSource.contains(".configurationPanelChrome(isSelected: true)"))
-        #expect(!listSource.contains(".frame(height:"))
+        #expect(!listSource.contains(".frame(height: SubjectTimeAnchorMetrics"))
         #expect(rowSource.contains("anchor.resolvedAnchorType.compactDisplayName"))
         #expect(rowSource.contains(".foregroundStyle(anchorTypeTint)"))
         #expect(rowSource.contains("switch anchor.resolvedAnchorType"))
@@ -173,7 +164,7 @@ struct TimeAnchorEditingTransactionTests {
     @Test("anchor swipe delete opens confirmation without claiming immediate destruction")
     func anchorSwipeDeleteOpensConfirmationWithoutClaimingImmediateDestruction() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectTimeAnchorRow.swift"
         )
         let normalizedSource = source.replacingOccurrences(
             of: "\\s+",

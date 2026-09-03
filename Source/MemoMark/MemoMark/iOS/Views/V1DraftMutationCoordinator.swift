@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1DraftMutationItem: Identifiable, Hashable {
+struct DraftMutationItem: Identifiable, Hashable {
 
     enum Kind: Hashable {
         case text
@@ -39,8 +39,8 @@ struct V1DraftMutationItem: Identifiable, Hashable {
     nonisolated static func text(
         _ value: String,
         id: UUID = UUID()
-    ) -> V1DraftMutationItem {
-        V1DraftMutationItem(
+    ) -> DraftMutationItem {
+        DraftMutationItem(
             id: id,
             kind: .text,
             title: "文字",
@@ -55,8 +55,8 @@ struct V1DraftMutationItem: Identifiable, Hashable {
         templateValue: String,
         systemImage: String = "tag",
         id: UUID = UUID()
-    ) -> V1DraftMutationItem {
-        V1DraftMutationItem(
+    ) -> DraftMutationItem {
+        DraftMutationItem(
             id: id,
             kind: .token,
             title: title,
@@ -67,8 +67,8 @@ struct V1DraftMutationItem: Identifiable, Hashable {
     }
 }
 
-struct V1DraftMutationDraft: Hashable {
-    var items: [V1DraftMutationItem]
+struct DraftMutationDraft: Hashable {
+    var items: [DraftMutationItem]
 
     mutating func updateTextItem(
         id: UUID,
@@ -97,7 +97,7 @@ struct V1DraftMutationDraft: Hashable {
             return nil
         }
 
-        let item = V1DraftMutationItem.text(text)
+        let item = DraftMutationItem.text(text)
         items.insert(item, at: 0)
         return item.id
     }
@@ -115,7 +115,7 @@ struct V1DraftMutationDraft: Hashable {
             return nil
         }
 
-        let item = V1DraftMutationItem.text(text)
+        let item = DraftMutationItem.text(text)
         if let last = items.last,
            last.kind == .text,
            last.value
@@ -134,7 +134,7 @@ struct V1DraftMutationDraft: Hashable {
     }
 
     mutating func appendComposedItem(
-        _ item: V1DraftMutationItem
+        _ item: DraftMutationItem
     ) {
         if let last = items.last,
            last.kind == .text,
@@ -155,7 +155,7 @@ struct V1DraftMutationDraft: Hashable {
     }
 
     mutating func insertComposedItem(
-        _ item: V1DraftMutationItem,
+        _ item: DraftMutationItem,
         after anchorID: UUID?
     ) {
         guard let anchorID,
@@ -210,13 +210,13 @@ struct V1DraftMutationDraft: Hashable {
     }
 }
 
-struct V1DraftMutationCoordinator {
+struct DraftMutationCoordinator {
 
     struct State: Hashable {
-        var regionDrafts: [CardRegion: V1DraftMutationDraft] = [:]
+        var regionDrafts: [CardRegion: DraftMutationDraft] = [:]
         var activeTextItemIDs: [CardRegion: UUID] = [:]
         var activeConfigurationStatus:
-            V1ConfigurationStatus = .idle
+            ConfigurationPersistenceStatus = .idle
     }
 
     struct Update: Hashable {
@@ -227,8 +227,8 @@ struct V1DraftMutationCoordinator {
     static func draft(
         for region: CardRegion,
         state: State,
-        makeDefaultDraft: (CardRegion) -> V1DraftMutationDraft
-    ) -> V1DraftMutationDraft {
+        makeDefaultDraft: (CardRegion) -> DraftMutationDraft
+    ) -> DraftMutationDraft {
         state.regionDrafts[region]
         ?? makeDefaultDraft(region)
     }
@@ -246,8 +246,8 @@ struct V1DraftMutationCoordinator {
     static func updateDraft(
         for region: CardRegion,
         in state: State,
-        makeDefaultDraft: (CardRegion) -> V1DraftMutationDraft,
-        transform: (inout V1DraftMutationDraft) -> Void
+        makeDefaultDraft: (CardRegion) -> DraftMutationDraft,
+        transform: (inout DraftMutationDraft) -> Void
     ) -> Update {
         var nextState = state
         var draft =
@@ -271,7 +271,7 @@ struct V1DraftMutationCoordinator {
         text: String,
         for region: CardRegion,
         in state: State,
-        makeDefaultDraft: (CardRegion) -> V1DraftMutationDraft
+        makeDefaultDraft: (CardRegion) -> DraftMutationDraft
     ) -> Update {
         var nextState = state
         nextState.activeTextItemIDs[region] = id
@@ -292,7 +292,7 @@ struct V1DraftMutationCoordinator {
         _ text: String,
         for region: CardRegion,
         in state: State,
-        makeDefaultDraft: (CardRegion) -> V1DraftMutationDraft
+        makeDefaultDraft: (CardRegion) -> DraftMutationDraft
     ) -> Update {
         var insertedID: UUID?
         let update =
@@ -321,7 +321,7 @@ struct V1DraftMutationCoordinator {
         _ text: String,
         for region: CardRegion,
         in state: State,
-        makeDefaultDraft: (CardRegion) -> V1DraftMutationDraft
+        makeDefaultDraft: (CardRegion) -> DraftMutationDraft
     ) -> Update {
         var insertedID: UUID?
         let update =
@@ -350,7 +350,7 @@ struct V1DraftMutationCoordinator {
         id: UUID,
         from region: CardRegion,
         in state: State,
-        makeDefaultDraft: (CardRegion) -> V1DraftMutationDraft
+        makeDefaultDraft: (CardRegion) -> DraftMutationDraft
     ) -> Update {
         updateDraft(
             for: region,
@@ -379,7 +379,7 @@ struct V1DraftMutationCoordinator {
         before textItemID: UUID,
         from region: CardRegion,
         in state: State,
-        makeDefaultDraft: (CardRegion) -> V1DraftMutationDraft
+        makeDefaultDraft: (CardRegion) -> DraftMutationDraft
     ) -> Update {
         let currentDraft = draft(
             for: region,
@@ -417,10 +417,10 @@ struct V1DraftMutationCoordinator {
     }
 
     static func insert(
-        _ item: V1DraftMutationItem,
+        _ item: DraftMutationItem,
         into region: CardRegion,
         in state: State,
-        makeDefaultDraft: (CardRegion) -> V1DraftMutationDraft
+        makeDefaultDraft: (CardRegion) -> DraftMutationDraft
     ) -> Update {
         updateDraft(
             for: region,

@@ -19,10 +19,10 @@ final class QueueCoordinator {
         urls: [URL],
         launchSource: BatchJobLaunchSource,
         title: String? = nil
-    ) -> MemoMarkResult<BatchJob> {
+    ) async -> MemoMarkResult<BatchJob> {
 
         guard let job =
-            queueRepository.enqueue(
+            await queueRepository.enqueue(
                 urls: urls,
                 launchSource: launchSource,
                 title: title
@@ -47,10 +47,10 @@ final class QueueCoordinator {
             ExternalPhotoImportSummary? = nil,
         intakeRequestID: UUID? = nil,
         title: String? = nil
-    ) -> MemoMarkResult<BatchJob> {
+    ) async -> MemoMarkResult<BatchJob> {
 
         guard let job =
-            queueRepository.enqueue(
+            await queueRepository.enqueue(
                 payloads: payloads,
                 configuration: configuration,
                 launchSource: launchSource,
@@ -74,9 +74,9 @@ final class QueueCoordinator {
 
     func retryFailedTasks(
         in jobID: UUID
-    ) -> MemoMarkResult<Void> {
+    ) async -> MemoMarkResult<Void> {
 
-        queueRepository
+        await queueRepository
             .retryFailedTasks(
                 in: jobID
             )
@@ -85,18 +85,18 @@ final class QueueCoordinator {
 
     func cancelJob(
         _ jobID: UUID
-    ) -> MemoMarkResult<Void> {
+    ) async -> MemoMarkResult<Void> {
 
-        queueRepository
+        await queueRepository
             .cancelJob(jobID)
         return .success(())
     }
 
     func clearCompletedHistory(
         preserving jobID: UUID?
-    ) -> MemoMarkResult<Void> {
+    ) async -> MemoMarkResult<Void> {
 
-        queueRepository
+        await queueRepository
             .clearCompletedHistory(
                 preserving: jobID
             )

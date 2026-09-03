@@ -9,12 +9,12 @@ struct V1DraftOrchestrationCoordinatorTests {
     @Test("draft(for:) falls back to the provided default editor draft when no local region draft exists")
     func draftFallsBackToProvidedDefaultEditorDraft() {
         let defaultDraft =
-            V1EditorDraft(
+            MemoryCardEditorDraft(
                 items: [.text("默认文案")]
             )
 
         let resolved =
-            V1DraftOrchestrationCoordinator
+            DraftOrchestrationCoordinator
             .draft(
                 for: .slotA,
                 viewState: .init(
@@ -33,7 +33,7 @@ struct V1DraftOrchestrationCoordinatorTests {
     @Test("applyMutationUpdate bridges the updated view state and returns preview drafts only for dirty regions")
     func applyMutationUpdateBridgesStateAndReturnsDirtyPreviewDrafts() {
         let updatedState =
-            V1DraftMutationCoordinator.State(
+            DraftMutationCoordinator.State(
                 regionDrafts: [
                     .slotA: .init(
                         items: [
@@ -52,7 +52,7 @@ struct V1DraftOrchestrationCoordinatorTests {
             )
 
         let application =
-            V1DraftOrchestrationCoordinator
+            DraftOrchestrationCoordinator
             .applyMutationUpdate(
                 .init(
                     state: updatedState,

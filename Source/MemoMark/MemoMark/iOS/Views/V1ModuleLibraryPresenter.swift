@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-enum V1ModuleLibraryPresenter {
+enum ModuleLibraryPresenter {
 
     static let defaultModules:
         [IOSInsertableModule] = [
@@ -23,7 +23,7 @@ enum V1ModuleLibraryPresenter {
             return []
         }
 
-        return V1ModuleUsageTracker
+        return ModuleUsageTracker
             .sortedModules(
                 defaults: defaultModules,
                 storage: usageStorage
@@ -33,7 +33,7 @@ enum V1ModuleLibraryPresenter {
     static func categoryTitle(
         for module: IOSInsertableModule
     ) -> String {
-        V1ModuleUsageTracker
+        ModuleUsageTracker
             .categoryTitle(for: module)
     }
 
@@ -41,7 +41,7 @@ enum V1ModuleLibraryPresenter {
         for module: IOSInsertableModule,
         currentStorage: String
     ) -> String? {
-        V1ModuleUsageTracker
+        ModuleUsageTracker
             .recordedStorage(
                 for: module,
                 storage: currentStorage

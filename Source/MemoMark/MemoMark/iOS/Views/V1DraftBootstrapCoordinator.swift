@@ -1,16 +1,16 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1DraftBootstrapCoordinator {
+struct ConfigurationDraftBootstrapCoordinator {
 
     private let loadDrafts:
         () -> MemoMarkResult<
-            [CardRegion: V1PreviewDraft]
+            [CardRegion: MemoryCardPreviewDraft]
         >
 
     init(
         loadDrafts: @escaping () -> MemoMarkResult<
-            [CardRegion: V1PreviewDraft]
+            [CardRegion: MemoryCardPreviewDraft]
         >
     ) {
         self.loadDrafts = loadDrafts
@@ -18,26 +18,26 @@ struct V1DraftBootstrapCoordinator {
 
     init(
         session: ConfigurationSession,
-        context: V1PreviewCompositionContext,
-        engine: V1PreviewCompositionEngine
+        context: MemoryCardPreviewCompositionContext,
+        engine: MemoryCardPreviewCompositionEngine
     ) {
         self.init {
             if let configuration =
                 session.selectedMemoryConfiguration {
                 return .success(
-                    V1ConfigurationDraftProjection(
+                    ConfigurationDraftProjection(
                         configuration: configuration
                     )
                     .regionDrafts
                     .mapValues {
-                        V1DraftBridge.previewDraft(
+                        DraftBridge.previewDraft(
                             from: $0
                         )
                     }
                 )
             }
 
-            return BootstrapV1PreviewDraftsIntent(
+            return BootstrapMemoryCardPreviewDraftsIntent(
                 templateIDsByRegion:
                     Dictionary(
                         uniqueKeysWithValues:
@@ -61,8 +61,8 @@ struct V1DraftBootstrapCoordinator {
     }
 
     func bootstrapDrafts(
-        makeDefaultDraft: (CardRegion) -> V1EditorDraft
-    ) -> [CardRegion: V1EditorDraft] {
+        makeDefaultDraft: (CardRegion) -> MemoryCardEditorDraft
+    ) -> [CardRegion: MemoryCardEditorDraft] {
         switch loadDrafts() {
         case .success(let drafts):
             return Dictionary(
@@ -70,7 +70,7 @@ struct V1DraftBootstrapCoordinator {
                     drafts.map { region, draft in
                         (
                             region,
-                            V1DraftBridge
+                            DraftBridge
                             .editorDraft(
                                 from: draft
                             )

@@ -10,10 +10,10 @@ struct V1DraftBridgeTests {
     func previewAndMutationProjectionsPreserveItemMetadata() {
         let tokenID = UUID()
         let draft =
-            V1EditorDraft(
+            MemoryCardEditorDraft(
                 items: [
                     .text("记录"),
-                    V1ContentItem(
+                    MemoryCardContentItem(
                         id: tokenID,
                         kind: .token,
                         title: "设备",
@@ -26,11 +26,11 @@ struct V1DraftBridgeTests {
             )
 
         let previewDraft =
-            V1DraftBridge.previewDraft(
+            DraftBridge.previewDraft(
                 from: draft
             )
         let mutationDraft =
-            V1DraftBridge.mutationDraft(
+            DraftBridge.mutationDraft(
                 from: draft
             )
 
@@ -67,11 +67,11 @@ struct V1DraftBridgeTests {
     @Test("editor draft round trips through preview and mutation bridges")
     func editorDraftRoundTripsThroughPreviewAndMutationBridges() {
         let draft =
-            V1EditorDraft(
+            MemoryCardEditorDraft(
                 items: [
                     .text("记录"),
                     .separator("·"),
-                    V1ContentItem(
+                    MemoryCardContentItem(
                         id: UUID(),
                         kind: .lineBreak,
                         title: "换行",
@@ -83,15 +83,15 @@ struct V1DraftBridgeTests {
             )
 
         let fromPreview =
-            V1DraftBridge.editorDraft(
+            DraftBridge.editorDraft(
                 from:
-                    V1DraftBridge
+                    DraftBridge
                     .previewDraft(from: draft)
             )
         let fromMutation =
-            V1DraftBridge.editorDraft(
+            DraftBridge.editorDraft(
                 from:
-                    V1DraftBridge
+                    DraftBridge
                     .mutationDraft(from: draft)
             )
 
@@ -103,11 +103,11 @@ struct V1DraftBridgeTests {
     func viewStateProjectionPreservesActiveIDsAndTypedStatus() {
         let textID = UUID()
         let state =
-            V1DraftBridge.mutationState(
+            DraftBridge.mutationState(
                 regionDrafts: [
                     .slotA: .init(
                         items: [
-                            V1ContentItem(
+                            MemoryCardContentItem(
                                 id: textID,
                                 kind: .text,
                                 title: "文字",
@@ -123,7 +123,7 @@ struct V1DraftBridgeTests {
             )
 
         let viewState =
-            V1DraftBridge.viewState(
+            DraftBridge.viewState(
                 from: state
             )
 
@@ -143,7 +143,7 @@ struct V1DraftBridgeTests {
 
     @Test("structured editor clipboard preserves literal and module order")
     func structuredEditorClipboardPreservesLiteralAndModuleOrder() throws {
-        let draft = V1EditorDraft(
+        let draft = MemoryCardEditorDraft(
             items: [
                 .text("他爸"),
                 .token(
@@ -162,10 +162,10 @@ struct V1DraftBridgeTests {
             ]
         )
 
-        let payload = V1EditorClipboardPayload(items: draft.items)
-        let encoded = try #require(V1EditorClipboardCodec.encode(payload))
+        let payload = MemoryCardEditorClipboardPayload(items: draft.items)
+        let encoded = try #require(MemoryCardEditorClipboardCodec.encode(payload))
         let decoded = try #require(
-            V1EditorClipboardCodec.decode(encoded)
+            MemoryCardEditorClipboardCodec.decode(encoded)
         )
 
         #expect(decoded.items == draft.items)
@@ -180,19 +180,19 @@ struct V1DraftBridgeTests {
             !decoded.items.map(\.id).contains(id)
         })
 
-        let incompatible = V1EditorClipboardPayload(
+        let incompatible = MemoryCardEditorClipboardPayload(
             items: draft.items,
-            schema: V1EditorClipboardPayload.schemaVersion + 1
+            schema: MemoryCardEditorClipboardPayload.schemaVersion + 1
         )
         let incompatibleData = try #require(
-            V1EditorClipboardCodec.encode(incompatible)
+            MemoryCardEditorClipboardCodec.encode(incompatible)
         )
-        #expect(V1EditorClipboardCodec.decode(incompatibleData) == nil)
+        #expect(MemoryCardEditorClipboardCodec.decode(incompatibleData) == nil)
     }
 
     @Test("unresolved module keeps its canonical expression and gets a visible fallback")
     func unresolvedModuleKeepsCanonicalExpressionAndGetsFallback() {
-        let item = V1ContentItem.token(
+        let item = MemoryCardContentItem.token(
             "无法识别的内容",
             value: "原始模块",
             templateValue: "{{future_module}}",

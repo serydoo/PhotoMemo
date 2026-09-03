@@ -13,6 +13,9 @@ struct ShareExtensionControllerSplitContractTests {
         let renderer = try sourceText(
             "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift"
         )
+        let surfaceFactory = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionSurfaceFactory.swift"
+        )
         let typography = try sourceText(
             "Source/MemoMark/MemoMark/App/MemoMarkDesignTokens.swift"
         )
@@ -72,9 +75,11 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(controller.contains("MemoMarkDesignTokens.Layout.compactPrimaryActionCornerRadius"))
         #expect(controller.contains("UIImage(systemName: \"sparkles\")"))
         #expect(controller.contains("primaryButton.configuration?.imagePadding =\n            8"))
-        #expect(controller.contains("makeTitledCardContainer("))
-        #expect(controller.contains("makeInnerCardContainer("))
-        #expect(controller.contains("makeInsetDivider()"))
+        #expect(controller.contains("ShareExtensionSurfaceFactory.makeTitledSectionContainer("))
+        #expect(controller.contains("ShareExtensionSurfaceFactory.makeInnerCardContainer("))
+        #expect(controller.contains("ShareExtensionSurfaceFactory.makeInsetDivider()"))
+        #expect(surfaceFactory.contains("static func makeTitledSectionContainer"))
+        #expect(surfaceFactory.contains("static func makeInnerCardContainer"))
         #expect(controller.contains("stack.alignment = .fill"))
     }
 
@@ -88,6 +93,9 @@ struct ShareExtensionControllerSplitContractTests {
         )
         let tokens = try sourceText(
             "Source/MemoMark/MemoMark/App/MemoMarkDesignTokens.swift"
+        )
+        let surfaceFactory = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionSurfaceFactory.swift"
         )
 
         #expect(renderer.contains("func normalTitle("))
@@ -108,9 +116,11 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(tokens.contains("static let compactCardCornerRadius: CGFloat = 18"))
         #expect(tokens.contains("static let compactCardPadding: CGFloat = 14"))
         #expect(tokens.contains("static let compactInnerCardPadding: CGFloat = 12"))
-        #expect(controller.contains("MemoMarkDesignTokens.Layout.compactCardCornerRadius"))
-        #expect(controller.contains("MemoMarkDesignTokens.Layout.compactCardPadding"))
-        #expect(controller.contains(".compactInnerCardPadding"))
+        #expect(controller.contains("ShareExtensionSurfaceFactory.makeCardContainer"))
+        #expect(controller.contains("ShareExtensionSurfaceFactory.makeInnerCardContainer"))
+        #expect(surfaceFactory.contains("MemoMarkDesignTokens.Layout.compactCardCornerRadius"))
+        #expect(surfaceFactory.contains("MemoMarkDesignTokens.Layout.compactCardPadding"))
+        #expect(surfaceFactory.contains(".compactInnerCardPadding"))
         #expect(
             controller.contains(
                 ".received,\n                photoCount: sharedPhotoCount"
@@ -129,11 +139,16 @@ struct ShareExtensionControllerSplitContractTests {
         let tokens = try sourceText(
             "Source/MemoMark/MemoMark/App/MemoMarkDesignTokens.swift"
         )
+        let surfaceFactory = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionSurfaceFactory.swift"
+        )
 
-        #expect(controller.contains("divider.backgroundColor =\n            .separator"))
-        #expect(controller.contains("equalToConstant: 1 / UIScreen.main.scale"))
-        #expect(controller.contains("constant: MemoMarkDesignTokens.Layout.dividerInset"))
-        #expect(controller.contains("constant: -MemoMarkDesignTokens.Layout.dividerInset"))
+        #expect(controller.contains("ShareExtensionSurfaceFactory.makeInsetDivider()"))
+        #expect(surfaceFactory.contains("divider.backgroundColor = .separator"))
+        #expect(surfaceFactory.contains("equalToConstant:"))
+        #expect(surfaceFactory.contains("1 / UIScreen.main.scale"))
+        #expect(surfaceFactory.contains("MemoMarkDesignTokens.Layout.dividerInset"))
+        #expect(surfaceFactory.contains("-MemoMarkDesignTokens.Layout.dividerInset"))
         #expect(tokens.contains("static let dividerInset: CGFloat = 12"))
     }
 

@@ -1,6 +1,10 @@
 import Foundation
 
-enum BatchJobState: String, Codable, Hashable {
+nonisolated enum BatchJobState:
+    String,
+    Codable,
+    Hashable,
+    Sendable {
 
     case draft
 
@@ -52,7 +56,11 @@ extension BatchJobState {
     }
 }
 
-enum BatchJobLaunchSource: String, Codable, Hashable {
+nonisolated enum BatchJobLaunchSource:
+    String,
+    Codable,
+    Hashable,
+    Sendable {
 
     case inAppPreview
 
@@ -89,7 +97,11 @@ extension BatchJobLaunchSource {
     }
 }
 
-enum BatchTaskPhase: String, Codable, Hashable {
+nonisolated enum BatchTaskPhase:
+    String,
+    Codable,
+    Hashable,
+    Sendable {
 
     case queued
 
@@ -112,7 +124,7 @@ enum BatchTaskPhase: String, Codable, Hashable {
     case cancelled
 }
 
-extension BatchTaskPhase {
+nonisolated extension BatchTaskPhase {
 
     var isPending: Bool {
         switch self {
@@ -572,14 +584,26 @@ extension BatchConfigurationSnapshot {
 #endif
         return copy
     }
+
+    func asLegacyTransportCompatibility()
+    -> BatchConfigurationSnapshot {
+        var copy = self
+        copy.configurationID = nil
+        copy.configurationRevision = nil
+        copy.productionContractVersion = nil
+        return copy
+    }
 }
 
 #if !MEMOMARK_SHARE_EXTENSION
 extension BatchConfigurationSnapshot {
 
-    var v1MediaOutputMode: V1MediaOutputMode {
+    /// Resolves the immutable production output mode from the persisted
+    /// transport fields. The raw field remains compatibility-owned; active
+    /// production code consumes this responsibility-based name.
+    var mediaOutputMode: MediaOutputMode {
         if let mediaOutputModeRawValue,
-            let mode = V1MediaOutputMode(
+            let mode = MediaOutputMode(
                 rawValue: mediaOutputModeRawValue
             ) {
             return mode
@@ -600,6 +624,7 @@ extension BatchConfigurationSnapshot {
 
         return .originalFormat
     }
+
 }
 #endif
 
@@ -755,14 +780,16 @@ struct BatchTaskIntakePayload:
     }
 }
 
-struct BatchTaskFailure:
+nonisolated struct BatchTaskFailure:
     Codable,
-    Hashable {
+    Hashable,
+    Sendable {
 
-    enum Classification:
+    nonisolated enum Classification:
         String,
         Codable,
-        Hashable {
+        Hashable,
+        Sendable {
 
         case unsupportedInput
 
@@ -814,10 +841,11 @@ extension BatchTaskFailure {
     }
 }
 
-enum BatchTaskProgressStage:
+nonisolated enum BatchTaskProgressStage:
     String,
     Codable,
-    Hashable {
+    Hashable,
+    Sendable {
 
     case preparingRAWPhoto
     case preparingHighResolutionPhoto
@@ -934,9 +962,10 @@ enum BatchTaskProgressStage:
     }
 }
 
-struct BatchTaskProgress:
+nonisolated struct BatchTaskProgress:
     Codable,
-    Hashable {
+    Hashable,
+    Sendable {
 
     var currentUnit: Int
 
@@ -1024,10 +1053,11 @@ struct BatchTaskProgress:
     }
 }
 
-struct BatchTask:
+nonisolated struct BatchTask:
     Identifiable,
     Codable,
-    Hashable {
+    Hashable,
+    Sendable {
 
     let id: UUID
 

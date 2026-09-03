@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1DiagnosticsRefreshState:
+struct DiagnosticsRefreshState:
     Equatable {
 
     let snapshot:
@@ -11,7 +11,7 @@ struct V1DiagnosticsRefreshState:
         [MemoMarkShareDiagnosticEvent]
 }
 
-struct V1DiagnosticsRefreshCoordinator {
+struct DiagnosticsRefreshCoordinator {
 
     private let loadSnapshot:
         () -> MemoMarkiOSProcessingDiagnosticsSnapshot
@@ -86,25 +86,28 @@ struct V1DiagnosticsRefreshCoordinator {
             clearCompletedHistory: {
                 preservingJobID in
                 guard let queueCoordinator else {
-                    backgroundStatusService
-                        .clearCompletedHistory()
+                    Task { @MainActor in
+                        await backgroundStatusService
+                            .clearCompletedHistory()
+                    }
                     return
                 }
 
-                _ =
-                    ClearCompletedQueueHistoryIntent(
+                Task { @MainActor in
+                    _ = await ClearCompletedQueueHistoryIntent(
                         preservingJobID:
                             preservingJobID,
                         coordinator:
                             queueCoordinator
                     )
-                    .executeSynchronously()
+                    .execute()
+                }
             }
         )
     }
 
     func shareDiagnosticsState()
-    -> V1DiagnosticsRefreshState {
+    -> DiagnosticsRefreshState {
         let snapshot =
             loadSnapshot()
 
@@ -114,7 +117,7 @@ struct V1DiagnosticsRefreshCoordinator {
     }
 
     func refreshedState()
-    -> V1DiagnosticsRefreshState {
+    -> DiagnosticsRefreshState {
         switch refreshSnapshot() {
         case .success(let snapshot):
             return state(
@@ -136,8 +139,8 @@ struct V1DiagnosticsRefreshCoordinator {
     private func state(
         from snapshot:
             MemoMarkiOSProcessingDiagnosticsSnapshot
-    ) -> V1DiagnosticsRefreshState {
-        V1DiagnosticsRefreshState(
+    ) -> DiagnosticsRefreshState {
+        DiagnosticsRefreshState(
             snapshot: snapshot,
             events: snapshot.events
         )

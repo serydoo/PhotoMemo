@@ -54,7 +54,7 @@ struct QueueStatusProjectionEngineTests {
             isRecovery: false
         )
 
-        let presentation = V1SettingsPagePresenter.presentation(
+        let presentation = TaskPagePresenter.presentation(
             header: header,
             snapshot: nil,
             recoveryMessage: nil,

@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1MemorySourceDisclosureState: Hashable {
+struct MemorySourceDisclosureState: Hashable {
 
     private(set) var selectedSubjectID: UUID?
     private(set) var isExpanded: Bool
@@ -35,7 +35,7 @@ struct V1MemorySourceDisclosureState: Hashable {
     }
 }
 
-struct V1MemoryExpressionDisclosureState: Hashable {
+struct MemoryExpressionDisclosureState: Hashable {
 
     private(set) var isExpanded: Bool
 
@@ -51,7 +51,7 @@ struct V1MemoryExpressionDisclosureState: Hashable {
 /// Presentation-only disclosure preferences for the Configuration Center.
 /// These values are intentionally separate from configuration data and are
 /// stored only so the editor can reopen in the user's preferred density.
-struct V1ConfigurationDisclosureState: Hashable {
+struct ConfigurationDisclosureState: Hashable {
 
     enum Section: String, CaseIterable {
         case memorySource
@@ -78,9 +78,9 @@ struct V1ConfigurationDisclosureState: Hashable {
     }
 
     private(set) var memorySourceDisclosureState:
-        V1MemorySourceDisclosureState
+        MemorySourceDisclosureState
     private(set) var memoryExpressionDisclosureState:
-        V1MemoryExpressionDisclosureState
+        MemoryExpressionDisclosureState
     private(set) var presentationStyleIsExpanded: Bool
     private(set) var cardLayoutIsExpanded: Bool
     private(set) var photoDescriptionIsExpanded: Bool
@@ -89,14 +89,14 @@ struct V1ConfigurationDisclosureState: Hashable {
     init(
         defaults: UserDefaults = .standard
     ) {
-        memorySourceDisclosureState = V1MemorySourceDisclosureState(
+        memorySourceDisclosureState = MemorySourceDisclosureState(
             isExpanded: Self.value(
                 forKey: StorageKey.memorySource,
                 defaults: defaults
             )
         )
         memoryExpressionDisclosureState =
-            V1MemoryExpressionDisclosureState(
+            MemoryExpressionDisclosureState(
                 isExpanded: Self.value(
                     forKey: StorageKey.memoryExpression,
                     defaults: defaults

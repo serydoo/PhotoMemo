@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-enum V1LogoMode:
+enum ConfigurationLogoMode:
     String,
     Codable,
     CaseIterable,

@@ -86,14 +86,14 @@ private extension MemoMarkiOSBackgroundExecutionService {
                     "MemoMarkBatchProcessing"
             ) { [weak self] in
                 Task { @MainActor in
-                    self?
+                    await self?
                         .handleBackgroundTimeExpiration()
                 }
             }
     }
 
-    func handleBackgroundTimeExpiration() {
-        batchQueueStore
+    func handleBackgroundTimeExpiration() async {
+        await batchQueueStore
             .stopProcessingForBackgroundExpiration()
         _ = MemoMarkBackgroundTaskSubmission
             .submit()

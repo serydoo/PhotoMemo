@@ -99,7 +99,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
             )
 
             if isExpanded {
-                V1HorizontalDivider(
+                HorizontalDivider(
                     horizontalInset: ConfigurationUI.sheetDividerInset
                 )
 
@@ -111,7 +111,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
             }
 
             if showsDivider {
-                V1HorizontalDivider(
+                HorizontalDivider(
                     horizontalInset: ConfigurationUI.sheetDividerInset
                 )
             }

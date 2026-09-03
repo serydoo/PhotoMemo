@@ -43,8 +43,10 @@ struct MemoMarkRootSceneView: View {
                             stage: .appOpenURLShare,
                             message: "Received memomark://share."
                         )
-                        runtime
-                            .refreshExternalIntakeState()
+                        Task {
+                            await runtime
+                                .refreshExternalIntakeState()
+                        }
                     case .processing:
                         pendingNotificationDeepLink = deepLink
                     }
@@ -79,13 +81,19 @@ struct MemoMarkRootSceneView: View {
                 runtime.externalIntakeCenter
                 .$revision
             ) { _ in
-                runtime.refreshExternalIntakeState()
+                Task {
+                    await runtime
+                        .refreshExternalIntakeState()
+                }
             }
             .task {
                 await runtime.refreshPermissionsAndResume()
             }
             .onAppear {
-                runtime.refreshExternalIntakeState()
+                Task {
+                    await runtime
+                        .refreshExternalIntakeState()
+                }
             }
             .onChange(of: scenePhase) { _, newPhase in
                 guard newPhase == .active else {
@@ -95,6 +103,10 @@ struct MemoMarkRootSceneView: View {
                     await runtime
                         .refreshPermissionsAndResume()
                 }
+            }
+            .onChange(of: interfaceLanguagePreferenceRawValue) { _, _ in
+                runtime.backgroundStatusService
+                    .refreshPresentation()
             }
     }
 
@@ -125,33 +137,22 @@ struct MemoMarkRootSceneView: View {
     @ViewBuilder
     private var rootConfigurationCenter: some View {
         #if os(iOS)
-        MemoMarkiOSV1View(
-            backgroundStatusService:
-                runtime.backgroundStatusService,
-            commerceStore: runtime.commerceStore,
-            refreshExternalIntake: {
-                runtime.refreshExternalIntakeState()
-            },
-            previewCoordinator:
-                runtime.environment.coordinators.preview,
-            exportCoordinator:
-                runtime.environment.coordinators.export,
-            queueCoordinator:
-                runtime.environment.coordinators.queue,
-            configurationCoordinator:
-                runtime.environment.coordinators.configuration,
-            externalIntakeCenter:
-                runtime.environment.externalIntakeCenter,
-            diagnosticsRepository:
-                runtime.environment.repositories.diagnostics,
-            productionDiagnosticsRepository:
-                runtime.environment.repositories
-                .productionDiagnostics,
-            notificationDeepLink:
-                pendingNotificationDeepLink,
-            onNotificationDeepLinkHandled: {
-                pendingNotificationDeepLink = nil
-            }
+        MemoMarkConfigurationCenterView(
+            dependencies:
+                MemoMarkConfigurationCenterDependencies(
+                    runtime: runtime,
+                    refreshExternalIntake: {
+                        Task {
+                            await runtime
+                                .refreshExternalIntakeState()
+                        }
+                    },
+                    notificationDeepLink:
+                        pendingNotificationDeepLink,
+                    onNotificationDeepLinkHandled: {
+                        pendingNotificationDeepLink = nil
+                    }
+                )
         )
         .preferredColorScheme(preferredColorScheme)
         #else

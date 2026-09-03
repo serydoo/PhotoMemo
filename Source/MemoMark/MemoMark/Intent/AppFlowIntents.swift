@@ -19,7 +19,7 @@ struct QueueBatchJobIntent:
         BatchJob
     > {
 
-        coordinator.enqueue(
+        await coordinator.enqueue(
             urls: urls,
             launchSource: launchSource,
             title: title

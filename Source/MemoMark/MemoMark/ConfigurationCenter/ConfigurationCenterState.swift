@@ -68,11 +68,11 @@ struct MemoryPreset:
     var selectedTimeAnchorID: UUID?
     var outputOption: ConfigurationOutputOption
     var storageOption: ConfigurationStorageOption
-    var logoMode: V1LogoMode
+    var logoMode: ConfigurationLogoMode
     var usesCustomMemoryWriteText: Bool
     var customMemoryWriteText: String
     var savedOutputConfiguration:
-        V1SavedOutputConfiguration?
+        SavedOutputConfigurationSchemaV1?
     var language: MemoMarkLanguage
 
     init(
@@ -85,11 +85,11 @@ struct MemoryPreset:
         selectedTimeAnchorID: UUID? = nil,
         outputOption: ConfigurationOutputOption = .processedImage,
         storageOption: ConfigurationStorageOption = .appFolder,
-        logoMode: V1LogoMode = .appleMini,
+        logoMode: ConfigurationLogoMode = .appleMini,
         usesCustomMemoryWriteText: Bool = false,
         customMemoryWriteText: String = "",
         savedOutputConfiguration:
-            V1SavedOutputConfiguration? = nil,
+            SavedOutputConfigurationSchemaV1? = nil,
         language: MemoMarkLanguage = .simplifiedChinese
     ) {
         self.id = id
@@ -167,10 +167,10 @@ struct MemoryPreset:
         selectedTimeAnchorID = try container.decodeIfPresent(UUID.self, forKey: .selectedTimeAnchorID)
         outputOption = try container.decode(ConfigurationOutputOption.self, forKey: .outputOption)
         storageOption = try container.decode(ConfigurationStorageOption.self, forKey: .storageOption)
-        logoMode = try container.decode(V1LogoMode.self, forKey: .logoMode)
+        logoMode = try container.decode(ConfigurationLogoMode.self, forKey: .logoMode)
         usesCustomMemoryWriteText = try container.decode(Bool.self, forKey: .usesCustomMemoryWriteText)
         customMemoryWriteText = try container.decode(String.self, forKey: .customMemoryWriteText)
-        savedOutputConfiguration = try container.decodeIfPresent(V1SavedOutputConfiguration.self, forKey: .savedOutputConfiguration)
+        savedOutputConfiguration = try container.decodeIfPresent(SavedOutputConfigurationSchemaV1.self, forKey: .savedOutputConfiguration)
         language = try container.decodeIfPresent(MemoMarkLanguage.self, forKey: .language) ?? .simplifiedChinese
     }
 
@@ -193,18 +193,20 @@ struct MemoryPreset:
     }
 }
 
-struct V1SavedOutputConfiguration:
+/// Historical saved-output Codable payload embedded in legacy presets.
+/// The schema label is explicit; field names and encoding remain unchanged.
+struct SavedOutputConfigurationSchemaV1:
     Codable,
     Hashable {
 
-    var outputTarget: V1IOSOutputTarget
-    var mediaOutputMode: V1MediaOutputMode
+    var outputTarget: ConfigurationOutputTarget
+    var mediaOutputMode: MediaOutputMode
     var selectedExistingAlbumIdentifier: String
     var newAlbumName: String
 
     init(
-        outputTarget: V1IOSOutputTarget,
-        mediaOutputMode: V1MediaOutputMode,
+        outputTarget: ConfigurationOutputTarget,
+        mediaOutputMode: MediaOutputMode,
         selectedExistingAlbumIdentifier: String,
         newAlbumName: String
     ) {
@@ -222,4 +224,7 @@ struct V1SavedOutputConfiguration:
                 )
     }
 }
+
+@available(*, deprecated, renamed: "SavedOutputConfigurationSchemaV1")
+typealias V1SavedOutputConfiguration = SavedOutputConfigurationSchemaV1
 #endif

@@ -11,12 +11,12 @@ struct V1DraftRuntimeCoordinatorTests {
     func updateTextItemBridgesViewStateChangesAndRefreshesOnlyDirtyPreviews() {
         let itemID = UUID()
         var viewState =
-            V1DraftOrchestrationCoordinator
+            DraftOrchestrationCoordinator
             .ViewState(
                 regionDrafts: [
-                    .slotA: V1EditorDraft(
+                    .slotA: MemoryCardEditorDraft(
                         items: [
-                            V1ContentItem(
+                            MemoryCardContentItem(
                                 id: itemID,
                                 kind: .text,
                                 title: "文字",
@@ -30,10 +30,10 @@ struct V1DraftRuntimeCoordinatorTests {
                 activeTextItemIDs: [:],
                 activeConfigurationStatus: .idle
             )
-        var refreshedDrafts: [CardRegion: V1PreviewDraft] = [:]
+        var refreshedDrafts: [CardRegion: MemoryCardPreviewDraft] = [:]
 
         let coordinator =
-            V1DraftRuntimeCoordinator(
+            DraftRuntimeCoordinator(
                 loadViewState: {
                     viewState
                 },
@@ -41,7 +41,7 @@ struct V1DraftRuntimeCoordinatorTests {
                     viewState = $0
                 },
                 makeDefaultDraft: { region in
-                    V1EditorDraft(
+                    MemoryCardEditorDraft(
                         items: [
                             .text("default-\(region.rawValue)")
                         ]
@@ -90,10 +90,10 @@ struct V1DraftRuntimeCoordinatorTests {
     func bootstrapDraftsReplacesRegionDraftsPreservesOtherViewStateAndRefreshesAllMemoryRegions() {
         let activeID = UUID()
         var viewState =
-            V1DraftOrchestrationCoordinator
+            DraftOrchestrationCoordinator
             .ViewState(
                 regionDrafts: [
-                    .slotA: V1EditorDraft(
+                    .slotA: MemoryCardEditorDraft(
                         items: [.text("旧内容")]
                     )
                 ],
@@ -102,10 +102,10 @@ struct V1DraftRuntimeCoordinatorTests {
                 ],
                 activeConfigurationStatus: .saved
             )
-        var refreshedDrafts: [CardRegion: V1PreviewDraft] = [:]
+        var refreshedDrafts: [CardRegion: MemoryCardPreviewDraft] = [:]
 
         let coordinator =
-            V1DraftRuntimeCoordinator(
+            DraftRuntimeCoordinator(
                 loadViewState: {
                     viewState
                 },
@@ -113,7 +113,7 @@ struct V1DraftRuntimeCoordinatorTests {
                     viewState = $0
                 },
                 makeDefaultDraft: { region in
-                    V1EditorDraft(
+                    MemoryCardEditorDraft(
                         items: [
                             .text("default-\(region.rawValue)")
                         ]
@@ -129,7 +129,7 @@ struct V1DraftRuntimeCoordinatorTests {
                 }
             )
         let bootstrapCoordinator =
-            V1DraftBootstrapCoordinator {
+            ConfigurationDraftBootstrapCoordinator {
                 .success([
                     .slotB: .init(
                         items: [.text("锚点内容")]
@@ -167,10 +167,10 @@ struct V1DraftRuntimeCoordinatorTests {
     @MainActor
     func refreshPreviewFallsBackToTheDefaultDraftWhenLocalEditorStateIsEmpty() {
         var receivedRegion: CardRegion?
-        var receivedDraft: V1PreviewDraft?
+        var receivedDraft: MemoryCardPreviewDraft?
 
         let coordinator =
-            V1DraftRuntimeCoordinator(
+            DraftRuntimeCoordinator(
                 loadViewState: {
                     .init(
                         regionDrafts: [:],
@@ -180,7 +180,7 @@ struct V1DraftRuntimeCoordinatorTests {
                 },
                 updateViewState: { _ in },
                 makeDefaultDraft: { region in
-                    V1EditorDraft(
+                    MemoryCardEditorDraft(
                         items: [
                             .text("default-\(region.rawValue)")
                         ]

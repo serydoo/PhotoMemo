@@ -7,15 +7,21 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("root delegates system presentation and runtime coordination")
     func rootDelegatesSystemPresentationAndRuntimeCoordination() throws {
         let root = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
-
-        #expect(root.contains("V1SubjectPresentationModifier("))
-        #expect(root.contains("V1EditorPresentationModifier("))
-        #expect(root.contains("V1WelcomeAndSettingsPresentationModifier("))
-        #expect(root.contains("V1RootChangeObservationModifier("))
-        #expect(root.contains("V1ConfigurationDeletionRuntimeCoordinator"))
-        #expect(root.contains("V1ConfigurationApplyPayloadBuilder.build"))
+        let runtime = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Runtime.swift"
+        )
+        let runtimeComposition = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+RuntimeComposition.swift"
+        )
+        #expect(root.contains("SubjectPresentationModifier("))
+        #expect(root.contains("MemoryCardEditorPresentationModifier("))
+        #expect(root.contains("WelcomeAndSettingsPresentationModifier("))
+        #expect(root.contains("RootChangeObservationModifier("))
+        #expect((root + runtimeComposition).contains("ConfigurationDeletionRuntimeCoordinator"))
+        #expect(!root.contains("V1ConfigurationDeletionRuntimeCoordinator"))
+        #expect((root + runtime).contains("ConfigurationSavePayloadBuilder.build"))
         #expect(root.contains("productionDiagnosticsRepository"))
         #expect(!root.contains("ConfigurationBackupRequest("))
         #expect(!root.contains("ConfigurationRestoreRequest("))
@@ -23,32 +29,45 @@ struct IPhoneResponsiveLayoutContractTests {
         // stale-result identity checks, and latest-request-wins album loading
         // to stay together. The budget is intentionally explicit so future
         // root growth remains visible in review.
-        #expect(root.components(separatedBy: "\n").count < 3_350)
+        #expect(root.components(separatedBy: "\n").count < 2_700)
+    }
+
+    @Test("root keeps preview construction outside the production surface")
+    func rootKeepsPreviewConstructionOutsideProductionSurface() throws {
+        let root = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
+        )
+        let preview = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterViewPreview.swift"
+        )
+
+        #expect(!root.contains("#Preview"))
+        #expect(preview.contains("#Preview(\"iOS V4 预览\")"))
     }
 
     @Test("shared page layout binds scroll content to the viewport")
     func sharedPageLayoutBindsScrollContentToViewport() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1AdaptivePageLayout.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/AdaptivePageLayout.swift"
         )
 
         #expect(source.contains("maximumReadableContentWidth"))
         #expect(source.contains("containerRelativeFrame(.horizontal)"))
-        #expect(source.contains("func v1AdaptiveScrollContent"))
-        #expect(source.contains("func v1AdaptivePageContent"))
+        #expect(source.contains("func adaptiveScrollContent"))
+        #expect(source.contains("func adaptivePageContent"))
         #expect(source.contains("alignment: .center"))
     }
 
     @Test("section cards share one compact accessible header rhythm")
     func sectionCardsShareCompactHeaderRhythm() throws {
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
         )
         let configuration = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
 
-        #expect(support.contains("enum V1SectionCardMetrics"))
+        #expect(support.contains("enum ConfigurationSectionCardMetrics"))
         #expect(support.contains("static let headerContentSpacing: CGFloat = 10"))
         #expect(support.contains("static let sectionSpacing: CGFloat = 12"))
         #expect(
@@ -56,10 +75,10 @@ struct IPhoneResponsiveLayoutContractTests {
                 "static let cardHeaderMinimumHeight: CGFloat = 28"
             )
         )
-        #expect(support.contains("spacing: V1SectionCardMetrics.cardHeaderContentSpacing"))
+        #expect(support.contains("spacing: ConfigurationSectionCardMetrics.cardHeaderContentSpacing"))
         #expect(
             support.contains(
-                "V1SectionCardMetrics.cardHeaderMinimumHeight"
+                "ConfigurationSectionCardMetrics.cardHeaderMinimumHeight"
             )
         )
         #expect(
@@ -74,10 +93,10 @@ struct IPhoneResponsiveLayoutContractTests {
         )
         #expect(
             support.contains(
-                ".padding(.vertical, V1SectionCardMetrics.cardVerticalPadding)"
+                ".padding(.vertical, ConfigurationSectionCardMetrics.cardVerticalPadding)"
             )
         )
-        #expect(configuration.contains("spacing: V1SectionCardMetrics.cardHeaderContentSpacing"))
+        #expect(configuration.contains("spacing: ConfigurationSectionCardMetrics.cardHeaderContentSpacing"))
         #expect(configuration.contains("configurationSectionHeader"))
         #expect(configuration.contains(".v1SectionSurfaceLayout()"))
         #expect(!configuration.contains(".v1CardChrome()"))
@@ -86,22 +105,21 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("primary vertical pages adopt the shared viewport contract")
     func primaryVerticalPagesAdoptSharedViewportContract() throws {
         let scrollPageExpectations = [
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift",
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectConfigurationFlow.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1WelcomePresentation.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/WelcomePresentation.swift",
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSBackgroundStatusSheet.swift",
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterSidebarView.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenteriOSView.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
         ]
 
         for path in scrollPageExpectations {
             let source = try sourceText(path)
             if path ==
-                "Source/MemoMark/MemoMark/iOS/Views/V1EditorPresentationModifier.swift" {
+                "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift" {
                 #expect(
                     source.contains("editorContent"),
                     "The card editor owns its fixed header and internal scroll surface."
@@ -109,28 +127,28 @@ struct IPhoneResponsiveLayoutContractTests {
                 continue
             }
             #expect(
-                source.contains("v1AdaptiveScrollContent("),
+                source.contains("adaptiveScrollContent("),
                 "Expected \(path) to bind vertical scroll content to the viewport."
             )
         }
 
         let editorSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
         )
-        #expect(editorSource.contains("v1AdaptivePageContent("))
-        #expect(editorSource.contains("v1AdaptiveScrollContent("))
+        #expect(editorSource.contains("adaptivePageContent("))
+        #expect(editorSource.contains("adaptiveScrollContent("))
 
         let taskSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
         )
         #expect(taskSource.contains("ScrollView {"))
-        #expect(taskSource.contains("v1AdaptiveScrollContent("))
+        #expect(taskSource.contains("adaptiveScrollContent("))
     }
 
     @Test("home subject card provides a narrow width fallback")
     func homeSubjectCardProvidesNarrowWidthFallback() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSupport.swift"
         )
 
         #expect(source.contains("responsiveCardContent"))
@@ -141,7 +159,7 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("home header labels provide a narrow width fallback")
     func homeHeaderLabelsProvideNarrowWidthFallback() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
 
         #expect(source.contains("adaptiveHeaderFacts"))
@@ -154,15 +172,19 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("home preset rows and settings disclosures preserve readable content")
     func compactRowsProvideVerticalFallbacks() throws {
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+        )
+        let presetRow = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomeMemoryPresetRow.swift"
         )
         let settings = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
         )
 
-        #expect(home.contains("private var adaptivePresetRowContent"))
-        #expect(home.contains("private var verticalPresetRowContent"))
-        #expect(home.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(home.contains("HomeMemoryPresetRow("))
+        #expect(presetRow.contains("private var adaptivePresetRowContent"))
+        #expect(presetRow.contains("private var verticalPresetRowContent"))
+        #expect(presetRow.contains("dynamicTypeSize.isAccessibilitySize"))
         #expect(settings.contains("private var adaptiveDisclosureHeader"))
         #expect(settings.contains("private var verticalDisclosureHeader"))
     }
@@ -170,10 +192,10 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("processing pipeline and anchor editor avoid fixed compact geometry")
     func processingPipelineAndAnchorEditorAvoidFixedGeometry() throws {
         let processing = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
         )
         let anchors = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
 
         #expect(processing.contains("private func pipelineStepTitle"))
@@ -192,13 +214,16 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("shared headings and semantic tokens support system accessibility")
     func sharedHeadingsAndSemanticTokensSupportSystemAccessibility() throws {
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
         )
         let tokens = try sourceText(
             "Source/MemoMark/MemoMark/App/MemoMarkDesignTokens.swift"
         )
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+        )
+        let presetRow = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomeMemoryPresetRow.swift"
         )
 
         #expect(support.contains(".accessibilityAddTraits(.isHeader)"))
@@ -207,14 +232,14 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(tokens.contains("static let success"))
         #expect(tokens.contains("static let danger"))
         #expect(tokens.contains("enum Motion"))
-        #expect(home.contains("MemoMarkDesignTokens.Semantic.fixedLightBackground"))
+        #expect(presetRow.contains("MemoMarkDesignTokens.Semantic.fixedLightBackground"))
         #expect(!home.contains(".fill(Color.blue.opacity(0.08))"))
     }
 
     @Test("home header gives the app mark and settings entry primary touch weight")
     func homeHeaderGivesTheAppMarkAndSettingsEntryPrimaryTouchWeight() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
 
         #expect(source.contains(".frame(width: 70, height: 70)"))
@@ -228,7 +253,7 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("configuration backup library uses a native row menu")
     func configurationBackupLibraryUsesNativeRowMenu() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/LocalConfigurationLibrarySheet.swift"
         )
 
         #expect(source.contains("Menu"))
@@ -242,26 +267,32 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("configuration controls reflow for accessibility text sizes")
     func configurationControlsReflowForAccessibilityText() throws {
         let optionListSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
+        )
+        let rowLayoutSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionRowLayout.swift"
+        )
+        let footerSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
         )
 
-        #expect(optionListSource.contains("@Environment(\\.dynamicTypeSize)"))
-        #expect(optionListSource.contains("dynamicTypeSize.isAccessibilitySize"))
-        #expect(optionListSource.contains("更多配置操作"))
+        #expect(rowLayoutSource.contains("@Environment(\\.dynamicTypeSize)"))
+        #expect(rowLayoutSource.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(footerSource.contains("更多配置操作"))
         #expect(optionListSource.contains("configurationSectionHeader"))
-        #expect(optionListSource.contains("adaptiveConfigurationRow"))
-        #expect(optionListSource.contains("horizontalConfigurationRow"))
-        #expect(optionListSource.contains("verticalConfigurationRow"))
-        #expect(!optionListSource.contains("ViewThatFits(in: .horizontal)"))
+        #expect(rowLayoutSource.contains("adaptiveConfigurationRow"))
+        #expect(rowLayoutSource.contains("horizontalConfigurationRow"))
+        #expect(rowLayoutSource.contains("verticalConfigurationRow"))
+        #expect(!rowLayoutSource.contains("ViewThatFits(in: .horizontal)"))
     }
 
     @Test("configuration footer and anchor editor remain reachable in short environments")
     func configurationFooterAndAnchorEditorRemainReachable() throws {
         let editor = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
         )
         let anchors = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
 
         #expect(editor.contains(".safeAreaInset(edge: .bottom, spacing: 0)"))
@@ -273,7 +304,7 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("configuration preview stays above the inspector at every viewport")
     func configurationPreviewStaysAboveInspector() throws {
         let editor = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
         )
 
         #expect(editor.contains("private var stackedContent"))
@@ -286,7 +317,7 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("configuration preview fills the centered readable column")
     func configurationPreviewFillsCenteredReadableColumn() throws {
         let editor = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
         )
         let previewStart = try #require(
             editor.range(of: "private var previewPane")?.lowerBound
@@ -307,13 +338,13 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("region composer keeps text editing separate from module selection")
     func regionComposerKeepsTextEditingSeparateFromModuleSelection() throws {
         let cluster = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RegionEditorCluster.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
         )
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorSupport.swift"
         )
         let root = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
 
         #expect(!cluster.contains("private var moduleToolbar"))
@@ -337,42 +368,46 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card editor exposes a separate top module action")
     func cardEditorExposesASeparateTopModuleAction() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
         )
         let root = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
+        let editor = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Editor.swift"
+        )
+        let combined = root + editor
 
         #expect(modifier.contains("onToggleModuleLibrary"))
         #expect(modifier.contains("? \"minus\""))
         #expect(modifier.contains(": \"plus\""))
         #expect(modifier.contains("canToggleModuleLibrary"))
         #expect(modifier.contains("isModuleLibraryPresented"))
-        #expect(root.contains("dismissKeyboard()"))
-        #expect(root.contains("toggleModuleLibraryFromToolbar"))
-        #expect(root.contains("showModuleLibrary("))
+        #expect(combined.contains("dismissKeyboard()"))
+        #expect(combined.contains("toggleModuleLibraryFromToolbar"))
+        #expect(combined.contains("showModuleLibrary("))
     }
 
     @Test("card editor visual continuity preserves the stable interaction skeleton")
     func cardEditorVisualContinuityPreservesStableInteractionSkeleton() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
         )
         let cluster = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RegionEditorCluster.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
         )
         let textKit = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
         )
         let library = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ModuleLibrarySurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ModuleLibrarySurface.swift"
         )
 
         #expect(!modifier.contains("focusedRegionTitle"))
         #expect(modifier.contains("configuration.card_editor.subtitle"))
         #expect(modifier.contains("Color.black"))
         #expect(modifier.contains(".opacity(0.12)"))
-        #expect(modifier.contains("V1CardEditorOverlay"))
+        #expect(modifier.contains("MemoryCardEditorOverlay"))
         #expect(modifier.contains("configuration.card_editor.done"))
         #expect(cluster.contains("focusedRegion"))
         #expect(!cluster.contains("private var currentEditingTask"))
@@ -393,7 +428,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(library.contains("return \"记忆表达\""))
 
         // Frozen behavior boundaries for this visual-only pass.
-        #expect(cluster.contains("V1ModuleLibrarySurface.fixedHeight"))
+        #expect(cluster.contains("ModuleLibrarySurface.fixedHeight"))
         #expect(cluster.contains(".scrollDismissesKeyboard(.never)"))
         #expect(cluster.contains("ForEach(visibleRegions"))
         #expect(!cluster.contains("previewContent"))
@@ -409,13 +444,13 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("empty card editor caret uses compact centered text metrics")
     func emptyCardEditorCaretKeepsStableTextMetrics() throws {
         let textKit = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
         )
         let lineGeometry = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorLineBoxGeometry.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorLineBoxGeometry.swift"
         )
 
-        #expect(textKit.contains("enum V1EditorInputMetrics"))
+        #expect(textKit.contains("enum MemoryCardEditorInputMetrics"))
         #expect(textKit.contains("static let controlHeight: CGFloat = 40"))
         #expect(textKit.contains("static let fallbackLineHeight: CGFloat = 22"))
         #expect(textKit.contains("static let moduleAttachmentHeight: CGFloat = 28"))
@@ -429,10 +464,10 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(textKit.contains("static func lineHeight(for font: UIFont)"))
         #expect(textKit.contains("static func textBaselineOffset(for font: UIFont)"))
         #expect(textKit.contains("static func attachmentBaselineOffset("))
-        #expect(textKit.contains("let lineHeight = V1EditorInputMetrics.lineHeight(for: font)"))
+        #expect(textKit.contains("let lineHeight = MemoryCardEditorInputMetrics.lineHeight(for: font)"))
         #expect(textKit.contains("minimumLineHeight = lineHeight"))
         #expect(textKit.contains("maximumLineHeight = lineHeight"))
-        #expect(textKit.contains("V1EditorLineBoxGeometry.attachmentOriginY("))
+        #expect(textKit.contains("MemoryCardEditorLineBoxGeometry.attachmentOriginY("))
         #expect(textKit.contains("fontDescender: font.descender"))
         #expect(textKit.contains("attributes[.baselineOffset] ="))
         #expect(textKit.contains("private func attachmentAttributes()"))
@@ -445,7 +480,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(lineGeometry.contains("(lineHeight - fontLineHeight) / 2"))
         #expect(lineGeometry.contains("static func attachmentOriginY("))
         #expect(lineGeometry.contains("lineHeight + fontDescender"))
-        #expect(textKit.contains("V1EditorInputMetrics.moduleAttachmentHeight,"))
+        #expect(textKit.contains("MemoryCardEditorInputMetrics.moduleAttachmentHeight,"))
         #expect(textKit.contains("updateVerticalTextAlignment()"))
         #expect(textKit.contains("override func caretRect(for position: UITextPosition) -> CGRect"))
         #expect(textKit.contains("tintColor = .tintColor"))
@@ -455,11 +490,11 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(textKit.contains("static let caretWidth: CGFloat = 2"))
         #expect(textKit.contains("textContainer.maximumNumberOfLines = 1"))
         #expect(textKit.contains("textContainer.lineBreakMode = .byClipping"))
-        #expect(textKit.contains("let caretHeight = V1EditorInputMetrics.caretHeight"))
+        #expect(textKit.contains("let caretHeight = MemoryCardEditorInputMetrics.caretHeight"))
         #expect(textKit.contains("let editorCenterY = bounds.midY"))
         #expect(!textKit.contains("max(systemRect.height, 1)"))
         #expect(!textKit.contains("textStorage.length > 0"))
-        #expect(textKit.contains(".frame(height: V1EditorInputMetrics.controlHeight)"))
+        #expect(textKit.contains(".frame(height: MemoryCardEditorInputMetrics.controlHeight)"))
         #expect(textKit.contains(".frame(maxWidth: .infinity, alignment: .leading)"))
         #expect(!textKit.contains("containsAttachment"))
     }
@@ -467,37 +502,37 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card editor uses one native caret and one inline spacing contract")
     func cardEditorUsesNativeCaretAndInlineSpacingContract() throws {
         let textKit = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
         )
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorSupport.swift"
         )
 
-        #expect(textKit.contains("left: V1EditorInputMetrics.textContainerHorizontalInset"))
-        #expect(textKit.contains("right: V1EditorInputMetrics.textContainerHorizontalInset"))
+        #expect(textKit.contains("left: MemoryCardEditorInputMetrics.textContainerHorizontalInset"))
+        #expect(textKit.contains("right: MemoryCardEditorInputMetrics.textContainerHorizontalInset"))
         #expect(textKit.contains("static let inlineItemSpacing: CGFloat = 2"))
         #expect(textKit.contains("static let attachmentTrailingAdvance: CGFloat = 2"))
         #expect(textKit.contains("static let attachmentLeadingAdvance: CGFloat = 0"))
-        #expect(textKit.contains("V1EditorCapsuleMetrics.attachmentLeadingAdvance"))
-        #expect(textKit.contains("V1EditorCapsuleMetrics.attachmentTrailingAdvance"))
+        #expect(textKit.contains("MemoryCardEditorCapsuleMetrics.attachmentLeadingAdvance"))
+        #expect(textKit.contains("MemoryCardEditorCapsuleMetrics.attachmentTrailingAdvance"))
         #expect(textKit.contains("applyDraft(draft, to: textView, selection: selectedRange)"))
         #expect(textKit.contains("width: max(systemRect.width, caretWidth)"))
-        #expect(support.contains("HStack(spacing: V1EditorCapsuleMetrics.inlineItemSpacing)"))
-        #expect(support.contains("padding(.horizontal, V1EditorInputMetrics.textContainerHorizontalInset)"))
-        #expect(support.contains("V1EditorCapsuleMetrics.attachmentTrailingAdvance"))
+        #expect(support.contains("HStack(spacing: MemoryCardEditorCapsuleMetrics.inlineItemSpacing)"))
+        #expect(support.contains("padding(.horizontal, MemoryCardEditorInputMetrics.textContainerHorizontalInset)"))
+        #expect(support.contains("MemoryCardEditorCapsuleMetrics.attachmentTrailingAdvance"))
         #expect(support.contains("leadingAdvance: CGFloat = 0"))
         #expect(support.contains("let canvasSize = CGSize("))
         #expect(support.contains("x: leadingAdvance"))
         #expect(support.contains("width: canvasSize.width"))
         #expect(support.contains("UIGraphicsImageRenderer(size: canvasSize)"))
-        #expect(support.contains("V1EditorInputMetrics.attachmentBaselineOffset("))
+        #expect(support.contains("MemoryCardEditorInputMetrics.attachmentBaselineOffset("))
         #expect(!support.contains("let trailingAdvance: CGFloat = 4"))
     }
 
     @Test("card editor normalizes live text attributes around module boundaries")
     func cardEditorNormalizesLiveTextAttributesAroundModuleBoundaries() throws {
         let textKit = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
         )
 
         #expect(textKit.contains("private func normalizeTextRunAttributes("))
@@ -511,27 +546,27 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card editor keeps titles beside compact TextKit inputs")
     func cardEditorKeepsTitlesBesideCompactTextKitInputs() throws {
         let textKit = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
         )
 
         #expect(textKit.contains("HStack("))
         #expect(textKit.contains("alignment: .center"))
-        #expect(textKit.contains("spacing: V1EditorInputMetrics.titleInputSpacing"))
+        #expect(textKit.contains("spacing: MemoryCardEditorInputMetrics.titleInputSpacing"))
         #expect(textKit.contains("width: titleColumnWidth"))
         #expect(textKit.contains("Text(title ?? region.displayTitle)"))
         #expect(!textKit.contains("if let subtitle = region.editorSubtitle"))
 
         let cluster = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RegionEditorCluster.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
         )
-        #expect(cluster.contains("V1EditorInputMetrics.multiRegionTitleColumnWidth"))
-        #expect(cluster.contains("V1EditorInputMetrics.titleColumnWidth"))
+        #expect(cluster.contains("MemoryCardEditorInputMetrics.multiRegionTitleColumnWidth"))
+        #expect(cluster.contains("MemoryCardEditorInputMetrics.titleColumnWidth"))
     }
 
     @Test("card editor deletes only the module immediately before the live caret")
     func cardEditorDeletesAttachmentRelativeToCaret() throws {
         let textKit = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
         )
 
         #expect(textKit.contains("let caretLocation = min"))
@@ -559,16 +594,16 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card editor keeps modules structured across copy and paste")
     func cardEditorKeepsModulesStructuredAcrossCopyAndPaste() throws {
         let draft = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorDraft.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorDraft.swift"
         )
         let textKit = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
         )
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorSupport.swift"
         )
 
-        #expect(draft.contains("struct V1EditorClipboardPayload: Codable"))
+        #expect(draft.contains("struct MemoryCardEditorClipboardPayload: Codable"))
         #expect(draft.contains("static let schemaVersion = 1"))
         #expect(draft.contains("copyingForInsertion"))
         #expect(textKit.contains("UIPasteboard"))
@@ -584,16 +619,16 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(textKit.contains("restoreUndoSnapshot"))
         #expect(support.contains("isUnresolvedModule"))
         #expect(support.contains("editorModuleSystemImage"))
-        #expect(support.contains("V1EditorCapsuleMetrics"))
+        #expect(support.contains("MemoryCardEditorCapsuleMetrics"))
     }
 
     @Test("card editor empty surface and region navigator request the real TextKit focus")
     func cardEditorRequestsRealTextKitFocus() throws {
         let textKit = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TextKitEditorSession.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
         )
         let cluster = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RegionEditorCluster.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
         )
 
         #expect(textKit.contains("var focusHandler: (() -> Void)?"))
@@ -613,20 +648,19 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card content editor does not render duplicate right-side row previews")
     func cardContentEditorDoesNotRenderDuplicateRightSideRowPreviews() throws {
         let cluster = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RegionEditorCluster.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
         )
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorSupport.swift"
         )
         let editorStart = try #require(
-            support.range(of: "struct V1RegionEditorCard: View")?.lowerBound
+            support.range(of: "struct MemoryCardRegionEditorCard: View")?.lowerBound
         )
         let editorSource = String(support[editorStart..<support.endIndex])
 
         #expect(cluster.contains("ForEach(visibleRegions"))
         #expect(!cluster.contains("正在编辑输出内容"))
         #expect(!cluster.contains("正在编辑\\(activeRegion.displayTitle)"))
-        #expect(editorSource.contains("VStack(alignment: .leading, spacing: 6)"))
         #expect(!editorSource.contains("HStack(alignment: .center, spacing: 8)"))
         #expect(editorSource.contains(".frame(maxWidth: .infinity)"))
         #expect(editorSource.contains("private var compositionField"))
@@ -641,7 +675,7 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card composer keeps module removal in keyboard text-flow semantics")
     func cardComposerUsesKeyboardBackspaceForModuleRemoval() throws {
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorSupport.swift"
         )
         let module = try sourceSection(
             in: support,
@@ -650,10 +684,10 @@ struct IPhoneResponsiveLayoutContractTests {
         )
 
         #expect(module.contains("RoundedRectangle"))
-        #expect(module.contains(".frame(height: V1EditorCapsuleMetrics.height)"))
-        #expect(module.contains("V1EditorCapsuleMetrics.cornerRadius"))
-        #expect(module.contains("V1EditorCapsuleMetrics.borderWidth"))
-        #expect(support.contains("HStack(spacing: V1EditorCapsuleMetrics.inlineItemSpacing)"))
+        #expect(module.contains(".frame(height: MemoryCardEditorCapsuleMetrics.height)"))
+        #expect(module.contains("MemoryCardEditorCapsuleMetrics.cornerRadius"))
+        #expect(module.contains("MemoryCardEditorCapsuleMetrics.borderWidth"))
+        #expect(support.contains("HStack(spacing: MemoryCardEditorCapsuleMetrics.inlineItemSpacing)"))
         #expect(!support.contains("当前插入位置"))
         #expect(!support.contains("Color.accentColor.opacity(0.82)"))
         #expect(support.contains("insertionMarkerID"))
@@ -665,7 +699,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!module.contains("onRemoveItem(item)"))
         #expect(!module.contains("xmark.circle.fill"))
         #expect(support.contains("onBackspaceAtBeginning"))
-        #expect(support.contains("V1InlineTextField"))
+        #expect(support.contains("MemoryCardInlineTextField"))
         #expect(module.contains(".systemBlue"))
         #expect(!support.contains("V1ModuleChipRemoveButtonStyle"))
     }
@@ -674,12 +708,12 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card composer keeps empty nodes native and places leading modules at the edge")
     func cardComposerKeepsEmptyNodesNativeAndPlacesLeadingModulesAtTheEdge() throws {
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorSupport.swift"
         )
         let editorSource = try sourceSection(
             in: support,
-            from: "struct V1RegionEditorCard: View",
-            to: "private struct V1InlineTextField"
+            from: "struct MemoryCardRegionEditorCard: View",
+            to: "private struct MemoryCardInlineTextField"
         )
 
         #expect(!editorSource.contains("placeholder: \"短语\""))
@@ -691,7 +725,7 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card editor surface covers the keyboard gap instead of exposing page controls")
     func cardEditorSurfaceCoversKeyboardGap() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
         )
         #expect(modifier.contains(".safeAreaPadding(.bottom, 12)"))
         #expect(modifier.contains("ToolbarItemGroup(placement: .keyboard)"))
@@ -702,7 +736,7 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card editor supports deliberate pull dismissal outside active text input")
     func cardEditorSupportsDeliberatePullDismissal() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
         )
 
         #expect(modifier.contains("configuration.card_editor.done"))
@@ -715,17 +749,17 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("module candidates stay inline with the card editor instead of a half sheet")
     func moduleCandidatesStayInlineWithTheCardEditor() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
         )
         let cluster = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RegionEditorCluster.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
         )
         let library = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ModuleLibrarySurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ModuleLibrarySurface.swift"
         )
 
         #expect(!modifier.contains(".sheet(isPresented: $isModuleSheetPresented)"))
-        #expect(cluster.contains("V1ModuleLibrarySurface("))
+        #expect(cluster.contains("ModuleLibrarySurface("))
         #expect(cluster.contains("activeModuleRegion"))
         #expect(cluster.contains("VStack(spacing: 0)"))
         #expect(cluster.contains(".zIndex(1)"))
@@ -753,10 +787,10 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card editor owns the bounded viewport while the keyboard is visible")
     func cardEditorKeepsTheSheetStableWhileTheKeyboardIsVisible() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
         )
 
-        #expect(modifier.contains("V1CardEditorOverlay"))
+        #expect(modifier.contains("MemoryCardEditorOverlay"))
         #expect(modifier.contains("contentEditorTopBoundaryFraction"))
         #expect(modifier.contains("contentEditorMinimumTopBoundary"))
         #expect(modifier.contains("let editorHeight = max("))
@@ -773,11 +807,11 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!modifier.contains(".presentationDetents"))
 
         let cluster = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RegionEditorCluster.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
         )
         #expect(cluster.contains(".scrollDismissesKeyboard(.never)"))
         #expect(cluster.contains("ScrollView(.vertical, showsIndicators: false)"))
-        #expect(cluster.contains("V1ModuleLibrarySurface.fixedHeight"))
+        #expect(cluster.contains("ModuleLibrarySurface.fixedHeight"))
     }
 
     @Test("output and processing preserve controls and copy at accessibility sizes")
@@ -786,7 +820,7 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift"
         )
         let processing = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
         )
 
         #expect(output.contains("private var adaptiveOutputTargetPicker"))
@@ -800,17 +834,17 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("subject anchors and interface preferences provide vertical accessibility fallbacks")
     func subjectAnchorsAndInterfacePreferencesProvideVerticalFallbacks() throws {
         let subjectAnchors = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewCardSections.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewCardSections.swift"
         )
         let settings = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/InterfacePreferencesContent.swift"
         )
 
         #expect(subjectAnchors.contains("private func anchorTypePill"))
         #expect(subjectAnchors.contains("dynamicTypeSize.isAccessibilitySize"))
         #expect(subjectAnchors.contains("ViewThatFits(in: .horizontal)"))
-        #expect(settings.contains("private var adaptiveAppearancePicker"))
-        #expect(settings.contains("private var adaptiveInterfaceLanguagePicker"))
+        #expect(settings.contains("private var appearancePicker"))
+        #expect(settings.contains("private var interfaceLanguagePicker"))
         #expect(settings.contains(".pickerStyle(.segmented)"))
         #expect(settings.contains(".pickerStyle(.menu)"))
     }
@@ -818,15 +852,15 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("time anchor editor teaches type date preview and later use without a compressed menu row")
     func timeAnchorEditorUsesVisibleGuidedSequence() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
         let editor = try sourceSection(
             in: source,
-            from: "private struct V1IOSSubjectAnchorCompactEditor: View",
+            from: "private struct SubjectAnchorCompactEditor: View",
             to: "private struct CompactSubjectAnchorDatePicker: View"
         )
         let homeSupport = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSupport.swift"
         )
 
         #expect(editor.contains("这个日子属于哪一类？"))
@@ -848,10 +882,10 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("configuration preview is full width and restores the page guidance")
     func configurationPreviewIsFullWidthAndRestoresPageGuidance() throws {
         let configurationPageSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationPageSurface.swift"
         )
         let supportSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardPreviewSurface.swift"
         )
 
         #expect(configurationPageSource.contains("pageSubtitle: interfaceLanguage.localized("))
@@ -859,7 +893,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(configurationPageSource.contains("fallback: \"决定记忆围绕谁、如何呈现，以及保存到哪里。\""))
 
         let previewStart = try #require(
-            supportSource.range(of: "struct V1PreviewCard")?.lowerBound
+            supportSource.range(of: "struct MemoryCardPreviewSurface")?.lowerBound
         )
         let previewEnd = try #require(
             supportSource.range(
@@ -907,20 +941,15 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("subject anchor modules use compact semantic-color type labels")
     func subjectAnchorModulesUseCompactSemanticColorTypeLabels() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
-        )
-        let editorSource = try sourceText(
-            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
         let module = try sourceSection(
             in: source,
-            from: "struct V1IOSSubjectAnchorDetailModule",
-            to: "private struct V1IOSSubjectAnchorCompactEditor"
+            from: "struct SubjectAnchorDetailModule",
+            to: "private struct SubjectAnchorCompactEditor"
         )
-        let editorRow = try sourceSection(
-            in: editorSource,
-            from: "private struct SubjectTimeAnchorRow",
-            to: "private struct PlatformAvatarImage"
+        let editorRow = try sourceText(
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectTimeAnchorRow.swift"
         )
 
         #expect(module.contains("static let ordinaryMinimumHeight: CGFloat = 64"))
@@ -933,13 +962,13 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(module.contains("类型，\\(typeName)"))
         #expect(module.contains("Type, \\(typeName)"))
         #expect(module.contains(".onTapGesture(perform: onConfigure)"))
-        #expect(module.contains("V1TimeAnchorTodayPresenter.presentation("))
+        #expect(module.contains("TimeAnchorTodayPresenter.presentation("))
         #expect(!module.contains("anchorTypeSystemImage"))
         #expect(!module.contains("Text(\"类型："))
         #expect(!module.contains("minHeight: 76"))
 
         #expect(editorRow.contains("SubjectTimeAnchorMetrics.rowHeight"))
-        #expect(editorSource.contains("static let rowHeight: CGFloat = 52"))
+        #expect(editorRow.contains("static let rowHeight: CGFloat = 52"))
         #expect(editorRow.contains("anchor.resolvedAnchorType.compactDisplayName"))
         #expect(editorRow.contains("anchorTypeTint"))
         #expect(editorRow.contains("accessibilityLabel(anchorTypeAccessibilityLabel)"))
@@ -956,13 +985,13 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
         )
         let homeRows = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSHomeCardPrimitives.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomeCardPrimitives.swift"
         )
         let subjectRows = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSupport.swift"
         )
         let anchorRows = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
 
         #expect(configurationUI.contains("compactRowVerticalPadding: CGFloat = 6"))
@@ -979,46 +1008,50 @@ struct IPhoneResponsiveLayoutContractTests {
 
     @Test("home activity card remains a distinct processing status surface")
     func homeActivityCardRemainsDistinctProcessingStatusSurface() throws {
-        let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+        let homeSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+        )
+        let cardSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomeActivityCard.swift"
         )
 
-        #expect(source.contains("private struct V1IOSHomeActivityCard"))
-        #expect(!source.contains("V1TitledSectionCard(title: \"当前任务\")"))
-        #expect(source.contains("private var activitySection"))
-        #expect(source.contains("activityProgressBar"))
-        #expect(source.contains(".frame(height: 4)"))
-        #expect(source.contains("localized(\"home.activity.progress\")"))
-        #expect(source.contains("V1IOSHomeActivityPresenter.shouldShow(projection)"))
+        #expect(homeSource.contains("HomeActivityCard("))
+        #expect(!homeSource.contains("ConfigurationTitledSectionCard(title: \"当前任务\")"))
+        #expect(homeSource.contains("private var activitySection"))
+        #expect(cardSource.contains("struct HomeActivityCard"))
+        #expect(cardSource.contains("activityProgressBar"))
+        #expect(cardSource.contains(".frame(height: 4)"))
+        #expect(cardSource.contains("localized(\"home.activity.progress\")"))
+        #expect(cardSource.contains("HomeActivityPresenter.shouldShow(projection)"))
     }
 
     @Test("Home shows one current time answer while the subject page keeps anchor-specific answers")
     func homeAndSubjectFlowsPresentTimeAnswersAtDifferentDepths() throws {
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSupport.swift"
         )
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
         let overview = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift"
         )
         let editor = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift"
         )
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SubjectPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectPresentationModifier.swift"
         )
         let root = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
 
-        #expect(support.contains("struct V1IOSTodayTimeAnswerStrip: View"))
+        #expect(support.contains("struct TodayTimeAnswerStrip: View"))
         #expect(support.contains("minHeight: ConfigurationUI.minimumInteractiveHeight"))
-        #expect(support.contains("V1TimeAnchorTodayPresenter.presentation("))
-        #expect(home.contains("V1IOSTodayTimeAnswerStrip("))
-        #expect(!overview.contains("V1IOSTodayTimeAnswerStrip("))
-        #expect(!editor.contains("V1IOSTodayTimeAnswerStrip("))
+        #expect(support.contains("TimeAnchorTodayPresenter.presentation("))
+        #expect(home.contains("TodayTimeAnswerStrip("))
+        #expect(!overview.contains("TodayTimeAnswerStrip("))
+        #expect(!editor.contains("TodayTimeAnswerStrip("))
         #expect(modifier.contains("availableConfigurationCount"))
         #expect(modifier.contains("completedPhotoCount"))
         #expect(root.contains("availableConfigurationCount: homeAvailablePresets.count"))
@@ -1026,8 +1059,8 @@ struct IPhoneResponsiveLayoutContractTests {
 
         let timeAnswer = try sourceSection(
             in: support,
-            from: "struct V1IOSTodayTimeAnswerStrip: View",
-            to: "struct V1SubjectAvatarView: View"
+            from: "struct TodayTimeAnswerStrip: View",
+            to: "struct SubjectAvatarView: View"
         )
         #expect(timeAnswer.contains("maxWidth: .infinity"))
         #expect(timeAnswer.contains("alignment: .leading"))
@@ -1050,7 +1083,7 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
         )
         let flow = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift"
         )
         let expressionCard = try sourceSection(
             in: subjectEditor,
@@ -1076,18 +1109,18 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("subject overview uses the shared section surface hierarchy")
     func subjectOverviewUsesSharedSectionSurfaceHierarchy() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift"
         )
 
-        #expect(source.contains("v1AdaptiveScrollContent("))
+        #expect(source.contains("adaptiveScrollContent("))
         #expect(source.contains("ConfigurationUI.contentColumnPadding"))
         #expect(!source.contains("GeometryReader"))
         #expect(source.contains("subjectIdentitySummary"))
         #expect(source.contains("subjectBasicInformation"))
-        #expect(source.contains("V1TitledSectionSurface("))
-        #expect(!source.contains("V1TitledSectionCard("))
-        #expect(source.contains("V1IOSSubjectAnchorDetailSection("))
-        #expect(!source.contains("V1ConfigurationCardContainer"))
+        #expect(source.contains("ConfigurationTitledSectionSurface("))
+        #expect(!source.contains("ConfigurationTitledSectionCard("))
+        #expect(source.contains("SubjectAnchorDetailSection("))
+        #expect(!source.contains("ConfigurationCardContainer"))
     }
 
     @Test("iPhone views do not branch on the physical screen or device model")
@@ -1116,14 +1149,17 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/EntryNavigationState.swift"
         )
         let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
-        #expect(navigationSource.contains("var flowState: V1EntryFlowState"))
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+        #expect(navigationSource.contains("var flowState: EntryFlowState"))
         #expect(navigationSource.contains("expandedEditorSections"))
         #expect(navigationSource.contains("profileOffsetY"))
         #expect(navigationSource.contains("previewOffsetY"))
-        #expect(rootSource.contains("private var entryNavigationState"))
-        #expect(rootSource.contains("private var entryFlowState: V1EntryFlowState {"))
+        #expect(rootSource.contains("var entryNavigationState"))
+        #expect(rootSource.contains("var entryFlowState: EntryFlowState {"))
         #expect(!rootSource.contains("private var entryFlowState ="))
         #expect(!rootSource.contains("@State\n    private var expandedEditorSections"))
         #expect(!rootSource.contains("@State\n    private var profileOffsetY"))
@@ -1133,47 +1169,56 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("root groups media picker presentation without moving intake ownership")
     func rootGroupsMediaPickerPresentationState() throws {
         let root = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
         let presentation = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RootPresentationState.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/RootPresentationState.swift"
+        )
+        let pages = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+        let lifecycle = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Lifecycle.swift"
         )
 
-        #expect(presentation.contains("struct V1MediaPickerPresentationState"))
+        #expect(presentation.contains("struct MediaPickerPresentationState"))
         #expect(presentation.contains("selectedProcessingItems"))
         #expect(presentation.contains("selectedLogoItem"))
         #expect(presentation.contains("isOptimizingLogo"))
-        #expect(root.contains("private var rootPresentationState"))
-        #expect(root.contains("rootPresentationState.mediaPickerPresentation"))
+        #expect(root.contains("var rootPresentationState"))
+        #expect((root + pages).contains("rootPresentationState.mediaPickerPresentation"))
         #expect(!root.contains("private var selectedProcessingItems"))
         #expect(!root.contains("private var selectedLogoItem"))
         #expect(!root.contains("private var isOptimizingLogo"))
-        #expect(root.contains("externalIntakeCenter.submit"))
+        #expect((root + lifecycle).contains("externalIntakeCenter.submit"))
     }
 
     @Test("adaptive entry navigation is stateless and preserves all destinations")
     func adaptiveEntryNavigationIsStatelessAndPreservesAllDestinations() throws {
         let navigationSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1AdaptiveNavigationShell.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/AdaptiveNavigationShell.swift"
         )
         let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
+        )
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
         )
         let observationSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RootChangeObservationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/RootChangeObservationModifier.swift"
         )
 
-        #expect(navigationSource.contains("struct V1EntryNavigationSurface<"))
-        #expect(navigationSource.contains("@Binding\n    var selection: V1EntryTab"))
-        #expect(navigationSource.contains("let navigationStyle: V1EntryNavigationStyle"))
+        #expect(navigationSource.contains("struct EntryNavigationSurface<"))
+        #expect(navigationSource.contains("@Binding\n    var selection: EntryTab"))
+        #expect(navigationSource.contains("let navigationStyle: EntryNavigationStyle"))
         #expect(navigationSource.contains("TabView(selection: $selection)"))
         #expect(navigationSource.contains("compactSidebarNavigation"))
-        #expect(navigationSource.contains("V1EntryCompactSidebar(selection: $selection)"))
-        #expect(navigationSource.contains("V1EntrySidebar(selection: $selection)"))
-        #expect(navigationSource.contains(".tag(V1EntryTab.home)"))
-        #expect(navigationSource.contains(".tag(V1EntryTab.editor)"))
-        #expect(!navigationSource.contains(".tag(V1EntryTab.output)"))
-        #expect(navigationSource.contains(".tag(V1EntryTab.tasks)"))
+        #expect(navigationSource.contains("EntryCompactSidebar(selection: $selection)"))
+        #expect(navigationSource.contains("EntrySidebar(selection: $selection)"))
+        #expect(navigationSource.contains(".tag(EntryTab.home)"))
+        #expect(navigationSource.contains(".tag(EntryTab.editor)"))
+        #expect(!navigationSource.contains(".tag(EntryTab.output)"))
+        #expect(navigationSource.contains(".tag(EntryTab.tasks)"))
         #expect(navigationSource.contains("case .settings:"))
         #expect(!navigationSource.contains("@State"))
         #expect(!navigationSource.contains("ConfigurationSession"))
@@ -1182,16 +1227,16 @@ struct IPhoneResponsiveLayoutContractTests {
                 "newTab == .editor || newTab == .output"
             )
         )
-        #expect(rootSource.contains("V1EntryNavigationSurface("))
+        #expect(pagesSource.contains("EntryNavigationSurface("))
         #expect(rootSource.contains("@Environment(\\.verticalSizeClass)"))
-        #expect(rootSource.contains("navigationStyle: entryNavigationStyle"))
-        #expect(rootSource.contains("hasCompactVerticalSizeClass:"))
+        #expect(pagesSource.contains("navigationStyle: entryNavigationStyle"))
+        #expect(pagesSource.contains("hasCompactVerticalSizeClass:"))
     }
 
     @Test("sidebar navigation fills the host viewport")
     func sidebarNavigationFillsHostViewport() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1AdaptiveNavigationShell.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/AdaptiveNavigationShell.swift"
         )
         let sidebarStart = try #require(
             source.range(of: "private func sidebarNavigation")?.lowerBound
@@ -1212,24 +1257,24 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card content editor uses one fixed four-region editing surface")
     func cardContentEditorUsesOneFixedFourRegionEditingSurface() throws {
         let cluster = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RegionEditorCluster.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
         )
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorSupport.swift"
         )
 
         #expect(cluster.contains("ForEach(visibleRegions"))
-        #expect(cluster.contains("V1RegionEditorCard("))
+        #expect(cluster.contains("MemoryCardRegionEditorCard("))
         #expect(!cluster.contains("expansionBinding"))
         #expect(!cluster.contains("configurationGuide"))
 
         let editorStart = try #require(
-            support.range(of: "struct V1RegionEditorCard: View")
+            support.range(of: "struct MemoryCardRegionEditorCard: View")
         )
         let editorBody = String(support[editorStart.lowerBound...])
 
         #expect(editorBody.contains("let region: CardRegion"))
-        #expect(editorBody.contains("draft: V1EditorDraft"))
+        #expect(editorBody.contains("draft: MemoryCardEditorDraft"))
         #expect(!editorBody.contains("IOSCompactEntryDisclosureRow("))
         #expect(!editorBody.contains("组合结果"))
         #expect(!editorBody.contains("模块与文字"))

@@ -9,7 +9,7 @@ struct V1PreviewSyncCoordinatorTests {
     @Test("refreshPreview syncs the render model display text for a single region")
     func refreshPreviewSyncsTheRenderModelDisplayTextForASingleRegion() {
         let model =
-            V1PreviewRenderModel(
+            MemoryCardPreviewRenderModel(
                 templateSourceText:
                     "记录{{memory_summary}}",
                 displayText:
@@ -19,7 +19,7 @@ struct V1PreviewSyncCoordinatorTests {
         var receivedText = ""
 
         let coordinator =
-            V1PreviewSyncCoordinator(
+            PreviewSyncCoordinator(
                 syncRegionPreview: { region, text in
                     receivedRegion = region
                     receivedText = text
@@ -42,7 +42,7 @@ struct V1PreviewSyncCoordinatorTests {
         var receivedPreviews: [CardRegion: String] = [:]
 
         let coordinator =
-            V1PreviewSyncCoordinator(
+            PreviewSyncCoordinator(
                 syncRegionPreview: { _, _ in },
                 syncRegionPreviews: {
                     receivedPreviews = $0
@@ -76,7 +76,7 @@ struct V1PreviewSyncCoordinatorTests {
     @Test("previewText delegates to the configured loader")
     func previewTextDelegatesToTheConfiguredLoader() {
         let coordinator =
-            V1PreviewSyncCoordinator(
+            PreviewSyncCoordinator(
                 syncRegionPreview: { _, _ in },
                 syncRegionPreviews: { _ in },
                 loadPreviewText: {

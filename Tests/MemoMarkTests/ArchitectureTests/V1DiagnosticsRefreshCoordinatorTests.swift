@@ -20,7 +20,7 @@ struct V1DiagnosticsRefreshCoordinatorTests {
             )
 
         let coordinator =
-            V1DiagnosticsRefreshCoordinator(
+            DiagnosticsRefreshCoordinator(
                 loadSnapshot: {
                     snapshot
                 },
@@ -53,7 +53,7 @@ struct V1DiagnosticsRefreshCoordinatorTests {
         var refreshCount = 0
 
         let coordinator =
-            V1DiagnosticsRefreshCoordinator(
+            DiagnosticsRefreshCoordinator(
                 loadSnapshot: {
                     MemoMarkiOSProcessingDiagnosticsSnapshot()
                 },
@@ -94,7 +94,7 @@ struct V1DiagnosticsRefreshCoordinatorTests {
             )
 
         let coordinator =
-            V1DiagnosticsRefreshCoordinator(
+            DiagnosticsRefreshCoordinator(
                 loadSnapshot: {
                     fallbackSnapshot
                 },
@@ -129,7 +129,7 @@ struct V1DiagnosticsRefreshCoordinatorTests {
         var receivedJobID: UUID?
 
         let coordinator =
-            V1DiagnosticsRefreshCoordinator(
+            DiagnosticsRefreshCoordinator(
                 loadSnapshot: {
                     MemoMarkiOSProcessingDiagnosticsSnapshot()
                 },

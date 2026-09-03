@@ -1,20 +1,20 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1ConfigurationBootstrapProjection:
+struct ConfigurationBootstrapProjection:
     Hashable {
 
     let customLogoBadge:
         Badge?
 
     let logoMode:
-        V1LogoMode
+        ConfigurationLogoMode
 
     let outputTarget:
-        V1IOSOutputTarget
+        ConfigurationOutputTarget
 
     let mediaOutputMode:
-        V1MediaOutputMode
+        MediaOutputMode
 
     let selectedExistingAlbumIdentifier:
         String
@@ -26,14 +26,14 @@ struct V1ConfigurationBootstrapProjection:
         ExpressionModuleConfiguration?
 }
 
-enum V1ConfigurationBootstrapPresenter {
+enum ConfigurationBootstrapPresenter {
 
     static func projection(
         from state:
-            V1ConfigurationBootstrapState
-    ) -> V1ConfigurationBootstrapProjection {
+            ConfigurationBootstrapState
+    ) -> ConfigurationBootstrapProjection {
 
-        V1ConfigurationBootstrapProjection(
+        ConfigurationBootstrapProjection(
             customLogoBadge:
                 state.logoMode == .customUpload
                 ? state.customLogoBadge

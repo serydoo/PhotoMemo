@@ -1,6 +1,6 @@
 # MemoMark Project Structure
 
-Last updated: 2026-08-26
+Last updated: 2026-09-03
 
 This is the practical lookup map for the current repository. Architecture and
 product ownership remain defined by `PROJECT_CONSTITUTION.md`,
@@ -53,8 +53,17 @@ use MemoMark.
   presentation-expression layers.
 - `LayoutEngine/`, `MediaGeometry/` — measurable layout and media geometry.
 - `Renderers/` — drawing implementations that consume resolved layout/content.
-- `Services/`, `MediaPipelineVNext/` — PhotoKit, metadata, export, Live Photo,
-  queue, notification, and media lifecycle services.
+- `Application/` — application transactions, runtime composition, and
+  cross-layer use-case orchestration. These types may coordinate owners, but
+  do not become a second durable store or UI state owner.
+- `Domain/` — deterministic processing policies, task references, and other
+  framework-light rules that do not need PhotoKit or SwiftUI.
+- `Infrastructure/` — concurrency gates, durable ledgers, and narrow PhotoKit
+  transaction ports. Platform effects remain behind these boundaries.
+- `Services/`, `MediaPipelineVNext/` — existing PhotoKit, metadata, export,
+  Live Photo, queue, notification, and media lifecycle services. New code
+  should move here only when it is genuinely a service/adapter rather than an
+  application transaction or pure domain rule.
 - `iOS/` — iOS app shell, ActivityKit bridge, Share Extension, and current views.
 - `Views/` — current macOS/shared SwiftUI surfaces. The retired
   `Views/Main/MainView*` workspace/editor subtree must not be restored.
@@ -64,7 +73,7 @@ use MemoMark.
 
 - macOS: `ConfigurationCenter/ConfigurationCenterView.swift`
 - iOS root scene: `App/MemoMarkRootSceneView.swift`
-- iOS primary experience: `iOS/Views/MemoMarkiOSV1View.swift`
+- iOS primary experience: `iOS/Views/MemoMarkConfigurationCenterView.swift`
 - Share Extension controller:
   `iOS/ShareExtension/MemoMarkShareExtensionViewController.swift`
 - Widget bundle:
@@ -79,8 +88,11 @@ different Apple target and lifecycle boundaries.
 
 `Source/MemoMark/MemoMark/iOS/Views/` remains physically flat because the
 project uses filesystem-synchronized groups. Use the local `README.md` there
-for the current logical grouping. New files should follow existing
-`ConfigurationCenter*`, `V1*`, or `MemoMarkiOS*` responsibility prefixes.
+for the current logical grouping. New active files should use stable
+responsibility names such as `ConfigurationCenter*`, `MemoryCard*`, `Home*`,
+`Subject*`, `Settings*`, or `Task*`. Do not introduce new stage-based `V1*`
+names; existing `V1*` files are migration bridges awaiting a separately
+verified compatibility-naming slice.
 
 ## Tests
 

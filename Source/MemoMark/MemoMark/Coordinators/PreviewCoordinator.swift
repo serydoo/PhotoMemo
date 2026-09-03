@@ -4,15 +4,27 @@ import Foundation
 @MainActor
 final class PreviewCoordinator {
 
-    private let buildService:
-        RecordCardBuildService
+    private let buildTransaction:
+        BuildRecordCardTransaction
 
     init(
+        buildTransaction:
+            BuildRecordCardTransaction
+    ) {
+        self.buildTransaction =
+            buildTransaction
+    }
+
+    convenience init(
         buildService:
             RecordCardBuildService
     ) {
-        self.buildService =
-            buildService
+        self.init(
+            buildTransaction:
+                BuildRecordCardTransaction(
+                    buildService: buildService
+                )
+        )
     }
 
     func buildCard(
@@ -20,11 +32,9 @@ final class PreviewCoordinator {
         configuration: BatchConfigurationSnapshot
     ) -> MemoMarkResult<RecordCard> {
 
-        .success(
-            buildService.buildCard(
-                from: photo,
-                configuration: configuration
-            )
+        buildTransaction.buildCard(
+            from: photo,
+            configuration: configuration
         )
     }
 
@@ -33,11 +43,9 @@ final class PreviewCoordinator {
         configuration: BatchConfigurationSnapshot
     ) -> MemoMarkResult<String> {
 
-        .success(
-            buildService.defaultPhotoDescription(
-                from: photo,
-                configuration: configuration
-            )
+        buildTransaction.defaultPhotoDescription(
+            from: photo,
+            configuration: configuration
         )
     }
 

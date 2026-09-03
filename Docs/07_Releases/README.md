@@ -14,11 +14,24 @@ Release events:
 
 ## Current Candidate Materials
 
-The current local source-checkpoint package is `2.2.3 (100)`. It opens a new
-App Store Connect version train after `2.2.2` was closed and carries the
-settings, welcome-guidance, avatar, editor, and persistence maintenance from
-the `2.2.2 (99)` source checkpoint. TestFlight evidence is not reused as App
-Store certification evidence.
+The current local source-checkpoint package is `2.2.4 (101)`. It records the
+behavior-preserving core architecture modernization and the resulting
+configuration, queue, media-save, Share-intake, and presentation responsibility
+cleanup. Its state is `Version Locked; Manual Acceptance Complete; Engineering
+Follow-ups Deferred`: the working tree is on `main`, but no Git commit, push,
+TestFlight upload, or App Store action has occurred. The user-confirmed manual
+checks are recorded separately from automated tests and formal production
+certification.
+
+- [`2026-09-03-2.2.4-release-notes.md`](2026-09-03-2.2.4-release-notes.md)
+- [`2026-09-03-2.2.4-app-store-whats-new.md`](2026-09-03-2.2.4-app-store-whats-new.md)
+- [`2026-09-03-2.2.4-testflight-notes.md`](2026-09-03-2.2.4-testflight-notes.md)
+- [`2026-09-03-2.2.4-sync-manifest.md`](2026-09-03-2.2.4-sync-manifest.md)
+- [`2026-09-03-2.2.4-app-review-materials.md`](2026-09-03-2.2.4-app-review-materials.md)
+
+The previous `2.2.3 (100)` package remains the historical App Store Connect
+version-train record. Its evidence must not be treated as certification for
+the current build.
 
 - [`2026-08-29-2.2.3-release-notes.md`](2026-08-29-2.2.3-release-notes.md)
 - [`2026-08-29-2.2.3-app-store-whats-new.md`](2026-08-29-2.2.3-app-store-whats-new.md)

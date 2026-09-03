@@ -1,6 +1,6 @@
 import Foundation
 
-struct V1SavedConfigurationReadiness:
+struct SavedConfigurationReadiness:
     Equatable {
 
     let isReady: Bool
@@ -21,6 +21,10 @@ struct V1SavedConfigurationReadiness:
             configurationRevision
     }
 }
+
+/// Compatibility name for the historical readiness transport. The persisted
+/// subject-library schema remains versioned independently.
+typealias V1SavedConfigurationReadiness = SavedConfigurationReadiness
 
 struct BatchConfigurationSnapshotProvider {
 
@@ -156,19 +160,19 @@ struct BatchConfigurationSnapshotProvider {
         )
     }
 
-    func loadV1ConfigurationReadiness()
-    -> V1SavedConfigurationReadiness {
+    func loadConfigurationReadiness()
+    -> SavedConfigurationReadiness {
         guard
             let data = defaults.data(
                 forKey: Keys.subjectLibrary
             ),
             let record =
                 try? JSONDecoder().decode(
-                    StoredV1SubjectLibraryRecord.self,
+                    StoredSubjectLibrarySchemaV1Record.self,
                     from: data
                 )
         else {
-            return V1SavedConfigurationReadiness(
+            return SavedConfigurationReadiness(
                 isReady: false,
                 presetTitle: nil
             )
@@ -181,7 +185,7 @@ struct BatchConfigurationSnapshotProvider {
         let reference =
             loadProductionConfigurationReference()
 
-        return V1SavedConfigurationReadiness(
+        return SavedConfigurationReadiness(
             isReady: selectedPreset != nil,
             presetTitle:
                 selectedPreset?
@@ -191,6 +195,12 @@ struct BatchConfigurationSnapshotProvider {
             configurationRevision:
                 reference?.revision
         )
+    }
+
+    @available(*, deprecated, message: "Use loadConfigurationReadiness() instead.")
+    func loadV1ConfigurationReadiness()
+    -> SavedConfigurationReadiness {
+        loadConfigurationReadiness()
     }
 
     func loadAnchorsResult()
@@ -404,7 +414,9 @@ struct BatchConfigurationSnapshotProvider {
 
 private extension BatchConfigurationSnapshotProvider {
 
-    struct StoredV1SubjectLibraryRecord:
+    /// Minimal decoder for the historical subject-library schema. It does not
+    /// become a current configuration model or write a new durable format.
+    struct StoredSubjectLibrarySchemaV1Record:
         Decodable {
 
         let selectedSubjectID: UUID?
@@ -476,7 +488,7 @@ private extension BatchConfigurationSnapshotProvider {
 
     func resolvedSelectedPreset(
         from record:
-            StoredV1SubjectLibraryRecord
+            StoredSubjectLibrarySchemaV1Record
     ) -> StoredMemoryPreset? {
         if let selectedMemoryPresetID =
             record.selectedMemoryPresetID,
@@ -609,7 +621,7 @@ private extension BatchConfigurationSnapshotProvider {
             ),
             let record =
                 try? JSONDecoder().decode(
-                    V1SubjectLibraryRecord.self,
+                    SubjectLibrarySchemaV1Record.self,
                     from: data
                 ),
             !record.subjects.isEmpty

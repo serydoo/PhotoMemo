@@ -6,17 +6,17 @@ import Testing
 @Suite("Media intake file-first contract")
 struct MediaIntakeFileFirstContractTests {
 
-    @Test("V1 Quick Action PhotosPicker attempts file representation before Data fallback")
-    func v1QuickActionPhotosPickerAttemptsFileRepresentationBeforeDataFallback() throws {
+    @Test("foreground PhotosPicker attempts file representation before Data fallback")
+    func foregroundPhotosPickerAttemptsFileRepresentationBeforeDataFallback() throws {
         let source =
             try sourceText(
                 relativePath:
-                    "Source/MemoMark/MemoMark/iOS/Views/V1PhotoIntakeSupport.swift"
+                    "Source/MemoMark/MemoMark/iOS/Views/PhotoIntakeImporter.swift"
             )
 
         try expectOrdered(
             source: source,
-            earlier: "V1PickedPhotoFileRepresentation",
+            earlier: "PickedPhotoFileRepresentation",
             later: "Data.self"
         )
     }

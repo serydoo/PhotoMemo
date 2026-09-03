@@ -28,8 +28,9 @@ final class PhotoKitLivePhotoAssetWriter:
         assetReadbackVerifier:
             (any LivePhotoAssetReadbackVerifying)? = nil,
         receiptStore:
-            PhotoLibrarySaveReceiptStore =
-                PhotoLibrarySaveReceiptStore(),
+            PhotoLibrarySaveReceiptStore? = nil,
+        photoLibraryGateway:
+            PhotoLibraryTransactionGateway? = nil,
         readbackAttemptCount: Int = 8,
         readbackRetryDelayNanoseconds:
             UInt64 = 250_000_000,
@@ -40,7 +41,16 @@ final class PhotoKitLivePhotoAssetWriter:
         self.savePerformer =
             savePerformer
             ?? PhotoKitLivePhotoAssetSavePerformer(
-                receiptStore: receiptStore
+                receiptLedger:
+                    receiptStore.map {
+                        PhotoLibrarySaveReceiptLedger(
+                            store: $0
+                        )
+                    }
+                    ?? .shared,
+                photoLibraryGateway:
+                    photoLibraryGateway
+                    ?? PhotoLibraryTransactionGateway.shared
             )
         self.pairingIdentityVerifier =
             pairingIdentityVerifier
@@ -273,16 +283,25 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
     private let defaultAlbumTitle =
         MemoMarkAlbumSelection
         .defaultAlbumTitle
-    private let receiptStore:
-        PhotoLibrarySaveReceiptStore
+    private let receiptLedger:
+        PhotoLibrarySaveReceiptLedger
+    private let placeholderIntentWriter:
+        PhotoLibraryPendingIntentPlaceholderWriter
+    private let photoLibraryGateway:
+        PhotoLibraryTransactionGateway
     private let receiptReconciliationPolicy =
         PhotoLibrarySaveReceiptReconciliationPolicy()
 
     init(
-        receiptStore:
-            PhotoLibrarySaveReceiptStore
+        receiptLedger:
+            PhotoLibrarySaveReceiptLedger,
+        photoLibraryGateway:
+            PhotoLibraryTransactionGateway
     ) {
-        self.receiptStore = receiptStore
+        self.receiptLedger = receiptLedger
+        placeholderIntentWriter =
+            receiptLedger.placeholderIntentWriter
+        self.photoLibraryGateway = photoLibraryGateway
     }
 
     func save(
@@ -305,7 +324,7 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
                 )
 
             if let idempotencyKey = operation.idempotencyKey,
-               let existingAsset = try existingAsset(
+               let existingAsset = try await existingAsset(
                    for: idempotencyKey
                ) {
                 return PhotoLibrarySaveResult(
@@ -317,7 +336,7 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
             try Task.checkCancellation()
 
             if let idempotencyKey = operation.idempotencyKey {
-                guard receiptStore.recordIntent(
+                guard await receiptLedger.recordIntent(
                     for: idempotencyKey
                 ) else {
                     throw LivePhotoAssetWritingError
@@ -327,7 +346,7 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
                 do {
                     try Task.checkCancellation()
                 } catch {
-                    receiptStore.removeIntent(
+                    await receiptLedger.removeIntent(
                         for: idempotencyKey
                     )
                     throw error
@@ -374,9 +393,9 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
                 if let idempotencyKey =
                     operation.idempotencyKey {
                     didPersistPlaceholderIntent =
-                        self.receiptStore
-                        .recordIntentAssetIdentifier(
-                            placeholder.localIdentifier,
+                        self.placeholderIntentWriter.record(
+                            assetIdentifier:
+                                placeholder.localIdentifier,
                             for: idempotencyKey
                         )
                 }
@@ -393,29 +412,55 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
                 }
             } catch {
                 let decision =
-                    PhotoLibrarySaveTransactionRecovery.resolve(
+                    await PhotoLibrarySaveTransactionRecovery.resolve(
                         idempotencyKey: operation.idempotencyKey,
                         placeholderIdentifier: placeholderIdentifier,
                         assetExists: placeholderIdentifier
                             .flatMap(fetchAsset(with:)) != nil,
-                        receiptStore: receiptStore
+                        receiptLedger: receiptLedger
                     )
-                if decision == .recoverExistingAsset,
-                   !(error is CancellationError),
-                   let placeholderIdentifier {
+                let receipt: PhotoLibrarySaveReceipt?
+                if let idempotencyKey = operation.idempotencyKey {
+                    receipt = await receiptLedger.receipt(
+                        for: idempotencyKey
+                    )
+                } else {
+                    receipt = nil
+                }
+                switch PhotoLibraryAmbiguousCommitRecoveryPolicy()
+                    .resolution(
+                        decision: decision,
+                        wasCancelled: error is CancellationError,
+                        idempotencyKey: operation.idempotencyKey,
+                        receipt: receipt
+                    ) {
+                case .reportRecoveredAsset:
+                    guard let placeholderIdentifier else {
+                        throw error
+                    }
                     return PhotoLibrarySaveResult(
                         albumTitle: album?.localizedTitle ?? "",
                         assetLocalIdentifier: placeholderIdentifier
                     )
+                case .awaitReadback:
+                    throw LivePhotoAssetWritingError
+                        .savedAssetReadbackPending
+                case .rethrowFailure:
+                    throw error
                 }
-                throw error
             }
 
             try Task.checkCancellation()
 
             guard let placeholderIdentifier else {
-                if let idempotencyKey = operation.idempotencyKey {
-                    receiptStore.removeReceipt(for: idempotencyKey)
+                if operation.idempotencyKey != nil {
+                    // The external transaction has already returned. A
+                    // missing placeholder is therefore an ambiguous local
+                    // observation, not proof that the asset was not created.
+                    // Keep the submitted intent/receipt so a retry cannot
+                    // issue a second PhotoKit write.
+                    throw LivePhotoAssetWritingError
+                        .savedAssetReadbackPending
                 }
                 throw LivePhotoAssetWritingError
                     .assetSaveFailed
@@ -423,11 +468,14 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
 
             if let idempotencyKey = operation.idempotencyKey {
                 guard didPersistPlaceholderIntent,
-                      receiptStore.record(
+                      await receiptLedger.record(
                           assetIdentifier: placeholderIdentifier,
                           for: idempotencyKey
                       ) else {
-                    receiptStore.removeReceipt(for: idempotencyKey)
+                    // PhotoKit has already accepted the external transaction.
+                    // Retain the pending placeholder evidence so a retry can
+                    // reconcile the visible asset instead of creating a
+                    // duplicate Live Photo.
                     throw LivePhotoAssetWritingError
                         .savedAssetReadbackPending
                 }
@@ -438,7 +486,9 @@ private final class PhotoKitLivePhotoAssetSavePerformer:
             if let idempotencyKey = operation.idempotencyKey {
                 // Keep the transaction-submitted receipt as the safe fallback
                 // when the post-commit acknowledgement cannot be persisted.
-                guard receiptStore.markCommitted(for: idempotencyKey) else {
+                guard await receiptLedger.markCommitted(
+                    for: idempotencyKey
+                ) else {
                     throw LivePhotoAssetWritingError.savedAssetReadbackPending
                 }
             }
@@ -458,31 +508,30 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
 
     func existingAsset(
         for idempotencyKey: String
-    ) throws -> PHAsset? {
+    ) async throws -> PHAsset? {
+        let recordedIdentifier =
+            await receiptLedger.assetIdentifier(
+                for: idempotencyKey
+            )
+        let pendingIdentifier =
+            await receiptLedger.pendingAssetIdentifier(
+                for: idempotencyKey
+            )
         guard let assetIdentifier =
-                receiptStore.assetIdentifier(
-                    for: idempotencyKey
-                )
-                ?? receiptStore.pendingAssetIdentifier(
-                    for: idempotencyKey
-                ) else {
+                recordedIdentifier
+                ?? pendingIdentifier else {
             return nil
         }
 
-        let asset =
-            PHAsset.fetchAssets(
-                withLocalIdentifiers: [
-                    assetIdentifier
-                ],
-                options: nil
-            )
-            .firstObject
+        let asset = fetchAsset(
+            with: assetIdentifier
+        )
 
         switch receiptReconciliationPolicy
             .decision(
                 assetExists: asset != nil,
                 recordedAt:
-                    receiptStore.recordedAt(
+                    await receiptLedger.recordedAt(
                         for: idempotencyKey
                     )
             ) {
@@ -491,9 +540,9 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
                 throw LivePhotoAssetWritingError
                     .savedAssetReadbackPending
             }
-            guard receiptStore.materializePendingIntent(
+            guard await receiptLedger.materializePendingIntent(
                 for: idempotencyKey
-            ), receiptStore.ensureCommitted(
+            ), await receiptLedger.ensureCommitted(
                 for: idempotencyKey
             ) else {
                 throw LivePhotoAssetWritingError
@@ -516,26 +565,8 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
     }
 
     func requestAuthorizationIfNeeded() async -> PHAuthorizationStatus {
-
-        let currentStatus =
-            PHPhotoLibrary.authorizationStatus(
-                for: .readWrite
-            )
-
-        if currentStatus != .notDetermined {
-            return currentStatus
-        }
-
-        return await withCheckedContinuation {
-            continuation in
-            PHPhotoLibrary.requestAuthorization(
-                for: .readWrite
-            ) { status in
-                continuation.resume(
-                    returning: status
-                )
-            }
-        }
+        await photoLibraryGateway
+            .requestReadWriteAuthorization()
     }
 
     func resolvedAlbum(
@@ -583,82 +614,37 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
     func fetchAlbum(
         with localIdentifier: String
     ) -> PHAssetCollection? {
-
-        PHAssetCollection
-            .fetchAssetCollections(
-                withLocalIdentifiers: [
-                    localIdentifier
-                ],
-                options: nil
-            )
-            .firstObject
+        photoLibraryGateway.album(
+            with: localIdentifier
+        )
     }
 
     func fetchAlbum(
         withTitle title: String
     ) -> PHAssetCollection? {
-
-        let fetchResult =
-            PHAssetCollection.fetchAssetCollections(
-                with: .album,
-                subtype: .any,
-                options: nil
-            )
-
-        var matchedAlbum: PHAssetCollection?
-
-        fetchResult.enumerateObjects {
-            collection,
-            _,
-            stop in
-            guard
-                collection.localizedTitle == title
-            else {
-                return
-            }
-
-            matchedAlbum = collection
-            stop.pointee = true
-        }
-
-        return matchedAlbum
+        photoLibraryGateway.album(titled: title)
     }
 
     func fetchAsset(
         with localIdentifier: String
     ) -> PHAsset? {
-        PHAsset.fetchAssets(
-            withLocalIdentifiers: [localIdentifier],
-            options: nil
-        ).firstObject
+        photoLibraryGateway.asset(
+            with: localIdentifier
+        )
     }
 
     func createAlbum(
         named title: String
     ) async throws -> PHAssetCollection {
-
-        var createdIdentifier: String?
-
-        try await performChanges {
-            let request =
-                PHAssetCollectionChangeRequest
-                .creationRequestForAssetCollection(
-                    withTitle: title
-                )
-
-            createdIdentifier =
-                request
-                .placeholderForCreatedAssetCollection
-                .localIdentifier
+        let createdAlbum: PHAssetCollection?
+        do {
+            createdAlbum = try await photoLibraryGateway.createAlbum(
+                named: title
+            )
+        } catch is PhotoLibraryTransactionGateway.Error {
+            throw LivePhotoAssetWritingError.albumCreateFailed
         }
-
-        guard
-            let createdIdentifier,
-            let createdAlbum =
-                fetchAlbum(
-                    with: createdIdentifier
-                )
-        else {
+        guard let createdAlbum else {
             throw LivePhotoAssetWritingError
                 .albumCreateFailed
         }
@@ -669,33 +655,12 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
     func performChanges(
         _ changes: @escaping () -> Void
     ) async throws {
-
-        try await withCheckedThrowingContinuation {
-            (
-                continuation:
-                    CheckedContinuation<Void, Error>
-            ) in
-            PHPhotoLibrary.shared().performChanges(
+        do {
+            try await photoLibraryGateway.performChanges(
                 changes
-            ) { success, error in
-                if let error {
-                    continuation.resume(
-                        throwing: error
-                    )
-                    return
-                }
-
-                guard success else {
-                    continuation.resume(
-                        throwing:
-                            LivePhotoAssetWritingError
-                            .assetSaveFailed
-                    )
-                    return
-                }
-
-                continuation.resume()
-            }
+            )
+        } catch is PhotoLibraryTransactionGateway.Error {
+            throw LivePhotoAssetWritingError.assetSaveFailed
         }
     }
 }

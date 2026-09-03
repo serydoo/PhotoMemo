@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import MemoMark
 
-@Suite("V1 module usage migration")
+@Suite("module usage tracking")
 struct ModuleUsageMigrationTests {
 
     @Test("sortedModules prioritizes higher-usage modules and preserves default order for ties")
@@ -27,7 +27,7 @@ struct ModuleUsageMigrationTests {
             )
 
         let sorted =
-            V1ModuleUsageTracker
+            ModuleUsageTracker
             .sortedModules(
                 defaults: defaults,
                 storage: storage
@@ -47,13 +47,13 @@ struct ModuleUsageMigrationTests {
     func recordedStorageIncrementsUsageAndIgnoresCorruptedStorage() {
 
         let firstEncoded =
-            V1ModuleUsageTracker
+            ModuleUsageTracker
             .recordedStorage(
                 for: .smartTime,
                 storage: "{broken"
             )
         let firstCounts =
-            V1ModuleUsageTracker
+            ModuleUsageTracker
             .counts(
                 from: firstEncoded ?? ""
             )
@@ -67,13 +67,13 @@ struct ModuleUsageMigrationTests {
         )
 
         let secondEncoded =
-            V1ModuleUsageTracker
+            ModuleUsageTracker
             .recordedStorage(
                 for: .smartTime,
                 storage: firstEncoded ?? ""
             )
         let secondCounts =
-            V1ModuleUsageTracker
+            ModuleUsageTracker
             .counts(
                 from: secondEncoded ?? ""
             )
@@ -91,13 +91,13 @@ struct ModuleUsageMigrationTests {
     func categoryTitlePreservesCurrentLabeling() {
 
         #expect(
-            V1ModuleUsageTracker
+            ModuleUsageTracker
             .categoryTitle(
                 for: .captureSummary
             ) == "智能表达"
         )
         #expect(
-            V1ModuleUsageTracker
+            ModuleUsageTracker
             .categoryTitle(
                 for: .cameraModel
             ) == "EXIF"

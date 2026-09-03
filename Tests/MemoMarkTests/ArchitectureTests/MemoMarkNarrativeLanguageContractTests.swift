@@ -8,10 +8,10 @@ struct MemoMarkNarrativeLanguageContractTests {
     @Test("active memory-configuration copy follows the approved narrative")
     func activeMemoryConfigurationCopyFollowsApprovedNarrative() throws {
         let optionList = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
         let configurationPage = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationPageSurface.swift"
         )
         let simplifiedChinese = try sourceText(
             "Source/MemoMark/MemoMark/zh-Hans.lproj/Localizable.strings"
@@ -52,28 +52,28 @@ struct MemoMarkNarrativeLanguageContractTests {
     @Test("primary headings describe memories and saving rather than implementation")
     func primaryHeadingsDescribeMemoriesAndSaving() throws {
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
         let output = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift"
         )
         let task = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
         )
         let welcome = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1WelcomePresentation.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/WelcomePresentation.swift"
         )
         let regionContent = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1EditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
         )
         let subjectEditor = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift"
         )
         let subjectOverview = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift"
         )
         let timeAnchorEditor = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
 
         for key in [

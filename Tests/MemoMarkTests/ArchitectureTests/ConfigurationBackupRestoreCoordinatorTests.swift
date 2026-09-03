@@ -8,6 +8,53 @@ import Testing
 struct ConfigurationBackupRestoreCoordinatorTests {
 
     @MainActor
+    @Test("restore transaction makes an empty library current using the durable receipt revision")
+    func restoreTransactionMakesEmptyLibraryCurrentFromDurableReceipt() async throws {
+        let document = Self.signedDocument(
+            subject: Self.makeSubject(id: Self.importedSubjectID),
+            configuration: Self.makeConfiguration(
+                id: Self.importedConfigurationID,
+                title: "First Restored"
+            )
+        )
+        var savedAggregate: ConfigurationLibraryRecord?
+        let transaction = RestoreConfigurationLibraryTransaction(
+            dependencies: .init(
+                saveAggregate: { aggregate in
+                    savedAggregate = aggregate
+                    return Self.makeSaveReceipt(
+                        revision: 23,
+                        subjectID: Self.importedSubjectID,
+                        configurationID: Self.importedConfigurationID
+                    )
+                },
+                readData: { _ in try Self.encode(document) },
+                startSecurityScopedAccess: { _ in false },
+                stopSecurityScopedAccess: { _ in }
+            )
+        )
+
+        let receipt = try await transaction.apply(
+            .init(
+                fileURL: URL(fileURLWithPath: "/tmp/first.memomarkconfig"),
+                assetRootURL: nil,
+                makeCurrent: false,
+                aggregate: nil,
+                availableAlbumIdentifiers: [],
+                destinationRootURL: Self.makeTemporaryDirectory()
+            )
+        )
+
+        #expect(receipt.aggregate.revision == 23)
+        #expect(savedAggregate?.activeSubjectID == Self.importedSubjectID)
+        #expect(
+            savedAggregate?.activeConfigurationID
+            == Self.importedConfigurationID
+        )
+        #expect(receipt.shouldApplyCurrentConfiguration)
+    }
+
+    @MainActor
     @Test("restore and make current reconciles revision and pairs security scope")
     func restoreAndMakeCurrentReconcilesRevision() async throws {
         let rootURL = Self.makeTemporaryDirectory()

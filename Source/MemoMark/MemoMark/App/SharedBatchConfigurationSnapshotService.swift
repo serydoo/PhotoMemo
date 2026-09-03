@@ -21,11 +21,17 @@ struct SharedBatchConfigurationSnapshotService {
         snapshotProvider.loadSnapshot()
     }
 
-    func loadV1ConfigurationReadiness()
-    -> V1SavedConfigurationReadiness {
+    func loadConfigurationReadiness()
+    -> SavedConfigurationReadiness {
 
         snapshotProvider
-            .loadV1ConfigurationReadiness()
+            .loadConfigurationReadiness()
+    }
+
+    @available(*, deprecated, message: "Use loadConfigurationReadiness() instead.")
+    func loadV1ConfigurationReadiness()
+    -> SavedConfigurationReadiness {
+        loadConfigurationReadiness()
     }
 
     func loadAnchorsResult()

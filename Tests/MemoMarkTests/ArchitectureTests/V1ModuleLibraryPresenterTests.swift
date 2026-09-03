@@ -3,13 +3,13 @@ import Foundation
 import Testing
 @testable import MemoMark
 
-@Suite("V1 module library presenter")
-struct V1ModuleLibraryPresenterTests {
+@Suite("module library presenter")
+struct ModuleLibraryPresenterTests {
 
     @Test("modules returns an empty list for non-memory-card regions")
     func modulesReturnsEmptyForNonMemoryRegions() {
         #expect(
-            V1ModuleLibraryPresenter
+            ModuleLibraryPresenter
                 .modules(
                     for: .icon,
                     usageStorage: "{}"
@@ -36,7 +36,7 @@ struct V1ModuleLibraryPresenterTests {
             )
 
         let modules =
-            V1ModuleLibraryPresenter
+            ModuleLibraryPresenter
             .modules(
                 for: .slotA,
                 usageStorage: storage
@@ -49,13 +49,13 @@ struct V1ModuleLibraryPresenterTests {
     @Test("recordedUsageStorage increments module usage counts")
     func recordedUsageStorageIncrementsCounts() {
         let encoded =
-            V1ModuleLibraryPresenter
+            ModuleLibraryPresenter
             .recordedUsageStorage(
                 for: .smartTime,
                 currentStorage: "{}"
             )
         let counts =
-            V1ModuleUsageTracker
+            ModuleUsageTracker
             .counts(from: encoded ?? "")
 
         #expect(
@@ -70,26 +70,26 @@ struct V1ModuleLibraryPresenterTests {
     @Test("sheet presentation helpers preserve the active-region dismissal rule")
     func sheetPresentationHelpersPreserveDismissRule() {
         #expect(
-            V1ModuleLibraryPresenter
+            ModuleLibraryPresenter
                 .isSheetPresented(
                     activeRegion: .slotD
                 )
         )
         #expect(
-            !V1ModuleLibraryPresenter
+            !ModuleLibraryPresenter
                 .isSheetPresented(
                     activeRegion: nil
                 )
         )
         #expect(
-            V1ModuleLibraryPresenter
+            ModuleLibraryPresenter
                 .resolvedActiveRegion(
                     isPresented: false,
                     currentRegion: .slotD
                 ) == nil
         )
         #expect(
-            V1ModuleLibraryPresenter
+            ModuleLibraryPresenter
                 .resolvedActiveRegion(
                     isPresented: true,
                     currentRegion: .slotD

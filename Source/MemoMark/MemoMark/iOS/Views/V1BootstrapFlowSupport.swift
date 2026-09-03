@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-enum V1BootstrapSessionRestorePlan {
+enum ConfigurationBootstrapSessionRestorePlan {
 
     case clearSession
     case none
@@ -19,53 +19,53 @@ enum V1BootstrapSessionRestorePlan {
     )
 }
 
-struct V1BootstrapFlowPatch {
+struct ConfigurationBootstrapFlowPatch {
 
     let shouldSaveSubjectLibrary: Bool
     let customLogoBadge: Badge?
-    let logoMode: V1LogoMode
+    let logoMode: ConfigurationLogoMode
     let logoStatusMessage: String?
-    let outputTarget: V1IOSOutputTarget
+    let outputTarget: ConfigurationOutputTarget
     let mediaOutputMode:
-        V1MediaOutputMode
+        MediaOutputMode
     let selectedExistingAlbumIdentifier: String
     let suggestedNewAlbumName: String?
     let locationDisplayConfiguration:
         ExpressionModuleConfiguration?
     let sessionRestorePlan:
-        V1BootstrapSessionRestorePlan
+        ConfigurationBootstrapSessionRestorePlan
     let birthdayDate: Date?
-    let welcomeState: V1WelcomeFlowState
-    let regionDrafts: [CardRegion: V1EditorDraft]
+    let welcomeState: WelcomeFlowState
+    let regionDrafts: [CardRegion: MemoryCardEditorDraft]
 }
 
-struct V1BootstrapFlowCoordinator {
+struct ConfigurationBootstrapFlowCoordinator {
 
     private let loadConfigurationState:
-        () -> V1ConfigurationBootstrapState
+        () -> ConfigurationBootstrapState
 
     private let loadDrafts:
         (
-            V1PreviewCompositionContext,
-            (CardRegion) -> V1EditorDraft
-        ) -> [CardRegion: V1EditorDraft]
+            MemoryCardPreviewCompositionContext,
+            (CardRegion) -> MemoryCardEditorDraft
+        ) -> [CardRegion: MemoryCardEditorDraft]
 
     private let presentWelcome:
-        (Bool) -> V1WelcomeFlowState
+        (Bool) -> WelcomeFlowState
 
     init(
         loadConfigurationState:
-            @escaping () -> V1ConfigurationBootstrapState,
+            @escaping () -> ConfigurationBootstrapState,
         loadDrafts:
             @escaping (
-                V1PreviewCompositionContext,
-                (CardRegion) -> V1EditorDraft
-            ) -> [CardRegion: V1EditorDraft],
+                MemoryCardPreviewCompositionContext,
+                (CardRegion) -> MemoryCardEditorDraft
+            ) -> [CardRegion: MemoryCardEditorDraft],
         presentWelcome:
-            @escaping (Bool) -> V1WelcomeFlowState
+            @escaping (Bool) -> WelcomeFlowState
                 = {
                     hasSeenWelcome in
-                    V1WelcomeFlowCoordinator
+                    WelcomeFlowCoordinator
                         .presentWelcome(
                             hasSeenWelcome:
                                 hasSeenWelcome
@@ -81,9 +81,9 @@ struct V1BootstrapFlowCoordinator {
 
     init(
         configurationBootstrapCoordinator:
-            V1ConfigurationBootstrapCoordinator,
+            ConfigurationBootstrapCoordinator,
         session: ConfigurationSession,
-        engine: V1PreviewCompositionEngine
+        engine: MemoryCardPreviewCompositionEngine
     ) {
         self.init(
             loadConfigurationState: {
@@ -93,7 +93,7 @@ struct V1BootstrapFlowCoordinator {
             loadDrafts: {
                 context,
                 makeDefaultDraft in
-                V1DraftBootstrapCoordinator(
+                ConfigurationDraftBootstrapCoordinator(
                     session: session,
                     context: context,
                     engine: engine
@@ -110,20 +110,20 @@ struct V1BootstrapFlowCoordinator {
         hasSeenWelcome: Bool,
         fallbackBirthdayDate: Date,
         makeDefaultDraft:
-            (CardRegion) -> V1EditorDraft
-    ) -> V1BootstrapFlowPatch {
+            (CardRegion) -> MemoryCardEditorDraft
+    ) -> ConfigurationBootstrapFlowPatch {
         let state =
             loadConfigurationState()
         let projection =
-            V1ConfigurationBootstrapPresenter
+            ConfigurationBootstrapPresenter
             .projection(from: state)
         let resolvedSubjects =
             state.subjects.map {
-                V1SubjectLibraryResolver
+                SubjectLibraryResolver
                     .sanitizedSubjectLibrary($0)
             }
         let resolvedSubject =
-            V1SubjectLibraryResolver
+            SubjectLibraryResolver
             .resolvedBootstrapSubject(
                 subjects: resolvedSubjects,
                 selectedSubjectID:
@@ -135,7 +135,7 @@ struct V1BootstrapFlowCoordinator {
             resolvedSubject?.primaryTimeAnchor?.date
             ?? resolvedSubject?.referenceDate
         let draftContext =
-            V1PreviewCompositionContext(
+            MemoryCardPreviewCompositionContext(
                 subject: resolvedSubject,
                 birthdayDate:
                     resolvedBirthdayDate
@@ -145,7 +145,7 @@ struct V1BootstrapFlowCoordinator {
                     .locationDisplayConfiguration
             )
 
-        return V1BootstrapFlowPatch(
+        return ConfigurationBootstrapFlowPatch(
             shouldSaveSubjectLibrary:
                 state.subjectLibraryReadFailure == nil,
             customLogoBadge:
@@ -195,10 +195,10 @@ struct V1BootstrapFlowCoordinator {
     }
 
     private func sessionRestorePlan(
-        state: V1ConfigurationBootstrapState,
+        state: ConfigurationBootstrapState,
         resolvedSubjects: [MemorySubject]?,
         resolvedSubject: MemorySubject?
-    ) -> V1BootstrapSessionRestorePlan {
+    ) -> ConfigurationBootstrapSessionRestorePlan {
         if state.configurationLibraryRecoveryFailed {
             if let subjects = resolvedSubjects,
                !subjects.isEmpty {

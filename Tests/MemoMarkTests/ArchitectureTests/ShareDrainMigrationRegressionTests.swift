@@ -157,7 +157,7 @@ struct ShareDrainMigrationRegressionTests {
 
     @MainActor
     @Test("Queue persistence failure keeps the Share request pending")
-    func queuePersistenceFailureKeepsShareRequestPending() throws {
+    func queuePersistenceFailureKeepsShareRequestPending() async throws {
         let suiteName =
             "MemoMark.ShareDrainMigrationRegressionTests.QueueFailure.\(UUID().uuidString)"
         let defaults = try #require(
@@ -196,7 +196,7 @@ struct ShareDrainMigrationRegressionTests {
             [sourceURL],
             source: .shareExtension
         )
-        runtime.flushExternalRequests()
+        await runtime.flushExternalRequests()
 
         #expect(queueStore.jobs.isEmpty)
         #expect(
@@ -251,10 +251,12 @@ struct ShareDrainMigrationRegressionTests {
             .$revision
             .dropFirst()
             .sink { _ in
-                runtime.refreshExternalIntakeState()
+                Task { @MainActor in
+                    await runtime.refreshExternalIntakeState()
+                }
             }
 
-        let result = runtime.flushExternalRequests()
+        let result = await runtime.flushExternalRequests()
         try await Task.sleep(for: .milliseconds(200))
         withExtendedLifetime(revisionObserver) {}
 
@@ -265,7 +267,7 @@ struct ShareDrainMigrationRegressionTests {
 
     @MainActor
     @Test("Corrupt Share metadata suppresses managed orphan cleanup")
-    func corruptShareMetadataSuppressesManagedOrphanCleanup() throws {
+    func corruptShareMetadataSuppressesManagedOrphanCleanup() async throws {
         let context = try Self.makeContext(
             named:
                 "MemoMark.ShareDrainMigrationRegressionTests.CorruptCleanup.\(UUID().uuidString)"
@@ -288,7 +290,7 @@ struct ShareDrainMigrationRegressionTests {
             environment: context.environment
         )
 
-        runtime.refreshExternalIntakeState()
+        await runtime.refreshExternalIntakeState()
 
         #expect(runtime.externalIntakeCenter.intakePersistenceError != nil)
         #expect(
@@ -342,7 +344,7 @@ struct ShareDrainMigrationRegressionTests {
                 request.intakePayloads.first
             )
         let result =
-            context.environment.coordinators
+            await context.environment.coordinators
             .queue
             .enqueue(
                 payloads:
@@ -639,8 +641,8 @@ struct ShareDrainMigrationRegressionTests {
     }
 
     @MainActor
-    @Test("ProcessShareIntent restores canonical memory snapshot stripped by Share Extension transport")
-    func processShareIntentRestoresCanonicalMemorySnapshotStrippedByShareExtensionTransport() async throws {
+    @Test("ProcessShareIntent keeps historical transport isolated when canonical memory is absent")
+    func processShareIntentKeepsHistoricalTransportIsolatedWhenCanonicalMemoryIsAbsent() async throws {
         let context = try Self.makeContext(
             named:
                 "MemoMark.ShareDrainMigrationRegressionTests.MemorySnapshotRestore.\(UUID().uuidString)"
@@ -708,21 +710,15 @@ struct ShareDrainMigrationRegressionTests {
         )
         #expect(
             job.configuration
-            .canonicalProductionSnapshot != nil
+            .canonicalProductionSnapshot == nil
         )
         #expect(
             job.configuration.template
             == transportConfiguration.template
         )
         #expect(
-            job.configuration
-            .canonicalProductionSnapshot?
-            .memorySubject?
-            .resolvedExpressionSubjectText
-            == canonicalConfiguration
-            .canonicalProductionSnapshot?
-            .memorySubject?
-            .resolvedExpressionSubjectText
+            job.configuration.memorySubjectText
+            == transportConfiguration.memorySubjectText
         )
         #expect(
             MemoMarkShareDiagnostics.loadEvents(
@@ -1022,6 +1018,82 @@ struct ShareDrainMigrationRegressionTests {
         #expect(
             task.contentTypeIdentifier
             == "com.apple.live-photo"
+        )
+    }
+
+    @MainActor
+    @Test("ProcessShareIntent keeps an unrecoverable Live Photo fallback static when output policy explicitly requests a static image")
+    func processShareIntentKeepsUnrecoverableLivePhotoFallbackStaticForStaticOutput() async throws {
+
+        let context = try Self.makeContext(
+            named:
+                "MemoMark.ShareDrainMigrationRegressionTests.LivePhotoStaticOutput.\(UUID().uuidString)"
+        )
+        defer { Self.cleanup(context) }
+
+        let sourceURL = try SyntheticFixtureLibrary.fixtureURL(
+            .iphoneJPEG
+        )
+        var configuration = context.environment.repositories.configuration
+            .loadDefaultBatchConfigurationSnapshot()
+        configuration.mediaOutputModeRawValue = MediaOutputMode.staticImage.rawValue
+        configuration.livePhotoPolicyRawValue = MemoryConfigurationRecord
+            .Output.LivePhotoPolicy.staticImageOnly.rawValue
+
+        let request = ExternalPhotoIntakeRequest(
+            launchSource: .shareExtension,
+            urls: [sourceURL],
+            items: [
+                ExternalPhotoIntakeItem(
+                    managedURL: sourceURL,
+                    originalFileName: "IMG_0935.jpg",
+                    sourceIdentifier: nil,
+                    contentTypeIdentifier: UTType.jpeg.identifier,
+                    livePhotoRecoveryHint:
+                        LivePhotoStaticFallbackRecoveryHint(
+                            originalFileName: "IMG_0935.jpg",
+                            advertisedLivePhotoTypeIdentifier:
+                                "com.apple.live-photo",
+                            staticContentTypeIdentifier:
+                                UTType.jpeg.identifier,
+                            captureDate: nil,
+                            pixelWidth: 4032,
+                            pixelHeight: 3024
+                        )
+                )
+            ],
+            configurationSnapshot: configuration
+        )
+        let coordinator = ShareCoordinator(
+            externalIntakeCenter:
+                context.environment.externalIntakeCenter,
+            externalIntakeStore:
+                context.environment.services.externalIntakeStore,
+            configurationRepository:
+                context.environment.repositories.configuration,
+            queueRepository:
+                context.environment.repositories.queue,
+            livePhotoAssetIdentityResolver:
+                FakeLivePhotoAssetIdentityResolver(
+                    resolution: .notFound
+                )
+        )
+
+        let result = await ProcessShareIntent(
+            request: request,
+            consumedPayloadKeys: [],
+            coordinator: coordinator
+        )
+        .execute()
+
+        let receipt = try #require(result.value)
+        let task = try #require(receipt.job?.tasks.first)
+
+        #expect(task.sourceIdentifier == nil)
+        #expect(task.contentTypeIdentifier == UTType.jpeg.identifier)
+        #expect(
+            BatchTaskMemoryPolicy.processingRoute(for: task)
+            == .staticImage
         )
     }
 

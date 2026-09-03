@@ -15,7 +15,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
             .deletingLastPathComponent()
         let source = try String(
             contentsOf: repositoryRoot.appendingPathComponent(
-                "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+                "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
             ),
             encoding: .utf8
         )
@@ -45,11 +45,11 @@ struct V1BootstrapRuntimeCoordinatorTests {
                 anchorTitle: "纪念日",
                 anchorDate: Date(timeIntervalSince1970: 43_200)
             )
-        let expectedDrafts: [CardRegion: V1EditorDraft] = [
-            .slotA: V1EditorDraft(items: [.text("A")])
+        let expectedDrafts: [CardRegion: MemoryCardEditorDraft] = [
+            .slotA: MemoryCardEditorDraft(items: [.text("A")])
         ]
         let patch =
-            V1BootstrapFlowPatch(
+            ConfigurationBootstrapFlowPatch(
                 shouldSaveSubjectLibrary: true,
                 customLogoBadge: nil,
                 logoMode: .subjectAvatar,
@@ -70,7 +70,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
                     selectedMemoryPresetID: nil
                 ),
                 birthdayDate: selectedSubject.primaryTimeAnchor?.date,
-                welcomeState: V1WelcomeFlowState(
+                welcomeState: WelcomeFlowState(
                     hasSeenWelcome: true,
                     showsWelcomePage: false,
                     showsWorkflowGuide: false
@@ -79,7 +79,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
             )
 
         var applyingStates: [Bool] = []
-        var receivedProjection: V1BootstrapViewProjection?
+        var receivedProjection: ConfigurationBootstrapViewProjection?
         var restoredLibrary: (
             subjects: [MemorySubject],
             selectedID: MemorySubject.ID?,
@@ -87,11 +87,11 @@ struct V1BootstrapRuntimeCoordinatorTests {
             selectedMemoryPresetID: MemoryPreset.ID?
         )?
         var restoredSubject: MemorySubject?
-        var receivedWelcomeState: V1WelcomeFlowState?
+        var receivedWelcomeState: WelcomeFlowState?
         var refreshCount = 0
 
         let coordinator =
-            V1BootstrapRuntimeCoordinator(
+            ConfigurationBootstrapRuntimeCoordinator(
                 setApplyingBootstrapState: {
                     applyingStates.append($0)
                 },
@@ -117,7 +117,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
         #expect(applyingStates == [true, false])
         #expect(
             receivedProjection
-            == V1BootstrapViewProjection(
+            == ConfigurationBootstrapViewProjection(
                 shouldSaveSubjectLibrary: true,
                 customLogoBadge: nil,
                 logoMode: .subjectAvatar,
@@ -149,7 +149,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
         #expect(restoredSubject == nil)
         #expect(
             receivedWelcomeState
-            == V1WelcomeFlowState(
+            == WelcomeFlowState(
                 hasSeenWelcome: true,
                 showsWelcomePage: false,
                 showsWorkflowGuide: false
@@ -168,7 +168,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
                 anchorDate: Date(timeIntervalSince1970: 172_800)
             )
         let patch =
-            V1BootstrapFlowPatch(
+            ConfigurationBootstrapFlowPatch(
                 shouldSaveSubjectLibrary: false,
                 customLogoBadge: nil,
                 logoMode: .appleMini,
@@ -182,7 +182,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
                     subject
                 ),
                 birthdayDate: nil,
-                welcomeState: V1WelcomeFlowState(
+                welcomeState: WelcomeFlowState(
                     hasSeenWelcome: false,
                     showsWelcomePage: true,
                     showsWorkflowGuide: false
@@ -195,7 +195,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
         var refreshCount = 0
 
         let coordinator =
-            V1BootstrapRuntimeCoordinator(
+            ConfigurationBootstrapRuntimeCoordinator(
                 setApplyingBootstrapState: { _ in },
                 updateProjection: { _ in },
                 restoreSubjectLibrary: { _, _, _, _ in
@@ -222,7 +222,7 @@ struct V1BootstrapRuntimeCoordinatorTests {
     func clearSessionPatchRemovesTransientMockConfigurationContent() {
         let session = ConfigurationSession()
         #expect(!session.state.memoryPresets.isEmpty)
-        let patch = V1BootstrapFlowPatch(
+        let patch = ConfigurationBootstrapFlowPatch(
             shouldSaveSubjectLibrary: false,
             customLogoBadge: nil,
             logoMode: .appleMini,
@@ -234,14 +234,14 @@ struct V1BootstrapRuntimeCoordinatorTests {
             locationDisplayConfiguration: nil,
             sessionRestorePlan: .clearSession,
             birthdayDate: nil,
-            welcomeState: V1WelcomeFlowState(
+            welcomeState: WelcomeFlowState(
                 hasSeenWelcome: true,
                 showsWelcomePage: false,
                 showsWorkflowGuide: false
             ),
             regionDrafts: [:]
         )
-        let coordinator = V1BootstrapRuntimeCoordinator(
+        let coordinator = ConfigurationBootstrapRuntimeCoordinator(
             setApplyingBootstrapState: { _ in },
             updateProjection: { _ in },
             restoreSubjectLibrary: { _, _, _, _ in },

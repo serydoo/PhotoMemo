@@ -1,31 +1,31 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1BootstrapViewProjection:
+struct ConfigurationBootstrapViewProjection:
     Equatable {
 
     let shouldSaveSubjectLibrary: Bool
     let customLogoBadge: Badge?
-    let logoMode: V1LogoMode
+    let logoMode: ConfigurationLogoMode
     let logoStatusMessage: String?
-    let outputTarget: V1IOSOutputTarget
+    let outputTarget: ConfigurationOutputTarget
     let mediaOutputMode:
-        V1MediaOutputMode
+        MediaOutputMode
     let selectedExistingAlbumIdentifier: String
     let suggestedNewAlbumName: String?
     let locationDisplayConfiguration:
         ExpressionModuleConfiguration?
     let birthdayDate: Date?
-    let regionDrafts: [CardRegion: V1EditorDraft]
+    let regionDrafts: [CardRegion: MemoryCardEditorDraft]
 }
 
 @MainActor
-struct V1BootstrapRuntimeCoordinator {
+struct ConfigurationBootstrapRuntimeCoordinator {
 
     private let setApplyingBootstrapState:
         (Bool) -> Void
     private let updateProjection:
-        (V1BootstrapViewProjection) -> Void
+        (ConfigurationBootstrapViewProjection) -> Void
     private let restoreSubjectLibrary:
         (
             [MemorySubject],
@@ -36,13 +36,13 @@ struct V1BootstrapRuntimeCoordinator {
     private let restoreConfigurationLibrary:
         (ConfigurationLibraryRecord) -> Void
     private let applyConfigurationDraftProjection:
-        (V1ConfigurationDraftProjection) -> Void
+        (ConfigurationDraftProjection) -> Void
     private let restoreSelectedSubject:
         (MemorySubject) -> Void
     private let clearSession:
         () -> Void
     private let applyWelcomeState:
-        (V1WelcomeFlowState) -> Void
+        (WelcomeFlowState) -> Void
     private let refreshDynamicPreview:
         () -> Void
 
@@ -51,7 +51,7 @@ struct V1BootstrapRuntimeCoordinator {
             Bool
         ) -> Void,
         updateProjection: @escaping (
-            V1BootstrapViewProjection
+            ConfigurationBootstrapViewProjection
         ) -> Void,
         restoreSubjectLibrary: @escaping (
             [MemorySubject],
@@ -63,14 +63,14 @@ struct V1BootstrapRuntimeCoordinator {
             ConfigurationLibraryRecord
         ) -> Void = { _ in },
         applyConfigurationDraftProjection: @escaping (
-            V1ConfigurationDraftProjection
+            ConfigurationDraftProjection
         ) -> Void = { _ in },
         restoreSelectedSubject: @escaping (
             MemorySubject
         ) -> Void,
         clearSession: @escaping () -> Void = {},
         applyWelcomeState: @escaping (
-            V1WelcomeFlowState
+            WelcomeFlowState
         ) -> Void,
         refreshDynamicPreview: @escaping () -> Void
     ) {
@@ -94,11 +94,11 @@ struct V1BootstrapRuntimeCoordinator {
 
     func apply(
         _ patch:
-            V1BootstrapFlowPatch
+            ConfigurationBootstrapFlowPatch
     ) {
         setApplyingBootstrapState(true)
         updateProjection(
-            V1BootstrapViewProjection(
+            ConfigurationBootstrapViewProjection(
                 shouldSaveSubjectLibrary:
                     patch.shouldSaveSubjectLibrary,
                 customLogoBadge:
@@ -141,7 +141,7 @@ struct V1BootstrapRuntimeCoordinator {
                     $0.id == activeConfigurationID
                 }) {
                 applyConfigurationDraftProjection(
-                    V1ConfigurationDraftProjection(
+                    ConfigurationDraftProjection(
                         configuration: activeConfiguration
                     )
                 )

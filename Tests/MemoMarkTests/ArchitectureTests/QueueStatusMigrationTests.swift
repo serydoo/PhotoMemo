@@ -83,7 +83,7 @@ struct QueueStatusMigrationTests {
 
     @MainActor
     @Test("ClearCompletedQueueHistoryIntent removes terminal external jobs through QueueCoordinator")
-    func clearCompletedQueueHistoryIntentRemovesTerminalExternalJobs() throws {
+    func clearCompletedQueueHistoryIntentRemovesTerminalExternalJobs() async throws {
 
         let suiteName =
             "MemoMark.QueueStatusMigrationTests.clear.\(UUID().uuidString)"
@@ -223,11 +223,11 @@ struct QueueStatusMigrationTests {
             )
 
         let result =
-            ClearCompletedQueueHistoryIntent(
+            await ClearCompletedQueueHistoryIntent(
                 preservingJobID: nil,
                 coordinator: coordinator
             )
-            .executeSynchronously()
+            .execute()
 
         switch result {
         case .success:

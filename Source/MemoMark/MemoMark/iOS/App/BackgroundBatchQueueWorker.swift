@@ -5,15 +5,15 @@ import Photos
 @MainActor
 final class BackgroundBatchQueueWorker {
 
-    private let batchQueueStore: BatchQueueStore
+    private let queueRuntime: any BackgroundQueueRuntime
     private let prepareQueue:
-        @MainActor () -> BackgroundQueuePreparationResult
+        @MainActor () async -> BackgroundQueuePreparationResult
     private let hasPhotoLibraryAuthorization: () -> Bool
     private var cancellationRequested = false
 
     init(
-        batchQueueStore: BatchQueueStore,
-        prepareQueue: @escaping @MainActor () -> BackgroundQueuePreparationResult,
+        queueRuntime: any BackgroundQueueRuntime,
+        prepareQueue: @escaping @MainActor () async -> BackgroundQueuePreparationResult,
         hasPhotoLibraryAuthorization: @escaping () -> Bool = {
             let status = PHPhotoLibrary.authorizationStatus(
                 for: .readWrite
@@ -21,7 +21,7 @@ final class BackgroundBatchQueueWorker {
             return status == .authorized || status == .limited
         }
     ) {
-        self.batchQueueStore = batchQueueStore
+        self.queueRuntime = queueRuntime
         self.prepareQueue = prepareQueue
         self.hasPhotoLibraryAuthorization =
             hasPhotoLibraryAuthorization
@@ -30,7 +30,7 @@ final class BackgroundBatchQueueWorker {
     func run() async -> BackgroundQueueRunResult {
         cancellationRequested = false
 
-        let preparationResult = prepareQueue()
+        let preparationResult = await prepareQueue()
         if let runResult =
             preparationResult.runResultWithoutProcessing {
             return runResult
@@ -39,11 +39,11 @@ final class BackgroundBatchQueueWorker {
             return .requiresUserAction
         }
 
-        batchQueueStore.startProcessingIfNeeded()
-        while batchQueueStore.isProcessing {
+        await queueRuntime.startProcessingIfNeeded()
+        while queueRuntime.isProcessing {
             guard !Task.isCancelled,
                   !cancellationRequested else {
-                batchQueueStore
+                await queueRuntime
                     .stopProcessingForBackgroundExpiration()
                 return .retryScheduled
             }
@@ -57,13 +57,13 @@ final class BackgroundBatchQueueWorker {
             retryRequested:
                 preparationResult
                 .requiresRetryAfterProcessing,
-            pendingTaskCount: batchQueueStore.pendingTaskCount
+            pendingTaskCount: queueRuntime.pendingTaskCount
         )
     }
 
-    func cancel() {
+    func cancel() async {
         cancellationRequested = true
-        batchQueueStore
+        await queueRuntime
             .stopProcessingForBackgroundExpiration()
     }
 }

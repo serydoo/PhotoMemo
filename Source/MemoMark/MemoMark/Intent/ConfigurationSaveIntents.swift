@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1ConfigurationSaveRequest:
+struct ConfigurationSaveRequest:
     Hashable {
 
     struct TimeAnchor:
@@ -44,7 +44,7 @@ struct V1ConfigurationSaveRequest:
     let albumSelection: AlbumSelection
 
     let mediaOutputMode:
-        V1MediaOutputMode
+        MediaOutputMode
 
     init(
         subject: MemorySubject? = nil,
@@ -64,7 +64,7 @@ struct V1ConfigurationSaveRequest:
         timeAnchor: TimeAnchor,
         albumSelection: AlbumSelection,
         mediaOutputMode:
-            V1MediaOutputMode = .originalFormat
+            MediaOutputMode = .originalFormat
     ) {
         self.subject = subject
         self.subjects = subjects
@@ -92,13 +92,13 @@ struct V1ConfigurationSaveRequest:
     }
 }
 
-struct V1ConfigurationSaveReceipt:
+struct ConfigurationSaveReceipt:
     Hashable {
 
     let anchor: Anchor
 }
 
-struct V1ConfigurationBootstrapState:
+struct ConfigurationBootstrapState:
     Hashable {
 
     let configurationLibrary:
@@ -108,7 +108,7 @@ struct V1ConfigurationBootstrapState:
         Bool
 
     let draftProjection:
-        V1ConfigurationDraftProjection?
+        ConfigurationDraftProjection?
 
     let subjects: [MemorySubject]?
     let selectedSubjectID: MemorySubject.ID?
@@ -121,13 +121,13 @@ struct V1ConfigurationBootstrapState:
         Badge?
 
     let logoMode:
-        V1LogoMode
+        ConfigurationLogoMode
 
     let outputTarget:
-        V1IOSOutputTarget
+        ConfigurationOutputTarget
 
     let mediaOutputMode:
-        V1MediaOutputMode
+        MediaOutputMode
 
     let selectedExistingAlbumIdentifier:
         String
@@ -144,7 +144,7 @@ struct V1ConfigurationBootstrapState:
         configurationLibraryRecoveryFailed:
             Bool = false,
         draftProjection:
-            V1ConfigurationDraftProjection? = nil,
+            ConfigurationDraftProjection? = nil,
         subjects: [MemorySubject]? = nil,
         selectedSubjectID: MemorySubject.ID? = nil,
         memoryPresets: [MemoryPreset] = [],
@@ -153,10 +153,10 @@ struct V1ConfigurationBootstrapState:
         subjectLibraryReadFailure:
             MemoMarkSharedDefaultsReadFailure? = nil,
         customLogoBadge: Badge?,
-        logoMode: V1LogoMode,
-        outputTarget: V1IOSOutputTarget,
+        logoMode: ConfigurationLogoMode,
+        outputTarget: ConfigurationOutputTarget,
         mediaOutputMode:
-            V1MediaOutputMode = .originalFormat,
+            MediaOutputMode = .originalFormat,
         selectedExistingAlbumIdentifier: String,
         suggestedNewAlbumName: String?,
         locationDisplayConfiguration:
@@ -190,28 +190,28 @@ struct V1ConfigurationBootstrapState:
     }
 }
 
-struct SaveV1ConfigurationIntent:
+struct SaveConfigurationIntent:
     MemoMarkIntent {
 
     let request:
-        V1ConfigurationSaveRequest
+        ConfigurationSaveRequest
 
     let coordinator:
         ConfigurationCoordinator
 
     func execute()
     async -> MemoMarkResult<
-        V1ConfigurationSaveReceipt
+        ConfigurationSaveReceipt
     > {
 
         coordinator
-            .saveV1Configuration(
+            .saveConfiguration(
                 request
             )
     }
 }
 
-struct LoadV1ConfigurationBootstrapIntent:
+struct LoadConfigurationBootstrapIntent:
     MemoMarkIntent {
 
     let coordinator:
@@ -219,7 +219,7 @@ struct LoadV1ConfigurationBootstrapIntent:
 
     func execute()
     async -> MemoMarkResult<
-        V1ConfigurationBootstrapState
+        ConfigurationBootstrapState
     > {
 
         executeSynchronously()
@@ -227,11 +227,18 @@ struct LoadV1ConfigurationBootstrapIntent:
 
     func executeSynchronously()
     -> MemoMarkResult<
-        V1ConfigurationBootstrapState
+        ConfigurationBootstrapState
     > {
 
         coordinator
-            .loadV1ConfigurationBootstrapState()
+            .loadConfigurationBootstrapState()
     }
 }
+
+// Kept for source compatibility with the pre-modernization callers and
+// persisted compatibility tests. These aliases do not introduce another
+// production path; they resolve to the canonical application transport.
+typealias V1ConfigurationSaveRequest = ConfigurationSaveRequest
+typealias V1ConfigurationSaveReceipt = ConfigurationSaveReceipt
+typealias SaveV1ConfigurationIntent = SaveConfigurationIntent
 #endif

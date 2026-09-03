@@ -48,11 +48,11 @@ struct V1ConfigurationBootstrapPresenterTests {
         )
 
         let firstProjection =
-            V1ConfigurationDraftProjection(
+            ConfigurationDraftProjection(
                 configuration: first
             )
         let secondProjection =
-            V1ConfigurationDraftProjection(
+            ConfigurationDraftProjection(
                 configuration: second
             )
 
@@ -99,7 +99,7 @@ struct V1ConfigurationBootstrapPresenterTests {
                 imagePath: "/tmp/custom-logo.png"
             )
         let state =
-            V1ConfigurationBootstrapState(
+            ConfigurationBootstrapState(
                 customLogoBadge: badge,
                 logoMode: .customUpload,
                 outputTarget: .existingAlbum,
@@ -115,7 +115,7 @@ struct V1ConfigurationBootstrapPresenterTests {
             )
 
         let projection =
-            V1ConfigurationBootstrapPresenter
+            ConfigurationBootstrapPresenter
             .projection(from: state)
 
         #expect(
@@ -149,7 +149,7 @@ struct V1ConfigurationBootstrapPresenterTests {
     @Test("automatic and system-library bootstrap preserve non-custom logo projection")
     func automaticAndSystemLibraryBootstrapPreserveNonCustomLogoProjection() {
         let systemState =
-            V1ConfigurationBootstrapState(
+            ConfigurationBootstrapState(
                 customLogoBadge: nil,
                 logoMode: .appleMini,
                 outputTarget: .applePhotos,
@@ -158,7 +158,7 @@ struct V1ConfigurationBootstrapPresenterTests {
                 suggestedNewAlbumName: nil
             )
         let automaticState =
-            V1ConfigurationBootstrapState(
+            ConfigurationBootstrapState(
                 customLogoBadge: nil,
                 logoMode: .appleMini,
                 outputTarget: .automatic,
@@ -168,10 +168,10 @@ struct V1ConfigurationBootstrapPresenterTests {
             )
 
         let systemProjection =
-            V1ConfigurationBootstrapPresenter
+            ConfigurationBootstrapPresenter
             .projection(from: systemState)
         let automaticProjection =
-            V1ConfigurationBootstrapPresenter
+            ConfigurationBootstrapPresenter
             .projection(from: automaticState)
 
         #expect(
@@ -210,7 +210,7 @@ struct V1ConfigurationBootstrapPresenterTests {
     @Test("subject-avatar bootstrap preserves the third logo mode without requiring a custom badge payload")
     func subjectAvatarBootstrapProjectsThirdLogoMode() {
         let state =
-            V1ConfigurationBootstrapState(
+            ConfigurationBootstrapState(
                 customLogoBadge: nil,
                 logoMode: .subjectAvatar,
                 outputTarget: .automatic,
@@ -219,7 +219,7 @@ struct V1ConfigurationBootstrapPresenterTests {
             )
 
         let projection =
-            V1ConfigurationBootstrapPresenter
+            ConfigurationBootstrapPresenter
             .projection(from: state)
 
         #expect(projection.logoMode == .subjectAvatar)
@@ -234,7 +234,7 @@ private extension V1ConfigurationBootstrapPresenterTests {
         title: String,
         templateText: String,
         locationStyle: String,
-        logoMode: V1LogoMode,
+        logoMode: ConfigurationLogoMode,
         badge: Badge,
         memoryText: String,
         descriptionEnabled: Bool,
@@ -243,7 +243,7 @@ private extension V1ConfigurationBootstrapPresenterTests {
             MemoryConfigurationRecord.Output.AlbumDescriptor.Destination,
         albumID: String,
         albumTitle: String,
-        mediaMode: V1MediaOutputMode,
+        mediaMode: MediaOutputMode,
         anchorID: UUID
     ) -> MemoryConfigurationRecord {
         var template = Template.classicWhite

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by ADR-011
 
 ## Date
 
@@ -59,3 +59,11 @@ That would spread queue coordination responsibilities and increase migration cos
 
 - continue internal batch decomposition only when responsibilities are clear
 - avoid introducing parallel public queue entry points without a new ADR
+
+## Supersession Note
+
+ADR-011 retains `BatchQueueStore` as a migration compatibility facade but no
+longer treats it as the permanent queue architecture. The target durable owner
+is an actor-backed queue runtime/ledger with immutable task commands and typed
+events or outcomes. The facade remains active until callers and evidence have
+migrated; this status does not authorize premature removal.

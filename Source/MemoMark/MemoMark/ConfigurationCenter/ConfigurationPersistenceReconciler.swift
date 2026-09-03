@@ -17,9 +17,9 @@ struct ConfigurationPersistenceReconciler {
 
     func persistenceSnapshotForCurrentConfiguration(
         editingState: ConfigurationEditingState,
-        logoMode: V1LogoMode? = nil,
+        logoMode: ConfigurationLogoMode? = nil,
         outputConfiguration:
-            V1SavedOutputConfiguration? = nil,
+            SavedOutputConfigurationSchemaV1? = nil,
         savedAt: Date = Date()
     ) -> ConfigurationPersistenceSnapshot {
         if let presetIndex =
@@ -191,7 +191,7 @@ struct ConfigurationPersistenceReconciler {
 
     @discardableResult
     func reconcileConfigurationLibrarySave(
-        candidate: V1ConfigurationAggregateCandidate,
+        candidate: ConfigurationAggregateCandidate,
         receipt: ConfigurationLibrarySaveReceipt,
         editingState: inout ConfigurationEditingState
     ) -> ConfigurationPersistenceReconciliationOutcome {
@@ -217,9 +217,9 @@ struct ConfigurationPersistenceReconciler {
         in preset: MemoryPreset,
         editingState: ConfigurationEditingState,
         savedAt: Date?,
-        logoMode: V1LogoMode?,
+        logoMode: ConfigurationLogoMode?,
         outputConfiguration:
-            V1SavedOutputConfiguration?
+            SavedOutputConfigurationSchemaV1?
     ) -> MemoryPreset {
         var updatedPreset = preset
         updatedPreset.savedAt = savedAt

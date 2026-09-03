@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-enum BatchTaskProcessingRoute: String {
+nonisolated enum BatchTaskProcessingRoute: String {
     case livePhoto
     case staticImage
 
@@ -10,8 +10,10 @@ enum BatchTaskProcessingRoute: String {
     }
 }
 
-@MainActor
-struct BatchTaskExecutionContext {
+/// Immutable inputs captured before a task enters the production executor.
+/// The context carries no UI state and therefore must remain usable from an
+/// actor or detached media worker as the execution pipeline is decomposed.
+nonisolated struct BatchTaskExecutionContext {
     let taskReference: BatchQueueExecution.TaskReference
     let taskSnapshot: BatchTask
     let configuration: BatchConfigurationSnapshot
@@ -24,26 +26,28 @@ struct BatchTaskExecutionContext {
 @MainActor
 final class BatchTaskProcessor {
     private let photoRepository: PhotoRepository
-    private let previewCoordinator: PreviewCoordinator
+    private let buildRecordCard:
+        BuildRecordCardTransaction
     private let exportCoordinator: ExportCoordinator
     private let livePhotoProcessor: any LivePhotoBatchTaskProcessing
     private let diagnosticsRecorder: BatchTaskDiagnosticsRecorder
     private let resourceLifecycle: BatchTaskResourceLifecycle
     private let renderHealthValidator:
-        @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock]
+        @MainActor (RecordCard, BatchConfigurationSnapshot) async throws -> [CardTextBlock]
 
     init(
         photoRepository: PhotoRepository,
-        previewCoordinator: PreviewCoordinator,
+        buildRecordCard:
+            BuildRecordCardTransaction,
         exportCoordinator: ExportCoordinator,
         livePhotoProcessor: any LivePhotoBatchTaskProcessing,
         diagnosticsRecorder: BatchTaskDiagnosticsRecorder,
         resourceLifecycle: BatchTaskResourceLifecycle,
         renderHealthValidator: @escaping
-            @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock]
+            @MainActor (RecordCard, BatchConfigurationSnapshot) async throws -> [CardTextBlock]
     ) {
         self.photoRepository = photoRepository
-        self.previewCoordinator = previewCoordinator
+        self.buildRecordCard = buildRecordCard
         self.exportCoordinator = exportCoordinator
         self.livePhotoProcessor = livePhotoProcessor
         self.diagnosticsRecorder = diagnosticsRecorder
@@ -51,13 +55,19 @@ final class BatchTaskProcessor {
         self.renderHealthValidator = renderHealthValidator
     }
 
-    func process(context: BatchTaskExecutionContext, in store: BatchQueueStore) async {
-        await processTaskInternal(context: context, in: store)
+    func process(
+        context: BatchTaskExecutionContext,
+        runtime: any BatchTaskExecutionRuntime
+    ) async {
+        await processTaskInternal(
+            context: context,
+            runtime: runtime
+        )
     }
 
     private func processTaskInternal(
         context: BatchTaskExecutionContext,
-        in store: BatchQueueStore
+        runtime: any BatchTaskExecutionRuntime
     ) async {
         let reference = context.taskReference
         let initialTask = context.taskSnapshot
@@ -68,31 +78,38 @@ final class BatchTaskProcessor {
         let startedAt = context.startedAt
         let route = context.route.rawValue
 
-        store.setActiveProcessingReference(reference)
-        guard store.updateTask(at: reference, mutate: { task in
-            task.phase = .importing
-            task.progress = BatchTaskProgress(
-                currentUnit: 1,
-                totalUnits: totalProgressUnits,
-                stage: initialPreparationStage(
-                    for: memoryBudget
+        await runtime.activate(reference)
+        guard await runtime.accept(
+            .processingStarted(
+                progress: BatchTaskProgress(
+                    currentUnit: 1,
+                    totalUnits: totalProgressUnits,
+                    stage: initialPreparationStage(
+                        for: memoryBudget
+                    )
                 )
-            )
-            task.failure = nil
-        }) else {
+            ),
+            at: reference
+        ) else {
             return
         }
 
         var temporaryFileURL: URL?
+        var jobID: UUID?
         do {
-            guard let task = store.currentTask(at: reference) else {
+            guard let executionState =
+                await runtime.executionState(
+                    at: reference
+                ) else {
                 throw BatchTaskProcessorError.taskUnavailable
             }
+            let task = executionState.task
+            jobID = executionState.jobID
             diagnosticsRecorder.recordRoute(
                 for: task,
                 sourceURLIsLivePhotoBundle: LivePhotoSourceBundleLocator.canResolveBundle(at: task.sourceURL),
                 route: route,
-                jobID: store.currentJob(at: reference)?.id
+                jobID: jobID
             )
 
             if BatchTaskMemoryPolicy
@@ -116,23 +133,27 @@ final class BatchTaskProcessor {
                     "livePhotoProcessing",
                     route: route,
                     task: task,
-                    jobID: store.currentJobID(at: reference)
+                    jobID: jobID
                 ) {
                     try await processLivePhotoTask(
                         task: task,
                         at: reference,
-                        in: store,
+                        runtime: runtime,
                         totalProgressUnits: totalProgressUnits,
                         configuration: context.configuration
                     )
                 }
-                if let phase = store.currentTaskPhase(at: reference), phase.isTerminal {
+                if let phase = await currentPhase(
+                    at: reference,
+                    runtime: runtime
+                ),
+                phase.isTerminal {
                     diagnosticsRecorder.recordTaskDuration(
                         startedAt: startedAt,
                         route: route,
                         phase: phase,
                         task: task,
-                        jobID: store.currentJobID(at: reference)
+                        jobID: jobID
                     )
                 }
                 return
@@ -142,7 +163,7 @@ final class BatchTaskProcessor {
                 "import",
                 route: route,
                 task: task,
-                jobID: store.currentJobID(at: reference)
+                jobID: jobID
             ) {
                 try await requireValue(
                     ImportBatchPhotoIntent(
@@ -157,88 +178,110 @@ final class BatchTaskProcessor {
             }
 
             guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
-                currentPhase: store.currentTaskPhase(at: reference)
+                currentPhase: await currentPhase(
+                    at: reference,
+                    runtime: runtime
+                )
             ) else {
-                store.cleanupManagedSourceForDurablyTerminalTask(
+                await runtime.cleanupDurablyTerminalSource(
                     at: reference
                 )
                 return
             }
 
-            store.updateTask(at: reference, persist: false) { task in
-                task.captureDate = importedPhoto.metadata.captureDate
-                task.phase = .metadataReady
-                task.progress = BatchTaskProgress(
-                    currentUnit: requiresExtendedPreviewPreparation ? 3 : 2,
-                    totalUnits: totalProgressUnits,
-                    stage: completedPreparationStage(
-                        for: memoryBudget
+            _ = await runtime.accept(
+                .metadataLoaded(
+                    captureDate:
+                        importedPhoto.metadata.captureDate,
+                    progress: BatchTaskProgress(
+                        currentUnit:
+                            requiresExtendedPreviewPreparation
+                            ? 3
+                            : 2,
+                        totalUnits: totalProgressUnits,
+                        stage: completedPreparationStage(
+                            for: memoryBudget
+                        )
                     )
-                )
-            }
+                ),
+                at: reference
+            )
 
             let configuration = context.configuration
             let card = try await diagnosticsRecorder.measureStageDuration(
                 "build",
                 route: route,
                 task: task,
-                jobID: store.currentJobID(at: reference)
+                jobID: jobID
             ) {
                 try requireValue(
-                    await BuildPreviewIntent(
-                        photo: importedPhoto,
-                        configuration: configuration,
-                        coordinator: previewCoordinator
-                    ).execute()
+                    await buildRecordCard.buildCardOffMainThread(
+                        from: importedPhoto,
+                        configuration: configuration
+                    )
                 )
             }
 
             do {
-                _ = try renderHealthValidator(card, configuration)
+                _ = try await renderHealthValidator(
+                    card,
+                    configuration
+                )
                 diagnosticsRecorder.recordRenderHealthCheckPassed(
                     task: task,
-                    launchSource: store.currentJob(at: reference)?.launchSource,
+                    launchSource:
+                        executionState.launchSource,
                     configuration: configuration,
-                    jobID: store.currentJobID(at: reference)
+                    jobID: jobID
                 )
             } catch {
                 diagnosticsRecorder.recordRenderHealthCheckFailed(
                     task: task,
                     configuration: configuration,
                     error: error,
-                    jobID: store.currentJobID(at: reference)
+                    jobID: jobID
                 )
                 throw error
             }
 
             guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
-                currentPhase:
-                    store.currentTaskPhase(
-                        at: reference
-                    )
+                currentPhase: await currentPhase(
+                    at: reference,
+                    runtime: runtime
+                )
             ) else {
-                store.cleanupManagedSourceForDurablyTerminalTask(
+                await runtime.cleanupDurablyTerminalSource(
                     at: reference
                 )
                 return
             }
 
-            store.updateTask(at: reference, persist: false) { task in
-                task.phase = .previewReady
-                task.progress = BatchTaskProgress(
-                    currentUnit: requiresExtendedPreviewPreparation ? 4 : 3,
-                    totalUnits: totalProgressUnits,
-                    stage: .presentationReady
-                )
-            }
-            guard store.updateTask(at: reference, mutate: { task in
-                task.phase = .exporting
-                task.progress = BatchTaskProgress(
-                    currentUnit: requiresExtendedPreviewPreparation ? 5 : 4,
-                    totalUnits: totalProgressUnits,
-                    stage: .renderingImage
-                )
-            }) else {
+            _ = await runtime.accept(
+                .previewBuilt(
+                    progress: BatchTaskProgress(
+                        currentUnit:
+                            requiresExtendedPreviewPreparation
+                            ? 4
+                            : 3,
+                        totalUnits: totalProgressUnits,
+                        stage: .presentationReady
+                    )
+                ),
+                at: reference
+            )
+            guard await runtime.accept(
+                .exportStarted(
+                    progress: BatchTaskProgress(
+                        currentUnit:
+                            requiresExtendedPreviewPreparation
+                            ? 5
+                            : 4,
+                        totalUnits: totalProgressUnits,
+                        stage: .renderingImage
+                    )
+                ),
+                at: reference
+            ) else {
                 return
             }
 
@@ -246,7 +289,7 @@ final class BatchTaskProcessor {
                 "export",
                 route: route,
                 task: task,
-                jobID: store.currentJobID(at: reference)
+                jobID: jobID
             ) {
                 try requireValue(
                     await ExportRecordCardIntent(
@@ -259,30 +302,41 @@ final class BatchTaskProcessor {
             temporaryFileURL = exportedFileURL
 
             guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
-                currentPhase: store.currentTaskPhase(at: reference)
+                currentPhase: await currentPhase(
+                    at: reference,
+                    runtime: runtime
+                )
             ) else {
                 resourceLifecycle.cleanupTemporaryFile(at: exportedFileURL)
-                store.cleanupManagedSourceForDurablyTerminalTask(
+                await runtime.cleanupDurablyTerminalSource(
                     at: reference
                 )
                 return
             }
 
-            guard store.updateTask(at: reference, mutate: { task in
-                task.renderedFileURL = exportedFileURL
-                task.phase = .savingToPhotoLibrary
-                task.progress = BatchTaskProgress(
-                    currentUnit: requiresExtendedPreviewPreparation ? 6 : 5,
-                    totalUnits: totalProgressUnits,
-                    stage: .savingToPhotoLibrary
-                )
-            }) else {
+            guard await runtime.accept(
+                .photoLibrarySaveStarted(
+                    renderedFileURL: exportedFileURL,
+                    progress: BatchTaskProgress(
+                        currentUnit:
+                            requiresExtendedPreviewPreparation
+                            ? 6
+                            : 5,
+                        totalUnits: totalProgressUnits,
+                        stage: .savingToPhotoLibrary
+                    )
+                ),
+                at: reference
+            ) else {
                 resourceLifecycle.cleanupTemporaryFile(at: exportedFileURL)
                 return
             }
 
             guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
-                currentPhase: store.currentTaskPhase(at: reference)
+                currentPhase: await currentPhase(
+                    at: reference,
+                    runtime: runtime
+                )
             ) else {
                 resourceLifecycle.cleanupTemporaryFile(at: exportedFileURL)
                 return
@@ -292,7 +346,7 @@ final class BatchTaskProcessor {
                 "save",
                 route: route,
                 task: task,
-                jobID: store.currentJobID(at: reference)
+                jobID: jobID
             ) {
                 try await requireValue(
                     SaveRenderedPhotoIntent(
@@ -304,17 +358,23 @@ final class BatchTaskProcessor {
                     ).execute()
                 )
             }
-            let notificationAttachmentURL = diagnosticsRecorder.measureNotificationAttachmentStage(
+            let notificationAttachmentURL = await diagnosticsRecorder.measureNotificationAttachmentStage(
                 route: route,
                 task: task,
-                jobID: store.currentJobID(at: reference)
+                jobID: jobID
             ) {
-                resourceLifecycle.makeNotificationAttachmentIfNeeded(
+                await resourceLifecycle.makeNotificationAttachmentOffMainThreadIfNeeded(
                     from: exportedFileURL,
                     taskID: task.id
                 )
             }
-            let historyCoverCandidate = store.currentJob(at: reference)?.historyCover == nil
+            let hasHistoryCover =
+                await runtime.executionState(
+                    at: reference
+                )?
+                .hasHistoryCover
+                ?? true
+            let historyCoverCandidate = !hasHistoryCover
                 ? await resourceLifecycle.makeHistoryCoverIfNeeded(
                     from: exportedFileURL,
                     jobID: reference.jobID,
@@ -322,21 +382,23 @@ final class BatchTaskProcessor {
                 )
                 : nil
             resourceLifecycle.cleanupTemporaryFile(at: exportedFileURL)
-            guard store.updateTask(
+            guard await runtime.accept(
+                .completed(
+                    albumTitle: saveResult.albumTitle,
+                    assetIdentifier:
+                        saveResult.assetLocalIdentifier,
+                    notificationAttachmentURL:
+                        notificationAttachmentURL,
+                    progress: BatchTaskProgress(
+                        currentUnit: totalProgressUnits,
+                        totalUnits: totalProgressUnits,
+                        stage: .completed
+                    )
+                ),
                 at: reference,
-                historyCoverCandidate: historyCoverCandidate,
-                mutate: { task in
-                task.renderedFileURL = nil
-                task.savedAlbumName = saveResult.albumTitle
-                task.savedAssetIdentifier = saveResult.assetLocalIdentifier
-                task.notificationAttachmentURL = notificationAttachmentURL
-                task.phase = .completed
-                task.progress = BatchTaskProgress(
-                    currentUnit: totalProgressUnits,
-                    totalUnits: totalProgressUnits,
-                    stage: .completed
-                )
-            }) else {
+                historyCoverCandidate:
+                    historyCoverCandidate
+            ) else {
                 return
             }
             diagnosticsRecorder.recordTaskDuration(
@@ -344,28 +406,33 @@ final class BatchTaskProcessor {
                 route: route,
                 phase: .completed,
                 task: task,
-                jobID: store.currentJobID(at: reference)
+                jobID: jobID
             )
-            store.cleanupManagedSourceForDurablyTerminalTask(
+            await runtime.cleanupDurablyTerminalSource(
                 at: reference
             )
-            if let jobID = store.currentJobID(at: reference) {
-                await store.deliverFinalNotificationIfNeeded(for: jobID)
-            }
+            await runtime.deliverFinalNotification(
+                for: reference.jobID
+            )
         } catch {
             // A cancellation may race with an explicit terminal transition
             // (user cancellation or a system background-expiration guard).
             // Resolve that durable state first so cleanup/notification logic
             // is not bypassed by the generic CancellationError branch.
             if BatchTaskFailurePolicy.shouldIgnoreErrorBecauseTaskEnded(
-                currentPhase: store.currentTaskPhase(at: reference)
+                currentPhase: await currentPhase(
+                    at: reference,
+                    runtime: runtime
+                )
             ) {
                 resourceLifecycle.cleanupTemporaryFile(at: temporaryFileURL)
-                store.cleanupManagedSourceForDurablyTerminalTask(
+                await runtime.cleanupDurablyTerminalSource(
                     at: reference
                 )
-                if let jobID = store.currentJobID(at: reference) {
-                    await store.deliverFinalNotificationIfNeeded(for: jobID)
+                if let jobID {
+                    await runtime.deliverFinalNotification(
+                        for: jobID
+                    )
                 }
                 return
             }
@@ -382,7 +449,7 @@ final class BatchTaskProcessor {
                 // otherwise the queue loop immediately selects the same
                 // queued task and spins forever.
                 if !Task.isCancelled {
-                    store.stopProcessingForCancellation()
+                    await runtime.stopForCancellation()
                 }
                 return
             }
@@ -394,27 +461,19 @@ final class BatchTaskProcessor {
                 resourceLifecycle.cleanupTemporaryFile(
                     at: temporaryFileURL
                 )
-                guard store.updateTask(at: reference, mutate: { task in
-                    task.renderedFileURL = nil
-                    task.notificationAttachmentURL = nil
-                    task.failure = nil
-                    task.phase = .savingToPhotoLibrary
-                    task.progress = BatchTaskProgress(
-                        currentUnit:
-                            max(task.progress.totalUnits - 1, 0),
-                        totalUnits:
-                            max(task.progress.totalUnits, 1),
-                        stage:
-                            .confirmingPhotoLibrarySave
-                    )
-                }) else {
+                guard await runtime.accept(
+                    .photoLibraryReadbackPending,
+                    at: reference
+                ) else {
                     return
                 }
                 return
             }
 
-            let failurePhase = store.currentTaskPhase(at: reference) ?? .queued
-            let jobID = store.currentJobID(at: reference)
+            let failurePhase = await currentPhase(
+                at: reference,
+                runtime: runtime
+            ) ?? .queued
             let failureClassification =
                 BatchTaskFailurePolicy
                 .failureClassification(for: error)
@@ -429,40 +488,40 @@ final class BatchTaskProcessor {
                     language: .interfaceStored
                 )
             resourceLifecycle.cleanupTemporaryFile(at: temporaryFileURL)
-            guard store.updateTask(at: reference, mutate: { task in
-                let canRetry = BatchTaskFailurePolicy.canRetryTaskAfterFailure(
-                    sourceURL: task.sourceURL
-                )
-                task.renderedFileURL = nil
-                task.notificationAttachmentURL = nil
-                task.phase = .failed
-                task.failure = BatchTaskFailure(
+            let failure =
+                BatchTaskFailure(
                     phase: failurePhase,
                     message: diagnosticFailure.userMessage,
                     classification: failureClassification,
-                    canRetry: canRetry,
+                    canRetry:
+                        BatchTaskFailurePolicy
+                        .canRetryTaskAfterFailure(
+                            sourceURL:
+                                initialTask.sourceURL
+                        ),
                     diagnosticCode:
                         diagnosticFailure.code.rawValue,
                     supportID:
                         diagnosticFailure.supportID
                 )
-                task.progress = BatchTaskProgress(
-                    currentUnit: 0,
-                    totalUnits: 1,
-                    stage: .failed
-                )
-            }) else {
+            guard await runtime.accept(
+                .failed(failure),
+                at: reference
+            ) else {
                 return
             }
-            if let sourceURL = store.currentTask(at: reference)?.sourceURL,
-               !resourceLifecycle.canPreserveManagedSourceForRetry(at: sourceURL) {
-                guard store.updateTask(at: reference, mutate: { task in
-                    task.failure?.canRetry = false
-                }) else {
+            if !resourceLifecycle
+                .canPreserveManagedSourceForRetry(
+                    at: initialTask.sourceURL
+                ) {
+                guard await runtime.accept(
+                    .retryDisabled,
+                    at: reference
+                ) else {
                     return
                 }
             }
-            store.setLastErrorMessage(
+            await runtime.publishLastError(
                 diagnosticFailure.userMessage
             )
             diagnosticsRecorder.recordTaskDuration(
@@ -480,7 +539,9 @@ final class BatchTaskProcessor {
                 startedAt: startedAt
             )
             if let jobID {
-                await store.deliverFinalNotificationIfNeeded(for: jobID)
+                await runtime.deliverFinalNotification(
+                    for: jobID
+                )
             }
         }
     }
@@ -488,22 +549,28 @@ final class BatchTaskProcessor {
     private func processLivePhotoTask(
         task: BatchTask,
         at reference: BatchQueueExecution.TaskReference,
-        in store: BatchQueueStore,
+        runtime: any BatchTaskExecutionRuntime,
         totalProgressUnits: Int,
         configuration: BatchConfigurationSnapshot
     ) async throws {
-        guard store.updateTask(at: reference, mutate: { task in
-            task.phase = .exporting
-            task.progress = BatchTaskProgress(
-                currentUnit: max(totalProgressUnits - 1, 1),
-                totalUnits: totalProgressUnits,
-                stage:
-                    configuration.v1MediaOutputMode
-                    == .originalFormat
-                    ? .renderingLivePhoto
-                    : .renderingStillImage
-            )
-        }) else {
+        guard await runtime.accept(
+            .exportStarted(
+                progress: BatchTaskProgress(
+                    currentUnit:
+                        max(
+                            totalProgressUnits - 1,
+                            1
+                        ),
+                    totalUnits: totalProgressUnits,
+                    stage:
+                        configuration.mediaOutputMode
+                        == .originalFormat
+                        ? .renderingLivePhoto
+                        : .renderingStillImage
+                )
+            ),
+            at: reference
+        ) else {
             return
         }
         let result = try await livePhotoProcessor.process(
@@ -511,20 +578,37 @@ final class BatchTaskProcessor {
             configuration: configuration
         )
         guard !BatchTaskFailurePolicy.shouldAbortFurtherProcessing(
-            currentPhase: store.currentTaskPhase(at: reference)
+            currentPhase: await currentPhase(
+                at: reference,
+                runtime: runtime
+            )
         ) else {
             resourceLifecycle.cleanupTemporaryFiles(result.temporaryFileURLs)
-            store.cleanupManagedSourceForDurablyTerminalTask(
+            await runtime.cleanupDurablyTerminalSource(
                 at: reference
             )
             return
         }
-        let notificationAttachmentURL = result.notificationSourceURL.flatMap {
-            resourceLifecycle.makeNotificationAttachmentIfNeeded(from: $0, taskID: task.id)
+        let notificationAttachmentURL: URL?
+        if let notificationSourceURL = result.notificationSourceURL {
+            notificationAttachmentURL =
+                await resourceLifecycle
+                .makeNotificationAttachmentOffMainThreadIfNeeded(
+                    from: notificationSourceURL,
+                    taskID: task.id
+                )
+        } else {
+            notificationAttachmentURL = nil
         }
         let historyCoverCandidate: BatchJobHistoryCover?
+        let hasHistoryCover =
+            await runtime.executionState(
+                at: reference
+            )?
+            .hasHistoryCover
+            ?? true
         if let sourceURL = result.notificationSourceURL,
-           store.currentJob(at: reference)?.historyCover == nil {
+           !hasHistoryCover {
             historyCoverCandidate = await resourceLifecycle.makeHistoryCoverIfNeeded(
                 from: sourceURL,
                 jobID: reference.jobID,
@@ -534,29 +618,44 @@ final class BatchTaskProcessor {
             historyCoverCandidate = nil
         }
         resourceLifecycle.cleanupTemporaryFiles(result.temporaryFileURLs)
-        guard store.updateTask(
+        guard await runtime.accept(
+            .completed(
+                albumTitle:
+                    result.saveResult.albumTitle,
+                assetIdentifier:
+                    result.saveResult
+                    .assetLocalIdentifier,
+                notificationAttachmentURL:
+                    notificationAttachmentURL,
+                progress: BatchTaskProgress(
+                    currentUnit: totalProgressUnits,
+                    totalUnits: totalProgressUnits,
+                    stage: .completed
+                )
+            ),
             at: reference,
-            historyCoverCandidate: historyCoverCandidate,
-            mutate: { task in
-            task.renderedFileURL = nil
-            task.savedAlbumName = result.saveResult.albumTitle
-            task.savedAssetIdentifier = result.saveResult.assetLocalIdentifier
-            task.notificationAttachmentURL = notificationAttachmentURL
-            task.phase = .completed
-            task.progress = BatchTaskProgress(
-                currentUnit: totalProgressUnits,
-                totalUnits: totalProgressUnits,
-                stage: .completed
-            )
-        }) else {
+            historyCoverCandidate:
+                historyCoverCandidate
+        ) else {
             return
         }
-        store.cleanupManagedSourceForDurablyTerminalTask(
+        await runtime.cleanupDurablyTerminalSource(
             at: reference
         )
-        if let jobID = store.currentJobID(at: reference) {
-            await store.deliverFinalNotificationIfNeeded(for: jobID)
-        }
+        await runtime.deliverFinalNotification(
+            for: reference.jobID
+        )
+    }
+
+    private func currentPhase(
+        at reference: BatchTaskReference,
+        runtime: any BatchTaskExecutionRuntime
+    ) async -> BatchTaskPhase? {
+        await runtime.executionState(
+            at: reference
+        )?
+        .task
+        .phase
     }
 
     private func requireValue<Value>(_ result: MemoMarkResult<Value>) throws -> Value {

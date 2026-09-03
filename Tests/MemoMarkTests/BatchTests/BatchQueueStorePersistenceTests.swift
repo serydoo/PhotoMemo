@@ -61,7 +61,7 @@ struct BatchQueueStorePersistenceTests {
 
     @MainActor
     @Test("Persistence recovery reloads readable jobs before writing instead of overwriting them")
-    func persistenceRecoveryReloadsJobsBeforeWriting() throws {
+    func persistenceRecoveryReloadsJobsBeforeWriting() async throws {
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.RecoveryReload.\(UUID().uuidString)"
         let defaults =
@@ -97,7 +97,7 @@ struct BatchQueueStorePersistenceTests {
             "Injected persistence backend did not expose the recovered queue before retry."
         )
 
-        store.retryPersistence()
+        await store.retryPersistence()
 
         #expect(
             !store.isPersistenceBlocked,
@@ -770,7 +770,7 @@ struct BatchQueueStorePersistenceTests {
 
     @MainActor
     @Test("A later exact Photos readback completes a protected saving task without requeueing")
-    func laterReceiptVisibilityCompletesProtectedSavingTask() throws {
+    func laterReceiptVisibilityCompletesProtectedSavingTask() async throws {
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.ReceiptLaterVisibility.\(UUID().uuidString)"
         let defaults = try #require(
@@ -813,7 +813,7 @@ struct BatchQueueStorePersistenceTests {
             taskID.uuidString
         ] = "receipt-backed-asset"
 
-        store.startProcessingIfNeeded()
+        await store.startProcessingIfNeeded()
 
         let task = try #require(store.jobs.first?.tasks.first)
         #expect(task.phase == .completed)
@@ -825,8 +825,66 @@ struct BatchQueueStorePersistenceTests {
     }
 
     @MainActor
+    @Test("Photos permission loss makes protected receipt recovery actionable")
+    func permissionLossMakesProtectedReceiptRecoveryActionable() async throws {
+        let suiteName =
+            "MemoMark.BatchQueueStorePersistenceTests.ReceiptPermissionLoss.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let taskID = UUID()
+        defaults.set(
+            try JSONEncoder().encode([
+                savingJob(taskID: taskID)
+            ]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+        let receiptStore = PhotoLibrarySaveReceiptStore(
+            defaults: defaults
+        )
+        #expect(
+            receiptStore.record(
+                assetIdentifier: "receipt-backed-asset",
+                for: taskID.uuidString
+            )
+        )
+        let assetLocator =
+            MutablePhotoLibraryReceiptAssetLocator()
+        assetLocator.isPhotoLibraryReadbackAuthorized = false
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receiptStore,
+            photoLibraryReceiptAssetLocator: assetLocator,
+            automaticallyStartsProcessing: false
+        )
+
+        await store.startProcessingIfNeeded()
+
+        let task = try #require(store.jobs.first?.tasks.first)
+        #expect(task.phase == .failed)
+        #expect(
+            task.failure?.diagnosticCode
+            == ProductionDiagnosticErrorCode
+                .photoLibraryUnauthorized
+                .rawValue
+        )
+        #expect(task.failure?.canRetry == true)
+        #expect(
+            receiptStore.assetIdentifier(for: taskID.uuidString)
+            == "receipt-backed-asset"
+        )
+        #expect(store.lastErrorMessage.contains("权限"))
+    }
+
+    @MainActor
     @Test("Clearing persisted terminal history removes only its durable receipt")
-    func clearingTerminalHistoryRemovesReceiptAfterQueuePersistence() throws {
+    func clearingTerminalHistoryRemovesReceiptAfterQueuePersistence() async throws {
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.ReceiptClear.\(UUID().uuidString)"
         let defaults = try #require(
@@ -857,7 +915,7 @@ struct BatchQueueStorePersistenceTests {
             saveReceiptStore: receiptStore
         )
 
-        store.clearTerminalExternalJobHistory(
+        await store.clearTerminalExternalJobHistory(
             preserving: nil
         )
 
@@ -870,7 +928,7 @@ struct BatchQueueStorePersistenceTests {
 
     @MainActor
     @Test("Failed queue persistence retains receipts for removed terminal history")
-    func failedTerminalHistoryPersistenceRetainsReceipt() throws {
+    func failedTerminalHistoryPersistenceRetainsReceipt() async throws {
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.ReceiptFailure.\(UUID().uuidString)"
         let defaults = try #require(
@@ -903,7 +961,7 @@ struct BatchQueueStorePersistenceTests {
             saveReceiptStore: receiptStore
         )
 
-        store.clearTerminalExternalJobHistory(
+        await store.clearTerminalExternalJobHistory(
             preserving: nil
         )
 
@@ -1212,7 +1270,9 @@ struct BatchQueueStorePersistenceTests {
         let visibleAssetIdentifiers: [String: String]
 
         func visibleAssetIdentifier(
-            for idempotencyKey: String
+            for idempotencyKey: String,
+            recordedAssetIdentifier _: String?,
+            pendingAssetIdentifier _: String?
         ) -> String? {
             visibleAssetIdentifiers[idempotencyKey]
         }
@@ -1223,16 +1283,24 @@ struct BatchQueueStorePersistenceTests {
 
         var visibleAssetIdentifiers: [String: String] = [:]
 
+        var isPhotoLibraryReadbackAuthorized = true
+
         func visibleAssetIdentifier(
-            for idempotencyKey: String
+            for idempotencyKey: String,
+            recordedAssetIdentifier _: String?,
+            pendingAssetIdentifier _: String?
         ) -> String? {
             visibleAssetIdentifiers[idempotencyKey]
+        }
+
+        func isReadbackAuthorized() -> Bool {
+            isPhotoLibraryReadbackAuthorized
         }
     }
 
     @MainActor
-    @Test("Deferred task updates do not rewrite persisted jobs until flush")
-    func deferredTaskUpdatesDoNotRewritePersistedJobsUntilFlush() throws {
+    @Test("Execution events persist before their state is projected")
+    func executionEventsPersistBeforeTheirStateIsProjected() async throws {
 
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.\(UUID().uuidString)"
@@ -1252,12 +1320,14 @@ struct BatchQueueStorePersistenceTests {
                 settingsService:
                     SettingsService(
                         defaults: defaults
-                    )
+                    ),
+                automaticallyStartsProcessing:
+                    false
             )
 
         let job =
             try #require(
-                store.enqueue(
+                await store.enqueue(
                     urls: [
                         URL(
                             fileURLWithPath:
@@ -1279,19 +1349,18 @@ struct BatchQueueStorePersistenceTests {
                 store.nextPendingTaskReference()
             )
 
-        store.updateTask(
-            at: reference,
-            persist: false
-        ) { task in
-            task.phase = .importing
-            task.progress = BatchTaskProgress(
-                currentUnit: 1,
-                totalUnits: 5,
-                statusMessage: "正在读取原图"
-            )
-        }
+        let accepted = await store.applyExecutionEvent(
+            .processingStarted(
+                progress: BatchTaskProgress(
+                    currentUnit: 1,
+                    totalUnits: 5,
+                    statusMessage: "正在读取原图"
+                )
+            ),
+            at: reference
+        )
 
-        let deferredPersistedData =
+        let committedPersistedData =
             try #require(
                 defaults.data(
                     forKey:
@@ -1300,35 +1369,23 @@ struct BatchQueueStorePersistenceTests {
             )
 
         #expect(
-            deferredPersistedData
-            == initialPersistedData
+            committedPersistedData
+            != initialPersistedData
         )
+        #expect(accepted)
         #expect(
             store.currentTask(
                 at: reference
             )?.phase == .importing
         )
 
-        store.persistJobs()
-
-        let flushedPersistedData =
-            try #require(
-                defaults.data(
-                    forKey:
-                        "photomemo.batchQueue.jobs"
-                )
-            )
         let decodedJobs =
             try JSONDecoder()
             .decode(
                 [BatchJob].self,
-                from: flushedPersistedData
+                from: committedPersistedData
             )
 
-        #expect(
-            flushedPersistedData
-            != initialPersistedData
-        )
         #expect(decodedJobs.count == 1)
         #expect(decodedJobs[0].id == job.id)
         #expect(decodedJobs[0].tasks[0].phase == .importing)
@@ -1339,8 +1396,8 @@ struct BatchQueueStorePersistenceTests {
     }
 
     @MainActor
-    @Test("Multiple deferred task updates flush the latest state once")
-    func multipleDeferredTaskUpdatesFlushTheLatestStateOnce() throws {
+    @Test("Sequential execution events persist and project in order")
+    func sequentialExecutionEventsPersistAndProjectInOrder() async throws {
 
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.Multiple.\(UUID().uuidString)"
@@ -1360,12 +1417,14 @@ struct BatchQueueStorePersistenceTests {
                 settingsService:
                     SettingsService(
                         defaults: defaults
-                    )
+                    ),
+                automaticallyStartsProcessing:
+                    false
             )
 
         _ =
             try #require(
-                store.enqueue(
+                await store.enqueue(
                     urls: [
                         URL(
                             fileURLWithPath:
@@ -1387,31 +1446,49 @@ struct BatchQueueStorePersistenceTests {
                 store.nextPendingTaskReference()
             )
 
-        store.updateTask(
-            at: reference,
-            persist: false
-        ) { task in
-            task.phase = .metadataReady
-            task.progress = BatchTaskProgress(
-                currentUnit: 2,
-                totalUnits: 5,
-                statusMessage: "已读取 EXIF 和拍摄时间"
-            )
-        }
+        let started = await store.applyExecutionEvent(
+            .processingStarted(
+                progress: BatchTaskProgress(
+                    currentUnit: 1,
+                    totalUnits: 5,
+                    statusMessage: "正在读取原图"
+                )
+            ),
+            at: reference
+        )
+        let metadataLoaded = await store.applyExecutionEvent(
+            .metadataLoaded(
+                captureDate: nil,
+                progress: BatchTaskProgress(
+                    currentUnit: 2,
+                    totalUnits: 5,
+                    statusMessage: "已读取 EXIF 和拍摄时间"
+                )
+            ),
+            at: reference
+        )
+        let previewBuilt = await store.applyExecutionEvent(
+            .previewBuilt(
+                progress: BatchTaskProgress(
+                    currentUnit: 3,
+                    totalUnits: 5,
+                    statusMessage: "已准备预览"
+                )
+            ),
+            at: reference
+        )
+        let exportStarted = await store.applyExecutionEvent(
+            .exportStarted(
+                progress: BatchTaskProgress(
+                    currentUnit: 4,
+                    totalUnits: 5,
+                    statusMessage: "正在生成图片"
+                )
+            ),
+            at: reference
+        )
 
-        store.updateTask(
-            at: reference,
-            persist: false
-        ) { task in
-            task.phase = .exporting
-            task.progress = BatchTaskProgress(
-                currentUnit: 4,
-                totalUnits: 5,
-                statusMessage: "正在生成图片"
-            )
-        }
-
-        let deferredPersistedData =
+        let committedPersistedData =
             try #require(
                 defaults.data(
                     forKey:
@@ -1420,35 +1497,26 @@ struct BatchQueueStorePersistenceTests {
             )
 
         #expect(
-            deferredPersistedData
-            == initialPersistedData
+            committedPersistedData
+            != initialPersistedData
         )
+        #expect(started)
+        #expect(metadataLoaded)
+        #expect(previewBuilt)
+        #expect(exportStarted)
         #expect(
             store.currentTask(
                 at: reference
             )?.phase == .exporting
         )
 
-        store.persistJobs()
-
-        let flushedPersistedData =
-            try #require(
-                defaults.data(
-                    forKey:
-                        "photomemo.batchQueue.jobs"
-                )
-            )
         let decodedJobs =
             try JSONDecoder()
             .decode(
                 [BatchJob].self,
-                from: flushedPersistedData
+                from: committedPersistedData
             )
 
-        #expect(
-            flushedPersistedData
-            != initialPersistedData
-        )
         #expect(decodedJobs[0].tasks[0].phase == .exporting)
         #expect(
             decodedJobs[0].tasks[0].progress.statusMessage
@@ -1462,7 +1530,7 @@ struct BatchQueueStorePersistenceTests {
 
     @MainActor
     @Test("Batch queue persistence reports encoding failures without overwriting existing payload")
-    func batchQueuePersistenceReportsEncodingFailuresWithoutOverwritingExistingPayload() throws {
+    func batchQueuePersistenceReportsEncodingFailuresWithoutOverwritingExistingPayload() async throws {
 
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.EncodingFailure.\(UUID().uuidString)"
@@ -1487,11 +1555,13 @@ struct BatchQueueStorePersistenceTests {
                 settingsService:
                     SettingsService(
                         defaults: defaults
-                    )
+                    ),
+                automaticallyStartsProcessing:
+                    false
             )
         let job =
             try #require(
-                store.enqueue(
+                await store.enqueue(
                     urls: [
                         URL(
                             fileURLWithPath:
@@ -1543,7 +1613,7 @@ struct BatchQueueStorePersistenceTests {
 
     @MainActor
     @Test("Queue admission rolls back when durable persistence fails")
-    func queueAdmissionRollsBackWhenDurablePersistenceFails() throws {
+    func queueAdmissionRollsBackWhenDurablePersistenceFails() async throws {
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.AdmissionFailure.\(UUID().uuidString)"
         let defaults = try #require(
@@ -1557,10 +1627,11 @@ struct BatchQueueStorePersistenceTests {
             settingsService: SettingsService(defaults: defaults),
             persistence: BatchQueuePersistence(
                 backend: FailingSaveBackend()
-            )
+            ),
+            automaticallyStartsProcessing: false
         )
 
-        let job = store.enqueue(
+        let job = await store.enqueue(
             urls: [
                 URL(
                     fileURLWithPath:
@@ -1575,7 +1646,7 @@ struct BatchQueueStorePersistenceTests {
 
     @MainActor
     @Test("Cancelling a queued task retains its managed source when persistence fails")
-    func cancellationPersistenceFailureRetainsManagedSource() throws {
+    func cancellationPersistenceFailureRetainsManagedSource() async throws {
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.CancellationFailure.\(UUID().uuidString)"
         let defaults = try #require(
@@ -1612,14 +1683,15 @@ struct BatchQueueStorePersistenceTests {
             ),
             persistence: BatchQueuePersistence(
                 backend: backend
-            )
+            ),
+            automaticallyStartsProcessing: false
         )
         let job = try #require(
-            store.enqueue(urls: [managedSourceURL])
+            await store.enqueue(urls: [managedSourceURL])
         )
 
         backend.rejectsWrites = true
-        store.cancelJob(job.id)
+        await store.cancelJob(job.id)
 
         #expect(store.jobs[0].tasks[0].phase == .queued)
         let reloadedJobs =
@@ -1635,7 +1707,7 @@ struct BatchQueueStorePersistenceTests {
 
     @MainActor
     @Test("Terminal task cleanup retains its managed source when persistence fails")
-    func terminalCleanupPersistenceFailureRetainsManagedSource() throws {
+    func terminalCleanupPersistenceFailureRetainsManagedSource() async throws {
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.TerminalCleanupFailure.\(UUID().uuidString)"
         let defaults = try #require(
@@ -1672,27 +1744,32 @@ struct BatchQueueStorePersistenceTests {
             ),
             persistence: BatchQueuePersistence(
                 backend: backend
-            )
+            ),
+            automaticallyStartsProcessing: false
         )
         _ = try #require(
-            store.enqueue(urls: [managedSourceURL])
+            await store.enqueue(urls: [managedSourceURL])
         )
         let reference = try #require(
             store.nextPendingTaskReference()
         )
-        store.updateTask(
-            at: reference,
-            persist: false
-        ) { task in
-            task.phase = .completed
-        }
-
         backend.rejectsWrites = true
-        let didCleanup = store
+        let accepted = await store.applyExecutionEvent(
+            .processingStarted(
+                progress: BatchTaskProgress(
+                    currentUnit: 1,
+                    totalUnits: 5,
+                    statusMessage: "正在读取原图"
+                )
+            ),
+            at: reference
+        )
+        let didCleanup = await store
             .cleanupManagedSourceForDurablyTerminalTask(
                 at: reference
             )
 
+        #expect(!accepted)
         #expect(!didCleanup)
         #expect(
             FileManager.default.fileExists(
@@ -1703,7 +1780,7 @@ struct BatchQueueStorePersistenceTests {
 
     @MainActor
     @Test("Batch queue persistence reports backend save failures")
-    func batchQueuePersistenceReportsBackendSaveFailures() throws {
+    func batchQueuePersistenceReportsBackendSaveFailures() async throws {
 
         let suiteName =
             "MemoMark.BatchQueueStorePersistenceTests.SaveFailure.\(UUID().uuidString)"
@@ -1728,11 +1805,13 @@ struct BatchQueueStorePersistenceTests {
                 settingsService:
                     SettingsService(
                         defaults: defaults
-                    )
+                    ),
+                automaticallyStartsProcessing:
+                    false
             )
         let job =
             try #require(
-                store.enqueue(
+                await store.enqueue(
                     urls: [
                         URL(
                             fileURLWithPath:

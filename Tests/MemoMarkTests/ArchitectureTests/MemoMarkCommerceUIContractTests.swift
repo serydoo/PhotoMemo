@@ -83,46 +83,16 @@ struct MemoMarkCommerceUIContractTests {
 
     @Test("iOS Settings presents MemoMark+ before the Settings sheet closes")
     func iOSSettingsPresentsLiveMemoMarkPlusPurchase() throws {
-        let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+        let rootSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
+        )
+        let settingsPageSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
         )
 
-        let bodyStart = try #require(
-            source.range(
-                of: "    var body: some View {"
-            )
-        )
-        let rootNavigationStart = try #require(
-            source.range(
-                of: "    @ViewBuilder\n    private var rootNavigation"
-            )
-        )
-        let settingsPageStart = try #require(
-            source.range(
-                of: "    private var settingsPage: some View {"
-            )
-        )
-        let entryPresentationStart = try #require(
-            source.range(
-                of: "    private var entryPresentation:"
-            )
-        )
-        let rootBodySource = String(
-            source[
-                bodyStart.lowerBound
-                ..< rootNavigationStart.lowerBound
-            ]
-        )
-        let settingsPageSource = String(
-            source[
-                settingsPageStart.lowerBound
-                ..< entryPresentationStart.lowerBound
-            ]
-        )
-
-        #expect(!source.contains("commerceSnapshot: .initial"))
-        #expect(!source.contains("onOpenMemoMarkPlus: {}"))
-        #expect(source.contains("showsMemoMarkPlus"))
+        #expect(!rootSource.contains("commerceSnapshot: .initial"))
+        #expect(!rootSource.contains("onOpenMemoMarkPlus: {}"))
+        #expect(rootSource.contains("settingsContent: settingsPage"))
         #expect(
             settingsPageSource.contains(
                 ".sheet("
@@ -147,7 +117,7 @@ struct MemoMarkCommerceUIContractTests {
             settingsPageSource.contains("store: commerceStore")
         )
         #expect(
-            !rootBodySource.contains(
+            !rootSource.contains(
                 ".sheet(isPresented: $rootPresentationState.showsMemoMarkPlus)"
             )
         )
@@ -180,10 +150,10 @@ struct MemoMarkCommerceUIContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkPlusBadge.swift"
         )
         let homeSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
-        let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
         )
 
         #expect(badgeSource.contains("MemoMark+"))
@@ -196,14 +166,14 @@ struct MemoMarkCommerceUIContractTests {
         #expect(homeSource.contains("MemoMarkPlusBadge"))
         #expect(homeSource.contains("showsMemoMarkPlusBadge"))
         #expect(homeSource.contains("isFirstRecorder"))
-        #expect(rootSource.contains("showsHomeMemoMarkPlus"))
+        #expect(pagesSource.contains("showsHomeMemoMarkPlus"))
         #expect(
-            rootSource.contains(
+            pagesSource.contains(
                 "commerceStore.hasVerifiedPlusEntitlement"
             )
         )
         #expect(
-            rootSource.contains(
+            pagesSource.contains(
                 "commerceStore.hasFirstRecorderIdentity"
             )
         )
@@ -212,7 +182,7 @@ struct MemoMarkCommerceUIContractTests {
     @Test("Settings Hero makes the current membership state visible")
     func settingsHeroShowsCurrentMembershipState() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
         )
 
         #expect(source.contains("private var memoMarkPlusStatus"))
@@ -228,7 +198,10 @@ struct MemoMarkCommerceUIContractTests {
     @Test("Settings separates First Recorder identity from current Access")
     func settingsFirstRecorderProjectionIsAccessFirst() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
+        )
+        let settingsCardSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkPlusSettingsCard.swift"
         )
         let simplifiedChinese = try sourceText(
             "Source/MemoMark/MemoMark/zh-Hans.lproj/Localizable.strings"
@@ -302,8 +275,8 @@ struct MemoMarkCommerceUIContractTests {
         )
         #expect(source.contains("firstRecorderDate.formatted("))
         #expect(source.contains(".locale(interfaceLanguage.locale)"))
-        #expect(source.contains(".accessibilityLabel(\"MemoMark+\")"))
-        #expect(source.contains(".accessibilityValue("))
+        #expect(settingsCardSource.contains(".accessibilityLabel(\"MemoMark+\")"))
+        #expect(settingsCardSource.contains(".accessibilityValue("))
 
         for resource in [simplifiedChinese, english] {
             #expect(
@@ -333,7 +306,7 @@ struct MemoMarkCommerceUIContractTests {
     @Test("interface preferences appear immediately before version information")
     func interfacePreferencesPrecedeVersionInformation() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
         )
         let interfacePosition = try #require(
             source.range(of: "interfacePreferencesSection")?.lowerBound

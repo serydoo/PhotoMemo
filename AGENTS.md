@@ -63,9 +63,18 @@ device fit. The Engineering Loop must close `TX-001`, `BP-001`, and a
 superseding production certification before Expression Style production
 implementation or broader production-capability claims.
 
-V4 is the final sustained refinement stage. It does not authorize a large-scale
-core-flow or architecture rewrite. After V4, routine releases stop unless a
-material issue, Apple-platform or compatibility change, or major
+V4 is the final sustained refinement stage. It does not authorize an unbounded
+product-flow rewrite or feature expansion. The 2026-08-29 product-owner
+amendment explicitly authorizes the behavior-preserving internal core
+architecture modernization in
+`Docs/02_Architecture/RFC-002-Behavior-Preserving-Core-Architecture-Modernization.md`
+and ADR-011. Current concrete types, facades, ownership boundaries, dependency
+direction, folders, and eventual compile-time modules may therefore change.
+Existing features, durable compatibility, memory truth, original-photo
+protection, Apple Photos lifecycle behavior, Configuration Center product
+architecture, and accepted Renderer/Layout/media contracts must remain intact
+and must be proven before old paths are removed. After V4, routine releases stop
+unless a material issue, Apple-platform or compatibility change, or major
 reliability/privacy need justifies scoped maintenance.
 
 V3 concluded as `Concluded With Certification Carryover`. Do not describe it
@@ -76,10 +85,18 @@ The completed V2 IA-003 sequence remains an architectural reference:
 
 `IA-003A MemorySubject Adapter -> IA-003B Configuration Snapshot -> IA-003C Memory Block Resolver -> IA-003D CaptureTimeResolver -> IA-003E Interactive Memory Card connects real data -> IA-003F Renderer`
 
-Do not reopen frozen V2/V3 architecture or change Renderer, Metadata, Export,
-Share Extension, Photo Library, durable configuration, or Layout Engine
-behavior without a scoped V4 requirement and verification plan. The active V4
-research foundation alone does not authorize implementation.
+Do not change Renderer, Metadata, Export, Share Extension, Photo Library,
+durable configuration, or Layout Engine behavior without a scoped V4
+requirement and verification plan. RFC-002 authorizes internal ownership and
+dependency migration, not silent behavior or data-contract change. The active
+V4 research foundation alone does not authorize unrelated implementation.
+
+Active production code should use durable responsibility-based names rather
+than stage labels such as `V1` or `V4`. A version suffix is retained only when a
+type or key represents a real wire, schema, migration, or historical contract;
+name that role explicitly as `SchemaV1` or `LegacyV1` while preserving encoded
+keys and stored values. Do not mechanically rename persisted keys to the
+current product stage.
 
 Do not immediately migrate old documents. Build the new research documentation first; migrate old documents only after research specifications stabilize.
 

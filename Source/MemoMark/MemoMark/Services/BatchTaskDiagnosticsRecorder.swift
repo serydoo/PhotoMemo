@@ -244,6 +244,28 @@ final class BatchTaskDiagnosticsRecorder {
         return attachmentURL
     }
 
+    func measureNotificationAttachmentStage(
+        route: String,
+        task: BatchTask,
+        jobID: UUID?,
+        operation: () async -> URL?
+    ) async -> URL? {
+        let startedAt = Date()
+        let attachmentURL = await operation()
+        recordStageDuration(
+            stageName: "notificationAttachment",
+            startedAt: startedAt,
+            route: route,
+            outcome: "completed",
+            task: task,
+            jobID: jobID,
+            extraFields: [
+                "attachmentCreated": attachmentURL == nil ? "false" : "true"
+            ]
+        )
+        return attachmentURL
+    }
+
     private func recordStageDuration(
         stageName: String,
         startedAt: Date,

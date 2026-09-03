@@ -200,15 +200,49 @@ enum LivePhotoAssetIdentityMatcher {
 
 enum LivePhotoStaticFallbackPolicy {
 
+    // These transport values are intentionally repeated here because this
+    // policy is compiled by the Share Extension, which does not link the main
+    // app's intent and configuration-domain declarations. They are frozen
+    // persisted snapshot values, not a second domain model.
+    private static let staticImageModeRawValue = "staticImage"
+    private static let staticImageOnlyPolicyRawValue = "staticImageOnly"
+
+    static func allowsStaticFallback(
+        mediaOutputModeRawValue: String?,
+        livePhotoPolicyRawValue: String? = nil
+    ) -> Bool {
+        if mediaOutputModeRawValue
+            == staticImageModeRawValue {
+            return true
+        }
+
+        if livePhotoPolicyRawValue
+            == staticImageOnlyPolicyRawValue {
+            return true
+        }
+
+        // An absent or unrecognized frozen policy must not silently degrade a
+        // motion-preserving request. Historical snapshots resolve their
+        // explicit compatibility value before Share intake begins.
+        return false
+    }
+
     static func shouldStopAfterLiveRepresentationFailure(
         errorCode: Int?,
         mediaOutputModeRawValue: String?,
         livePhotoPolicyRawValue: String? = nil
     ) -> Bool {
-        // A provider that advertises Live Photo may still hand the extension a
-        // still image. Let the Share Extension persist that still only with a
-        // recovery hint; the main app must recover a real PhotoKit identity or
-        // fail the Live Photo task before processing.
+        // A provider that advertises Live Photo may only vend its still image
+        // to a Share Extension. That image is not an output candidate: it is
+        // a temporary, local-only identity hint for the host app to resolve
+        // the original Live Photo through PhotoKit. Once resolved, production
+        // uses the original paired resources; if resolution is not unique,
+        // ShareCoordinator preserves the Live Photo content type so the task
+        // fails instead of silently rendering the still image.
+        //
+        // `allowsStaticFallback` remains the downstream output decision for
+        // an unrecoverable hint. It must not be used to block this recovery
+        // transport at the Share Extension boundary.
         _ = errorCode
         _ = mediaOutputModeRawValue
         _ = livePhotoPolicyRawValue

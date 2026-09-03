@@ -9,6 +9,66 @@ struct IOSRegionConfigurationOption:
     let title: String
 }
 
+/// Owns the style-scoped editor buffers used by Configuration Center.
+///
+/// A single active buffer is projected into the editor while inactive styles
+/// remain isolated in `byPresentationStyle`. Keeping both values together
+/// prevents a style switch or bootstrap projection from updating only one
+/// side of the editor state.
+struct ConfigurationEditorDraftState: Hashable {
+
+    private(set) var active: [CardRegion: MemoryCardEditorDraft] = [:]
+
+    private(set) var byPresentationStyle:
+        [RecordCardPresentationStyle: [CardRegion: MemoryCardEditorDraft]] = [:]
+
+    var draftsForSaving:
+        [RecordCardPresentationStyle: [CardRegion: MemoryCardEditorDraft]] {
+        var result = byPresentationStyle
+        result[activePresentationStyle] = active
+        return result
+    }
+
+    private var activePresentationStyle:
+        RecordCardPresentationStyle = .classicWhite
+
+    mutating func activate(
+        _ style: RecordCardPresentationStyle,
+        fallback: [CardRegion: MemoryCardEditorDraft]
+    ) {
+        activePresentationStyle = style
+        active = byPresentationStyle[style] ?? fallback
+    }
+
+    mutating func commitActive(
+        for style: RecordCardPresentationStyle
+    ) {
+        activePresentationStyle = style
+        byPresentationStyle[style] = active
+    }
+
+    mutating func replaceActive(
+        _ drafts: [CardRegion: MemoryCardEditorDraft]
+    ) {
+        active = drafts
+        byPresentationStyle[activePresentationStyle] = drafts
+    }
+
+    mutating func replace(
+        active: [CardRegion: MemoryCardEditorDraft],
+        byPresentationStyle:
+            [RecordCardPresentationStyle: [CardRegion: MemoryCardEditorDraft]],
+        activeStyle: RecordCardPresentationStyle? = nil
+    ) {
+        if let activeStyle {
+            activePresentationStyle = activeStyle
+        }
+        self.active = active
+        self.byPresentationStyle = byPresentationStyle
+        self.byPresentationStyle[activePresentationStyle] = active
+    }
+}
+
 struct ConfigurationCenterRegionDraftStore {
 
     var selectedRegionConfigurationIDs: [CardRegion: String] = [:]

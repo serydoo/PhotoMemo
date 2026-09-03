@@ -18,32 +18,29 @@ final class BatchQueueNotifications {
 
     func scheduleStartNotificationIfNeeded(
         for jobID: UUID,
-        in store: BatchQueueStore
+        in runtime: any BatchQueueNotificationRuntime
     ) {
 
-        Task { @MainActor [weak store] in
-            guard let store else {
+        Task { @MainActor [weak runtime] in
+            guard let runtime else {
                 return
             }
 
             await deliverStartNotificationIfNeeded(
                 for: jobID,
-                in: store
+                in: runtime
             )
         }
     }
 
     func deliverStartNotificationIfNeeded(
         for jobID: UUID,
-        in store: BatchQueueStore
+        in runtime: any BatchQueueNotificationRuntime
     ) async {
 
-        guard let jobIndex =
-            store.jobIndex(
-                for: jobID
-            ),
-            let job =
-                store.job(at: jobIndex)
+        guard let job = runtime.notificationJob(
+            for: jobID
+        )
         else {
             return
         }
@@ -61,35 +58,30 @@ final class BatchQueueNotifications {
             return
         }
 
-        store.markStartNotificationSent(
-            at: jobIndex
+        await runtime.markStartNotificationSent(
+            for: job.id
         )
     }
 
     func deliverProgressNotificationIfNeeded(
         for jobID: UUID,
-        stage: String,
-        in store: BatchQueueStore
+        stage: String
     ) async {
         // Stage-by-stage progress belongs to Live Activity. Reposting local
         // notifications for each phase creates stacked cards in Notification
         // Center and is not reliable as a real-time progress surface.
         _ = jobID
         _ = stage
-        _ = store
     }
 
     func deliverFinalNotificationIfNeeded(
         for jobID: UUID,
-        in store: BatchQueueStore
+        in runtime: any BatchQueueNotificationRuntime
     ) async {
 
-        guard let jobIndex =
-            store.jobIndex(
-                for: jobID
-            ),
-            let job =
-                store.job(at: jobIndex)
+        guard let job = runtime.notificationJob(
+            for: jobID
+        )
         else {
             return
         }
@@ -110,14 +102,14 @@ final class BatchQueueNotifications {
             .notifyJobFinished(job)
 
         guard didSend else {
-            store.releaseNotificationAttachmentsIfCovered(
+            await runtime.releaseNotificationAttachmentsIfCovered(
                 for: jobID
             )
             return
         }
 
-        store.markFinalNotificationSent(
-            at: jobIndex
+        await runtime.markFinalNotificationSent(
+            for: job.id
         )
     }
 }

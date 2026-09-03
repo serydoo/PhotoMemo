@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-enum V1SubjectLibraryFactory {
+enum SubjectLibraryFactory {
 
     static func makeFirstRunSubject(
         name: String,
@@ -147,7 +147,7 @@ enum V1SubjectLibraryFactory {
     }
 }
 
-enum V1SubjectLibraryResolver {
+enum SubjectLibraryResolver {
 
     static func resolvedBootstrapSubject(
         subjects: [MemorySubject]?,
@@ -235,7 +235,7 @@ enum V1SubjectLibraryResolver {
 
         _ =
             coordinator
-            .saveV1SubjectLibrary(
+            .saveSubjectLibrary(
                 subjects:
                     sanitizedSubjectLibrary(subjects),
                 selectedSubjectID:
@@ -249,7 +249,7 @@ enum V1SubjectLibraryResolver {
 }
 
 @MainActor
-enum V1SubjectLibraryMutationCoordinator {
+enum SubjectLibraryMutationCoordinator {
 
     static func selectSubject(
         _ subjectID: MemorySubject.ID,
@@ -289,7 +289,7 @@ enum V1SubjectLibraryMutationCoordinator {
         to session: ConfigurationSession
     ) -> MemorySubject {
         let newSubject =
-            V1SubjectLibraryFactory
+            SubjectLibraryFactory
             .makeDefaultSubject(
                 referenceDate: referenceDate
             )

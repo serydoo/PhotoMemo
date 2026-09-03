@@ -1,5 +1,38 @@
 # Changelog
 
+## 2.2.4 (101) Core Architecture Maintenance - 2026-09-03
+
+- Reorganized the active implementation around explicit presentation,
+  application-transaction, domain-policy, and platform-adapter responsibilities
+  while preserving MemoMark's local-first Apple Photos workflow and existing
+  durable compatibility boundaries.
+- Split the Configuration Center root, Home preset presentation, recent task
+  history, avatar editing support, queue lifecycle, and Photo Library receipt
+  recovery into focused owners; source contracts now follow those owners rather
+  than the former V1-era monolithic files.
+- Preserved immutable production configuration snapshots, queue durability,
+  idempotent Photo Library receipt recovery, original-photo protection, and
+  still/Live Photo media distinctions throughout the migration.
+- Fixed a real Apple Photos Share-provider shape that advertises a Live Photo
+  while exposing only its still representation to the extension. MemoMark now
+  uses that local still only to recover the original Photos identity; a unique
+  match returns to the motion-preserving path, while an ambiguous match fails
+  rather than silently becoming a JPEG output.
+- Recorded a full physical-device `MemoMarkDeviceQA` pass on iPhone 17 Pro Max
+  for the code preceding the version-only bump: 17 passed, 0 failed, 0 skipped.
+  This supplies bounded static/Live Photo, RAW/ProRAW, readback, interruption,
+  and repeated-launch evidence but does not close the broader TX-001 or BP-001
+  certification obligations.
+- Raised all App, extension, widget, test, and Device QA target configurations
+  to marketing version `2.2.4` and build `101`.
+
+This is a maintenance source checkpoint. Its exact build has a focused
+signed-device Apple Photos Share-to-Live-Photo-readback result, and the user
+has confirmed that the relevant manual output-album visual/playback checks are
+broadly passing. A reproducible full macOS test run, TX-001, BP-001, and formal
+production-certification evidence remain deferred and must not be inferred
+from the manual acceptance result.
+
 ## 2.2.3 (100) New TestFlight Version Train - 2026-08-29
 
 - Opened a new App Store Connect version train after the `2.2.2` train closed for new submissions.

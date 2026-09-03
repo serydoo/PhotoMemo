@@ -26,7 +26,7 @@ struct MemoMarkPlusPurchaseView: View {
                 }
                 .padding(.top, 18)
                 .padding(.bottom, 34)
-                .v1AdaptiveScrollContent(
+                .adaptiveScrollContent(
                     horizontalPadding:
                         ConfigurationUI
                         .contentColumnPadding
@@ -129,7 +129,7 @@ struct MemoMarkPlusPurchaseView: View {
     }
 
     private var benefitSection: some View {
-        V1CardSurface(
+        ConfigurationCardSurface(
             title: localized(
                 "commerce.purchase.benefits.title",
                 fallback: "完整记录能力"

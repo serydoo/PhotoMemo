@@ -282,9 +282,18 @@ struct BatchFixtureCoverageTests {
         #expect(task.contentTypeIdentifier == "public.heic")
 
         let importedPhoto =
-            try await BatchProcessingCoordinator()
-            .importPhoto(
-                for: task
+            try await PhotoImportService()
+            .importPhotoOffMainThread(
+                from: task.sourceURL,
+                sourceInfo:
+                    PhotoSourceInfo(
+                        originalFileName:
+                            task.fileName,
+                        assetLocalIdentifier:
+                            task.sourceIdentifier,
+                        contentTypeIdentifier:
+                            task.contentTypeIdentifier
+                    )
             )
 
         #expect(

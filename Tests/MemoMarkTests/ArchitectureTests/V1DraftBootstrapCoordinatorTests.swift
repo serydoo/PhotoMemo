@@ -9,7 +9,7 @@ struct V1DraftBootstrapCoordinatorTests {
     @Test("bootstrapDrafts prefers intent-backed preview drafts when available")
     func bootstrapDraftsPrefersIntentBackedPreviewDraftsWhenAvailable() {
         let coordinator =
-            V1DraftBootstrapCoordinator {
+            ConfigurationDraftBootstrapCoordinator {
                 .success([
                     .slotA: .init(
                         items: [
@@ -38,7 +38,7 @@ struct V1DraftBootstrapCoordinatorTests {
     @Test("bootstrapDrafts falls back to default editor drafts for all memory regions")
     func bootstrapDraftsFallsBackToDefaultEditorDraftsForAllMemoryRegions() {
         let coordinator =
-            V1DraftBootstrapCoordinator {
+            ConfigurationDraftBootstrapCoordinator {
                 .failure(
                     MemoMarkError(
                         code: .previewBuildFailed,
@@ -50,9 +50,9 @@ struct V1DraftBootstrapCoordinatorTests {
         let drafts =
             coordinator.bootstrapDrafts {
                 region in
-                V1EditorDraft(
+                MemoryCardEditorDraft(
                     items: [
-                        V1ContentItem.text(
+                        MemoryCardContentItem.text(
                             "default-\(region.rawValue)"
                         )
                     ]

@@ -542,7 +542,7 @@ struct ConfigurationCenterTopPreviewSection<
     }
 
     private var currentSubjectTitle: String {
-        V1IOSHomeProjection
+        HomeProjection
             .subjectTitle(
                 session.state.selectedSubject
             )

@@ -1,5 +1,1928 @@
 # MemoMark Current Status
 
+## 2026-09-03 Build 101 — Refactor File Organization And Manual Acceptance Closeout
+
+- The `2.2.4 (101)` behavior-preserving refactor is now closed for continued
+  real-world use. The user confirmed that the relevant manual checks are
+  broadly passing, including visual inspection and playback in the output
+  album. This closes the corresponding manual-acceptance item in the release
+  manifest; it does not convert a manual result into automated-test,
+  Instruments, or production-certification evidence.
+- The post-refactor source map is now recorded in
+  `Docs/03_Engineering/2026-09-03-post-refactor-file-organization.md` and the
+  active structure indexes. `Application/`, `Domain/`, and `Infrastructure/`
+  are treated as responsibility boundaries; iOS view files remain physically
+  flat because of the filesystem-synchronized Xcode group and are navigated by
+  the local logical map.
+- The active iOS entry is `MemoMarkConfigurationCenterView`. The retired
+  `ConfigurationCenteriOSView` and temporary dual-entry path are not restored.
+  Existing compatibility `V1` names remain only where they represent a real
+  schema/migration bridge or a separately deferred naming slice.
+- The working tree remains intentionally uncommitted. No Git staging, commit,
+  push, TestFlight upload, App Store Connect mutation, or App Store submission
+  was performed. Full macOS test-run repeatability, TX-001, BP-001, and formal
+  superseding production certification remain deferred observation follow-ups.
+
+## 2026-09-03 Build 100 — Background Status Projection P1 Closure
+
+- `MemoMarkBackgroundStatusService` is now limited to its correct main-actor adapter role: it observes the `BatchQueueStore` projection, filters and orders external jobs, retains the user-selected focus, publishes the current/status/history values, refreshes interface-language presentation, and forwards the explicit terminal-history clear action. It does not own durable queue truth, task execution, Snapshot capture, Share admission, Renderer, export, PhotoKit, or the deterministic derivation of a job display.
+- `MemoMarkBackgroundStatusProjection` now has the sole production implementation for immutable background-job presentation: selected-job resolution, active-task/failure/cancellation selection, current snapshot, task overview, history summary, feedback state, localized status text, progress fraction, pipeline state, queue display mode, configuration label, and usable local history-preview selection. It composes the already-closed pure queue projection and text catalog without observing or mutating the queue.
+- The prior service-local implementations of those projection methods were removed after the service call sites were migrated. There is no old/new production branch, duplicate queue/status formatter, or compatibility fallback. `MemoMarkBackgroundStatusService` reduced from 1,108 to 521 lines while preserving the same public observable state and user-facing action boundary.
+- TDD evidence: the direct status-projection test was RED while the type did not exist, then GREEN after the immutable projection implementation was introduced. The final focused macOS selection passed with 0 failures across background status, queue-projection responsibility, Share drain, queue fixtures, snapshot selection, terminal intake failure, language re-projection, partial/terminal history, Share idempotency, and Live Photo intake regressions. A fresh generic unsigned `MemoMarkiOS` Debug build, `git diff --check`, and governance validation passed. Final signed-iPhone/Apple Photos/background-interruption acceptance remains deliberately separate and is not claimed by these automated checks.
+
+## 2026-09-03 Build 100 — Queue Display Formatter P1 Closure
+
+- `MemoMarkQueueDisplayFormatter` is now a standalone pure, shared presentation utility rather than a nested responsibility of `MemoMarkBackgroundStatusService`. It formats the already-established queue title from immutable start time, photo count, interface language, and comparison time; it neither observes nor mutates a queue, Snapshot, persistence store, Share request, renderer, export transaction, PhotoKit resource, or background task.
+- The background-status service remains the sole main-actor projection adapter for `BatchQueueStore`, while Share admission, queue construction, and the background text catalog retain the same formatter API. The former service-local definition was removed after callers were verified against the single new production definition; no compatibility adapter, fallback formatter, date boundary, localized key, or title format was introduced or changed.
+- The completed source boundary is intentional: queue-title wording is used by Share, queue creation, and status presentation, so assigning it to one of those runtime coordinators would create an incorrect ownership dependency. The formatter remains deterministic and framework-light, which keeps it independently reusable without adding another state owner.
+- Evidence: the focused macOS selection passed with 0 failures across `BatchFixtureCoverageTests`, `ShareDrainMigrationRegressionTests`, and `MemoMarkBackgroundStatusServiceTests`, including today/yesterday/year date boundaries, Share admission, Live Photo intake cases, frozen queue semantics, and interface-language re-projection. A fresh generic unsigned `MemoMarkiOS` Debug build, `git diff --check`, and governance validation passed. Signed-iPhone/Apple Photos acceptance is still deliberately deferred to the unified final physical pass.
+
+## 2026-09-03 Build 100 — Background Queue Presentation P1 Closure
+
+- `MemoMarkBackgroundStatusService` remains the sole main-actor adapter from `BatchQueueStore` observations into published background-status state. It continues to own queue subscription, focused-job selection, refresh triggering, and the user-requested terminal-history clear action; it is not a second durable queue owner.
+- `MemoMarkBackgroundQueueProjection` now owns the pure queue-line subset: displayable external-job ordering, queue-line/aggregate wording, overflow count, and unfinished subsequent-job count. It receives immutable `BatchJob` facts plus the already selected local text catalog, and contains no `BatchQueueStore`, Combine publisher, persistence, Snapshot, execution, recovery, Photo Library, or Share dependency.
+- The previous duplicate queue-line helpers were removed after the service call sites moved. There is no fallback or parallel production formatter: one projection now supplies queue lines, overflow, and queued-job count while existing snapshot, retry, failure, and background-lifecycle semantics remain unchanged.
+- TDD evidence: the new projection responsibility contract was RED before the source existed, then passed with the established background-status behavior suite (0 failures), including subsequent queue count, recent-history limit, terminal intake failure, language re-projection, and legacy-job decoding. `git diff --check` and governance validation passed. Generic iOS build and final signed-iPhone background/Live Activity acceptance remain part of the unified final verification pass.
+
+## 2026-09-03 Build 100 — Subject Time-Anchor Presentation P1 Closure
+
+- `MemorySubjectEditorView` remains the sole owner of the Memory Subject editing draft, selected-anchor projection, add/edit transaction, Sheet presentation, cancel rollback, commit, focus reset, and `ConfigurationSession` synchronization. The time-anchor path therefore has no second persistence or transaction owner.
+- `SubjectTimeAnchorSelectionCard` and `SubjectTimeAnchorAddRow` now own only the independently reusable, immutable presentation of existing time anchors and the add affordance. They receive anchor values, the currently edited ID, and explicit configure/delete/add closures; they do not read session state, construct a Snapshot, persist data, start a transaction, or change the queue, Renderer, Photo Library, or domain model.
+- Existing behavior is retained: the current row stays visibly selected while editing; native row menu/swipe actions retain their confirmation path; the one-to-five anchor bounds, labels, divider rhythm, native sheet, save/cancel semantics, and active-anchor fallback remain owned by the parent flow. Two legacy source-location contracts were retargeted to the extracted row/avatar surfaces without weakening their behavioral assertions.
+- TDD evidence: the focused macOS selection passed with 0 failures across `SubjectTimeAnchorEditorSurfaceContractTests`, time-anchor transaction/presentation, Subject Overview, editor accessibility, and responsive-layout contracts. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation passed after the change. Final signed-iPhone acceptance remains in the unified physical pass: add/configure/delete/cancel/save, Dynamic Type, VoiceOver, and confirmation/menu/swipe interaction.
+
+## 2026-09-03 Build 100 — Photo Intake Active-Path Naming P1 Closure
+
+- The last active foreground-intake source file with a stage label, `V1PhotoIntakeSupport.swift`, has been retired without retaining a production fallback. Its former responsibilities now have formal, independently testable source ownership: `PhotoIntakeImporter` is the atomic native-media adapter; `PhotoIntakeUnsupportedMessagePresenter` projects input-policy diagnostics; `UIKitPhotoPicker` presents and forwards UIKit picker results; and the previously closed URL resolver, runtime request guard, and quick-action coordinator keep their own owners.
+- `PhotoIntakeImporter` intentionally remains a single adapter rather than being mechanically subdivided. Its two system picker paths preserve one evidence chain from advertised UTI and Apple Photos local identifier through Live Photo classification, sanitized original filename, controlled temporary representation, and `ExternalPhotoIntakeItem`. It remains outside configuration persistence, Snapshot capture, durable queue storage, Share, Renderer, export, and Photo Library writeback.
+- The migration preserves `FileRepresentation` before `Data` fallback, selected current representation, `.images + .livePhotos` picker filtering, PhotoKit filename/Live Photo lookup, diagnostics, temporary-file containment, item de-duplication, cancellation cleanup, latest-request rejection, and frozen Snapshot submission. No domain model, persisted key, input policy, Live Photo output policy, or user workflow changed.
+- TDD evidence: the full focused foreground-intake/media boundary selection passed with 0 failures (22 tests): importer, presenter, UIKit picker, resolver, runtime, quick-action, file-first contracts, and the established behavior suite. The iOS-runtime picker contract is platform-gated and remains covered by the successful iOS compilation. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation are rerun after this status update. The remaining proof is final signed-iPhone acceptance: still and Live Photo selection through both native surfaces, cancellation/stale request behavior, foreground task handoff, and Apple Photos output/read-back.
+
+## 2026-09-03 Build 100 — UIKit Photo-Picker Surface P1 Closure
+
+- `UIKitPhotoPicker` is now a dedicated `UIViewControllerRepresentable` presentation surface. It owns only creation/dismissal of the existing `PHPickerViewController`, the static selection limit, the deliberate `.images + .livePhotos` filter, current-asset representation preference, and forwarding either cancellation or immutable `PHPickerResult` values to its parent.
+- The presentation surface does not resolve provider files, infer content types, query PhotoKit, copy temporary media, freeze a configuration Snapshot, enqueue a task, or save/export a photo. Those paths remain in their existing owners: `PhotoIntakeImporter`, `PhotoIntakeURLResolver`, `PhotoIntakeRuntimeCoordinator`, the quick-action coordinator, and the external-intake center respectively.
+- A media-fidelity audit deliberately leaves the importer as one atomic platform-adapter boundary for now. Both native picker APIs must carry one coherent evidence chain—advertised type, Apple Photos local identifier, Live Photo classification, controlled temporary representation, and filename—into `ExternalPhotoIntakeItem`. Splitting that chain solely to reduce a source-file count would add an unproven failure surface to Live Photo/metadata intake.
+- TDD evidence: the new UIKit-picker responsibility contract plus the complete focused photo-intake selection passed with 0 failures (18 tests), covering picker presentation boundary, save-before-submit, frozen Snapshot propagation, cancellation/reuse, latest-request-wins, and managed-file containment. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation are rerun after this status update. The final signed-iPhone acceptance remains unified: SwiftUI/UIKit picker presentation, cancellation, still/Live Photo selection, foreground handoff, and Apple Photos output verification.
+
+## 2026-09-03 Build 100 — Photo Processing Quick-Action P1 Closure
+
+- `PhotoProcessingQuickActionCoordinator` is now a formally named, independent foreground-intake handoff boundary. It owns only the existing save-before-import rule, empty-input/result accounting, direct URL/item submission, and the immutable `BatchConfigurationSnapshot` that accompanies an accepted picker request.
+- `PhotoIntakeRuntimeCoordinator` remains the separate owner of latest-request identity, cancellation, stale-item cleanup, and root completion delivery. `PhotoIntakeImporter` remains the owner of PhotosPicker/PhotoKit representation resolution, while `V1PhotoIntakeSupport.swift` now retains only the unsupported-input presentation and importer responsibilities pending their own bounded audits. No queue, Share, renderer, export, Photo Library, or durable-configuration owner moved or changed.
+- The public coordinator name and all three overloads are unchanged. In particular, a failed configuration save still prevents import/submission; an empty import still reports `noSupportedPhotos`; requested/failed counts retain their existing values; and the configuration snapshot is still captured before asynchronous import rather than reread from mutable current state.
+- TDD evidence: the new responsibility contract plus the complete focused photo-intake selection passed with 0 failures (17 tests), covering save-before-submit, failed-save short-circuit, frozen Snapshot propagation, cancellation, latest-request-wins, managed-file copy/cleanup containment, and all three separated boundaries. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation are rerun after this status update. Final signed-iPhone acceptance remains deliberately unified: picker selection/cancellation, foreground handoff, and Apple Photos output verification.
+
+## 2026-09-03 Build 100 — Photo Intake Runtime-Request P1 Closure
+
+- `PhotoIntakeRuntimeCoordinator` is the explicit short-lived owner of foreground picker request identity. Its own active request ID prevents an older delayed picker import from submitting against a newer configuration context, updating the root completion state, or retaining unsubmitted managed items after cancellation.
+- The coordinator now resides in its own formally named source file. `V1PhotoIntakeSupport.swift` retains only the unsupported-input and importer responsibilities until their dependencies are separately closed. The public coordinator API and its Configuration Center lifecycle caller remain unchanged.
+- The migration preserves the established order: save a `BatchConfigurationSnapshot`; verify the request is still current; import managed items; discard them if the request became stale; submit only a nonempty current item list with that same frozen snapshot; then clear the identity only if it still belongs to that request. The coordinator owns no picker UI, durable configuration write, queue, Share handoff, PhotoKit read/write, or Photo Library output behavior.
+- TDD evidence: the complete focused foreground-intake behavior selection plus both URL-resolver and runtime-coordinator contracts passed with 0 failures. It includes save failure, empty input, frozen Snapshot propagation, cancellation cleanup, task-cancellation reuse, and latest-request-wins regression cases. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation remain required after this status update. The final physical iPhone pass still covers picker presentation/cancellation, real foreground handoff, and Apple Photos output verification.
+
+## 2026-09-03 Build 100 — Photo Intake URL-Resolver P1 Closure
+
+- The active foreground photo-picker support was still aggregated in the historical `V1PhotoIntakeSupport.swift` filename, despite `PhotoIntakeURLResolver` already having a distinct responsibility: accepting supported local picker URLs, creating a MemoMark-owned temporary representation, and deleting only verified files inside that picker directory.
+- `PhotoIntakeURLResolver` now lives in its own formally named source file. The independent quick-action coordinator and runtime latest-request guard have likewise been separated; the unsupported-input presentation and picker importer remain in the historical aggregation until their independent production boundaries are audited. These migrations do not reframe or replace the foreground intake workflow.
+- The resolver retains the current input policy, URL standardization/de-duplication, `MemoMarkPicker` temporary directory, filename sanitization, source-copy behavior, extension selection, and symlink-resolved containment guard. It does not save configuration, freeze or submit a batch Snapshot, write the external-intake store, mutate a queue, perform Share handoff, or access PhotoKit/Photo Library output.
+- TDD evidence: `PhotoIntakeURLResolverContractTests` plus the complete focused photo-intake selection passed with 0 failures. That selection covers supported URL de-duplication, temporary filename/copy behavior, cleanup containment including symlink escape prevention, save-before-submit, frozen configuration propagation, cancellation, and newer-request-wins behavior. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation remain required after this status update. Final physical iPhone acceptance still includes picker selection/cancellation, intake-to-task handoff, output behavior, and Apple Photos verification.
+
+## 2026-09-03 Build 100 — Task Recent-History Surface P1 Closure
+
+- The Task page has one current-task/processing owner and one separately bounded completed-history display. `TaskRecentHistorySurface` now owns only the latter: grouping the immutable `TaskHistoryRowPresentation` values by day, the four-row inline limit, empty state, detail sheet, Dynamic Type row layout, and returning a selected `TaskPhotoLibraryLink` through the existing parent callback.
+- `TaskPageSurface` continues to own the queue-derived `TaskPagePresentation`, current task card, progress/pipeline disclosure, retry callback, and all navigation decisions. The new history surface does not construct queue facts, run a task, alter a `BatchJob`, write a receipt, fetch a PhotoKit asset, or derive a different output link. Its sheet binding is explicitly supplied by the parent and remains view-local presentation state.
+- The actual task/history rows, day grouping, localization keys, date formatter inputs, thumbnail URL/symbol/tint/count, Apple Photos tap behavior, sheet detents, and completion dismissal action are unchanged. This is a display-composition migration, not a change to processing, output correctness, snapshot semantics, partial-failure presentation, or Photo Library behavior.
+- TDD evidence: the focused task surface contract and `TaskPagePresenterTests` selection passed with 0 failures, covering current/recent projection separation, persisted-history eligibility, interface language, and Apple Photos action presentation. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation remain required after this status update. The unified physical iPhone pass still covers history rows/sheet, local thumbnail fallback, Dynamic Type, VoiceOver, retry, and opening the intended Photos destination.
+
+## 2026-09-03 Build 100 — Task Local-Thumbnail Surface P1 Closure
+
+- `TaskPageSurface` owns the user-facing projection of durable queue facts, history grouping, retry/photo-library navigation callbacks, and its one sheet-presentation state. It previously also contained `TaskLocalThumbnail`, whose separate SwiftUI image state and ImageIO file decode lifecycle are not part of task-page composition.
+- `TaskLocalThumbnail` now owns only the ephemeral local-file thumbnail representation: its `sourceURL`-keyed task, utility-priority ImageIO decode, placeholder, multi-photo count badge, and existing localized accessibility label. It receives a URL already selected by the task projection and never reads or writes `BatchQueueStore`, Photo Library, save receipts, configuration, Snapshot, or Renderer state.
+- The page still creates the same thumbnail at every current/history call site and passes the identical URL, symbol, tint, geometry, and item count. No task state, retry policy, output-photo routing, ImageIO thumbnail option, image source, or accessibility copy changed; the extraction simply keeps page composition separate from its bounded media-display lifecycle.
+- TDD evidence: the new responsibility contract and the focused `TaskPagePresenterTests` selection passed with 0 failures, including current/recent task projection, interface-language selection, task-history eligibility, and Apple Photos action presentation. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation remain required after this status update. Final signed-iPhone checks remain in the unified physical pass: local-thumbnail loading/fallback, large text, VoiceOver, history sheet, retry, and Photo Library navigation.
+
+## 2026-09-03 Build 100 — Memory Subject Avatar-Surface P1 Closure
+
+- The Memory Subject editor owns a high-risk avatar lifecycle: subject-scoped draft projection, picker selection, crop-sheet presentation, asynchronous asset optimization, stale-request rejection, uncommitted-asset cleanup, and the established `ConfigurationSession` write path. A read-only audit confirmed that `SubjectAvatarOptimizationState` already supplies a deliberate request-ID plus subject-ID boundary; creating a second coordinator would duplicate that lifecycle and increase stale-result risk rather than reduce it.
+- `SubjectAvatarEditingSurfaces` now owns only the two independent SwiftUI presentations around that lifecycle: the full identity-editor avatar panel and the compact identity-overview picker. The parent supplies the current value draft, current busy state, picker binding, and explicit remove callback. The new surfaces do not reference the optimizer, request state, session, persistence, Renderer, queue, Photos save-back, or a second crop path.
+- `MemorySubjectEditorView` remains the sole owner of `prepareSelectedAvatar`, `applyAvatarCrop`, request invalidation on subject changes/removal, and `syncDraftToSession`. Thus a previous picker/crop result still cannot write to a newly selected subject, and cancelling/removing an avatar retains the established draft and durable-identity semantics. This is a presentation-boundary change only; it does not alter photo data, derived-avatar file contracts, anchor behavior, or Configuration Center interaction.
+- TDD evidence: the new surface-boundary contract was first compiled with the focused avatar selection. A test-only path-helper issue was fixed locally; the final focused macOS selection passed with 0 failures, covering the new boundary, avatar draft projection, newest-request-wins state, opaque crop presentation, and crop geometry. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation passed. Signed-iPhone acceptance still remains in the unified final pass, specifically picker reselection, crop pan/pinch/reset/cancel/confirm, Dynamic Type, and VoiceOver behavior.
+
+## 2026-09-02 Build 100 — Home Preset-Row Surface P1 Closure
+
+- `HomePageSurface` also contained the independent presentation of one `MemoryPreset`: compact/accessible vertical fallback, saved-state detail, anchor identity mark, logo/subject-avatar badge, and localized accessibility identity. That surface reads one immutable preset and invokes the page-supplied selection callback; it does not select/persist a preset itself.
+- `HomeMemoryPresetRow` now owns only that presentation. The Home page remains the single owner of `ForEach`, selected-ID comparison, subject/anchor lookup, and `onSelectMemoryPreset`; configuration persistence, Snapshot construction, renderer work, and queue state remain outside the row.
+- The existing compact-layout and semantic-token contracts now validate the actual Home-page call site plus the focused row surface, rather than requiring the row implementation to remain in the Home coordinator file. The source root is reduced from 1,056 to 826 lines while retaining the current visual and accessibility structure.
+- TDD evidence: the new row contract was RED before the extracted surface existed. The focused row/activity/iPhone-layout selection passed with `0` failures, and a fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation remain required after this status update; signed-device Dynamic Type, avatar-image, and tap-to-select checks remain in the unified final acceptance pass.
+
+## 2026-09-02 Build 100 — Home Activity Surface P1 Closure
+
+- `HomePageSurface` previously contained both its Home configuration/navigation composition and the independent, short-lived presentation of an immutable `HomeActivityProjection`. The latter has its own mounted/visible state, reduced-motion behavior, progress accessibility value, completion display window, and dismissal animation, but does not own a queue or mutate any production fact.
+- `HomeActivityCard` now owns that focused presentation surface. Its only inputs remain the existing immutable projection and existing `onOpenProcessing` callback; it has no `ConfigurationSession`, `BatchQueueStore`, Photo Library, persistence, renderer, or Snapshot dependency. The Home page continues to decide whether it has an activity section and passes the same projection/callback, so no navigation or queue semantics changed.
+- `HomePageSurface` was reduced from 1,260 to 1,056 lines. During verification, an iPhone layout contract still assumed `ConfigurationDeletionRuntimeCoordinator` was in the root/ordinary Runtime file. It is correctly assembled by the pre-existing Runtime-Composition extension, so the contract now checks the real three-file composition boundary instead of constraining the coordinator back into the root.
+- TDD evidence: the new activity-card contract was RED before the independent surface existed; the focused Home activity and iPhone-responsive layout selection then passed with `0` failures. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and governance validation remain required after this status update. This is structural/build evidence only; final signed-device checks still include active-task visual motion, Dynamic Type, VoiceOver, and navigation to Processing.
+
+## 2026-09-02 Build 100 — Share Extension UIKit Surface-Factory P1 Closure
+
+- `MemoMarkShareExtensionViewController` already delegated intake, frozen configuration handoff, preview loading, handoff acknowledgement, progress observation, and view-state projection to focused collaborators, but it still contained duplicated static UIKit construction for cards, titled sections, inner cards, and summary hairlines. That left lifecycle/state ownership interleaved with appearance-only view assembly in a 1,739-line controller.
+- `ShareExtensionSurfaceFactory` now owns only stateless construction of those reusable UIKit surfaces. It preserves the existing semantic headings, Dynamic Type, card backgrounds, continuous corners, separator border/hairline geometry, token-derived padding, and stack alignment. It owns no `NSExtensionItem`, provider import, App Group persistence, queue handoff, PhotoKit work, state projection, accessibility-value mutation, or lifecycle behavior.
+- The controller now directly composes the same factory products and remains the owner of its existing state, constraints, callback wiring, progress/lifecycle transitions, and focused collaborators. Its source reduced to 1,517 lines; this is an internal composition change with no new user route or production semantic.
+- TDD evidence: the new factory contract was RED before the factory existed, then the focused Share factory, Share controller responsibility, and Apple-native product surface selection completed `41/41` with `0` failures and `0` skips. A fresh generic unsigned `MemoMarkiOS` Debug build passed, including the Share Extension target. `git diff --check` passed. This is structural/build evidence only; Share-sheet visual, Dynamic Type, VoiceOver, handoff, and Apple Photos acceptance remain part of the final signed-device pass.
+
+## 2026-09-02 Build 100 — Configuration Center Composition-Input P1 Closure
+
+- `MemoMarkRootSceneView` previously projected the app runtime into `MemoMarkConfigurationCenterView` through a long list of individual services, coordinators, transactions, repositories, and notification callbacks. The iOS preview constructed a similar but non-identical list. That was a real composition-boundary risk: adding or changing a Configuration Center capability could make production and preview wiring silently drift.
+- `MemoMarkConfigurationCenterDependencies` is now the single, short-lived composition input. It derives the existing Configuration Center capabilities from one `MemoMarkAppRuntime`; the root supplies only root-owned external-intake refresh and notification-deep-link behavior. The preview uses that exact same projection path with its intentional no-op defaults. The dependency value has no `@State`, UserDefaults access, persistence, queue mutation, renderer/media work, or global registration, and it is not part of a saved configuration or production snapshot.
+- `MemoMarkConfigurationCenterView` still owns its existing SwiftUI state and consumes the same injected concrete capabilities. The change only moves construction wiring out of two call sites; it neither changes coordinator lifetime nor creates a service locator, a second runtime, or a new UI route.
+- TDD evidence: `RootRuntimeCompositionContractTests` was RED before the composition input existed and then passed. The focused root-composition, iOS-runtime-surface, and Apple-native product contract selection completed `35/35` with `0` failures and `0` skips. A fresh generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` passed. This remains structural/build evidence; final signed-device visual, navigation, Share, and Apple Photos acceptance stays deferred to the unified physical acceptance pass.
+
+## 2026-09-02 Build 100 — Configuration Center Root Runtime-Composition P1 Closure
+
+- `MemoMarkConfigurationCenterView` had already moved page, lifecycle, editor, binding, and runtime operations into focused extensions, but its root declaration still mixed SwiftUI state ownership with the assembly of diagnostics, module, logo, configuration deletion/selection, local-library, save, preview-sync, and draft-runtime coordinators. That made the root harder to audit because the stable state owner and its injected-capability wiring were interleaved.
+- The existing coordinator assembly now lives in `MemoMarkConfigurationCenterView+RuntimeComposition.swift`. The root view remains the sole owner of `ConfigurationSession`, draft/presentation/lifecycle state containers, injected capabilities, bootstrap composition, navigation body, and all SwiftUI modifiers. The new extension owns no `@State`, durable persistence, queue mutation, renderer/media work, or alternate Configuration Center path; it only builds existing coordinators from those root-owned values.
+- Four injected runtime capabilities (`previewCoordinator`, `saveConfiguration`, `diagnosticsRepository`, and `localConfigurationLibraryCoordinator`) are module-internal rather than file-private so the separate extension can read the same values. They are not public API and do not change their construction, storage, lifetime, or behavior.
+- TDD evidence: `RootRuntimeCompositionContractTests` was RED while the composition extension did not exist, then passed after the migration. The focused root/state/Configuration Center contract selection passed `21/21` with `0` failures and `0` skips. The generic unsigned `MemoMarkiOS` Debug build passed after the iOS-only access-control boundary was corrected; the root source file reduced from `1,016` to `759` lines. `git diff --check` passed. This is structural/build evidence only; it does not replace the deliberately deferred signed-device visual, gesture, Dynamic Type, VoiceOver, Share-sheet, or Apple Photos acceptance checks.
+
+## 2026-09-02 Build 100 — Background Status Language-Projection P1 Closure
+
+- The background-status service previously projected queue titles, pipeline labels, phase labels, aggregate queue copy, and several terminal-state messages as Chinese strings. Those strings could remain stale after an interface-language change even though the underlying queue facts and active progress were current; the Live Activity bridge then received the same stale presentation payload.
+- `MemoMarkBackgroundStatusService` now accepts an explicitly injectable interface-language provider and exposes a presentation-only refresh entry point. The root scene calls that entry point when the durable interface-language preference changes. The service rebuilds its existing in-memory `MemoMarkBackgroundJobSnapshot` from unchanged `BatchJob`/`BatchTask` facts; it does not write the queue, re-run a task, change a production snapshot, translate durable failure evidence, or alter PhotoKit work.
+- The service no longer owns localized copy construction. `MemoMarkBackgroundStatusTextCatalog` is a pure value type that receives only the current interface language plus immutable queue/task facts and resolves status, pipeline, phase, queue-summary, and queue-line presentation. The service remains responsible for observing `BatchQueueStore`, selecting the active/focused job, and publishing projections. This reduces the service from roughly 1,780 to 1,363 lines without creating a second queue, snapshot, persistence, or Live Activity state owner.
+- Queue date/title formatting now takes an explicit presentation language at the status projection boundary. The existing production request-title callers retain the formatter's default language behavior, while status-sheet and Live Activity payloads use the current interface language. The iOS status sheet and Live Activity bridge now localize their remaining launch-source and job-state fallback text through the same four-language resource surface.
+- All new status, pipeline, phase, queue, job-state, and date-format resource keys are present in Simplified Chinese, English, Japanese, and Korean. A resource-quality failure discovered during this slice (Japanese/Korean format strings matching the English baseline) was corrected before closure.
+- TDD evidence: the background-status language-projection test was RED before the service exposed a language provider or refresh entry point. It now passes by reprojecting one unchanged queued job from English to Japanese and verifying both pipeline and queue text. `MemoMarkBackgroundStatusServiceTests` and `LocalizationResourceParityTests` passed with 0 failures; `plutil -lint` passed for all four `.strings` files; and a generic unsigned `MemoMarkiOS` Debug build passed. `git diff --check` and Codex governance validation passed. This is code/build evidence only: changing interface language while an active task and Live Activity are visible remains part of the final physical iPhone acceptance pass.
+
+## 2026-09-02 Build 100 — Share Managed-Import Materialization P1 Responsibility Closure
+
+- ShareManagedFileImporter previously mixed provider representation orchestration with three duplicated URL-to-App-Group copy branches and a separate Data fallback copy branch. ShareManagedImportMaterializer now owns only provider-payload materialization: source-readiness evidence, managed-copy diagnostics, original-file-name preservation, URL/Data record construction, and content-hash de-duplication.
+- The importer remains the sole owner of the production fallback order, provider timeout/cancellation, first-failure retention, Live Photo static recovery, unsupported-input policy, and duplicate cleanup. The materializer owns no provider API, request persistence, queue work, PhotoKit write, output policy, or UI. Existing diagnostic operation names and error codes (3004, 3005, 3007, 3014) remain unchanged.
+- The Data boundary explicitly preserves the Media truth rule: a fallback payload declared as Live Photo does not receive a synthetic sourceIdentifier; only non-Live-Photo data receives its content-derived identity. Thus a flattened fallback cannot be promoted into a fabricated paired Live Photo asset.
+- Evidence: a responsibility-contract test was RED before the materializer existed. The focused Share responsibility, intake diagnostics, and durable managed-file suites then passed with 0 failures, including file-first ordering, timeout evidence, Live Photo static fallback, filename/provenance retention, copy failures, and no-invented-Live-Photo-identity. A generic unsigned iOS MemoMarkiOS Debug build, including the Share Extension target, passed after the split. Two new build warnings (unused callback capture and implicit main-actor result projection) were removed by making the projection a pure nonisolated static function; the final target build was clean apart from Xcode's destination-selection banner. git diff --check and Codex governance validation passed. This is automated evidence only; the ordinary Share-sheet and Apple Photos end-to-end interaction remain in the final physical acceptance pass.
+
+## 2026-09-02 Build 100 — TX-001 Static Save Readback P0 Repair
+
+- Static-output processing previously advanced a durable `BatchTask` to queue completion immediately after the PhotoKit transaction callback and receipt acknowledgement. It now performs one exact `PHAsset.localIdentifier` lookup through `PhotoLibraryTransactionGateway` before returning a successful `PhotoLibrarySaveResult`.
+- If the exact asset is not visible yet, the writer retains its acknowledged receipt and returns the existing `savedAssetReadbackPending` outcome. `BatchTaskProcessor` therefore leaves the task in the established recoverable Photo Library readback state rather than treating a delayed-visibility condition as either success or permission to issue a second write. The check is deliberately scoped to idempotent batch exports, whose durable task identity and receipt provide safe recovery evidence.
+- The D5 recovery audit found a separate user-facing gap: if Photos access is revoked while a receipt-backed task is awaiting its exact readback, the prior queue could safely retain the receipt but leave the task appearing in-flight indefinitely. The receipt locator now distinguishes denied readback access from ordinary delayed visibility. The queue keeps all recovery evidence, creates no replacement asset, and projects a retryable `photoLibrary.permission.denied` failure with the existing Settings recovery guidance. Once access is restored, retry continues to use the same durable task identity and receipt-first path.
+- The resume path's fact collection is now isolated in `PhotoLibraryReceiptResumeRecoveryPlanner`: it reads receipt/visibility/permission facts and emits only completion or permission-recovery commands. `BatchQueueStore` remains the single owner that projects those commands through `BatchQueueDurableLedger`, publishes the user-facing status, records a successful save, and cleans resources after a durable completion. This removes the highest-complexity receipt-readback branch from the queue coordinator without creating another state, persistence, or PhotoKit-write owner.
+- The change preserves Apple Photos ownership, original-photo protection, output metadata/write behavior, and the static/Live Photo division of responsibility: Live Photo retains its stronger paired-resource verification; static output now has an equivalent exact-identity completion gate without importing Live Photo semantics.
+- TDD evidence: the static-readback policy test was RED before the type existed, then the full `PhotoLibrarySaveReceiptStoreTests` suite completed `33/33` with `0` failures, including static readback, receipt/intent durability, cancellation, and shared static/Live Photo contracts. The permission-loss regression was likewise RED before the recovery boundary existed; the complete `BatchQueueStorePersistenceTests` suite then completed `27/27` with `0` failures. Follow-up recovery and execution contracts completed `26/26` with `0` failures, covering protected receipt readback, missing managed sources, retry/reset, cancellation, background expiration, and notification/resource boundaries. The complete macOS `MemoMarkTests` suite subsequently completed `1,769` passed, `0` failed, and `1` intentionally skipped. A new generic unsigned `MemoMarkiOS` Debug build produced `MemoMarkiOS.app` with `2.2.3 (100)`; `git diff --check` and governance validation passed. This is code and build evidence only: delayed-visibility, forced-termination, permission-change, and D1-D5 physical protocol evidence remain required to close TX-001.
+
+## 2026-09-02 Build 100 — Batch Queue Commerce-Accounting P1 Responsibility Closure
+
+- `BatchQueueStore` previously mixed queue admission/execution coordination with free-record accounting: remaining-capacity calculation, failed-task retry capacity, completed-save idempotency, and bootstrap reconciliation. `BatchQueueCommerceAccounting` now owns only those commerce facts and its `MemoMarkCommercePersistence` interaction. It does not mutate `BatchJob`, write the durable queue, issue PhotoKit work, publish UI state, or own recovery presentation.
+- The queue facade remains the sole presentation/processing gate. It supplies the current durable queue projection and commerce snapshot, persists a returned snapshot through the established write-and-readback boundary, and retains the existing behavior to pause active processing and publish localized recovery copy when a commerce write cannot be proven durable. No StoreKit product, entitlement, persistent key, purchase state, queue transition, or Snapshot contract changed.
+- A compatibility audit found that the established Xcode QA environment intentionally retains a finite free snapshot immediately after an individual successful save, while startup reconciliation resolves the normal environment policy. The new accounting seam preserves those two existing projection paths exactly rather than normalizing them during the refactor.
+- TDD evidence: the new accounting tests were RED before the responsibility existed; they now pass, covering idempotent completed-save advancement, reserved-work retry admission, and the Xcode QA compatibility projection. The complete `BatchQueueStorePersistenceTests` suite passed `27/27`; `MemoMarkCommercePersistenceTests` and `CoreArchitectureDependencyContractTests` also passed. A generic unsigned `MemoMarkiOS` Debug build completed successfully. This is automated structural evidence only; final signed-device/Apple Photos acceptance remains the unified end-stage gate.
+
+## 2026-09-02 Build 100 — Batch Queue Resume-Source P1 Responsibility Closure
+
+- Startup recovery and post-lifecycle runtime recovery both need the same two facts: whether a non-terminal task has lost its managed intake copy, and the precise non-retryable interruption diagnostic to attach. Those facts were duplicated across `BatchQueuePersistence` and `BatchQueueStore`, creating a future drift risk in the path-containment and error-classification boundary.
+- `BatchQueueResumeSourceInspector` now owns only those common facts. Its root and file-manager inputs are explicit for tests. It does not normalize jobs, retain Photo Library receipts, persist a queue snapshot, remove files, or publish diagnostics. The bootstrap adapter still performs its one pre-actor normalization/write; the runtime path still collects immutable facts before applying `BatchQueueResumePolicy` inside the actor-backed durable ledger.
+- The focused test initially exposed an incorrect expected phase-derived code: `CocoaError.fileNoSuchFile` is intentionally classified by the established diagnostic classifier as `processing.source.missing`, ahead of a generic exporting-stage failure. The test now records that existing recovery semantics instead of altering it.
+- Evidence: `BatchQueueResumeSourceInspectorTests` and `BatchQueueRecoveryTests` passed `5/5`; `git diff --check` and governance validation passed. This remains code-level recovery evidence, not a substitute for the final forced-termination and real-device permission/interruption protocol.
+
+## 2026-09-02 Build 100 — Share Intake Capacity Snapshot P1 Closure
+
+- The Share Extension's preflight display may correctly read the latest available commercial capacity, but one actual submission must not re-read that mutable state while deciding whether to copy providers into the App Group. `MemoMarkShareExtensionIntakeService.persistSharedItems` now loads the compatible commerce snapshot once per request, derives one frozen request capacity, and uses that exact value for admission, diagnostics, and the failure context.
+- `ShareIntakeCapacityPolicy` owns the small, shared calculation: the lower of the frozen batch limit and remaining free records, or the batch limit for unlimited QA/entitlement snapshots. It owns no App Group I/O, configuration snapshot, provider loading, queue persistence, PhotoKit state, or UI presentation. The Configuration Snapshot remains independently frozen immediately before managed-item persistence, as before.
+- This preserves current UI behavior and all existing free/QA limits; it closes a subtle same-request inconsistency where repeated reads could observe different capacity values if another process changed the shared commerce snapshot during intake.
+- Evidence: `ShareIntakeCapacityPolicyTests`, `MemoMarkShareIntakeDiagnosticsTests`, and `ShareDrainMigrationRegressionTests` passed `31/31`, including flattened Live Photo fallback, historical transport isolation, durable handoff acknowledgement retry, and the updated oversize-admission contract. The first unsigned iOS build exposed that a new shared source file was not included by the Share Extension target; the policy was moved to the already shared `App/` source layer, after which the generic unsigned `MemoMarkiOS` build, including the Share Extension target, completed successfully. The full `MemoMarkTests` result then passed `1,744` tests with `0` failures and `1` intentional skip. It repeats the two existing Xcode priority-inversion warnings from `FixtureExportReadbackTests`; neither is a new product failure. Physical Share-sheet/Apple Photos acceptance remains required in the final unified device pass.
+
+## 2026-09-02 Build 100 — macOS Source-Contract Test-Host P1 Diagnosis
+
+- The current filtered macOS `MemoMarkTests` execution does enter the injected `MemoMark.app` host and starts `ShareIntakeResponsibilitySplitTests`; sampling captured the test runner inside its source-level architecture assertions while opening a repository Swift file. This is not a Share intake, Snapshot, queue, Renderer, or Photo Library production-path failure.
+- The host process runs from `/private/tmp` with `/` as its working directory while the working repository is under the macOS Desktop privacy-controlled location. Direct source-file assertions therefore cannot currently be counted as runtime pass/fail evidence on this host until the test-resource/access arrangement is separately stabilized. The suite's local path helper now consistently uses `MemoMarkTestPaths.repositoryRoot`, eliminating its duplicate `#filePath` root traversal; that does not bypass host-level file access.
+- Evidence retained for this slice: `MemoMarkTests build-for-testing` completed and produced both `MemoMark.app` and `MemoMarkTests.xctest`; the generic-iOS application and Share Extension builds from the production changes completed successfully. Do not represent the interrupted filtered execution as a passing test run. This P1 test-infrastructure boundary remains separate from final signed-device and Apple Photos acceptance.
+
+## 2026-09-02 Build 100 — Record-Card Export Boundary P1 Audit
+
+- `RecordCardExportService` remains a small encoded-output facade over `OutputFileNamingResolver` and `RecordCardExportPipeline`. The pipeline remains the sole caller of the renderer-neutral `RecordCardPresentationPlanner`, `MemoMarkRenderedImageArtifactGuard`, and `MetadataPreservingImageWriter`; no export service or coordinator owns Layout Engine decisions, Memory Engine meaning, configuration state, or Photo Library receipt state.
+- The service/pipeline still require `@MainActor` because their artifact stage directly creates SwiftUI `ImageRenderer` output for Classic White and Minimal presentations. Removing that isolation mechanically would cross a real SwiftUI/CGImage boundary and risks changing Preview/export parity. The RFC-002 goal to remove unnecessary actor isolation therefore remains a measured P1 performance item: first split a sendable prepared-image/write transaction only after BP-001 provides a concrete bottleneck, then verify renderer/output parity and physical media behavior.
+- Decision: no speculative actor rewrite in this slice. Existing responsibility contracts and the current iOS build preserve the renderer-neutral output path; this audit narrows the remaining work instead of treating an Apple-framework boundary as generic technical debt.
+
+## 2026-09-02 Build 100 — Share Live Photo Static-Fallback P0 Contract Repair
+
+- A production-contract regression was found and corrected in the Apple Photos Share path. A provider can advertise a Live Photo while delivering only a flattened JPEG/HEIC. The frozen output policy now decides this branch at intake: `originalFormat` / motion-preserving requests stop as retryable failures; only a frozen `staticImage` or `staticImageOnly` request may carry the real static file forward.
+- `ShareLivePhotoRecovery` now attaches a `LivePhotoStaticFallbackRecoveryHint` only when the staged payload is **not** a complete still-plus-movie bundle. A complete source bundle remains a real Live Photo source. The main-app `ShareCoordinator` still upgrades a uniquely recovered PhotoKit identity to Live Photo; when recovery is unavailable it keeps the real static content type only for an explicitly static output policy, while motion-preserving work remains Live Photo-typed and is safely rejected for missing paired resources instead of fabricating motion or silently changing output semantics.
+- The shared policy uses the already-frozen transport strings `staticImage` / `staticImageOnly` rather than importing the main-app Intent or configuration-domain types into the Share Extension. This closes a discovered cross-target coupling error and preserves the extension’s target boundary.
+- New regression coverage locks both policy outcomes and the `ShareCoordinator` static-output queue route. `MemoMarkTests build-for-testing`, generic-iOS `MemoMarkiOS`, and generic-iOS `MemoMarkShareExtension` builds completed successfully; `git diff --check` and governance checks passed. Two filtered macOS test executions stalled in the application-host runner before emitting an `.xcresult`; they are recorded as validation-infrastructure interruptions, not test passes or product failures. This still requires final physical Apple Photos Share acceptance for the flattened-provider case.
+
+## 2026-09-02 Build 100 — Photo Library Export Facade P0 Audit And Album-Error P1 Repair
+
+- `PhotoLibraryExportService` was re-audited against RFC-002 as the static-output compatibility facade. It orchestrates authorization, album selection, the serialized PhotoKit transaction gateway, the actor-owned receipt ledger, and saved-asset metadata read-back; it contains no Renderer/Layout input, Memory Engine decision, alternate receipt store, or direct `PHPhotoLibrary` transaction/fetch path. The corresponding Live Photo writer shares the same transaction gateway, receipt lifecycle, and ambiguous-commit recovery policy.
+- A real error-semantics gap was corrected in both static and Live Photo writers: a `PhotoLibraryTransactionGateway.createAlbum` failure now maps to the respective `albumCreateFailed` error, rather than the post-write `assetSaveFailed` message. This preserves accurate recovery guidance before any output asset transaction has begun.
+- Evidence: the focused test target, including the new album-error contract, compiled successfully with `build-for-testing`; `git diff --check` passed. The immediately attempted macOS filtered test runner stalled in its app-host startup before producing an `.xcresult`, so it is recorded as an execution-infrastructure interruption rather than a passing test result. The already-completed focused receipt/transaction suites remain the behavioral evidence for this facade and will be re-run through the stable validation path before final acceptance.
+
+## 2026-09-02 Build 100 — Photo Library Receipt-Authority P0 Audit Closure
+
+- The Photo Library save-receipt lifecycle was re-audited. `PhotoLibrarySaveReceiptLedger` serializes intent, receipt, acknowledgement, recovery evidence, pruning, and readback-pending state for static and Live Photo output. `PhotoLibrarySaveReceiptStore` remains the encoded-storage adapter.
+- The sole synchronous `PhotoLibraryPendingIntentPlaceholderWriter` is intentionally constrained to recording the PhotoKit placeholder asset identifier inside `performChanges`; PhotoKit creates that identifier in a non-async callback and it must be durable before the external transaction ends. It cannot materialize, acknowledge, query, or remove receipts, so it is not a second receipt lifecycle owner.
+- Evidence: `PhotoLibrarySaveReceiptLedgerTests`, `PhotoLibrarySaveReceiptStoreTests`, `BatchQueueExecutionContractTests`, and `CoreArchitectureDependencyContractTests` passed `96` tests with `0` failures and `0` skips. This closes the P0 receipt double-owner audit question; delayed Photos visibility and full physical-system interruption evidence remain TX-001 scope.
+
+## 2026-09-02 Build 100 — Queue Durable-Authority P0 Audit Closure
+
+- `BatchQueueStore` was re-audited as the main-actor presentation/coordination facade. Runtime admissions, cancellations, task events, recovery, and durable snapshots flow through `BatchQueueDurableLedger`; the facade projects actor-owned state to UI and coordinates execution/notification work.
+- The only direct `BatchQueuePersistence.persistJobs` use remains the explicitly bounded bootstrap adapter before the actor begins accepting runtime commands. Source contracts enforce that singular bootstrap boundary and reject non-actor runtime persistence paths, preventing a second durable writer.
+- Evidence: `CoreArchitectureDependencyContractTests`, `BatchQueueDurableLedgerTests`, and `BatchQueueStorePersistenceTests` passed `75` tests with `0` failures and `0` skips. This closes the P0 double-writer/double-state audit question; it does not replace TX-001 delayed-visibility or final physical Apple Photos evidence.
+
+## 2026-09-02 Build 100 — Reverse-Geocoding P1 Platform Audit
+
+- The recurring host-build `CLGeocoder` deprecation was traced to the injected `CoreLocationReverseGeocoder` implementation used only to enrich incomplete photo-location metadata. It is not a Renderer, configuration, Share, queue, or persistence dependency.
+- Local Xcode SDK inspection confirms `MKReverseGeocodingRequest` is available only from iOS/macOS 26, while MemoMark still supports iOS 18. Its result model is `MKMapItem`/`MKAddress`, which cannot be silently substituted for the current `CLPlacemark` mapping that preserves the existing mainland-China city/district normalization rules.
+- Decision: retain the established protocol-backed Core Location implementation for the current release/refactor. A future MapKit migration must be a separately specified dual-availability platform change with address-parity fixtures and physical location-output acceptance; the compiler warning is tracked as P1, not treated as a behavior-preserving refactor defect.
+
+## 2026-09-02 Build 100 — Share Snapshot Compatibility P0 Audit Closure
+
+- The revision-mismatch branch in `ShareCoordinator` was re-audited against RFC-002. It is not a second production configuration path: current-format requests use their validated canonical frozen snapshot, historical requests may use only their own frozen transport through `asLegacyTransportCompatibility()`, and neither branch borrows a configuration selected after Share handoff.
+- The durable configuration repository remains a reference validator and revision authority. A current/future invalid revision is rejected; a historical revision mismatch is accepted only when the request's own identity and production contract validate. The recovery diagnostic is retained so this exceptional path remains observable.
+- Evidence: `ProductionConfigurationContractTests` and `ShareDrainMigrationRegressionTests` passed `39` tests with `0` failures and `0` skips. This closes the P0 architecture-audit question of new/old production semantic mixing; it does not close TX-001 delayed-visibility or full Apple Photos certification evidence.
+
+## 2026-09-02 Build 100 — Canonical Production Transport Closure
+
+- Active production callers now use `ConfigurationSaveRequest`, `ConfigurationSaveReceipt`, `ResolvedAlbumSelection`, and `SavedConfigurationReadiness` directly. The former `V1*` spellings remain only as explicitly documented source-compatibility aliases for historical migration tests; they no longer participate in the Configuration coordinator, draft projection, or Share Extension production path.
+- The versioned `SavedOutputConfigurationSchemaV1` and `SubjectLibrarySchemaV1Record` remain deliberately versioned durable-schema boundaries. This closure does not change a stored key, App Group contract, snapshot value, export selection, or Share handoff behavior.
+- Evidence: `CoreArchitectureDependencyContractTests`, `ShareIntakeResponsibilitySplitTests`, and `V1ConfigurationApplyCoordinatorTests` passed `48` tests with `0` failures and `0` skips. Generic iOS Debug build passed without a new warning or error.
+
+## 2026-09-02 Build 100 — Retained Presentation Components Naming Closure
+
+- The still-compiled but currently unreferenced presentation components are now `PresetControls` (`PresetPicker`, `PresetOperationsMenu`) and `AccessoryEntrySection`. They were deliberately retained rather than deleted: source-directory and Apple-native product-surface contracts still include them, while a later dependency review determines whether they are eligible for removal.
+- This is naming and file-location closure only. Preset interaction, logo picker binding, subject-avatar asset display, asset optimization state, and all configuration/durable data behavior are unchanged.
+- Evidence: `MemoMarkSymbolCatalogContractTests` and `AppleNativeProductSurfaceContractTests` passed `39` tests with `0` failures and `0` skips. Generic iOS Debug build passed; only the existing macOS `CLGeocoder` deprecation was reported.
+
+## 2026-09-02 Build 100 — Welcome And Deletion Presentation Naming Closure
+
+- The active first-run configuration sheet and workflow guide are now `FirstRunConfigurationSheet` and `WorkflowGuideSurface`; the non-persistent deletion result is now `ConfigurationDeletionOutcome`. Their current Settings/Welcome callers and source contracts moved together, leaving no active references to the former stage-labelled names.
+- This is a presentation/coordinator naming closure only. First-run state, configuration deletion decision rules, the "save current configuration before delete" guard, persistence receipt semantics, and durable configuration records are unchanged.
+- Evidence: `HomeConfigurationActionContractTests` and `IPhoneResponsiveLayoutContractTests` passed `62` tests with `0` failures and `0` skips. Generic iOS Debug build passed; only the existing macOS `CLGeocoder` deprecation was reported.
+
+## 2026-09-02 Build 100 — Shared Divider Responsibility Naming Closure
+
+- The shared, accessibility-hidden visual separator is now `HorizontalDivider`. All active Configuration Center, Subject, Home, Task, Settings, Release Notes, and Memory Card callers moved together; no active `V1HorizontalDivider` reference remains.
+- The separator still uses the same `ConfigurationUI.faintHairline`, half-point height, horizontal inset, and hidden accessibility behavior. This migration changes neither page hierarchy nor configuration, editor, render, or persistence semantics.
+- Evidence: `ConfigurationOptionListContractTests` and `AppleNativeProductSurfaceContractTests` passed `59` tests with `0` failures and `0` skips. Generic iOS Debug build, `git diff --check`, and Codex governance checks passed. The recurring macOS `CLGeocoder` deprecation remains a separate platform-migration follow-up.
+
+## 2026-09-02 Build 100 — Grouped Surface Responsibility Naming Closure
+
+- The shared Configuration Center visual modifier is now `GroupedSurface`, exposed through `groupedSurface()`. The existing Subject editor, Settings disclosure, and Configuration Center summary callers moved together; no active `V1GroupedSurface` or `v1GroupedSurface()` reference remains.
+- This is a view-chrome naming migration only. Corner radius, background, clipping, hairline overlay, and the existing content hierarchy remain exactly as before; no configuration state, persistence, renderer, or editor interaction semantics changed.
+- Evidence: `AppleNativeProductSurfaceContractTests` passed `33` tests with `0` failures and `0` skips. The generic iOS Debug build passed; its sole reported compiler output is the pre-existing macOS `CLGeocoder` deprecation, outside this slice.
+
+## 2026-09-02 Build 100 — Module Library Presentation Naming Closure
+
+- The active inline memory-card module candidate surface is now `ModuleLibrarySurface`. Its single `MemoryCardRegionEditorCluster` caller, fixed-height reference, source-contract paths, and private grouping extension moved together; no active `V1ModuleLibrarySurface` reference remains.
+- The migration is presentation-only: the candidate module inventory, category/value projections, insertion callback, TextKit editor ownership, fixed-height geometry, accessibility label, and inline rather-than-sheet interaction contract are unchanged.
+- Evidence: `ConfigurationOptionListContractTests`, `IPhoneResponsiveLayoutContractTests`, and `V1DesignFreezePolishContractTests` passed `82` tests with `0` failures and `0` skips. The generic iOS Debug build passed without a new compiler warning or error.
+
+## 2026-09-02 Build 100 — Local Configuration Library Presentation Naming Closure
+
+- The active local configuration-library presentation group now uses `LocalConfigurationLibraryRow`, `LocalConfigurationLibraryPresenter`, `LocalConfigurationLibraryPresentationModifier`, and `LocalConfigurationLibrarySheet`. Production callers, source-contract paths, and the focused test suite moved together; there are no remaining active references to the former stage-labelled group.
+- This is a responsibility-name migration only. The portable-asset mapper, configuration-record shape, local backup receipt semantics, restore/delete behavior, selected subject/configuration identifiers, and durable persistence keys remain untouched.
+- Evidence: `LocalConfigurationLibraryPresenterTests` passed `10` tests with `0` failures and `0` skips. The generic iOS Debug build passed. The only compiler output was the pre-existing macOS `CLGeocoder` deprecation in `GeocoderService`, intentionally left outside this Configuration Center presentation slice.
+
+## 2026-09-02 Build 100 — Current Naming And Avatar-Crop Device Verification
+
+- The active Task presentation model now uses `TaskDisplayMode`, `TaskOverviewItemPresentation`, `TaskPipelineStepPresentation`, and `TaskPhotoLibraryLink`; the active Logo picker optimization seam is `LogoAssetSelectionCoordinator`; and the configuration/editor text projection seam is `MemoryWriteTextPresenter`. Their source files, production callers, and associated current tests moved together. No stored key, schema, App Group path, PhotoKit contract, queue state, Renderer input, or user-visible behavior changed.
+- The current iPhone avatar-crop surface exposes stable test-only accessibility identifiers for the avatar picker and crop canvas. The signed iPhone 17 Pro Max QA flow selected a QA-album image, entered the crop sheet, verified a visible square canvas, captured the device screenshot, and cancelled back to the Subject editor. It saved no avatar, altered no selected subject, and modified no source image or configuration. The visual artifact confirms that the crop circle is centered within a square image stage rather than the old vertically stretched stage.
+- Post-change evidence: 20 focused Logo tests, 13 Task-presentation tests, 13 memory-write/configuration-apply tests, 10 crop contract/geometry/accessibility tests, and the one-device crop UI run all passed. The complete `MemoMarkTests` suite passed with `1,732 passed`, `0 failed`, and `1 intentionally skipped`; the signed device build/test compiles the current iOS app. `git diff --check` and Codex governance checks passed.
+- The full suite reports two existing internal priority-inversion warnings from `FixtureExportReadbackTests`; this is a host-test diagnostic, not a product failure, and this pass introduced no new production warning. The existing macOS `CLGeocoder` deprecation remains out of scope for this behavior-preserving refactor.
+- This materially closes the reported avatar-crop geometry regression with current signed-device evidence. It does not replace the remaining deliberate manual checks for pinch/drag feel, accessibility VoiceOver traversal, large-text layout, long-press Live Photo playback, and the ordinary Share-sheet journey; production certification remains unclaimed.
+
+## 2026-09-02 Build 100 — Advanced-Modules Presentation Naming Closure
+
+- The current time-and-location advanced configuration sheet is now `AdvancedModulesSheet`; its active Configuration Center caller and source-contract paths moved together. This is presentation nomenclature only: its existing location/time bindings, Dynamic Type branch, compact/large detents, localized text, NavigationStack, and completion dismissal remain unchanged.
+- The affected `ConfigurationOptionListContractTests` and `AppleNativeProductSurfaceContractTests` executed `59 passed`, `0 failed`; the generic iOS Debug build succeeded with `0` warnings and `0` errors. `git diff --check` and governance checks remain clean. This does not constitute additional device acceptance because no visual behavior changed.
+
+## 2026-09-02 Build 100 — Signed iPhone 17 Pro Max Core Modernization QA
+
+- A current signed Debug `MemoMarkiOS` build was installed in place on the paired iPhone 17 Pro Max (`iOS 27.0`, `00008150-000A043136A1401C`) without uninstalling or clearing the existing container. The installed application reports `MemoMark 2.2.3 (100)` and launched successfully with the existing selected subject/avatar still present.
+- The signed `MemoMarkDeviceQA` run completed on that device with `15 passed`, `0 failed`, and `0 skipped`. It exercised host launch; Configuration Center reachability; Simplified Chinese → Japanese → Korean interface transitions and restoration; subject/time-anchor editor reachability; QA input/output Photo Library inventory; picker presentation and the dedicated input-album route; prepared JPEG, Live Photo, and RAW processing; static/Live Photo post-commit termination-and-restart idempotency; and Live Photo output read-back with original preservation.
+- The XCTest result contains four Xcode-reported internal priority-inversion runtime warnings and a separate CoreDevice diagnostic-collection warning. Neither is a failing MemoMark test or a user-visible product failure; retain them as Xcode/device diagnostic noise unless a reproducible app-level symptom or actionable backtrace emerges.
+- This is strong signed-device automated evidence for the refactored production chain and post-commit recovery. It does **not** certify manual visual/gesture acceptance: avatar crop drag/pinch/reselect, Dynamic Type layout, real VoiceOver traversal, Live Photo long-press playback, and an ordinary Share-sheet user journey still require their dedicated physical interaction checks. Production certification remains unclaimed.
+
+## 2026-09-02 Build 100 — Core Modernization Automated Validation Closure
+
+- The complete `MemoMarkTests` suite passed after the responsibility and naming migrations: 1,732 passed, 0 failed, and 1 intentionally skipped platform-dependent test. The result covers production Snapshot isolation, Share intake/drain, durable queue transitions and recovery, Live Photo routing/readback, metadata/export contracts, Renderer parity, settings composition, editor behavior, localization, and the source-level architecture contracts updated to follow their new owners.
+- The unsigned generic-iOS Debug build for `MemoMarkiOS` also passed. `git diff --check` and `scripts/validate_codex_governance.py .` passed. The only compiler warnings observed are existing platform deprecations (including `CLGeocoder` on macOS) and non-blocking historical test-source warnings; this checkpoint introduces no new production warning or failure.
+- This closes the automated portion of the current core-modernization pass. The later signed-device QA record above closes the corresponding automated device matrix, but it is not an Apple Photos visual or release certification. Remaining manual evidence is deliberately bounded to avatar crop, Settings at large text/VoiceOver, Live Photo long-press playback, and the ordinary Share-sheet user journey.
+
+## 2026-09-02 Build 100 — Diagnostics Share-Sheet Presentation Naming Closure
+
+- The current UIKit share-sheet wrapper is now `DiagnosticsShareSheet` at `DiagnosticsShareSheet.swift`. It only presents the existing file URL through `UIActivityViewController`; it does not own diagnostic generation, classification, redaction, storage, or Settings error state.
+- `SettingsPageSurface` retains diagnostic-export lifecycle and the file handoff. Generic iOS Debug build, `git diff --check`, and governance checks passed. No diagnostic payload, privacy boundary, external action, or durable state changed.
+
+## 2026-09-02 Build 100 — Release-Notes Presentation Naming Closure
+
+- The active in-app release-history presentation is now `ReleaseNotesSheet` at `ReleaseNotesSheet.swift`. It is a current Settings/About surface, not a V1 schema, migration, or durable compatibility owner. Settings now presents the renamed sheet without changing release content, bundle-derived version display, localization keys, audience boundaries, or App Store/TestFlight state.
+- Focused release-notes, Settings disclosure, and active-localization suites passed. Generic iOS Debug build, `git diff --check`, and governance checks passed. Historical release documents and test names remain historical evidence and were not rewritten as product-stage terminology.
+
+## 2026-09-02 Build 100 — Saved-Output Schema Compatibility Naming Closure
+
+- The historical output payload embedded in legacy presets is now explicitly `SavedOutputConfigurationSchemaV1`. Active Configuration Center state, session, persistence reconciliation, projection, and iOS runtime callers use that name; `V1SavedOutputConfiguration` remains only as a deprecated source-compatibility typealias for unfinished legacy callers and tests.
+- The `savedOutputConfiguration` coding key and its output-target, media-output-mode, existing-album identifier, and new-album name semantics are unchanged. This did not alter output selection, Live Photo policy, PhotoKit, queue Snapshot, export, or durable configuration behavior.
+- Focused `ConfigurationSessionConfigurationLifecycleTests`, `ConfigurationSessionLayerTests`, and `ConfigurationMigrationTests` passed. Generic iOS Debug build, `git diff --check`, and governance checks passed. This is not a persistent-format migration or final device acceptance.
+
+## 2026-09-02 Build 100 — Subject-Library Schema Compatibility Naming Closure
+
+- The historical Codable subject-library representation is now explicitly named `SubjectLibrarySchemaV1Record`; the minimal readiness decoder is `StoredSubjectLibrarySchemaV1Record`. Active Settings, repository, projection, aggregate-bridge, and batch-snapshot production callers now use the explicit schema name.
+- The existing `V1SubjectLibraryRecord` identifier remains only as a deprecated source-compatibility typealias for legacy callers and tests. No `CodingKeys`, JSON field names, `photomemo.v1.subjectLibrary` key, fallback order, defaults migration, UUID identity, or persisted byte format changed.
+- Focused `ConfigurationMigrationTests`, `SettingsPersistenceLayerTests`, and `BatchConfigurationSnapshotProviderDiagnosticsTests` passed; generic iOS Debug build, `git diff --check`, and governance checks passed. This is a compatibility naming closure, not a durable-format migration or production-certification claim.
+
+## 2026-09-02 Build 100 — Settings Interface-Preference Presentation Closure
+
+- `InterfacePreferencesContent` now owns only the appearance and interface-language control layout, localized display labels, Dynamic Type picker routing, and the derived disclosure summary. It receives root-built `Binding` values, resolved interface language, and an accessibility-size flag.
+- `SettingsPageSurface` remains the only owner of both `@AppStorage` values, their exact existing storage keys, raw-value decoding/defaulting, disclosure persistence, and all surrounding Settings presentation state. No UserDefaults key, preference value, output language, Snapshot, commerce, or media behavior changed.
+- The Settings root reduced from 888 to 737 lines. The focused `SettingsDisclosureContractTests` suite passed 15/15, and the unsigned generic-iOS Debug build passed. Final iPhone 17 Pro Max Settings interaction, Dynamic Type, VoiceOver, and localization acceptance remains pending in the unified device pass.
+
+## 2026-09-02 Build 100 — Settings Feedback Content Closure
+
+- `FeedbackSupportContent` now composes the feedback rows from page-resolved state and callbacks. `SettingsPageSurface` remains the sole owner of diagnostic-export concurrency and result/error state, TestFlight eligibility, mail/GitHub URL construction, disclosure persistence, and external navigation; the component owns no I/O, preference, commerce, queue, media, or persistence policy.
+- The Settings root reduced from 969 to 888 lines after removal of the now-dead local presentation helper. `SettingsDisclosureContractTests` passed 15/15 and the unsigned generic-iOS Debug build passed. Final iPhone 17 Pro Max interaction, Dynamic Type, VoiceOver, and localized visual acceptance remains pending in the unified device pass; no device data, Git state, or external release state was mutated.
+
+## 2026-09-02 Build 100 — Settings Community Content Closure
+
+- `CommunitySupportContent` now owns only the settled, read-only community contact presentation. `SettingsPageSurface` keeps the disclosure binding and all formal-feedback behavior: diagnostics generation, TestFlight conditional copy, mail/GitHub URL construction, and external navigation. Community content receives only the resolved interface language; it does not read preferences, commerce, queue state, persistent storage, or Photos APIs.
+- The Settings root reduced from 1,005 to 969 lines. The focused `SettingsDisclosureContractTests` suite passed with 15 tests, and the unsigned generic-iOS Debug build passed. This is automated structural evidence only; final physical Settings, Dynamic Type, VoiceOver, and localized visual acceptance remain pending in the unified device pass. No app data was cleared, and no commit, remote push, TestFlight upload, or App Store mutation occurred.
+
+## 2026-09-02 Build 100 — Settings Presentation Naming Closure
+
+- 设置页、表达方式说明、section emphasis 和可展开 section shell 已收口为 `SettingsPageSurface`、
+  `SettingsExpressionGuide`、`SettingsSectionEmphasis` 与 `SettingsDisclosureSection`，活动 production/test
+  调用和 source-path contract 均随之迁移；历史文档仍保留旧路径作为证据。
+- 这一步只纠正无 compatibility 含义的 stage-era 命名。interface-language/appearance 的现有 UserDefaults key、
+  commerce entitlement、诊断导出、邮件/GitHub 外跳、隐私说明、release notes、help sheet 与所有 settings action
+  语义均未改变；没有增加第二个 preference store 或更改 App Store/网络边界。
+- `MemoMarkTests build-for-testing` 与无签名通用 iOS Debug 构建通过，`git diff --check` 与 Codex governance
+  checks 通过。SettingsPageSurface 仍为 1,812 行，后续会按 section responsibility 继续拆分；其展开/收起、语言/外观、
+  commerce、diagnostics、帮助、Dynamic Type 与 VoiceOver 仍待 iPhone 17 Pro Max 统一人工验收。
+
+## 2026-09-02 Build 100 — Settings Disclosure Shell Extraction
+
+- 可展开 section 的统一标题、trailing value、Dynamic Type horizontal/vertical routing、VoiceOver 状态/提示、
+  reduced-motion animation 与 content transition 已从 Settings page 中独立为 `SettingsDisclosureSection`。
+  `SettingsPageSurface` 因而由 1,812 行降至 1,652 行；页面仍唯一持有八个展开状态、偏好 binding、commerce/diagnostics/
+  help action 以及相应的 presentation state。
+- `SettingsSectionEmphasis` 仅因跨文件被放宽至模块内部可见，仍是 Settings feature 的内部类型。此项没有修改 UserDefaults
+  key、语言/外观值、commerce entitlement、diagnostic export、外部跳转、localization、Renderer、Export、Share、PhotoKit
+  或任何 durable state。
+- 无签名通用 iOS Debug 与 `MemoMarkTests build-for-testing` 通过，`git diff --check` 与 Codex governance checks
+  通过。定向 `SettingsDisclosureContractTests` 在 Xcode 27 app-hosted runner 中 73 秒保持 0 CPU 且无测试事件，已只停止
+  无响应 runner，记录为 BLOCKED 而非通过/失败；最终 Settings 展开/收起、Dynamic Type 与 VoiceOver 仍待 iPhone 17 Pro Max
+  统一人工验收。
+
+## 2026-09-02 Build 100 — MemoMark+ Settings Card Responsibility Closure
+
+- Settings 中的 MemoMark+ 入口已由 `MemoMarkPlusSettingsCard` 独立呈现，使
+  `SettingsPageSurface` 从 1,652 行进一步降至 1,525 行。卡片只接收已经解析的
+  `isPlus`、状态文字、说明、辅助功能提示、界面语言与打开动作；它不读取 StoreKit、
+  免费额度、首批记录者日期、`UserDefaults` 或任何持久化状态。
+- 权益判定、TestFlight 临时体验、免费额度/首批记录者的状态语义仍唯一保留在 Settings
+  composition owner 和既有 `MemoMarkCommerceStore` 投影中。此次没有修改商业规则、购买/
+  恢复购买、原有 preference key、配置/任务 snapshot、PhotoKit、Renderer、Export、Share
+  或本地化 key。
+- 无签名通用 iOS Debug 构建和 `MemoMarkTests build-for-testing` 通过；定向
+  `SettingsDisclosureContractTests` 实际执行 15 passed、0 failed，覆盖 disclosure
+  状态所有权与新的 commerce 投影输入边界。`git diff --check` 与 Codex governance checks
+  通过。MemoMark+ 入口、Settings 展开/收起、Dynamic Type 与 VoiceOver 仍待 iPhone 17 Pro Max
+  最终统一人工验收。
+
+## 2026-09-02 Build 100 — Settings Support-Row Responsibility Closure
+
+- Settings 的帮助动作、隐私说明、只读信息、可选外跳和已安装版本行已收口为
+  `SettingsActionRow`、`SettingsPrivacyRow`、`SettingsInformationRow`、`SettingsLinkRow`
+  与 `SettingsVersionRow`，其内部 icon/content owner 保持文件私有。根页从 1,525 行降至
+  1,309 行；页面继续唯一拥有所有 sheet、alert、URL、诊断、语言、本地偏好及 action callback。
+- 这是纯 SwiftUI 展示边界迁移：行组件仅接收显示值和原有 action，不读取 `@AppStorage`、
+  StoreKit、PhotoKit、Renderer、Export、Share、队列、snapshot 或持久化。行的字体、颜色、
+  divider、chevron、Dynamic Type 固定尺寸和原有 `.buttonStyle(.plain)` 语义均保持。
+- 无签名通用 iOS Debug 构建与 `MemoMarkTests build-for-testing` 通过；定向
+  `SettingsDisclosureContractTests` 实际执行 15 passed、0 failed。随后，早期 component extraction
+  留下的 Apple-native source-contract owner 路径已同步到 `ConfigurationActionFooter`、
+  `ConfigurationOptionRowLayout`、`SettingsDisclosureSection` 与 Settings support-row family；
+  `AppleNativeProductSurfaceContractTests` 实际执行 33 passed、0 failed。`git diff --check` 与 Codex
+  governance checks 通过；最终 Settings 的真实交互、Dynamic Type 和 VoiceOver 仍待 iPhone 17 Pro Max
+  统一人工验收。
+
+## 2026-09-02 Build 100 — Settings Read-Only Assurance Content Closure
+
+- 照片处理说明与数据安全说明分别由 `PhotoProcessingSupportContent`、
+  `DataSafetySupportContent` 承担。前者只接收已解析的界面语言和 batch limit，后者只接收界面语言；两者均不拥有
+  PhotoKit 资源、EXIF/Live Photo 处理、商业规则、队列、snapshot、权限、偏好或持久化。
+- `SettingsPageSurface` 仍保留 disclosure/state/commerce owner，并由 1,309 行降至 1,193 行。文案、图标、行顺序、
+  divider、原图保护表述、本地处理表述和 Apple Photos 保存语义保持不变。
+- 无签名通用 iOS Debug 构建通过；`SettingsDisclosureContractTests` 实际执行 15 passed、0 failed；
+  `git diff --check` 与 Codex governance checks 通过。真实设备上的 Settings 展开、文本放大、VoiceOver 与视觉验收仍待
+  iPhone 17 Pro Max 统一执行。
+
+## 2026-09-02 Build 100 — Settings Guidance And About Content Closure
+
+- `GettingStartedSupportContent` 现在承载开始使用的叙事与四个入口行，使用明确闭包把关于、欢迎、流程和表达方式的
+  既有动作交回 `SettingsPageSurface`。`AboutSettingsContent` 与 `AboutMemoMarkNarrativeContent` 则分别承载 About
+  disclosure 的版本/更新日志内容和现有介绍 sheet 的纯叙事内容；release-notes 与所有 sheet state 仍由根页面唯一持有。
+- 本次没有修改欢迎偏好、导航、release notes、localization key、商业投影、诊断、照片/媒体/渲染/导出/Share 或持久化。
+  根页面从 1,193 行进一步缩至 1,005 行，剩余部分集中为 preference、commerce、diagnostics 和 presentation state。
+- 无签名通用 iOS Debug 构建通过；`SettingsDisclosureContractTests` 实际执行 15 passed、0 failed；
+  `git diff --check` 与 Codex governance checks 通过。最终设备交互、Dynamic Type 与 VoiceOver 验收仍待统一执行。
+
+## 2026-09-02 Build 100 — Task Presentation Naming Closure
+
+- 处理进展页面、按日期的历史分组与本地结果缩略图已分别收口为 `TaskPageSurface`、
+  `TaskHistoryGroup` 与 `TaskLocalThumbnail`，并更新所有活动生产调用与测试源码路径。历史文档刻意保留旧路径，
+  作为当时架构与发布证据，不进行追溯性重写。
+- 该页面及其投影现由 `TaskPagePresenter`、`TaskPagePresentation`、`TaskCurrentPresentation` 与
+  `TaskHistoryRowPresentation` 按职责命名；它们继续只读取既有 queue/background-task 数据，并将打开 Photo Library、
+  失败重试和键盘收起交还 composition root。没有修改 task 状态、partial failure、snapshot、队列持久化、PhotoKit、
+  Renderer、Export 或 Share 的所有权。
+- `MemoMarkTests build-for-testing` 与无签名通用 iOS Debug 构建通过，`git diff --check` 与 Codex governance
+  checks 通过；迁移后的 TaskPagePresenter 行为套件实际执行通过（9 passed、0 failed），覆盖 active snapshot、完成结果、
+  history filtering、unsupported state、interface language 与 Photo Library action。任务状态卡、pipeline disclosure、
+  历史列表、缩略图、Photo Library 跳转、Dynamic Type 与 VoiceOver 仍待 iPhone 17 Pro Max 最终统一人工验收。
+
+## 2026-09-02 Build 100 — Configuration Inspector And Action Footer Responsibility Closure
+
+- Configuration Center 的检查器输入与输出 binding 已收口为 `ConfigurationOptionList`、
+  `ConfigurationOutputBindings` 和 `ConfigurationPageSurface`；底部保存/更多操作/确认提示则从检查器中独立为
+  `ConfigurationActionFooter`。随后，普通字号横向/无障碍字号纵向的通用行布局又独立为
+  `ConfigurationOptionRowLayout`。这消除了已退休 stage 名称，并将原 1,493 行混合视图收为 1,047 行检查器、
+  194 行 action-footer 与 137 行行布局 owner，同时不建立新的 view model、session 或配置真相。
+- Footer 仍接收相同的 persistence status、saving 状态及 save/create/reset/delete 回调；其 material/reduced-
+  transparency surface、disabled/retry/saved 表达、reset/delete confirmation 和 accessibility 文案全部保留。
+  `ConfigurationOptionRowLayout` 继续使用相同的 Dynamic Type 临界值、最小 trailing 宽度、detail/chevron 语义和
+  interface-language fallback；Inspector 继续唯一持有 disclosure、output bindings、picker 与 advanced-module sheet；本项不改动
+  ConfigurationSession、持久化、snapshot、PhotoKit、Renderer、Export 或 Share。
+- `MemoMarkTests build-for-testing` 与无签名通用 iOS Debug 构建通过，`git diff --check` 与 Codex governance
+  checks 通过。ConfigurationOptionList 的定向 source-contract 运行在 Xcode 27 app-hosted runner 中 81 秒保持
+  0 CPU 且无测试事件，已仅停止该无响应 runner，不计为通过或失败；最终检查器/底部操作、Dynamic Type 与 VoiceOver
+  仍待 iPhone 17 Pro Max 统一人工验收。
+
+## 2026-09-02 Build 100 — Preset Coordinator Naming Closure
+
+- 非持久化的预设选择更新与既有的“删除当前预设后交由 subject library resolver 保存”辅助 owner 已收口为
+  `PresetSelectionCoordinator` / `PresetDeletionCoordinator`。选择 fallback UUID、未知／重复选择 no-op，以及删除后
+  的 selected-preset 回退语义均未改变。
+- 盘点确认这两个 owner 当前没有生产调用点；本片不把它们接入任何新路径，也不删除原有回归覆盖。删除 helper 仍直接
+  使用唯一的 `SubjectLibraryResolver.persist`，没有引入第二套配置库、snapshot 或保存 transaction。
+- `MemoMarkTests build-for-testing`、无签名通用 iOS Debug 构建、`git diff --check` 与 Codex governance checks
+  通过；PresetSelectionCoordinator 定向行为测试实际执行通过（3 passed、0 failed）。请求的
+  SubjectLibrarySupport suite 未被当前 macOS runner 枚举为可执行 suite，不计为测试通过。
+
+## 2026-09-02 Build 100 — Subject And Time-Anchor Presentation Naming Closure
+
+- 记忆对象概览、对象编辑 flow、锚点维护 section、锚点公式／当天答案 presenter、首页对象入口与头像展示、
+  对象切换的纯决策 policy 已收口为 `Subject...`、`TimeAnchor...` 及对应职责文件路径。它们继续以
+  `ConfigurationSession` 作为唯一 editing-session 真相，并保持“draft 编辑 → 显式完成 → durable save”的既有
+  顺序；没有引入第二份对象、锚点或配置状态。
+- `V1SubjectLibraryRecord`、`StoredV1SubjectLibraryRecord`、其 Codable 读写、App Group / Settings 兼容路径和
+  原有 raw key 均特意保留。本片不改变对象 UUID、anchor 日期／calendar 语义、active anchor 选择、保存／删除
+  事务、PhotoKit、Renderer、Export、Share 或 production snapshot。
+- `MemoMarkTests build-for-testing` 与无签名通用 iOS Debug 构建通过；TimeAnchorEntry、TimeAnchorToday 与
+  SubjectSelectionMutation 的定向行为测试实际执行通过（13 passed、0 failed），覆盖当天／未来／生日的时间答案，
+  以及对象切换的 dirty、preview refresh 与 bootstrap 抑制语义。对象概览整组含 source-path contract，在 Xcode 27
+  app-hosted runner 中超过 85 秒保持 0 CPU，已仅终止该无响应 runner，不计为通过或失败。`git diff --check` 与
+  Codex governance checks 通过；对象切换、对象编辑、锚点增删、Dynamic Type、VoiceOver 与头像展示仍待
+  iPhone 17 Pro Max 最终统一人工验收。
+- 同一对象首页摘要投影也已收口为 `SubjectHomeSummary...`；它只读取 Home subject projection 与当前保存状态，
+  不写入配置。其定向行为测试实际执行通过（3 passed、0 failed），且随后测试宿主与无签名通用 iOS Debug 构建再次通过。
+
+## 2026-09-02 Build 100 — Home Presentation Naming Closure
+
+- Home 主入口的 page surface、feedback section、card primitives、subject/output/preset projection、任务 activity
+  projection/presenter、quick actions 与 recent processing content 已收口为 `Home…` 职责名称及对应文件路径。
+  该族只消费 Configuration Center、`MemoMarkCommerceStore` entitlement 与 background task 的既有投影；不会建立
+  第二份配置、商业或队列真值。
+- Home 的 Apple Photos 引导偏好 key、当前配置选择／删除／备份回调、`hasVerifiedPlusEntitlement` 商业投影、
+  任务队列摘要、各语言 fallback、compact/Dynamic Type 分支及所有 user action 均保持不变。本片没有改动
+  ConfigurationSession、StoreKit、PhotoKit、Renderer、Export、Share 或 durable configuration。
+- `MemoMarkTests build-for-testing` 与无签名通用 iOS Debug 构建通过；HomeProjection、HomeQuickActions、
+  HomeRecentProcessingPresenter 三组纯行为定向执行通过（20 passed、0 failed）。`git diff --check` 和 Codex
+  governance checks 通过。Home 的实际导航、Commerce badge、Apple Photos 入口、Dynamic Type 与 VoiceOver
+  仍待 iPhone 17 Pro Max 最终统一人工验收。
+
+## 2026-09-02 Build 100 — Entry And Welcome Naming Closure
+
+- 启动与配置中心导航的非持久化状态已由 `EntryPresentation`、`EntryTab`、`EntryFlowState`、
+  `EntryWelcomeFlowUpdate`、`EntryFlowCoordinator` 和对应 navigation surface/sidebar 承担；欢迎页、欢迎/设置
+  presentation modifier 及内部呈现组件已收口为 `Welcome...`。`hasSeenWelcome` 的现有偏好语义、首配 sheet、
+  workflow guide、紧凑/常规布局路由和处理后跳转任务页的状态转换没有改变。
+- 该 slice 不拥有 ConfigurationSession、配置持久化、snapshot、Picker 导入、队列、Renderer 或照片资源，只移除
+  无兼容语义的 stage-era 名称和文件路径；First Run 配置与现有 Settings/Subject surface 仍经原来的 entry flow
+  组合。
+- `MemoMarkTests build-for-testing` 与无签名通用 iOS Debug 构建通过；`git diff --check` 和 Codex governance
+  checks 通过；EntryFlowCoordinator、WelcomeFlowCoordinator 与 WelcomePresentation 的定向行为测试实际执行通过
+  （16 passed、0 failed）。欢迎、首次配置、旋转后的 compact routing 和动态类型仍待最终 iPhone 17 Pro Max
+  统一人工验收。
+
+## 2026-09-02 Build 100 — Root Transient-State Naming Closure
+
+- Configuration Center 的唯一 composition root 保持为 `MemoMarkConfigurationCenterView`：它继续唯一持有
+  `ConfigurationSession`、editor/output draft 与 transient presentation state；没有引入 ViewModel、第二份
+  aggregate 或 umbrella coordinator。早期约 3,350 行根实现目前已按 Pages、Actions、Bindings、Editor、Lifecycle、
+  Runtime 拆为独立 extension，主声明为 1,016 行 wiring/state surface。
+- Root-local 非兼容命名已收口为 `RootPresentationState`、`RootLifecycleState`、
+  `RootConfigurationProjectionState`、`RootChangeObservationModifier` 以及
+  `MediaPickerPresentationState`、`ConfigurationRenamePresentationState`、
+  `ConfigurationSwitchPresentationState`、`LocalConfigurationLibraryPresentationState`。这只是 transient
+  state/observation 文件与符号迁移；十一个 callback、保存抑制条件、picker、async entry、dirty 标记和 session
+  projection 顺序均未改变。
+- `MemoMarkTests build-for-testing` 与无签名通用 iOS Debug 构建通过。`git diff --check` 和 Codex governance
+  checks 通过；仍不把编译证据等同于 iPhone 17 Pro Max 上的配置切换、picker、保存或辅助功能验收。
+
+## 2026-09-02 Build 100 — Memory Card Editor Naming Closure
+
+- Card Content Editor 的纯内存草稿、四区域 transient interaction state、TextKit command/session、输入 line-box
+  metrics、UIKit attachment/capsule support 与 editor overlay/page/cluster 已统一迁移为 `MemoryCardEditor...`、
+  `MemoryCardTextKit...` 与 `MemoryCardRegionEditor...` 职责名称。它们没有 durable schema、wire payload 或
+  migration 语义；clipboard 的 schema version 和 pasteboard type 保持不变。
+- 此项为命名和文件归属收口，未改变 canonical 40pt/28pt line-box、ordinary-text half-leading、attachment
+  baseline isolation、UIKit 单一 caret、IME marked-text 延迟 normalization、undo/redo、四区域 command bus、
+  inline module insertion、overlay-local pull dismissal 或现有 draft → preview → configuration projection。
+  `ConfigurationSession`、持久化 key、Renderer、Layout Engine、PhotoKit、Share 与批处理路径均未进入本片。
+- 头像裁剪的只读复核确认：`SubjectAvatarCropSheet` 已由方形 canvas、独立的 crop geometry、clamped offset 和
+  request/subject identity gate 共同约束；没有发现应以猜测方式再改算法的证据，因此保留既有待真机复验的修正。
+- `MemoMarkTests` 已成功 `build-for-testing`，`MemoMarkiOS` 无签名通用 iOS Debug 构建通过；`git diff --check`
+  与 Codex governance checks 通过。定向三组契约测试在 Xcode 27 app-hosted runner 中超过 75 秒保持 0 CPU
+  且没有测试事件，已仅终止该无响应 runner，不计为通过或失败。最终 iPhone 17 Pro Max 的 CJK/IME、模块边界、
+  undo/redo、Dynamic Type 与头像拖动/缩放人工验收仍待统一设备回归。
+
+## 2026-09-02 Build 100 — Configuration Center Presentation And Preview Naming Closure
+
+- 活动 iOS 通用组件目录已由 `V1IOSViewSupportComponents.swift` 迁移为
+  `ConfigurationCenterViewSupportComponents.swift`。其中 18 个无 schema、wire、持久化或历史兼容语义的
+  `V1` presentation type 已改为职责名称，例如 `ConfigurationPageHeader`、
+  `ConfigurationCompactSectionRow`、`ConfigurationCardSurface`、
+  `ConfigurationTitledSectionCard` 与 `ConfigurationCardHeaderIconButton`；全部活动调用点与源契约同步迁移。
+- 此项严格是编译期命名和文件归属收口：没有改变页面/card/panel chrome、Dynamic Type 分支、最小交互尺寸、
+  accessibility label/hint、TextKit 输入几何、ConfigurationSession、媒体、队列、Renderer 或任何 durable key。
+  历史审计、发布记录和旧计划中的路径引用保持原样，未被重写成当前路径。
+- 同一责任域中的 `V1PreviewCard` 也已更名并迁移为 `MemoryCardPreviewSurface.swift`。它仍仅由预览 section
+  组合，继续以同一 `MinimalRenderer.Layout` 和既有 Memory Card preview 内容工作；Production card build 仍只经
+  `BuildRecordCardTransaction` 进入 Renderer/Export，未引入 Preview → Production 依赖。
+- Preview composition 的其余活动内存投影也已完整收口为 `MemoryCardPreviewCompositionEngine`、
+  `MemoryCardPreviewCompositionContext`、`MemoryCardPreviewDraft`、`MemoryCardPreviewRenderModel`、
+  `MemoryCardPreviewDraftItem`、`MemoryCardPreviewSection`、`PreviewSyncCoordinator` 及其对应的 preview Intent。
+  该族没有 schema、持久化、Renderer 或生产任务所有权；独立的 editor-draft / TextKit family 已在后续受控片中
+  迁移，因此没有把编辑几何或草稿 mutation 混入 preview migration。
+- `MemoMark` macOS Debug 与 `MemoMarkiOS` 无签名通用 iOS Debug 构建均已产出 app；`MemoMarkTests`
+  已在最终 preview composition rename 后再次成功 `build-for-testing`，覆盖迁移后的测试源码。预览投影、draft adapter
+  与 sync coordinator 的 focused 行为套件同样在 Xcode 27 app-hosted runner 中持续 75 秒以上为 0 CPU；此 runner
+  阻塞不只发生在 `#filePath` source-contract suite，已终止无响应 runner，
+  不计为通过或失败。`git diff --check`、Codex governance checks 和旧 symbol 零命中检查通过。最终 iPhone 17
+  Pro Max 的页面、Dynamic Type 与辅助功能人工验收仍待统一设备回归。
+
+## 2026-09-02 Build 100 — Photo Intake Naming Closure
+
+- iOS picker intake 的非持久化 owner 已收口为 `PhotoIntakeURLResolver`、
+  `PhotoProcessingQuickActionCoordinator`、`PhotoIntakeUnsupportedMessagePresenter`、
+  `PickedPhotoFileRepresentation`、`PhotoIntakeImporter` 与 `UIKitPhotoPicker`。它们继续分别承担临时
+  URL/文件副本、保存配置后提交、输入策略错误提示、Transferable file representation、PhotosPicker/PHPicker
+  导入以及 UIKit picker presentation；没有建立第二个 queue、configuration 或媒体事实 owner。
+- 行为契约保持不变：picker file representation 优先于 data representation；所有 provider 临时资源先复制至
+  MemoMark 拥有的临时目录；只有目录内真实文件可由过期请求清理；支持类型与 Live Photo 识别仍委托既有
+  `PhotoProcessingInputPolicy`/PhotoKit lookup；当前配置 snapshot 在异步导入前冻结，过期或取消请求不能提交，
+  Share Extension 仍是独立 bounded intake boundary。
+- 红测先迁移正式类型后，预期得到 22 项新符号未定义及连带类型推断错误；生产和全部测试调用迁移后，
+  picker/file-first contract、snapshot、runtime cancellation、入口路由与 dependency contract 定向回归通过
+  （67 passed、0 failed）。`MemoMarkiOS` 无签名通用 iOS Debug 构建已产出 app，`git diff --check` 与
+  Codex governance checks 通过；随后的完整宿主 `MemoMarkTests` 检查点通过（1729 passed、0 failed、
+  1 skipped；7 个动态参数测试共 40 次运行）。仍只有既有 `FixtureExportReadbackTests.swift` 的两条 QoS
+  inversion warning。此项没有声称 iCloud 下载、limited-library、真实 Live Photo pair 或 Apple Photos Share
+  的物理设备验收，后者仍待最终 iPhone 17 Pro Max 回归。
+
+## 2026-09-02 Build 100 — Local Configuration Library Runtime Naming Closure
+
+- 本地配置库的 root-runtime 边界已由 `LocalConfigurationLibraryRuntimeSnapshot` 与
+  `LocalConfigurationLibraryRuntimeCoordinator` 承担。它仍通过单一 snapshot 闭包读取当前 aggregate、
+  subject/preset 选择、dirty/saving 状态、可用相册与 logo asset；presentation state 只保留备份列表、
+  working flag 和状态文案，不成为第二份 configuration truth。
+- 备份、恢复和删除仍委托给 `ConfigurationBackupRestoreCoordinator`；当前配置先保存再备份、restore 后按
+  `makeCurrent` 决定是否应用、asset URL 收集、原子写失败回退、并发恢复防护和 blocking feedback 语义未变。
+  本项没有改变 local backup 格式、`ConfigurationLibraryRecord`、相册标识、照片、Renderer 或导出路径。
+- 该 coordinator 原本没有独立的名称测试，因而以其实际 delegated durable-contract 测试作为行为检查：
+  Configuration Backup Restore、Local Configuration Library Repository 与本地库 presenter 共通过
+  44 项（0 failed）。`MemoMarkiOS` 无签名通用 iOS Debug 构建已产出 app，`git diff --check` 和 Codex
+  governance checks 通过；随后的完整宿主 `MemoMarkTests` 检查点也通过（1729 passed、0 failed、1 skipped；
+  7 个动态参数测试共 40 次运行）。仍只有既有 `FixtureExportReadbackTests.swift` 的两条 QoS inversion warning；
+  最终 iPhone 17 Pro Max 的备份/恢复/设为当前配置人工验收仍待统一执行。
+
+## 2026-09-02 Build 100 — Draft Mutation And Bridge Naming Closure
+
+- 编辑草稿的纯内存模型已由 `DraftMutationItem`、`DraftMutationDraft`、
+  `DraftMutationCoordinator` 与 `DraftBridge` 承担，替代无 schema 含义的 stage-era 名称。该组只在
+  TextKit/editor draft、preview draft 和 `DraftOrchestrationCoordinator` 之间进行显式投影；不写入
+  durable payload、不拥有 TextKit 几何、Renderer、Layout 或照片资源。
+- 原有编辑语义保持不变：纯空白输入不插入 item、连续 trailing 空文本归一化、模块插入沿当前文字 item
+  锚定、删除前一模块后的活跃 text item 保留、任何 mutation 将对应 region 标为 dirty，预览只刷新 dirty
+  region。`V1EditorDraft`、`V1PreviewDraft` 与 TextKit attachment 暂保留在各自仍需审计的独立责任域中，
+  未发生数据格式迁移。
+- 红测先把三组 draft 行为测试切至正式类型，预期出现 74 项新符号及其连带类型推断错误；生产组合点和全部
+  测试调用迁移后，草稿 mutation、bridge、orchestration、bootstrap、ConfigurationModuleCompatibility 与
+  ConfigurationSession lifecycle 定向回归通过（64 passed、0 failed）。`MemoMarkiOS` 无签名通用 iOS
+  Debug 构建已产出 app，`git diff --check` 与 Codex governance checks 通过；最终 TextKit 编辑/预览的
+  iPhone 17 Pro Max 人工验收仍待统一设备回归。
+
+## 2026-09-02 Build 100 — Subject Library Factory Naming Closure
+
+- `V1SubjectLibraryFactory` 已收口为 `SubjectLibraryFactory`。它继续只构造首次欢迎流程所需的用户命名
+  subject，以及对象库空缺时的默认 subject；生日、百天与重要日子的三组时间锚点、默认名称、anchor type、
+  expression style 与 fallback 计算均保持不变。
+- 该 factory 不读取或写入 durable library，不持有 `V1SubjectLibraryRecord` schema、配置 snapshot、Renderer
+  或照片资源。欢迎流程仍由 lifecycle composition 调用同一 factory，随后通过原有 session/configuration
+  persistence 链保存，未建立旁路对象创建路径。
+- 测试先改用正式 factory 后，红测如预期报告 2 项新符号未定义及随后的类型推断错误；生产声明和调用方迁移后，
+  First Run Configuration Factory 与 Subject Library Support 定向回归通过（15 passed、0 failed）。`MemoMarkiOS`
+  无签名通用 iOS Debug 构建已产出 app；随后的完整宿主 `MemoMarkTests` 检查点通过（1729 passed、0 failed、
+  1 skipped；7 个动态参数测试共 40 次运行）。仍只有既有 `FixtureExportReadbackTests.swift` 的两条 QoS inversion
+  warning；最终 iPhone 17 Pro Max 首次配置人工验收仍待统一回归。
+
+## 2026-09-02 Build 100 — Subject Library Resolver Naming Closure
+
+- `V1SubjectLibraryResolver` 已收口为 `SubjectLibraryResolver`。它继续是对象库的纯解析与保存前组合
+  边界：启动时按已选对象或 fallback 决定 active subject、移除历史 `Kyoto Spring` 演示对象、将当前
+  选择合并进待保存 library，并且只经既有 `ConfigurationCoordinator.saveSubjectLibrary(...)` 写入。
+- `V1SubjectLibraryRecord` 明确保留：它表示现有持久化对象库 payload 的 schema 兼容边界，而非可随意
+  清理的 stage-era 源码名称。本项未改变对象 UUID、默认对象、选择 fallback、preset selection、持久化
+  revision、照片、Renderer 或导出语义。
+- 测试先改用正式 resolver 后，定向构建如预期仅报告 2 项新符号未定义错误；生产声明及所有调用方迁移后，
+  Subject Library Support 与 Configuration Apply Request Builder 定向回归通过（13 passed、0 failed）。
+  `MemoMarkiOS` 无签名通用 iOS Debug 构建已产出 app，`git diff --check` 与 Codex governance checks
+  通过。对象启动恢复、历史对象清理与保存后的选择保持仍待最终 iPhone 17 Pro Max 人工验收。
+
+## 2026-09-02 Build 100 — Subject Flow Naming Closure
+
+- Subject Flow 的非 schema presentation / orchestration owner 已收口为 `SubjectFlowEvent`、
+  `SubjectFlowPatch`、`SubjectLibraryRecoveryReceipt`、`SubjectLibraryPersistenceCoordinator`、
+  `SubjectLibraryRecoveryCoordinator` 与 `SubjectOverviewActionCoordinator`。它们继续由 Configuration
+  Center action/presentation 边界组合，ConfigurationSession 仍为 live subject/configuration 真值。
+- 本项明确保留 `V1SubjectLibraryRecord`：它是已存储 library payload 的真实兼容 schema，不是临时源码
+  名称。对象选择、时间锚点激活、默认对象创建、损坏库恢复和 active configuration selection 的逻辑仍使用
+  原有 `ConfigurationCoordinator` 持久化出口；损坏输入依旧保留 raw payload 后才写入可恢复库。
+- 先将该族测试切换到正式 owner，得到预期 14 项“新类型不在 scope”编译错误；生产声明与所有组合点迁移后，
+  Subject Library 支持回归通过（13 passed、0 failed）。本项未改变 UUID/revision、ConfigurationLibraryRecord、
+  preset payload、照片、Renderer 或导出语义。
+- `MemoMarkiOS` 无签名通用 iOS Debug 构建已产出 app，`git diff --check` 与 Codex governance checks
+  通过；对象选择、锚点与损坏库恢复的 iPhone 17 Pro Max 人工验收仍待最终统一设备回归。
+
+## 2026-09-02 Build 100 — Subject Library Mutation Naming Closure
+
+- `V1SubjectLibraryMutationCoordinator` 已收口为 `SubjectLibraryMutationCoordinator`。它仍只在
+  `ConfigurationSession` 上应用选择对象、激活锚点、添加默认对象与删除当前对象四类 mutation；不持有
+  durable library、原始 payload、Renderer 或照片资源。
+- 测试先迁移到正式名称后按预期得到 3 项“新 coordinator 不在 scope”的编译错误；生产调用方同步迁移后，
+  Subject Library 支持回归通过（13 passed、0 failed）。对象 ID、锚点 fallback、preset 语义与保存出口
+  均未改变。
+- `MemoMarkiOS` 无签名通用 iOS Debug 构建已产出 app，`git diff --check` 与 Codex governance checks
+  通过。该切片与紧邻 Subject Flow 收口将在下一次完整宿主回归中统一覆盖；设备端对象选择/锚点操作仍待
+  最终 iPhone 17 Pro Max 验收。
+- 随后的完整宿主 `MemoMarkTests` 检查点通过（1729 passed、0 failed、1 skipped；7 个动态参数测试共
+  40 次运行）。仍只有既有 `FixtureExportReadbackTests.swift` 的两条 QoS inversion warning；本项不构成
+  TX-001/BP-001 或物理设备上的 production certification。
+
+## 2026-09-02 Build 100 — Welcome Flow Naming Closure
+
+- 启动恢复与入口导航共同依赖的欢迎展示 state 和 reducer 已收口为 `WelcomeFlowState` 与
+  `WelcomeFlowCoordinator`。它们仍仅表达 `hasSeenWelcome`、欢迎页与流程指南三种展示状态；首次进入、
+  从欢迎页查看流程、开始使用后关闭所有 onboarding sheet 的既有状态转移未变。
+- 迁移前将相关主流程测试切换到正式类型名，编译器如预期报告 13 项“新 owner 不在 scope”错误；生产 owner
+  与 Bootstrap Flow、Bootstrap Runtime、Entry Flow、根 lifecycle composition 同步迁移后，欢迎流及其
+  启动恢复回归通过（14 passed、0 failed）。没有改变 `hasSeenWelcome` 的已有持久化责任、配置数据、
+  Photos 生命周期或输出语义。
+- `MemoMarkiOS` 无签名通用 iOS Debug 构建已产出 app；随后完整宿主 `MemoMarkTests` 检查点通过
+  （1729 passed、0 failed、1 skipped；7 个动态参数测试共 40 次运行）。仍只报告两条既有
+  `FixtureExportReadbackTests.swift` QoS inversion warning；本项不替代 iPhone 17 Pro Max 的欢迎与入口
+  人工验收。
+
+## 2026-09-02 Build 100 — Module Panel And Disclosure-State Naming Closure
+
+- 编辑器模块面板的纯状态 reducer 已由 `ModulePanelCoordinator` 承担，替代无 schema 含义的
+  `V1ModulePanelCoordinator`。根 Configuration Center 仍只组合 `State`；聚焦、显示、关闭与模块插入
+  后的状态转换保持原顺序。该 coordinator 不持有 TextKit session、草稿、Renderer 或持久化真相，模块
+  使用次数仍只经 `ModuleUsageTracker` 操作既有 JSON 表示。
+- Configuration Center 的展示偏好 state 已收口为 `MemorySourceDisclosureState`、
+  `MemoryExpressionDisclosureState` 与 `ConfigurationDisclosureState`。所有
+  `photomemo.v1.configurationCenter.*Expanded` key、首次默认展开、对象切换时重新展开 memory source、
+  以及只保存 presentation preference 而不写入 configuration data 的边界均保持不变；`V1` 只保留在
+  真实的兼容 key 中。
+- Module panel 红测如预期因正式符号尚未存在而无法编译，迁移后 panel reducer 定向回归通过
+  （5 passed、0 failed）。三组 disclosure state 回归通过（10 passed、0 failed），受影响的
+  Configuration Option List source contract 通过（1 passed、0 failed）。中间一次含错误 suite filter 的
+  Xcode 测试宿主没有选中实际测试且被终止，未计入验证结论；随后已用正式 suite identifier 重跑。
+- `MemoMarkiOS` 无签名通用 iOS Debug 构建已产出 app，`git diff --check` 与 Codex governance checks
+  通过。本项尚不替代 iPhone 17 Pro Max 上配置分段、模块插入与对象编辑的人工验收。
+
+## 2026-09-02 Build 100 — Module Library Naming Closure
+
+- 编辑器模块库的展示与使用统计 owner 已分别收口为 `ModuleLibraryPresenter` 与
+  `ModuleUsageTracker`。前者仍只提供 memory-card region 的默认模块、分类标题、使用量排序入口与
+  sheet active-region 解析；后者仍只将调用方提供的 JSON 映射解析为使用次数、按次数稳定排序并写回
+  更新后的 JSON 字符串。TextKit session、草稿状态、Renderer、memory result 与持久化 coordinator
+  均未迁入这两个 owner。
+- 实际的兼容边界保持字节语义不变：根视图的
+  `photomemo.v1.moduleUsageCounts` AppStorage key、`IOSInsertableModule.rawValue`、
+  `[String: Int]` JSON 表示、默认顺序、相同次数的稳定排序以及损坏 JSON 从空计数开始的回退均未改动。
+  旧 `V1ModuleUsageTracker` 名称不代表 schema，因而作为无效源码责任名移除。
+- presenter 红测如预期因新符号尚未存在失败，迁移后通过（4 passed、0 failed）；usage tracker 红测同样
+  如预期失败。首次绿色编译发现一个遗留测试调用点，确认只是旧符号漏改并立即补齐；重试后的 usage、
+  presenter 与 panel coordinator 回归通过（12 passed、0 failed），`git diff --check` 通过。
+- 随后的完整宿主 `MemoMarkTests` 检查点通过（1729 passed、0 failed、1 skipped；7 个动态参数测试共
+  40 次运行），`MemoMarkiOS` 无签名通用 iOS Debug 构建产出 app，Codex governance checks 通过。宿主
+  仍仅报告两条既有 `FixtureExportReadbackTests.swift` QoS inversion warning；本项没有触碰 TextKit
+  编辑会话、模块插入语义或 iPhone 17 Pro Max 的人工交互验收边界。
+
+## 2026-09-02 Build 100 — Bootstrap Adapter And Settings Guide Naming Closure
+
+- `SettingsService` 中没有 production caller 的 `V1ConfigurationBootstrapReadState` alias 与
+  `loadV1BootstrapReadState()` 转发入口已移除；正式的
+  `ConfigurationBootstrapReadState` 与 `loadConfigurationBootstrapReadState()` 仍是唯一读取入口。
+  原有 SettingsService 测试已迁移为直接覆盖正式读取行为，继续验证 typed badge decoding failure、编辑器
+  状态、已保存 subject 与 configuration library startup recovery；未修改 store key、payload、恢复顺序或
+  ConfigurationLibrary 的 durable semantics。
+- Settings 帮助中的表达指南已由 `SettingsExpressionGuide` 承担，Settings 页 sheet 调用与私有扩展同步
+  迁移。guide 的锚点枚举、公式展示、展开状态、静态文案和全部 localization key 未变。迁移中发现原有
+  source contract 仅用新名字子串匹配，会被 `V1SettingsExpressionGuide` 假阳性满足；现已补充对旧调用点
+  的显式负向断言，先得到预期 2 项失败，再在迁移后通过。
+- Bootstrap adapter 的 core/SettingsService/persistence 组合回归通过（49 passed、0 failed），Settings
+  expression guide 回归通过（5 passed、0 failed），`git diff --check` 通过。本项仅收口非持久化源码
+  adapter 与帮助界面 identity，不替代 iPhone 17 Pro Max 的 Configuration Center/设置页人工验收。
+
+## 2026-09-02 Build 100 — Configuration Output Surface Naming Closure
+
+- Configuration Center 的独立输出页面已由 `ConfigurationOutputPageSurface` 承担；页面内的
+  `OutputSaveConfigurationButton`、`OutputSaveButtonStyle`、
+  `OutputPhotoDescriptionSection`、`OutputPhotoDescriptionContent`、
+  `OutputRetentionLabel`、`OutputDestinationSection` 与
+  `OutputDestinationContent` 均已去除 stage-era 名称。配置选项页与独立输出页仍共用相同的照片说明、
+  保存位置内容 owner，未引入第二套 UI/状态实现。
+- 本项只整理 SwiftUI presentation identity：`ConfigurationOutputTarget`、`MemoryWriteOptionPresenter`、
+  localization keys、Dynamic Type/Reduce Motion/VoiceOver 分支、相册 reload callback、保存按钮状态以及
+  配置 dirty/save action 均保持原逻辑；页面不直接创建 PhotoKit、相册写入或保存 receipt transaction。
+- 名称迁移前，现有 source contract 对新“照片说明 section”名称如预期失败（29 passed、1 failed）；
+  完整输出页面族迁移后，选项边界、设计冻结、Apple-native surface 与系统交互定向回归通过
+  （70 passed、0 failed），`git diff --check` 通过。原历史文件路径暂保留为迁移追溯路径。
+- 随后的完整宿主 `MemoMarkTests` 检查点通过（1728 passed、0 failed、1 skipped；7 个测试带
+  40 次动态参数执行），`MemoMarkiOS` 无签名通用 iOS Debug 构建产出 app，Codex governance checks
+  通过。宿主仍仅报告两条既有 `FixtureExportReadbackTests.swift` QoS inversion warning；该结构验证
+  不替代 iPhone 17 Pro Max 上的输出相册、照片说明、Share 或 Apple Photos 人工验收。
+
+## 2026-09-02 Build 100 — Configuration Selection Persistence Naming Closure
+
+- 根 Configuration Center 实际调用的选择持久化子链已从 stage-era 名称收口为
+  `ConfigurationSelectionPersistencePatch`、
+  `ConfigurationSelectionPersistenceResult` 与
+  `ConfigurationSelectionPersistenceCoordinator`。该 coordinator 仍只提交已有的
+  `ConfigurationLibraryRecord`，以 durable receipt 的 revision 回写未变化的选择快照；没有
+  创建第二份 configuration truth，也没有改变 subject/configuration identity 的防覆盖检查。
+- 迁移前先将既有行为测试改为正式类型名，定向构建如预期因新符号尚未存在而失败；生产声明与 root
+  composition point 迁移后，定向回归通过（2 passed、0 failed），`git diff --check` 通过。原有
+  `ConfigurationLibrarySaveReceipt`、保存失败中文提示以及 `photomemo.v1.*` compatibility keys
+  均未变动。
+- 本项为源码职责命名收口，不替代 Configuration Center 的 iPhone 17 Pro Max 持久化交互验收，也不
+  改变 TX-001、BP-001、Share、PhotoKit、Renderer 或 Apple Photos 的生产证据状态。
+
+## 2026-09-02 Build 100 — Output Draft And Album-Load Naming Closure
+
+- 活跃输出草稿与相册加载 request identity 已由 `OutputDraftState` 和
+  `OutputAlbumLoadContext` 承担，替代原 stage-era 类型名。根配置中心、相册加载 presenter、
+  runtime 以及对应测试均迁移为正式词汇；PhotoKit 写入、输出相册选择 transaction、保存/恢复语义
+  和 durable output configuration 未改变。
+- 首次定向构建发现一个测试调用点遗漏，导致编译器报告旧类型不在 scope；已立即补齐并使用新的
+  isolated DerivedData 重跑。重试通过（6 passed、0 failed），`git diff --check` 通过。该记录
+  保留失败原因，避免把构建时序中的编译取消误报为产品输出故障。
+
+## 2026-09-02 Build 100 — Configuration Center Naming Family Checkpoint
+
+- Task 7.3 已完成两个可独立验证的功能子链：三个 root-local state container 的 stage-era
+  typealias 已移除，正式 owner 仍为 `RootPresentationState`、`RootLifecycleState` 与
+  `RootConfigurationProjectionState`；启动恢复链已迁移为 `ConfigurationBootstrap*` 与
+  `ConfigurationDraftBootstrapCoordinator`。两项均不增加 ViewModel、全局 state 或第二份
+  configuration/draft truth。
+- Root-state 定向契约通过（42 passed、0 failed）；bootstrap、草稿恢复、patch 应用及
+  ConfigurationSession lifecycle 回归通过（47 passed、0 failed）。随后完整宿主
+  `MemoMarkTests` 通过（1728 passed、0 failed、1 skipped；动态参数共 1761 次执行）。
+  `git diff --check` 与 Codex governance checks 均通过。
+- 完整宿主仍报告两条既有 `FixtureExportReadbackTests.swift` QoS inversion warning，未新增。
+  本检查点仅证明结构与宿主回归；不替代 iPhone 17 Pro Max 上 Configuration Center、对象头像、
+  Share、Apple Photos、后台恢复、TX-001 或 BP-001 的最终设备证据。
+
+## 2026-09-02 Build 100 — Configuration Bootstrap Naming Closure
+
+- 将 Configuration Center 已有的启动恢复链收口为稳定职责名称：
+  `ConfigurationBootstrapSessionRestorePlan`、
+  `ConfigurationDraftBootstrapCoordinator`、
+  `ConfigurationBootstrapProjection`、`ConfigurationBootstrapPresenter`、
+  `ConfigurationBootstrapFlowPatch`、`ConfigurationBootstrapFlowCoordinator`、
+  `ConfigurationBootstrapViewProjection` 与 `ConfigurationBootstrapRuntimeCoordinator`。
+  root 仍只是这些 owner 的 composition point；ConfigurationSession 仍是配置真值，草稿仍由
+  既有 draft runtime 重建。
+- 本项没有改变 bootstrap read、恢复计划选择、patch 应用、保存配置、相册/标识投影、草稿默认值或
+  durable configuration。所有 `V1Bootstrap*`、`V1ConfigurationBootstrap*` 与
+  `V1DraftBootstrapCoordinator` 的活跃生产/测试符号均已迁移；历史文件与测试文件名暂作为
+  追溯路径保留，不代表第二份运行时实现。
+- Bootstrap flow/runtime、presentation、draft bootstrap/runtime 与 ConfigurationSession 生命周期
+  定向回归通过（47 passed、0 failed）；`git diff --check` 通过。该命名切片不替代 iPhone 17 Pro Max
+  上的首次启动、对象头像、相册、Share 或 Apple Photos 统一人工验收。
+
+## 2026-09-02 Build 100 — Cross-Layer Configuration Vocabulary Closure
+
+- 完成 naming modernization 的 Task 7.2：`V1IOSOutputTarget`、
+  `V1MediaOutputMode` 与 `V1LogoMode` 分别由
+  `ConfigurationOutputTarget`、`MediaOutputMode`、
+  `ConfigurationLogoMode` 在声明处直接承载；配置保存、bootstrap、
+  production snapshot、queue、Share、Live Photo policy 与 Configuration Center
+  的所有活跃 Swift 调用一并迁移。原有仅用于新名字的 typealias、
+  `v1MediaOutputMode` 过渡访问器均已移除。
+- 此次只变更源码符号：相册目标、媒体与标识的 raw value 不变；
+  `photomemo.v1.mediaOutputMode`、JSON CodingKey、`logoModeRawValue`、
+  `mediaOutputModeRawValue`、原有相册选择值、头像/自定义标识资产路径及 Live Photo
+  的 static/preserve-motion 决策均未改变。新增 source 与 raw-value 契约先在旧声明
+  分别预期失败，防止后续退回到 stage-era 名称或悄然更改存储值。
+- 三组定向回归均通过：输出目标 95 passed、媒体输出 176 passed、标识模式 113 passed，
+  均为 0 failed。`git diff --check` 通过；宿主编译仍只报告既有 macOS
+  `CLGeocoder` 弃用 warning。该符号级迁移不替代 iPhone 17 Pro Max 的头像编辑、
+  Configuration Center、Apple Photos、Share 或后台恢复最终验收。
+
+## 2026-09-01 Build 100 — P2 iOS Lifecycle Responsibility Naming
+
+- 将根视图直接组合的七个非持久化生命周期 owner 从阶段名收口为职责名：
+  `PhotoIntakeRuntimeCoordinator`、`LogoAssetRuntimeCoordinator`、
+  `OutputAlbumRuntimeCoordinator`、`DiagnosticsRefreshCoordinator`、
+  `PreviewSyncCoordinator`、`DraftRuntimeCoordinator` 与
+  `DraftOrchestrationCoordinator`。它们仍只持有请求 identity、取消/过期抑制或纯草稿/投影协作，
+  不持有 ConfigurationSession、PhotoKit、Renderer、queue 或任何 schema/key。
+- 所有生产与对应测试引用一并迁移；历史文件名和测试文件名暂时保留为可追溯的迁移线索，未机械改动
+  `photomemo.v1.*` AppStorage key、兼容模型、编码值或历史文档。根视图仍是唯一的 SwiftUI
+  composition/state owner，未新建 ViewModel 或第二份 live configuration truth。
+- 随后同一命名批次还收口了不进入 durable configuration 的相册加载/诊断刷新投影：
+  `OutputAlbumLoadProjection`、`OutputAlbumRuntimeUpdate`、`ExportAlbumLoadingPresenter` 与
+  `DiagnosticsRefreshState`。相册 request identity、较新请求覆盖旧 completion、PhotoKit 读取、
+  错误投影及 root 状态应用均保持原有行为；其专用回归通过（12 passed）。
+- 新名称源契约在旧名称上预期失败；两组 focused lifecycle/core 回归通过（61 passed、44 passed），
+  随后完整宿主 `MemoMarkTests` 通过（1721 passed、0 failed、1 skipped；动态参数共 1754 次执行），
+  `MemoMarkiOS` iphoneos unsigned Debug 通用构建产出 `MemoMarkiOS.app`。两条既有
+  `FixtureExportReadbackTests` QoS inversion warning 未变；这不替代 iPhone 17 Pro Max 的最终
+  Configuration Center、文本编辑、相册、Share、Apple Photos 与后台恢复验收。
+
+## 2026-09-01 Build 100 — P1 Output Album Composition Closure
+
+- `ResolveOutputAlbumSelectionIntent` 的“新建相册”分支不再在 coordinator 缺失时临时构造
+  `PhotoLibraryExportService`。正式配置保存始终经 AppEnvironment 组合的
+  `ExportCoordinator -> PhotoLibraryRepository -> PhotoLibraryExporting` 进入同一 PhotoKit
+  authorization、album gate 与错误归一化边界；原有 automatic 与 existing-album 的纯解析行为不变。
+- 缺失 export coordinator 的不完整配置上下文现在显式返回既有
+  `MemoMarkErrorCode.configurationUnavailable`，而不是私自发起相册创建。此状态与同一 save transaction
+  缺失 configuration coordinator 时的失败语义一致，避免 production 与 fallback 两套出口服务实例并行。
+- 新源契约在旧结构预期失败；协调器路径、缺失协调器拒绝路径与 core contracts 的定向回归通过
+  （36 passed）。完整宿主 `MemoMarkTests` 通过（1720 passed、0 failed、1 skipped；动态参数共 1753
+  次执行），`MemoMarkiOS` iphoneos unsigned Debug 通用构建产出 `MemoMarkiOS.app`。两条既有
+  `FixtureExportReadbackTests` QoS inversion warning 未变；真实 album create/reuse 与 Apple Photos
+  输出仍属于 iPhone 17 Pro Max 的最终统一验收。
+
+## 2026-09-01 Build 100 — P0 Static Output PhotoKit Readback Gateway
+
+- 将 static-output metadata readback 所需的共通 PhotoKit resource 查询与临时文件导出，从
+  `PhotoLibraryExportService` 收口到 `PhotoLibraryTransactionGateway` 的
+  `exportPhotoResourceToTemporaryFile(for:)`。Export service 继续拥有输出完成后的产品语义：
+  以保存 receipt 的精确 asset identifier 取回资产、交给既有 `PhotoMetadataReader`，并在读取后清理
+  临时副本；writer、album、receipt、export link、错误文案与 Live Photo 流程均未改变。
+- 新 gateway 保留原先的 `.photo` / `.fullSizePhoto` 优先级和 fallback、唯一临时文件命名，以及
+  `PHAssetResourceManager` 的原始导出错误；资源不存在则映射回既有
+  `PhotoLibraryExportError.assetSaveFailed`，因此不扩展可见失败语义，也不触碰 EXIF 读取逻辑。
+- 新增依赖契约先在旧结构预期失败；PhotoKit 相关 targeted suite 通过（64 passed），随后完整宿主
+  `MemoMarkTests` 通过（1718 passed、0 failed、1 skipped），`MemoMarkiOS` iphoneos unsigned
+  Debug 通用构建产出 `MemoMarkiOS.app`。两条既有 fixture QoS inversion warning 未变；仍须在
+  iPhone 17 Pro Max 上最终确认真实 Apple Photos readback、EXIF、Live Photo 配对、Share 与后台恢复。
+
+## 2026-09-01 Build 100 — P0 External Intake Drain Ownership Closure
+
+- 将主 App 的 persisted external intake drain 从 `MemoMarkAppRuntime` 提取为
+  `ExternalIntakeDrainCoordinator`。新 owner 串行 drain 请求、记录既有诊断、经
+  `ProcessShareIntent -> ShareCoordinator` 进入既有快照冻结与耐久 queue admission、并仅在
+  admission 成功后确认请求；失败请求仍保留给后续恢复。
+- 协调器只读取 `ExternalIntakeQueueProjection` 的 pending count 和当前默认快照，不能直接
+  enqueue 或写 durable queue。revision 观察在 drain 中触发的 `refreshExternalIntakeState` 仍会被
+  `isDraining` 抑制，保留旧路径防止前台恢复与当前 drain 重入的时序。App runtime 继续只保留
+  应用生命周期、权限、orphan cleanup 与 UI 观察所需的 Store 持有。
+- 同时移除了无生产/测试调用的 `ExternalPhotoIntakeCenter.init()`；今后 center 必须显式接收
+  AppEnvironment 组合的 App Group intake store 与 Settings service。真正跨进程的
+  `ExternalPhotoIntakeStore.shared` 保持不变。
+- 新增依赖契约先在旧结构预期失败；core + Share-drain 定向回归通过（45 passed），随后完整宿主
+  `MemoMarkTests` 通过（1717 passed、0 failed、1 skipped），`MemoMarkiOS` iphoneos unsigned
+  Debug 通用构建产出 `MemoMarkiOS.app`。两条既有 fixture QoS inversion warning 未变；仍需
+  iPhone 17 Pro Max 最终验证实际 Share、后台到期/恢复和 Apple Photos 输出。
+
+## 2026-09-01 Build 100 — P1 Configuration-to-Queue Boundary Closure
+
+- `QueueRepository` 已是生产队列命令与默认配置快照的应用层门面；审查发现
+  `AppEnvironment` 在 `ConfigurationCoordinator` 的 live-default 回调中仍直接更新
+  `BatchQueueStore`。该旁路现改为经 `repositories.queue.updateDefaultConfiguration` 进入，
+  仍由同一 Store 与 actor-backed durable ledger 执行实际写入。
+- 配置保存后更新 queue 默认快照、更新 external intake 默认快照、已入队任务持有的冻结
+  ProductionSnapshot，以及 Share/PhotoKit/Renderer/Export 语义均未改变；本项只消除了
+  composition root 内新旧边界混用，不引入第二个 queue owner 或持久化路径。
+- 新增依赖契约先在旧结构上预期失败；迁移后 targeted core contracts 通过（28 passed），完整宿主
+  `MemoMarkTests` 通过（1716 passed、0 failed、1 skipped），`MemoMarkiOS` iphoneos unsigned
+  Debug 通用构建产出 `MemoMarkiOS.app`。两条既有 fixture QoS inversion warning 仍与本切片无关；
+  iPhone 17 Pro Max 的实际 Share、后台到期/恢复及 Apple Photos 统一验收仍待最终阶段。
+
+## 2026-09-01 Build 100 — P1 Background Queue Runtime Port
+
+- 新增 `BackgroundQueueRuntime`，使 `BackgroundBatchQueueWorker` 与
+  `MemoMarkBackgroundTaskCoordinator` 仅依赖后台任务实际需要的最小能力：启动处理、处理中状态、
+  剩余任务数与后台到期停止。两者不再静态引用可观察的 `BatchQueueStore`。
+- `BatchQueueStore` 仍是唯一端口实现；BGProcessingTask 的注册、expiration handler、
+  `setTaskCompleted`、权限门、durable pending work 判断以及 `stopProcessingForBackgroundExpiration`
+  的恢复语义完全沿用原路径。`MemoMarkiOSBackgroundExecutionService` 继续作为 UI 生命周期投影
+  观察 Store，未被误迁移为后台执行器。
+- 新增依赖契约先在旧结构上预期失败；迁移后完整宿主 `MemoMarkTests` 通过（1714 passed、0 failed、
+  1 skipped）。两条既有 fixture QoS inversion warning 仍存在且与本切片无关；真实 BGTask
+  调度/到期与 Apple Photos 恢复仍需 iPhone 17 Pro Max 统一验收。
+
+## 2026-09-01 Build 100 — Legacy External Intake Singleton Removal
+
+- 完成全仓调用方审查后，移除了没有生产调用方的
+  `ExternalPhotoIntakeCenter.shared`。主 App 文件打开、Share、后台 drain 与队列均已由
+  `AppEnvironment` 组合的单一 intake center 驱动；保留未使用的全局入口会使未来代码可能绕过
+  配置快照冻结和依赖注入边界。
+- 此项不移除 `ExternalPhotoIntakeStore.shared`：后者是实际的 App Group 持久化适配器，仍承担
+  Share 跨进程 handoff 的兼容默认值。移除的仅是内存可观察 center 的死入口，不改变持久化格式、
+  URL 过滤、Share、Snapshot、队列、PhotoKit 或原图语义。
+- 新增源契约先在旧代码上预期失败，移除后完整宿主 `MemoMarkTests` 通过（1713 passed、0 failed、
+  1 skipped）。本次 host 测试仍带两条既有 fixture QoS inversion warning；iOS 与真机回归将与
+  后续核心收口切片统一进行。
+- 后续 iOS 编译发现 `MemoMarkConfigurationCenterView` 尚保留同一全局入口的可选参数回退；
+  root 与 Preview 已经始终显式注入组合后的 center，因而将该参数收紧为必传并新增 iOS 根视图
+  源契约。契约先预期失败，修复后完整宿主测试通过（1715 passed、0 failed、1 skipped），
+  `MemoMarkiOS` iphoneos unsigned Debug 通用构建也重新产出 `MemoMarkiOS.app`。
+
+## 2026-09-01 Build 100 — P1 Queue Processing Runtime Port
+
+- 新增 `BatchQueueProcessingRuntime`。`BatchQueueExecution` 与
+  `BatchQueueCoordinator` 现在只通过该端口开始循环、选择下一待处理任务、读取该任务所属
+  job 的已冻结配置，并在循环结束时交回重启/恢复判断；它们不再静态引用
+  `BatchQueueStore` 或直接读取其可观察 `jobs` 投影。
+- `BatchQueueStore` 是端口的唯一兼容实现，仍负责排他启动、receipt readback、actor-backed
+  durable ledger、UI 投影、背景到期取消、循环结束后的归一化及可恢复重启。任务处理器继续只
+  接收 `BatchTaskExecutionRuntime`，因此没有引入第二条执行或状态写入路径，也未改变快照、
+  Live Photo、Photo Library、通知或清理时序。
+- 先新增源依赖契约并确认旧结构在完整宿主 `MemoMarkTests` 中预期失败；迁移后完整宿主套件
+  通过（1712 passed、0 failed、1 skipped），`MemoMarkiOS` iphoneos unsigned Debug 通用构建
+  产出 `MemoMarkiOS.app`。保留的两条 fixture QoS inversion runtime warning 与本切片无关；
+  真机后台到期、恢复、Share 和 Apple Photos 回归仍待最终统一验证。
+
+## 2026-09-01 Build 100 — P1 Queue Notification Runtime Port
+
+- `BatchQueueNotifications` 不再直接依赖可观察的 `BatchQueueStore`。新增
+  `BatchQueueNotificationRuntime` 作为最小应用端口：通知适配器只能读取当前 job 投影，
+  并在发送成功或附件可清理时提交既有的耐久 acknowledgement；它不能访问队列 UI 状态、
+  任务调度、PhotoKit、快照或持久化实现。
+- `BatchQueueStore` 仍是该端口唯一的兼容实现，继续通过 actor-backed ledger 标记开始/完成
+  通知和释放已覆盖的附件。通知发送条件、失败时清理、开始/完成的先后顺序与所有既有持久化
+  key 均未改变；本切片只收紧 Platform Adapter → Application Port 的依赖方向。
+- 先新增核心源责任契约，并确认旧结构在完整宿主 `MemoMarkTests` 中预期失败；迁移后完整
+  宿主套件通过（1711 passed、0 failed、1 skipped），`MemoMarkiOS` iphoneos unsigned
+  Debug 通用构建产出 `MemoMarkiOS.app`，`git diff --check` 通过。构建和宿主测试不替代
+  iPhone 17 Pro Max 上的真实通知、后台到期、Share 和 Apple Photos 统一验收。
+
+## 2026-09-01 Build 100 — P1 Queue Bootstrap Receipt Reconciliation Boundary
+
+- 新增 `BatchQueueBootstrapReceiptReconciler`，仅负责 actor 队列启动前的 Photo Library
+  receipt 精确标识符查询、pending intent 物化、commit acknowledgement 与孤儿 receipt
+  清理；它不投影队列 UI、不持久化 job、不登记商业事件，也不清理渲染或源文件。
+- `BatchQueueStore` 仍保留启动恢复的权威顺序：将已确认保存映射回 task 后，先持久化 job，
+  再登记成功保存并清理可再生资源。这样不改变既有 receipt、部分失败、重启恢复或清理时序，
+  只是把同步 bootstrap 的 receipt 责任从展示/队列 facade 中隔离出来。
+- 先以源责任契约验证旧实现在完整宿主 `MemoMarkTests` 中失败；迁移后完整宿主套件通过
+  （1708 passed、0 failed、1 skipped），`MemoMarkiOS` iphoneos unsigned Debug 构建通过。
+  `git diff --check` 与治理校验也通过。该证据不替代最终 iPhone 17 Pro Max 的重启恢复、
+  Apple Photos 输出与 Share 统一验收。
+- 随后将同步 bootstrap 的“恢复归一化”提取为
+  `BatchQueueBootstrapRecoveryNormalizer`：它只从回执证据计算受保护任务、调用既有恢复策略，
+  并报告新出现的中断失败；`BatchQueueStore` 继续拥有写入、诊断和后续流程。旧结构的完整
+  宿主套件按新责任契约失败，迁移后完整套件通过（1709 passed、0 failed、1 skipped）。
+- 对 `ShareManagedFileImporter` 的只读审查确认它仍是受契约保护的 Apple provider 边界：Live
+  Photo-first、file → in-place → fallback、15 秒超时、重复 completion 仲裁、static fallback、
+  去重与受管副本清理彼此耦合。本轮不为缩短文件而拆动该生产路径。相反，将 bootstrap 与
+  actor-backed resume 两处重复的恢复失败事件投影集中到
+  `BatchQueueRecoveryDiagnosticsReporter`，统一 `processing.recovery` 的分类、support context
+  与像素上下文；完整宿主套件随后通过（1710 passed、0 failed、1 skipped），`MemoMarkiOS`
+  iphoneos unsigned Debug 构建通过。
+
+## 2026-09-01 Build 100 — P0-9 File-Open Snapshot Admission Closure
+
+- 审查确认 macOS/iOS 文件打开入口此前直接调用 `ExternalPhotoIntakeCenter.submit`，而 Share
+  入口会先从持久化配置读取默认 `BatchConfigurationSnapshot` 再接收请求；这会让文件打开任务
+  在极端时序下使用缓存中较旧的默认配置，违背“任务被接收时即冻结配置”的 Production 契约。
+- `MemoMarkAppRuntime.handleExternalURLs` 现统一经已组合的 `ShareCoordinator.submit` 接收外部
+  URL。文件打开与 Share 因此共用同一个持久化配置读取、请求持久化与快照冻结边界；没有改变
+  URL 来源、队列、Renderer、PhotoKit、原图或既有持久化格式。
+- 先新增架构回归测试并确认旧实现下完整宿主 `MemoMarkTests` 失败；完成收口后完整宿主套件
+  通过，`MemoMarkiOS` iphoneos unsigned Debug 构建通过，治理校验与 `git diff --check` 通过。
+  真实文件打开、Share、Apple Photos 输出和头像裁剪视觉回归仍应与最终 iPhone 17 Pro Max
+  统一设备验收一并执行，不将编译或宿主测试误作真机结论。
+
+## 2026-09-01 Build 100 — P0-7 Configuration Center Binding Boundary
+
+- 将模块库、预览上下文、位置/时间/记忆显示绑定与诊断头部投影迁移到
+  `MemoMarkConfigurationCenterView+Bindings.swift`；绑定仍直接连接既有 Session、草稿和
+  Preview Engine，不引入第二份状态或改变保存语义。
+- 根视图由约 2003 行降至约 1828 行；`MemoMarkiOS` iphoneos unsigned Debug 构建通过。
+
+## 2026-09-01 Build 100 — P0-8 Configuration Runtime And Lifecycle Boundary
+
+- 将配置保存/兼容迁移、输出相册加载、Logo 资产运行时、首启/欢迎流程、诊断刷新、滚动偏移、
+  照片快速输入与队列提交迁移到 `MemoMarkConfigurationCenterView+Runtime.swift` 和
+  `MemoMarkConfigurationCenterView+Lifecycle.swift`。根文件现在主要保留状态所有权、依赖注入、
+  组合根和 `body`，不再承载完整业务流程实现。
+- 根视图由初始约 3320 行降至约 1017 行（约减少 69%）；新旧 Production 逻辑仍通过原有
+  coordinator、snapshot、PhotoKit/Share intake 与持久化边界，未改变功能或数据契约。
+- 跨文件扩展所需的成员显式提升为同模块 internal；没有暴露 public API。`MemoMarkiOS`
+  iphoneos unsigned Debug、macOS `MemoMark` Debug 构建，以及完整 `MemoMarkTests` 宿主套件
+  均通过；`git diff --check` 通过。真机、Apple Photos、Share 回归继续按最终统一验证计划执行。
+
+## 2026-09-01 Build 100 — P0-5 Configuration Center Page Composition Extraction
+
+- 将 `MemoMarkConfigurationCenterView` 的导航壳以及 Home、Settings、Configuration、
+  Output、Tasks 五个页面组合责任迁移到
+  `MemoMarkConfigurationCenterView+Pages.swift`。根视图不再同时承载页面树和运行时
+  状态，页面仍使用原有 session、snapshot、Binding 与 coordinator，未改变产品导航、
+  配置保存或任务展示语义。
+- 同步更新页面级源契约，使测试断言跟随真实责任 owner，而不是继续把页面构造误判为
+  根视图责任。根文件由约 3320 行降至 2563 行；macOS `MemoMark` Debug 构建及页面
+  定向契约套件通过。
+
+## 2026-09-01 Build 100 — P0-6 Editor And Configuration Action Composition Extraction
+
+- 将预览构建、TextKit 编辑交互、草稿同步、模块插入与编辑器状态操作迁移到
+  `MemoMarkConfigurationCenterView+Editor.swift`；将配置激活、保存前切换、对象选择、
+  配置库动作、备份恢复和对象持久化流程迁移到
+  `MemoMarkConfigurationCenterView+Actions.swift`。这些文件仍是同一 View 的明确
+  responsibility extensions，不新增 ViewModel 或全局状态，也没有复制业务真值。
+- 根视图进一步降至约 2003 行（相较初始约 3320 行减少约 40%）。为保持跨文件扩展
+  的显式依赖，必要的同模块成员改为 internal；未改变持久化键、Memory Engine、
+  Renderer、PhotoKit、Live Photo、Share 或 Snapshot 契约。
+- `MemoMarkiOS` iphoneos unsigned Debug 构建通过；页面/编辑器/动作相关定向契约套件
+  通过。完整宿主测试与最终 iPhone 17 Pro Max、Apple Photos、Share 回归仍按核心重构
+  收口后的统一验证计划执行。
+
+## 2026-09-01 Build 100 — P0-1 macOS File-Open Intake Composition Boundary
+
+- 收口一个真实的 Production 新旧路径混用点：`MemoMarkAppDelegate` 不再直接写入
+  `ExternalPhotoIntakeCenter.shared`，而是把 AppKit 文件打开事件转交给 SwiftUI
+  组合根安装的 `MemoMarkAppRuntime`，因此 macOS 文件打开、Share 和批处理现在共用
+  同一份注入式 `AppEnvironment` intake 实例。
+- 为处理 AppKit 早于 SwiftUI root 挂载到达的事件，delegate 在 handler 安装前暂存
+  URL 批次，并在安装时按到达顺序转发；没有改变 URL 过滤、持久化、队列或原图语义。
+- 新增核心依赖契约，禁止全局 intake singleton 回到 Production Path。
+  `CoreArchitectureDependencyContractTests` 定向套件通过，macOS `MemoMark` Debug
+  构建通过（exit 0）；真机、Apple Photos 和 Share 手工验收仍按计划统一在核心收口后执行。
+
+## 2026-09-01 Build 100 — P0-2 Shared Photo Library Exporter Composition
+
+- 批处理组合根现在把同一份 `PhotoLibraryExportService` 同时注入静态照片与
+  Live Photo 路由；此前 Live Photo 处理器在缺少显式依赖时会自行创建 exporter，
+  造成隐含的重复 PhotoKit 依赖和不清晰的收据边界。
+- `BatchQueueStore`、`BatchQueueExecution` 与 `AppEnvironment` 已完成依赖贯通，
+  默认构造仍保留为测试/兼容适配器；Production Path 不再绕过组合根。新增核心
+  架构契约并通过，TX-001 收据/延迟可见性/队列定向套件通过，macOS `MemoMark`
+  Debug 构建通过（exit 0）；完整 `MemoMarkTests` 宿主套件通过（exit 0）。
+
+## 2026-09-01 Build 100 — P0-3 Avatar Preview Responsibility Extraction
+
+- 将 `MemorySubjectEditorView` 中仅负责平台图片读取和圆形头像展示的代码拆到
+  `ConfigurationCenter/Editors/SubjectAvatarPreview.swift`，编辑器从 2101 行减少
+  为约 2030 行；请求身份、裁剪 sheet、取消/过期抑制、三路径资产投影和持久化
+  仍由原有责任边界拥有。
+- 头像优化状态、编辑草稿、裁切页和可访问性定向套件通过；macOS `MemoMark`
+  Debug 与 `MemoMarkiOS` iphoneos unsigned Debug 构建通过。该拆分未改变用户界面
+  行为或照片资产语义，真机头像视觉验收仍保留到最终统一设备回归。
+
+## 2026-09-01 Build 100 — P0-4 Time-Anchor Row Responsibility Extraction
+
+- 将记忆对象编辑器中独立的锚点列表行（删除确认、配置菜单、Dynamic Type
+  展示、类型颜色与本地化标签）拆到 `SubjectTimeAnchorRow.swift`，不再与编辑器
+  的草稿、焦点、保存和头像生命周期代码混在同一文件。
+- `MemorySubjectEditorView` 约再减少 150 行；锚点编辑/删除语义不变。时间锚点、
+  头像裁剪与可访问性定向测试通过，macOS `MemoMark` 与 `MemoMarkiOS` iphoneos
+  unsigned Debug 构建均通过（`BUILD SUCCEEDED`）。
+
+## 2026-09-01 Build 100 — P0-4 Date Picker Presentation Extraction
+
+- 将锚点日期 wheel/DatePicker 从 `MemorySubjectEditorView` 拆到
+  `CompactAnchorDatePicker.swift`，编辑器现在只负责把日期绑定交给纯展示组件，
+  Gregorian 日期边界、闰年/月底裁剪、iOS wheel 高度和 macOS DatePicker fallback
+  均保持原实现。
+- 日期绑定和装饰策略的纯转换扩展同步移到
+  `MemorySubjectEditorBindings.swift`；编辑器不再承载与 SwiftUI 绑定机制无关的
+  辅助实现。
+- 因源文件契约随责任迁移同步改为读取新 owner；未放宽任何行为断言。锚点、头像、
+  Apple-native destructive semantics 与响应式布局套件通过；完整 `MemoMarkTests`
+  宿主套件通过（exit 0），macOS 与 `MemoMarkiOS` iphoneos unsigned Debug 构建
+  均 `BUILD SUCCEEDED`。
+
+## 2026-09-01 Build 100 — Physical Device Regression Evidence
+
+- 已在配对的 iPhone 17 Pro Max（`iPhone`，物理设备）上完成签名构建、安装与启动：
+  `MemoMarkiOS`，bundle `com.serydoo.PhotoMemo.iOS`，版本 `2.2.3 (100)`。
+- `MemoMarkDeviceQA` 真机 harness 首轮执行 16 项，其中 15 项通过；唯一失败是
+  `QA-08 LivePhotoPostCommitTerminationAndRestartIdempotency` 在 PHPicker 虚拟化网格
+  中未登记选择，失败发生于提交前，未进入生产处理或保存路径。单项重试后完整通过，
+  并验证中断后重启只产生一个 Live Photo 输出、保留配对视频、保留原始输入。
+- 首轮与重试日志及 xcresult 分别保留在 `/tmp/MemoMarkDeviceQA/` 与
+  `/tmp/MemoMarkDeviceQA_QA08Retry/`；Photos 权限为 `authorized`，QA 输入相册与
+  QA 输出相册均被 harness 成功读取。设备部署与自动化 UI/PhotoKit 证据已建立，
+  仍不等同于人工查看输出图像外观或 Share Extension 端到端验收。
+
+## 2026-09-01 Build 100 — Resource Cleanup Dependency Boundary
+
+- `BatchTaskResourceLifecycle` 现在直接拥有临时文件清理职责，不再反向依赖同时
+  包含 import/build/export/save 逻辑的 `BatchProcessingCoordinator`。队列生产装配
+  已移除这条旧协调器注入，唯一 fixture 调用也改为直接使用 `PhotoImportService`，
+  因而旧宽型协调器已从源代码移除，未改变对外行为或持久化格式。
+- 新增核心依赖契约并通过批处理与核心架构定向测试；资源目录 containment、重试保留、
+  通知附件和清理幂等性均保持通过。
+
+## 2026-09-01 Build 100 — Configuration Center Root Surface And Anchor Compatibility
+
+- Configuration Center root view 的 SwiftUI preview scaffold 已移到独立的
+  `MemoMarkConfigurationCenterViewPreview.swift`，生产 root 现在为 3320 行，低于
+  3350 行结构预算；预览构造保持原有依赖与行为，不再让开发期 preview 挤占生产
+  协调面的复杂度预算。
+- `V1IOSSubjectConfigurationFlowState` 的 draft 初始化不再把已保存的 anchor
+  `expressionStyle` 强制归一化为 `.customNatural`。只有新建缺省 anchor 才使用默认值，
+  因而删除当前 anchor 后的 fallback、既有持久化语义和编辑态投影保持一致。
+- 根视图责任预算与主题流程回归测试均已通过；该增量未改变 Renderer、Metadata、
+  Live Photo、Share 或 PhotoKit 契约。
+
+## 2026-09-01 Build 100 — Production Card Compilation Execution Boundary
+
+- 批处理生产路径现在通过 `BuildRecordCardTransaction.buildCardOffMainThread` 编译
+  `RecordCard`，将确定性的卡片组装从 UI actor 调度到独立 utility 队列；原有同步
+  `buildCard` 保留给兼容调用与预览，不改变 Memory Engine、Renderer、Metadata 或
+  导出语义。
+- 新增生产卡片编译脱离主线程的回归与架构契约测试；`ArchitectureMigrationFoundationTests`
+  和 `CoreArchitectureDependencyContractTests` 定向测试通过。该边界只覆盖卡片组装，
+  PhotoKit、Renderer/ImageRenderer 与保存仍保留各自的平台隔离，真机、Share、Apple
+  Photos 和最终生产认证仍待核心重构收口后统一验证。
+
+## 2026-09-01 Build 100 — Configuration Editor Draft Ownership
+
+- iOS Configuration Center 的 active region buffer 与 presentation-style
+  缓存已合并到 `ConfigurationEditorDraftState`，样式切换、bootstrap projection
+  与保存投影都通过同一个状态边界完成，避免 root view 维护两份可不同步的字典。
+- 新增样式隔离与原子投影测试；`ConfigurationEditorDraftStateTests` 与核心架构契约
+  定向测试通过。未改变模板、模块、预览或持久化格式；真机编辑器与 Apple Photos
+  验收仍在核心重构完成后统一执行。macOS Debug 与 `iphoneos` SDK 编译均通过。
+
+## 2026-09-01 Build 100 — Notification Thumbnail Execution Boundary
+
+- 批处理生产路径现在通过异步 utility 执行通知缩略图的 ImageIO 解码与 JPEG
+  编码；`BatchTaskResourceLifecycle` 保留同步兼容入口，但生产处理器与
+  Live Photo 处理器均使用 `makeNotificationAttachmentOffMainThreadIfNeeded`，
+  避免在 UI actor 上执行可见的缩略图重活。通知附件命名、替换和失败语义保持不变。
+- 新增异步诊断计时重载、运行时附件生成回归和核心架构契约。`BatchQueueExecutionContractTests`
+  与 `CoreArchitectureDependencyContractTests` 定向测试全部通过，治理检查与
+  `git diff --check` 通过；真机、Apple Photos、Share 和最终生产认证仍留待核心重构收口。
+
+## 2026-09-01 Build 100 — Subject Avatar Lifecycle State Boundary
+
+- 头像编辑器的请求身份、取消、过期结果抑制和 busy 状态已提取到可测试的
+  `SubjectAvatarOptimizationState` 值类型；裁剪页中间态保留 active request，
+  不会因载入图片完成而提前失效。`SubjectAvatarEditingDraft` 现在集中负责将
+  display/badge/preview 三份衍生路径原子投影到 `MemorySubject.Identity`，避免
+  View 内出现部分头像写回。
+- 新增 request identity、latest-request-wins、取消清理和三路径投影测试；头像
+  focused tests 6 项通过，macOS `MemoMark` Debug build 和
+  `MemoMarkTests` build-for-testing 通过。未执行真机或 Apple Photos 手工验收，
+  仍按核心重构完成后统一验证。
+
+## 2026-09-01 Build 100 — Batch Execution Context Isolation
+
+- `BatchTaskExecutionContext` 与处理路由是不可变的执行输入，不再继承
+  `@MainActor`；UI、PhotoKit 和持久化服务的现有隔离保持不变，后续可在不
+  改变任务语义的前提下把重型媒体阶段移到专用执行器。
+- `BatchQueueExecutionContractTests` 定向测试通过，验证快照输入、取消、失败、
+  Live Photo 路由和资源清理行为未回归；本次未执行真机或 Apple Photos 手工验收。
+
+## 2026-09-01 Build 100 — Configuration Bootstrap Read Boundary
+
+- Configuration bootstrap/readiness transport now exposes stable responsibility
+  names (`ConfigurationBootstrapReadState`, `SavedConfigurationReadiness`,
+  `loadConfigurationBootstrapReadState()`, and
+  `loadConfigurationReadiness()`) across the application and Share Extension
+  paths. Historical `V1` entry points remain deprecated adapters only; the
+  persisted subject-library schema and raw storage keys are unchanged.
+- The new source contract and core architecture test suite pass, and the app
+  target builds successfully. Physical-device, Apple Photos, Share, and
+  production certification evidence remain deferred until the complete core
+  migration is closed.
+
+## 2026-09-01 Build 100 — Card Build Transaction Actor Boundary
+
+- `BuildRecordCardTransaction` no longer inherits `@MainActor`; card
+  compilation is a deterministic application operation over an immutable
+  snapshot and can now be scheduled away from UI isolation as the queue/media
+  runtime evolves. No renderer, metadata, Live Photo, or output behavior was
+  changed.
+- The macOS `MemoMark` build and all `CoreArchitectureDependencyContractTests`
+  pass. Only existing macOS API deprecation warnings remain. Full test evidence
+  and physical-device media validation remain cumulative gates for final
+  closure. The generic `MemoMarkiOS` and `MemoMarkShareExtension` iOS builds
+  also complete successfully for this boundary.
+
+## 2026-09-01 Build 100 — Configuration Persistence Naming Follow-up
+
+- `saveSubjectLibrary` is now the canonical application/repository/settings
+  entry point. The former `saveV1SubjectLibrary` names remain deprecated
+  compatibility adapters, while `V1SubjectLibraryRecord` stays unchanged as
+  the historical persisted representation.
+- The incremental post-change core contract test suite passes, the final
+  macOS `MemoMark` Debug build remains green, and governance plus
+  `git diff --check` pass. No device, Photos, or Share validation was run in
+  this host-side follow-up.
+
+## 2026-09-01 Build 100 — Core Refactor Checkpoint
+
+- 本轮核心重构当前工作树已通过 macOS `MemoMark` Debug 构建（Xcode 27，
+  exit 0）、`CoreArchitectureDependencyContractTests` 全部通过，以及治理脚本
+  `scripts/validate_codex_governance.py` 和 `git diff --check`。
+- 本次只新增/调整架构边界与恢复语义，没有执行 commit、stage、push，也没有
+  重新运行真机验证。当前仍需在最终整合阶段处理干净检出下的新文件纳入、TX-001
+  真机中断/read-back、Share Extension/Apple Photos 手工验收及生产认证。
+
+## 2026-09-01 Build 100 — Configuration Transport Naming Boundary
+
+- The application transaction path now uses stable responsibility names for
+  configuration save and album-selection requests/receipts. Historical `V1`
+  symbols remain only as source-compatible aliases for existing migration
+  callers and fixtures; no stored keys, raw values, or persistence formats
+  changed.
+- A source contract prevents `SaveConfigurationTransaction` from regressing to
+  the stage-prefixed transport names. The broader active-code naming migration
+  remains incremental and will be handled by cohesive feature families rather
+  than a repository-wide textual replacement.
+
+## 2026-09-01 Build 100 — Photo Library Album Preparation Serialization
+
+- `PhotoLibraryExportService.ensureAlbum` now performs title lookup and album
+  creation inside the shared `PhotoLibrarySaveGate`. Configuration saves and
+  batch work can therefore not race between a missing-title observation and a
+  `PHAssetCollection` creation, preventing duplicate destination albums while
+  preserving the existing album-selection behavior.
+- `CoreArchitectureDependencyContractTests` now locks this ownership boundary;
+  the focused core contract suite passes. Physical-device validation remains
+  deferred until the refactor closure as planned.
+
+## 2026-09-01 Build 100 — RFC-002 Slice E Ambiguous Commit Evidence Closure
+
+- PhotoKit 静态与 Live Photo 写入在外部事务已经返回、但本地未取得
+  `placeholderIdentifier` 时，不再删除 receipt 或 intent。该状态无法证明
+  外部写入失败，现统一返回 `savedAssetReadbackPending`，保留可恢复证据，
+  避免延迟可见时再次执行 `performChanges` 造成重复输出。
+- 新增 `missingPlaceholderAfterTransactionPreservesEvidence` 回归契约，覆盖
+  两条写入路径并锁定“事务后缺少 placeholder 仍保留幂等证据”的边界。
+- `PhotoLibrarySaveReceiptStoreTests` 定向 macOS 测试通过；本次未重新执行
+  真机验证，按当前重构计划留待全部核心架构闭环后统一进行。
+
+## 2026-09-01 Build 100 — Physical QA Remediation And Output-Album Readback
+
+- The device QA harness now keeps the production first-use picker boundary
+  intact while exposing a process-scoped `-uiTestingHarnessOnly` override for
+  deterministic automation. Configuration Center, Subject editor, and photo
+  picker actions also expose stable responsibility-based accessibility
+  identifiers, independent of the current interface language.
+- The production PHPicker explicitly includes both still images and complete
+  Live Photos. The harness selects Live Photos by their semantic accessibility
+  label across the virtualized grid and waits for the system completion action
+  to settle, instead of assuming PhotoKit fetch order equals picker order.
+- Draft-only Subject editor repair now routes through the session replacement
+  boundary and preserves an actionable empty-anchor state for legacy records;
+  durable subject data is still changed only by the explicit save action.
+- On the paired physical iPhone 17 Pro Max, the focused QA-04 run passed: a
+  complete Live Photo was selected and processed, the output album gained one
+  `livePhoto` result with a paired video resource, capture date was preserved,
+  and the original input remained unchanged. The preceding full run also
+  passed JPEG, RAW, inventory, picker, language, and static idempotency
+  scenarios (12/16 overall; the four failures were the pre-fix Live Photo
+  picker path and Subject editor reachability). The focused Subject editor
+  rerun now passes after the explicit 44pt Button hit region, contained
+  accessibility group, and scroll-settled harness path; it reaches and opens
+  the time-anchor editor without changing durable data.
+- The focused QA-08 Live Photo post-commit termination/relaunch test also
+  passes (71.4s): exactly one output is recovered, no duplicate is created,
+  and the original Live Photo remains complete with its paired video resource.
+  Its final PhotoKit readback observed 15 assets in `MemoMark QA Outputs`,
+  including the recovered Live Photo pair.
+- `MemoMark QA Outputs` is therefore a valid automated readback surface for
+  count, classification, dimensions, capture date, paired resources, and
+  original preservation. This is still automated device evidence, not manual
+  Apple Photos visual acceptance, Share Extension end-to-end sign-off, or
+  production certification.
+
+## 2026-08-31 Build 100 — Physical iPhone 17 Pro Max QA Baseline
+
+- XCTest UI automation was enabled on the paired physical iPhone 17 Pro Max
+  (`863C2747-6742-5E93-B715-6F89DBF90B31`). The signed `MemoMarkDeviceQA`
+  bundle built and launched successfully; the first attempt was correctly
+  rejected by iOS until the user entered the device passcode to enable UI
+  automation.
+- The authorized run executed 16 tests: 5 passed and 11 failed. Passing
+  evidence covers host launch, the Japanese/Korean interface-language matrix,
+  PhotoKit input/output inventory, and the Japanese Task surface. No source or
+  Photo Library asset was deleted or overwritten by the QA harness.
+- The connected device's `MemoMark QA Inputs` album was readable and contained
+  67 assets: 56 RAW assets with Photos JPEG renditions, 8 independent JPEG
+  stills, 1 HEIC still, and 2 complete Live Photos represented as HEIC + MOV.
+  The current Live Photo fixtures do not expose a `public.jpeg` still resource,
+  while the media-matrix test currently requires one; this is a QA-fixture/
+  contract mismatch, not a device connection failure.
+- Seven processing/picker tests could not reach the in-app picker because the
+  current production home surface intentionally hides that fallback after a
+  prior Apple Photos share or processing record. The configuration-center
+  title assertion and Subject-editor field assertion also do not match the
+  current signed-device accessibility surface. These failures must be
+  classified before changing product behavior or the harness. Physical visual
+  acceptance, Share Extension system flow, avatar crop acceptance, and
+  Apple Photos output readback therefore remain open.
+- Result evidence is retained at
+  `/tmp/MemoMarkDeviceQA/20260831T152800Z/`; artifact verification reports the
+  run as `fail (test-failed)`. This is a device-QA baseline only and does not
+  close TX-001, BP-001, or production certification.
+
+## 2026-08-31 Build 100 Core Modernization — Live Photo Card-Build Boundary Convergence
+
+- Live Photo batch production now receives the same
+  `BuildRecordCardTransaction` used by static-image batch production. The
+  processor no longer owns or calls `RecordCardBuildService` directly; both
+  output routes therefore share one application boundary for turning an
+  immutable `SelectedPhoto` and `BatchConfigurationSnapshot` into a
+  `RecordCard`.
+- `BatchProcessingCoordinator` was brought to the same boundary. Its legacy
+  helper remains available for existing callers, but construction and card
+  building now delegate through the application transaction rather than
+  creating a second service path. Composition in `AppEnvironment` and
+  `BatchQueueExecution` supplies the shared transaction explicitly.
+- No card contents, snapshot fields, Live Photo pairing, static-output policy,
+  metadata, export or Photo Library semantics changed. Architecture tests now
+  guard against reintroducing a direct card-build service dependency in the
+  Live Photo processor and coordinator.
+- `MemoMarkTests` build-for-testing and the focused Core Architecture and Live
+  Photo batch suites pass. Physical iPhone/Apple Photos acceptance remains
+  intentionally deferred to the final unified device pass.
+
+## 2026-08-31 Build 100 Core Modernization — Root State Naming Convergence
+
+- The active Configuration Center root now uses the responsibility-based names
+  `EditorInteractionState`, `RootPresentationState`,
+  `RootConfigurationProjectionState` and `RootLifecycleState` instead of
+  stage-labelled `V1...` names. Each former name is a typealias only, so
+  existing source/test integrations continue to compile without creating a
+  second state owner.
+- No persisted key, schema, UI flow, TextKit command bus, configuration value
+  or lifecycle behavior changed. The focused root-state contract tests and
+  `MemoMarkTests` build-for-testing pass.
+
+## 2026-08-31 Build 100 Core Modernization — PhotoKit Policy Compilation Boundary
+
+- Pure receipt reconciliation and ambiguous-commit decision policies now live
+  in `PhotoLibrarySavePolicies.swift`; the receipt store retains receipt,
+  intent, locator and recovery persistence responsibilities. This reduces the
+  store's policy/persistence coupling without changing any decision, encoded
+  key, schema or recovery outcome.
+- The existing receipt, ambiguous-commit, static/Live Photo and architecture
+  contracts continue to reference the same types. Targeted compilation and
+  focused receipt/ambiguous-commit runtime suites pass after this
+  compilation-unit move; physical PhotoKit acceptance remains deferred.
+
+## 2026-08-31 Build 100 Core Modernization — Memory Subject Draft Policy Convergence
+
+- `MemorySubjectEditingDraft` now owns editor-only time-anchor defaults,
+  cardinality limits, add/remove mutation and selection fallback. The SwiftUI
+  editor remains responsible for presentation, focus and session projection;
+  it no longer reimplements these rules in view methods.
+- The compatibility defaults remain draft-local and are still projected through
+  the established `ConfigurationSession` update boundary. Durable
+  `MemorySubject` schema, active-anchor meaning, naming, and persisted values
+  are unchanged.
+- New behavior tests cover deterministic default anchors, the five-anchor upper
+  bound, the one-anchor lower bound, deletion of the selected anchor, and
+  missing-anchor rejection. `MemoMark` Debug build, `MemoMarkTests`
+  build-for-testing, and the focused `MemorySubjectEditingDraftTests` runtime
+  suite pass. Physical iPhone editor and PhotosPicker acceptance remains
+  deferred to the final unified device pass.
+
+## 2026-08-31 Build 100 — Avatar Crop Canvas Geometry Correction
+
+- The avatar crop surface now establishes a square layout before measuring its
+  image content. The previous bare `GeometryReader` could consume the
+  remaining vertical space inside the editor, allowing portrait images to
+  extend beyond the intended crop canvas and making the circular guide appear
+  misaligned on the device.
+- The crop image and guide continue to use the existing
+  `SubjectAvatarCropSupport` geometry, zoom, translation clamping and
+  optimization contracts. Only the SwiftUI layout constraint changed; avatar
+  data, derived assets, crop coordinates and persistence semantics are
+  unchanged.
+- The crop-sheet contract now guards the square-canvas-before-measurement
+  invariant. The required macOS app build and test-target build-for-testing
+  pass; source-contract runtime execution remains subject to the repository's
+  known Xcode 27 app-hosted runner hang. Physical iPhone visual acceptance is
+  intentionally deferred to the final unified device pass.
+
+## 2026-08-31 Build 100 Core Modernization — Configuration Save and Production Snapshot Composition
+
+- `SaveConfigurationTransaction` is now composed once by `AppEnvironment` and
+  injected through `MemoMarkRootSceneView`; the Configuration Center no longer
+  constructs its own save transaction. The existing aggregate-first save route
+  and the explicitly named `applyLegacyCompatibility` route remain inside that
+  same transaction, so this changes no persistence authority or compatibility
+  semantics.
+- After a successful durable save, the Configuration Center now requests its
+  immutable `BatchConfigurationSnapshot` through the composition-root-owned
+  `LoadProductionConfigurationSnapshotTransaction`. The transaction reads the
+  canonical configuration repository; the view no longer constructs
+  `SettingsService` or reaches directly into global configuration state.
+- The established ordering is preserved: durable save first, canonical snapshot
+  load second, then default-configuration update and Intake submission. A task
+  already admitted to Production therefore retains its snapshot rather than
+  observing later Configuration Center edits.
+- The architecture contract covers both injected transactions and prohibits
+  View-local `SettingsService`/save-transaction construction. The full macOS
+  `MemoMarkTests` suite passes `1678 / 0 failed / 1 skipped` (with 1,711
+  parameterized executions). Unsigned Debug builds for macOS `MemoMark`,
+  generic iOS `MemoMarkiOS`, and `MemoMarkShareExtension` pass. Two existing
+  QoS-inversion runtime warnings in fixture export readback tests remain
+  non-failing and unchanged. Physical iPhone 17 Pro Max Configuration Center,
+  Photos, Share and avatar acceptance remains deferred to the requested final
+  unified device pass.
+
+## 2026-08-31 Build 100 Core Modernization — Production Card-Build Transaction
+
+- `BuildRecordCardTransaction` is now the narrow Application boundary for
+  turning an immutable `SelectedPhoto` plus
+  `BatchConfigurationSnapshot` into the established `RecordCard`. The Batch
+  executor no longer imports, constructs or awaits `BuildPreviewIntent`, and
+  it no longer depends on `PreviewCoordinator`.
+- `PreviewCoordinator` remains a Presentation adapter. It now delegates its
+  existing card and default-description requests to the same transaction, so
+  preview and production retain one card-build implementation without making
+  the production path depend on preview presentation state.
+- `BatchQueueExecution` and the composition root inject the transaction
+  directly. The queue's actor-owned runtime events, Snapshot use, render
+  health check, export, Photo Library save, Live Photo processor and
+  notification behavior were not changed by this dependency-direction slice.
+- The Configuration Center root also moved its scroll-offset preference types
+  into a focused support file and gave those active types stable
+  responsibility-based names. This restores the root's explicit bounded
+  responsibility budget without changing navigation, scroll, picker or
+  presentation behavior.
+- A direct RED-to-GREEN transaction parity test and the architecture source
+  contract now lock the absence of a Preview dependency in batch production.
+  The complete macOS `MemoMarkTests` run passes `1677 / 0 failed / 1 skipped`.
+  Unsigned Debug builds for macOS `MemoMark`, generic iOS `MemoMarkiOS`, and
+  `MemoMarkShareExtension` pass. The test runner recorded two pre-existing
+  QoS-inversion runtime warnings in fixture export readback tests; they are
+  not test failures and were not changed in this slice. Physical-device
+  processing, Photos and Share acceptance remains deferred to the requested
+  final unified iPhone pass.
+
+## 2026-08-31 Build 100 Core Modernization — Unified Ambiguous PhotoKit Commit Semantics
+
+- Static-photo and Live Photo saving now share
+  `PhotoLibraryAmbiguousCommitRecoveryPolicy` at the precise boundary where
+  `PHPhotoLibrary.performChanges` can report an ambiguous failure even though
+  an asset is visible. For an idempotent task, visibility is now reportable as
+  success only after its durable receipt has reached `commitAcknowledged`.
+- Live Photo previously had a weaker recovery exit: after visible-asset
+  reconciliation, it could report success without re-reading the receipt's
+  acknowledgement phase. It now follows the existing static-photo rule and
+  returns its established recoverable read-back-pending error when durable
+  acknowledgement is still absent. Cancellation and non-idempotent saves keep
+  their prior outcomes.
+- A second post-commit divergence is also closed. If PhotoKit has accepted a
+  Live Photo but the submitted-receipt write fails, the writer now retains the
+  pre-commit intent and placeholder identifier instead of deleting them. A
+  later retry therefore stays on exact-identifier reconciliation and cannot
+  silently create a duplicate because local acknowledgement failed.
+- The shared `PhotoLibrarySaveGate` has moved out of the static export service
+  into `Infrastructure/Concurrency`. It remains the same cancellation-aware
+  Actor and still serializes static-photo and Live Photo commits; the move
+  makes the cross-writer concurrency owner explicit without changing ordering.
+- This changes neither resource pairing, image/video encoding, EXIF/metadata,
+  original-photo protection, album selection nor receipt schema. It closes a
+  production semantic mismatch so a later retry cannot mistake an unconfirmed
+  Live Photo commit for a safe duplicate-free success.
+- The new policy tests and focused receipt, static/Live Photo writer and queue
+  suites pass, including a RED→GREEN post-commit evidence-retention contract.
+  Unsigned Debug builds for macOS `MemoMark`, generic iOS
+  `MemoMarkiOS`, and `MemoMarkShareExtension` pass. Real iPhone interruption,
+  read-back and duplicate-output evidence for TX-001 remains `NOT VERIFIED`
+  and is retained for the final unified device pass.
+
+## 2026-08-31 Build 100 Core Modernization — Configuration Bootstrap Load Transaction
+
+- Configuration startup now receives a composition-root-owned
+  `LoadConfigurationBootstrapTransaction`. The transaction reads the existing
+  bootstrap representation directly through `SettingsRepository`; the active
+  Configuration Center no longer reaches the read through
+  `ConfigurationCoordinator` or the former load Intent path.
+- `ConfigurationBootstrapCoordinator` remains a Presentation Bootstrap
+  Adapter for this increment: it alone maps a missing/unreadable configuration
+  state to the established in-memory default projection. The transaction
+  returns canonical state or a typed storage failure unchanged, so it cannot
+  silently create a second fallback or persistence path.
+- Existing aggregate-first startup recovery, legacy-settings migration,
+  corrupt-library behavior, output normalization, saved bytes and user-visible
+  fallback behavior are unchanged. The focused transaction, bootstrap,
+  configuration-migration and subject-library suites pass, as does the generic
+  iOS `MemoMarkiOS` Debug build. Physical iPhone startup/recovery acceptance
+  remains part of the requested final unified validation pass.
+- The active Presentation coordinator and its test suite now use this stable
+  responsibility name. This naming migration changes no bootstrap state,
+  Settings repository method, persisted key, encoded format or fallback
+  behavior.
+
+## 2026-08-31 Build 100 Core Modernization — Configuration Restore Transaction
+
+- The durable portion of local configuration restoration now lives in
+  `RestoreConfigurationLibraryTransaction`: serialized restore admission,
+  signed-document and packaged-asset validation, managed-asset rollback on
+  failure, aggregate candidate construction, and durable-save receipt handling
+  have one Application owner.
+- `ConfigurationBackupRestoreCoordinator` remains the presentation-feature
+  boundary. It supplies the transaction's narrow storage/file capabilities and
+  still owns user-facing status, backup-list refresh and its recoverable
+  refresh-failure projection; it no longer owns the aggregate write or asset
+  rollback transaction.
+- The transaction preserves existing behavior: an empty aggregate makes the
+  first restored configuration current, configuration copies preserve the
+  previous selection, the durable aggregate revision comes only from the save
+  receipt, and failed restoration removes only assets created by that attempt.
+  No portable-document schema, aggregate bytes, Photos, renderer, Snapshot or
+  original-media contract changed.
+- A direct RED→GREEN transaction test, existing backup/restore and import
+  regression suites, generic iOS `MemoMarkiOS` and `MemoMarkShareExtension`
+  Debug builds, and `git diff --check` pass. Physical iPhone 17 Pro Max
+  backup/restore and Photos acceptance remain deferred to the requested final
+  unified validation pass.
+
+## 2026-08-30 Build 100 Core Modernization — Configuration Draft Naming
+
+- The active configuration projection, aggregate-save input, candidate and
+  candidate builder are now `ConfigurationDraftProjection`,
+  `ConfigurationAggregateDraft`, `ConfigurationAggregateCandidate` and
+  `ConfigurationAggregateCandidateBuilder` in
+  `ConfigurationDraftProjection.swift`. All Production callers—configuration
+  save command, payload builder, runtime coordinator, bootstrap/restore,
+  Settings repository, reconciliation and Configuration Center—now use those
+  stable names.
+- This is a type/file migration only: `ConfigurationLibraryRecord`, revision
+  validation, aggregate candidate construction, compatibility projection,
+  persistence bytes and the explicit legacy save route are unchanged. There is
+  no new save path and no durable schema/typealias bridge in production.
+- The affected regression suites now use the same stable type names directly;
+  the temporary test-target-only compatibility spelling has been removed. No
+  application, persistence or Share Extension code depends on the retired
+  aliases.
+- Focused save candidate, configuration module compatibility, session
+  lifecycle and bootstrap suites, plus macOS, generic iOS and Share Extension
+  Debug builds, complete without failures. Physical-device validation remains
+  deferred to the user-requested final unified acceptance pass.
+
+## 2026-08-30 Build 100 Core Modernization — Preview Draft Adapter Naming
+
+- The active bridge from editor/preview drafts to the canonical preview
+  composition engine is now named `PreviewDraftAdapter`. Its file, direct
+  Configuration Center callers and focused test suite use the same stable
+  responsibility-based name.
+- This is a symbols-only migration: the existing preview draft, composition
+  engine, render-model contracts, Editor/Renderer semantics and all persisted
+  values remain unchanged. `V1` remains only on still-unmigrated active types
+  or genuine compatibility boundaries, each to be addressed in a separate
+  family rather than by a global replacement.
+
+## 2026-08-30 Build 100 Core Modernization — Memory Subject Editing Draft
+
+- `MemorySubjectEditorView` now owns its non-avatar inspector inputs as one
+  `MemorySubjectEditingDraft`: identity text, relationship text, definition,
+  time-anchor collection, expression-subject selection and active-anchor
+  selection no longer exist as peer `@State` truth.
+- The editor remains an intentional live Configuration Center projection.
+  It keeps the existing invalid-name guard and writes only through
+  `syncDraftToSession`; the draft's deterministic projection preserves the
+  selected anchor's ID, title and reference date together. The separate
+  `TimeAnchorEditingTransaction` continues to own sheet-local cancel rollback,
+  while `SubjectAvatarEditingDraft` continues to own cancellable media work.
+- `MemorySubjectEditingDraftTests`, the existing time-anchor transaction and
+  avatar/crop suites pass, together with macOS, generic iOS and Share Extension
+  Debug builds. This is host-side structural evidence only. Physical iPhone
+  17 Pro Max object-switching, keyboard, VoiceOver, PhotosPicker and crop
+  acceptance remain `NOT VERIFIED`.
+
+## 2026-08-30 Build 100 Core Modernization — Explicit Configuration Save Routes
+
+- `ConfigurationSaveRuntimeCoordinator` no longer infers that a missing
+  aggregate should fall through to the historical settings projection. Its
+  aggregate transaction now requires a complete
+  `ConfigurationLibraryRecord` and `ConfigurationAggregateDraft`; the
+  historical projection remains available only through the explicitly named
+  `applyLegacyCompatibility` entry point.
+- The active Configuration Center first builds and commits the durable
+  aggregate. It selects the compatibility projection only for installations
+  that have not yet produced a configuration aggregate, preserving their
+  existing durable data without allowing that adapter to silently become the
+  normal production save route.
+- No configuration model, revision behavior, preset/subject reconciliation,
+  album selection, output setting, Snapshot semantics, Renderer input, or
+  persistence schema changed. The distinction is ownership and migration
+  clarity only.
+- The focused `ConfigurationSaveRuntimeCoordinatorTests` suite passes
+  `10 / 10`. This is host-side transaction evidence; physical iPhone 17 Pro
+  Max configuration, avatar crop, Share/Photos, Live Photo and read-back
+  acceptance remain `NOT VERIFIED`.
+
+## 2026-08-30 Build 100 Core Modernization — Subject Avatar Editing Boundary
+
+- `MemorySubjectEditorView` no longer keeps the display-avatar, badge-avatar,
+  preview-avatar and avatar-status values as independent view properties.
+  `SubjectAvatarEditingDraft` now owns that transient editing group, including
+  restore and optimized-asset application transitions.
+- `MemorySubject.Identity` remains the sole durable owner. The existing
+  `syncDraftToSession` writeback is unchanged, so PhotosPicker selection,
+  crop confirmation/cancellation, optimization relevance checks and durable
+  subject semantics do not acquire a second persistence path.
+- The previously added crop-canvas clipping remains the containment fix for
+  portrait source images: the scaled image cannot draw over the crop sheet's
+  instructions, navigation controls or bottom actions.
+- Focused Configuration-save, avatar-draft, crop-sheet, crop-geometry and
+  asset-optimization tests pass `22 / 22`. Physical iPhone 17 Pro Max visual,
+  Dynamic Type, VoiceOver and real PhotosPicker acceptance remain
+  `NOT VERIFIED`.
+
+## 2026-08-30 Build 100 Core Modernization — Shared PhotoKit Transaction Gateway
+
+- 静态照片和 Live Photo 保存链原先各自实现了相册查询/创建、资产精确查询、授权和
+  `PHPhotoLibrary.performChanges` continuation。现在这些 Apple Photos 机械细节统一由
+  `PhotoLibraryTransactionGateway` 承担；两条保存链继续各自拥有资源构成、收据时序、
+  read-back 语义和用户可见错误映射。
+- gateway 不持有 Memory、Renderer、配置、收据或产品错误语义。它只返回 Apple Photos
+  原始结果；外层静态/Live Photo 事务将“未确认提交”映射回既有的
+  `assetSaveFailed`，保持 TX-001 的失败语义不变。相册创建后未读回 collection 的既有
+  `albumCreateFailed` 路径也保持不变。
+- 收据幂等检查仍严格按已知 local identifier 查询，不扫描完整照片库。新的依赖约束保证
+  `PhotoLibraryExportService` 和 `PhotoKitLivePhotoAssetWriter` 不再直接调用
+  `PHAsset.fetchAssets`、`PHAssetCollection.fetchAssetCollections` 或
+  `PHPhotoLibrary.performChanges`。
+- 收据、Live Photo、队列恢复和架构定向测试通过 `83 / 83`；macOS `MemoMark`、
+  generic iOS `MemoMarkiOS` 和 `MemoMarkShareExtension` unsigned Debug 构建均通过。
+  `git diff --check` 通过；无新增 Swift 6 actor-isolation 警告。
+- 这只收敛平台依赖方向，不改变 Apple Photos 权限级别、相册选择、静态照片/Live Photo
+  资源配对、EXIF/Metadata、输出文件、原图保护或真实设备验收要求。TX-001 的 iPhone
+  中断和 read-back 证据仍待完成。
+
+## 2026-08-30 Build 100 Core Modernization — Actor-Owned Photo Library Receipt Ledger
+
+- RFC-002 Slice E 的收据耐久入口现由共享的
+  `PhotoLibrarySaveReceiptLedger` Actor 持有。静态照片与 Live Photo 的预提交 Intent、
+  已提交收据、commit acknowledgement、可见资产复用与失败恢复均经由该账本；默认
+  Production 组合共享同一个 ledger，而测试或显式自定义 `UserDefaults` 仍可得到隔离实例。
+- Apple 的 `PHPhotoLibrary.performChanges` 只会在同步变更闭包中给出 placeholder identifier，
+  该标识必须在外部事务结束前留下耐久证据。为保持这一契约，ledger 仅授予
+  `PhotoLibraryPendingIntentPlaceholderWriter`：它只能把 identifier 附加到已存在的 Intent，
+  不能创建、确认、删除或读取收据。它不是第二条事务路径。
+- `PhotoLibrarySaveReceiptAssetLocator` 已收敛为纯 PhotoKit 精确 identifier 查询；Bootstrap
+  Adapter 或 Actor ledger 负责提供收据候选，平台网关不再拥有 `UserDefaults`/receipt Store。
+  `BatchQueueStore` 的运行期恢复、裁剪和收据清理均转向 ledger；直接 Store 调用仅保留在
+  初始化期间的同步 Bootstrap Adapter，供既有启动恢复使用。
+- `photomemo.photoLibrarySaveReceipt.v1` 与
+  `photomemo.photoLibrarySaveIntent.v1` 的键和值未改变；源码以
+  `receiptSchemaV1KeyPrefix` / `intentSchemaV1KeyPrefix` 明确它们是历史存储契约，
+  不是当前产品阶段命名。
+- 定向收据、Live Photo、队列恢复和架构约束测试通过 `82 / 82`；macOS `MemoMark`、
+  generic iOS `MemoMarkiOS` 和 `MemoMarkShareExtension` unsigned Debug 构建均通过。
+  `git diff --check` 通过。macOS 仅保留既有 `CLGeocoder` 弃用提示。
+- 本切片没有改变相册选择、静态/Live Photo 资源配对、EXIF/Metadata、Renderer、输出文件
+  或原图保护。TX-001 的真实设备中断、权限变化、延迟可见性与输出 read-back 证据仍待
+  iPhone 17 Pro Max 验收，不据此声明 production certification。
+
+## 2026-08-30 Build 100 Core Modernization — Actor-Owned Durable Queue Cutover
+
+- RFC-002 Slice D 的运行期耐久真值已迁移到
+  `BatchQueueDurableLedger` Actor。入队、重试、取消、恢复、执行事件、后台过期、
+  通知标记和历史清理都先在 Actor 内形成候选快照，成功写盘后才投影到
+  `BatchQueueStore`；写盘失败时继续暴露上一份耐久快照并阻断处理，不再存在处理器
+  直接修改可观察 Store 或“先发布、稍后保存”的 Production Path。
+- `BatchQueueStore` 仍作为 `@MainActor` 兼容门面，负责 UI 投影、PhotoKit 收据编排、
+  通知和 Commerce 协调，但不再拥有运行期队列磁盘提交权。仅应用初始化期间保留一个
+  明确命名的同步 Bootstrap Adapter，用于在 Actor 启动前完成既有收据恢复和队列
+  规范化；Actor 随后从该最终磁盘状态启动，两条路径不会并发参与 Production。
+- 终态历史上限、历史封面数量/时效/体积及通知附件释放已集中到
+  `BatchQueueRetentionPolicy`，并在每次 Actor 提交和恢复写入前统一执行。托管输入副本、
+  历史封面和保存收据只在对应队列变更成功落盘后清理，继续维持
+  persist-before-cleanup 和重启可恢复语义。
+- 修复了迁移过程中发现的真实并发缺陷：入队与重试曾在持有命令门时启动处理，恢复
+  协调会再次请求同一门而形成等待环。现在耐久提交在门内完成，处理 owner 在释放门后
+  启动；恢复等待后再次检查 owner，保持全局单处理者约束。
+- 运行期 `persist: Bool` / `persist: false` 延迟保存入口已从
+  `BatchTaskExecutionRuntime` 和 `BatchTaskProcessor` 移除；Metadata、Preview、Render、
+  PhotoKit save 等所有被接受的事件都在返回前完成耐久提交。`jobs-v1.json` 继续原样保留，
+  但源码明确将其命名为 `schemaV1Filename`，避免把真实存储契约误解为当前产品阶段。
+- 合并定向验证通过 `84 / 84`（队列持久化、Actor ledger、历史保留、执行、恢复和架构
+  依赖约束）；macOS `MemoMark`、generic iOS `MemoMarkiOS` 与
+  `MemoMarkShareExtension` unsigned Debug 构建全部通过。仅保留既有 macOS
+  `CLGeocoder` 弃用提示；`git diff --check` 通过。
+- 本切片不改变 Snapshot、Preset、Memory Engine、Layout Engine、Renderer、EXIF、
+  Live Photo、Photo Library 保存协议或原图。物理 iPhone 17 Pro Max 上的头像裁切、
+  Share/Photos、Live Photo 和中断恢复验收仍未执行，因此不声明 TX-001、BP-001 或
+  production certification 已关闭。
+
+## 2026-08-30 Build 100 Core Modernization — Transaction And Execution Boundaries
+
+- RFC-002 Slice B now has a real read-only application transaction:
+  `LoadPhotoLibraryAlbumsTransaction` depends on the narrow
+  `PhotoLibraryAlbumAccessing` port, returns a typed load result, and is built
+  once in the composition root. The Configuration Center album presenter no
+  longer constructs or calls the former one-to-one load Intent path.
+- The queue execution core now separates deterministic policy from external
+  media work. Retry/cancel/job-state derivation and executor-event transition
+  validation are pure Domain policies. `BatchTaskProcessor` consumes an
+  immutable `BatchTaskExecutionContext` plus the async
+  `BatchTaskExecutionRuntime` boundary and emits typed
+  `BatchTaskExecutionEvent` values; it contains no `BatchQueueStore` reference
+  and cannot run arbitrary store mutation closures. The current store remains
+  the only durable queue authority and compatibility facade.
+- Static-photo, Live Photo, ambiguous PhotoKit read-back, failure, cancellation
+  and retry paths retain their existing transitions. Stale, regressive and
+  post-terminal executor events are now rejected before persistence. This is
+  an actor-ready boundary, not a claim that the actor-backed durable queue
+  ledger is complete; retry/cancel/recovery/commerce/notification ownership
+  must move together before the facade can stop being authoritative.
+- The canonical configuration save path is now named and located as
+  `SaveConfigurationTransaction`, with responsibility-based command, receipt,
+  runtime, persistence-status and subject-save scheduler names. The active
+  root, entry section, shared adaptive layout, user-facing date formatter and
+  status badge no longer use a product-stage `V1` label. Persisted keys, raw
+  values, Codable fields, configuration revisions and compatibility
+  projections were not renamed or rewritten.
+- The PhotoKit intent/receipt/reconciliation component was physically
+  extracted from `PhotoLibraryExportService.swift` into
+  `PhotoLibrarySaveReceiptStore.swift`. The export service fell from roughly
+  1,800 to 961 lines while the existing `photomemo.*.v1` storage keys, legacy
+  readers, read-back verification, persist-before-cleanup ordering and
+  idempotency behavior remained unchanged. The component is still the existing
+  lock-backed store; actor-ledger caller migration and TX-001 interruption
+  evidence remain open.
+- Verification passed: governance validation, `git diff --check`, focused
+  transaction/queue/naming/receipt suites, the macOS Debug app build, and the
+  unsigned generic `MemoMarkiOS` Debug build. The complete `MemoMarkTests` run
+  passed `1640 / 0 failed / 1 skipped` (`1673` device/parameterized executions)
+  and retained two existing QoS warnings in `FixtureExportReadbackTests`.
+- Physical iPhone 17 Pro Max acceptance remains required for the avatar crop
+  containment fix, Share/Photos lifecycle, Live Photo/save-back behavior and
+  user-visible fit. No simulator was used, no production certification is
+  claimed, and no commit, push, TestFlight upload or App Store action was
+  performed.
+
+## 2026-08-30 Build 100 Refactoring P0 Closure — Production Snapshot Isolation
+
+- The active iOS Configuration Center composition root is now
+  `MemoMarkConfigurationCenterView`; the retired
+  `MemoMarkiOSV1View` source path is removed. The earlier Phase 1/2 view
+  extraction, runtime-coordinator adoption, and source-contract migration are
+  therefore closed as one buildable checkpoint rather than a mixed root path.
+- Production Share intake now keeps current-format requests on their complete
+  canonical snapshot. When an older Share Extension request predates that
+  payload and its durable revision has advanced, the request can enter only as
+  an explicit legacy transport compatibility snapshot: it retains its own
+  template, album, copy, anchor, language, and other captured fields, but it
+  cannot borrow the user's later current configuration. A current or future
+  revision without a canonical snapshot remains rejected.
+- This does not modify the Memory Engine, Layout Engine, Renderer, EXIF/Live
+  Photo handling, Photo Library write protocol, durable configuration schema,
+  or the original photo. It removes a production state-contamination path and
+  keeps the existing `BatchQueueStore` compatibility facade and its enforced
+  single processing owner intact.
+- Added regression coverage for versioned legacy transport and historical Share
+  transport isolation; updated extracted-view contracts so they verify the
+  user-visible boundary rather than a stale private-owner location or an
+  unrelated layout spacing constant. The focused Snapshot/Share suite passed
+  `39/39`; the BP-001 queue state-machine suite passed `47/47`.
+- A clean full `MemoMarkTests` run passed `1629 passed / 0 failed / 1 skipped`
+  (1,630 total). It retains two existing QoS runtime warnings from
+  `FixtureExportReadbackTests`; neither is a test failure. Current generic iOS
+  unsigned Debug build produced `MemoMarkiOS.app`; governance validation and
+  `git diff --check` passed.
+- RFC-002 now records the immutable-handoff rule. The paired physical iPhone
+  17 Pro Max is still required for post-refactor avatar crop, Share/Photos, and
+  output lifecycle acceptance; no simulator substitute or production
+  certification claim is made. No commit, push, TestFlight upload, or App Store
+  submission was performed.
+
+## 2026-08-29 RFC-002 Core Architecture Modernization Accepted
+
+- The product owner explicitly opened MemoMark's internal core architecture for
+  behavior-preserving redesign. RFC-002 and ADR-011 now define a target based on
+  Domain Kernel, Application Transactions, narrow Platform Ports/Adapters,
+  feature-scoped Presentation, and a behavior-free Composition Root.
+- The amendment allows current facades, owners, folders, and eventual compile-
+  time modules to change. It does not authorize feature loss, durable-format
+  breakage, changed memory truth, original-photo mutation, weakened PhotoKit
+  idempotency, Renderer-owned layout, or a second production path.
+- The same audit found active `V1` naming across 132 production Swift files and
+  89 test files. Active code will migrate to stable responsibility-based names;
+  real historical formats will use explicit `SchemaV1`/`LegacyV1` naming while
+  stored keys, raw values, file names, and migration readers remain unchanged.
+- The first naming slice targets the active iOS Configuration Center root and
+  current diagnostic copy. The migration will not mechanically replace `V1`
+  with `V4`.
+- Physical-device acceptance for the earlier Phase 2 lifecycle slices and
+  avatar crop correction remains pending because the paired iPhone was
+  unavailable. No production-certification claim is made by the architecture
+  decision.
+
+## 2026-08-29 Build 100 Codebase Health Refactoring — Phase 2 Slices 2-5 And Avatar Crop Containment
+
+- 按同一轮连续变更完成 Phase 2 剩余 Slice 2-4，没有创建总括 ViewModel，也没有改变
+  `ConfigurationSession`、Memory Engine、Layout Engine、Renderer、Apple Photos、Share Extension 或
+  `ExternalPhotoIntakeCenter` 的既有真值边界。`MemoMarkiOSV1View` 仍是活动 Configuration Center 组合根。
+- Slice 2 新增 `V1PhotoIntakeRuntimeCoordinator`，把“冻结配置快照 -> 异步导入 -> 提交”的请求身份、取消和
+  陈旧完成抑制从根视图收敛出来。SwiftUI 继续负责 picker 呈现；被取消或被新请求取代的导入不会提交，也不会
+  回写旧 UI，且只清理 MemoMark 自有 `MemoMarkV1Picker` 临时目录下尚未提交的副本，不触碰 Apple Photos
+  原图或其他路径。
+- Slice 3 新增 `V1LogoAssetRuntimeCoordinator`，统一 Logo 优化请求身份、对象/配置上下文核验、取消和陈旧
+  资产清理；根状态不再保存第二份 active request，只应用显式 `LogoAssetUpdate`。旧任务不能覆盖新 Logo，
+  也不能错误清除新任务的 busy 状态。
+- Slice 4 复用现有 `PreviewDraftAdapter`，让全部可插入模块的编辑项与显示文本直接由同一个
+  `V1PreviewCompositionEngine` 投影，删除根视图内重复的 raw-value 转换和不可达 fallback，预览语义与
+  Renderer/Layout Engine 所有权均未改变。
+- 后续 Slice 5 将相册列表加载的 generation、active request、上下文核验和陈旧完成抑制从输出草稿与根视图
+  收敛到 `V1OutputAlbumRuntimeCoordinator`。`V1OutputDraftState` 继续拥有相册列表、选择、loading 和提示投影，
+  `ExportCoordinator` 继续是 Photos 读取边界；未执行 PhotoKit 写入或修改耐久配置语义。旧任务不能覆盖新对象、
+  新配置或新输出选择，也不能错误清除新任务的 loading 状态。
+- 用户截图所示的对象头像裁切页重叠并非父 sheet 再次穿透，而是竖图 aspect-fill 的绘制矩形高于方形裁切舞台，
+  且舞台没有裁切子视图，导致照片覆盖说明、缩放控件和“恢复默认位置”。已在裁切舞台边界增加 `.clipped()`；
+  拖动、缩放、圆形遮罩、裁切配置、头像资源生成和原图语义均未改变，并增加源码契约锁定该边界。
+- 本轮 test target 构建通过；照片导入、Logo、预览投影、相册加载、对象持久化、对象库/切换和头像裁切几何共
+  66 个聚焦
+  测试全部通过（0 failed、0 skipped）。治理检查、`git diff --check`、规定的 macOS Debug build 和 generic
+  iOS unsigned Debug build 均通过；仅保留既有 actor-isolation/API 弃用 warning。读取源码的 source-contract
+  suite 仍受已记录的 Xcode 27 app-hosted runner 挂起影响，相关头像断言已静态核对，但不冒充运行通过。
+- 用户已反馈上一段对象持久化人工操作“暂时未发现问题”。当前配对 iPhone 17 Pro Max 被 `devicectl` 报告为
+  `unavailable`。本次合并源码已生成 Apple Development 签名的 `2.2.3 (100)` 包，路径为
+  `/tmp/MemoMarkSlice234Device/Build/Products/Debug-iphoneos/MemoMarkiOS.app`，并通过
+  `codesign --verify --deep --strict`；但安装/启动与头像裁切页人工视觉验收尚未完成。不使用 Simulator 替代，
+  不把签名或编译证据算作真机验收。当前未 commit、push、上传 TestFlight 或发布。
+
+## 2026-08-29 Build 100 Codebase Health Refactoring — Subject Persistence Slice
+
+- 完成 [iOS 根视图责任地图](03_Engineering/2026-08-29-ios-root-responsibility-map.md)，确认
+  `ConfigurationSession` 继续作为唯一活动配置真值；本轮没有引入总括 ViewModel，也没有改变 IA-002、
+  Memory Engine、Layout Engine、Renderer、Apple Photos 或 Share Extension 所有权。
+- 将 `MemoMarkiOSV1View.persistCurrentSubjectChanges()` 内的请求代次、异步保存、陈旧完成抑制、回执
+  revision、兼容投影 warning 和失败重试收敛到 `V1SubjectPersistenceRuntimeCoordinator`。根视图只提交
+  当前不可变候选并应用 `.queued`、`.saving` 或 completion patch；旧
+  `V1SubjectPersistenceRequestGate` 及其测试已删除，避免两套 latest-request-wins 规则并存。
+- 代码复审确认旧 gate 存在一个耐久性窗口：第一笔保存成功但被后续编辑逻辑淘汰时，其 receipt revision
+  不会写回；而 repository 明确拒绝旧 revision，最新编辑可能随后收到 `staleAggregate`。新 coordinator
+  只把队列中最新候选重基线到成功回执，不更改 schema、不放宽 stale 校验；用户在保存中把内容改回原状时，
+  也会相对已落盘的中间状态再次写入，避免中间编辑意外成为最终持久状态。
+- 新增 7 个 subject persistence runtime 测试，覆盖 no-op、成功回执、延迟保存期间继续编辑、改回基线、
+  陈旧失败、兼容投影 warning 和失败后重试；连同 subject library/selection 套件共 26 tests，全部执行通过。
+  测试 target 编译和 generic iOS unsigned Debug 构建通过。
+- Xcode 27 beta 的运行时测试已通过“同一 DerivedData 先构建宿主与测试 bundle”恢复；但所有经
+  `#filePath` 读取仓库源码的 source-contract suite 仍在 app-hosted runner 中以 0 CPU 挂起。本轮相关
+  源码断言已静态核对且测试可编译，但挂起 suite 不记为通过。实体 iPhone 17 Pro Max 构建、安装、启动及
+  对象快速连续保存人工验收将在本切片收口前单独记录；当前未 commit、push 或发布。
+- 当前未提交工作树已针对配对实体 iPhone 17 Pro Max（`863C2747-6742-5E93-B715-6F89DBF90B31`）完成
+  Apple Development 签名 Debug 构建，`codesign --verify --deep --strict`、覆盖安装及
+  `com.serydoo.PhotoMemo.iOS` 启动成功；安装产物来自
+  `/tmp/MemoMarkRefactorDevice/Build/Products/Debug-iphoneos/MemoMarkiOS.app`。这只证明包可安装和启动，
+  尚未替代“编辑对象后立即再编辑 / 改回原值 / 保存失败后重试 / 切换对象”的人工验收。
+- 本切片收口复核中，规定的 macOS Debug build、generic iOS unsigned Debug build、治理检查和
+  `git diff --check` 均通过；未发现退役 Configuration Center、旧 TextKit editor 或旧 subject request
+  gate 的残留引用。既有 `MemorySubjectEditorView` actor-isolation 与 macOS `CLGeocoder` 弃用警告未扩大。
+
+## 2026-08-29 Build 100 Codebase Health Refactoring — Phase 1
+
+- 以已验证的 `2.2.3 (100)`、`main @ 0954bea` 为行为基线，建立了
+  [代码库健康重构方案](03_Engineering/2026-08-29-codebase-health-refactoring-program.md)与
+  [增量实施计划](03_Engineering/2026-08-29-codebase-health-refactoring-plan.md)。本计划属于
+  Engineering Loop，不是核心架构重写；Configuration Center、Memory Engine、Layout Engine、
+  Renderer、Apple Photos 原图保护、持久化配置和 Share 工作流的所有权均保持不变。
+- 第一阶段确认 `ConfigurationCenteriOSView.swift` 没有生产调用，实际 iOS 根入口仍为
+  `MemoMarkRootSceneView -> MemoMarkiOSV1View`。在把本地化、符号、位置显示、响应式布局、设置披露和
+  Apple-native 契约迁移到活动 owner 后，删除了这份 1,778 行的退役实现，并同步修正 iOS 视图地图。
+- 从原 2,001 行的 `V1IOSViewSupportComponents.swift` 中移除了无引用的
+  `V1SlotATextKitEditor`、其私有 text view 和无引用的 `CardRegion` 私有图标 helper；活动的
+  `V1TextKitEditorSession`、attachment、IME、caret、selection、undo 和输入几何契约没有改动。
+  同时将 `V1PreviewCard` 与区域编辑器/UIKit 支持分别移动到独立编译单元；原支持文件现为 825 行，
+  只保留同一职责下的页面、卡片、面板和紧凑操作原语，不再为追求行数继续机械拆分。
+- 测试 target 的 `build-for-testing`、generic iOS unsigned Debug 构建、规定的 macOS Debug 构建、
+  governance checker 与 `git diff --check` 均通过。最初两次 Xcode 27 beta 执行在 worker/宿主产物
+  阶段中止；后续在同一 DerivedData 重建宿主与 test bundle 后，运行时 suite 已恢复执行，但读取仓库文件的
+  source-contract suite 仍单独挂起。因此不能把“测试已编译”记成“全量测试已通过”。现有
+  `MemorySubjectEditorView` actor-isolation 与 macOS `CLGeocoder` 弃用警告保持原状，未在本切片混改。
+- 本阶段是无行为变化的 P2 源码清理，没有运行 Simulator，也没有把编译证据宣称为实体 iPhone 视觉验收。
+  未操作 Apple Photos、未修改版本号、未 commit、push、上传 TestFlight 或提交 App Store。下一步按计划
+  先冻结 `MemoMarkiOSV1View` 的状态、异步生命周期、依赖和测试 seam 地图，再决定最小可验证提取点。
+
 ## 2026-08-29 Build 100 New TestFlight Train Preparation
 
 - 发现 App Store Connect 已关闭 `2.2.2` 预发布列车：上一轮 build 99 的归档与导出阶段通过，但上传阶段返回 `90062`（`CFBundleShortVersionString 2.2.2` 不高于已批准版本）和 `90186`（`2.2.2` 列车已关闭）。这不是源码编译或加密合规失败；经用户授权，本轮开启新的 marketing version `2.2.3`、build `100`。
@@ -26141,3 +28064,248 @@ automated UI test was used by explicit product direction, and no app or Photos
 data was cleared. Final Dark Mode and VoiceOver acceptance remains open and is
 intentionally the next dedicated stage. No Git commit, remote push, TestFlight
 upload, or App Store submission was performed.
+
+## 2026-09-03 MemoMarkDeviceQA Bounded Recovery Evidence
+
+On the paired iPhone 17 Pro Max, the signed Debug `MemoMarkDeviceQA` suite
+completed with **17 passed / 0 failed / 0 skipped**. The final local result
+bundle is
+`/tmp/MemoMarkDeviceQATXBP20260903/full-qa-tx-d4-passed-final-20260903/MemoMarkDeviceQA.xcresult`.
+The suite directly exercised the production picker route for an independent
+still, a complete Live Photo, and the prepared highest-quality RAW/ProRAW
+input; it asserted new-output cardinality, input preservation, Live Photo
+readback, configuration reachability, Subject-avatar crop cancellation, and
+the bounded interface-language surfaces.
+
+QA-07 and QA-08 exercised a Debug-only seam only after PhotoKit accepted the
+save transaction and before MemoMark acknowledged that local commit. For both
+a static output and a Live Photo output, the host was terminated, relaunched
+for recovery, and then cold-launched two further times. The expected output
+count remained stable throughout those later launches, so this run supplies
+direct physical-device evidence for the bounded post-commit recovery and
+TX-001 D4 repeat-start idempotency slices. A transient PHPicker accessibility
+node-reuse race was found in QA-08 during this work; the harness now accepts a
+Live Photo selection only after the picker enables its completion control. The
+corrected QA-08 was rerun independently and then included in the all-green
+full suite. No production media, queue, renderer, persistence, or Share code
+was changed by this correction.
+
+This does **not** close the overall TX-001 or BP-001 carryovers. The run does
+not cover Share Extension initiation, TX-001 D3 delayed-visibility behavior,
+TX-001 D5 permission changes during recovery, cancellation, or injected
+durable-receipt-write failure. An attempted current-device Instruments
+Activity Monitor capture recognized the device but timed out waiting for its
+boot state before a trace was produced; it supplies no measurement evidence
+and therefore BP-001 remains open pending an enforced single-task contract and
+an accepted measurement campaign. The result bundle also records Xcode runtime
+priority-inversion warnings during PhotoKit-related test waits; they did not
+fail a product assertion and require separate ownership investigation before
+being treated as a product performance finding. The test runs created only the
+user-authorized artifacts in the dedicated MemoMark QA Outputs album. No Git
+commit, remote push, TestFlight upload, App Store submission, or production
+certification claim was made.
+
+## 2026-09-03 Host Contract Verification Qualification
+
+The architecture-contract tests were updated only where behavior-preserving
+file extraction had left an assertion attached to its former monolithic owner.
+The resulting contracts now explicitly follow the current ownership graph:
+`TaskPageSurface -> TaskRecentHistorySurface`, `HomePageSurface ->
+HomeMemoryPresetRow`, and `MemoMarkConfigurationCenterView ->
+MemoMarkConfigurationCenterDependencies` plus runtime-composition extensions.
+This does not restore any retired V1 surface or change user-visible behavior.
+
+`MemoMarkTests` completed `build-for-testing` successfully in an isolated
+DerivedData directory after those contract updates. A focused read-only source
+check also passed all nine ownership assertions, covering the native recent
+history list and row height, overflow action, preset selection affordance,
+injected save/external-intake transactions, extracted lifecycle coordinators,
+and semantic subject icon. `git diff --check` passed.
+
+An attempted full macOS `MemoMarkTests` execution must not be interpreted as a
+passing or failing product suite: after more than 1,750 completed passing test
+cases, its Xcode runner stalled while finalizing workers and test logs. The
+result bundle recorded six `Testing was canceled` entries caused by the
+intentional interruption and one stale recent-history source-location
+assertion; the latter was corrected afterwards and included in the successful
+test build and focused source check. The existing skipped metadata-writer test
+remained skipped. The incomplete host run does not reduce the completed
+physical-device QA evidence, but it also does not substitute for a clean,
+reproducible full-host-suite run. No certification, commit, push, TestFlight,
+or App Store action was performed.
+
+## 2026-09-03 2.2.4 (101) Source Checkpoint Preparation
+
+The behavior-preserving architecture modernization has been organized as the
+next local source checkpoint, `2.2.4 (101)`. All target build settings now use
+marketing version `2.2.4` (10 fields) and build number `101` (12 fields),
+covering the macOS and iOS apps, Share Extension, Widget, tests, and Device QA.
+The accompanying release notes, App Store copy, TestFlight path, synchronization
+manifest, and App Review materials share the same scope and explicitly retain
+`Version Locked; Release Evidence Open` status.
+
+Repository classification found only intended untracked source, test,
+architecture, or engineering-record additions corresponding to
+the tracked legacy-file splits and renames; none are private media or generated
+release artifacts. The only safe disposable artifacts were the generated Python
+cache directories under `scripts/` and `scripts/tests/`. Local `.codex`
+configuration and skills remain deliberately excluded. The current worktree is
+already on `main` at `0954bea` with no separate branch to merge; it remains
+unstaged and unpushed pending the separately authorized Git operations.
+
+An isolated unsigned generic-iOS Debug `MemoMarkiOS` build has now completed
+for this exact source checkpoint. Its primary app, Share Extension, and Widget
+products each resolve to `2.2.4 / 101`; this is compile evidence only, not a
+signed-device or Apple Photos acceptance claim. A reproducible full macOS test
+completion and version-specific device evidence are still required before the
+checkpoint can be called a release candidate beyond source preparation. TX-001,
+BP-001, and superseding production certification remain open. No Git commit,
+push, TestFlight upload, App Store Connect change, or App Store submission was
+performed.
+
+## 2026-09-03 2.2.4 (101) Signed iPhone Deployment And Live Observation
+
+The exact `2.2.4 (101)` source checkpoint was rebuilt for the paired physical
+iPhone 17 Pro Max (`00008150-000A043136A1401C`) with the existing Apple
+Development signing identity. The resulting `MemoMarkiOS.app` passed strict
+signature verification, retained bundle identifier `com.serydoo.PhotoMemo.iOS`,
+and was confirmed to contain marketing version `2.2.4` and build `101`.
+
+The app was then installed in place through `devicectl`; no uninstall, erase,
+container reset, or Apple Photos data operation occurred. The device returned
+installation database sequence `2360`, and the app was launched in the
+foreground as process `10377`. A subsequent device process query confirmed
+that `MemoMarkiOS` and its Widget extension processes were present.
+
+Live observation was prepared through the current iOS tunnel with
+`pymobiledevice3 syslog live`, filtered to the existing
+`com.serydoo.PhotoMemo*` diagnostic subsystems. It can capture structured
+Share-intake and production-diagnostic events while the user exercises the
+app; it deliberately does not expose photo contents, paths, raw metadata, or
+private diagnostic payloads. No qualifying user workflow event had occurred at
+the initial observation point, so this record proves signed build, install,
+launch, and observability readiness only. It is not Apple Photos output
+acceptance, a Share-to-output proof, TX-001 closure, BP-001 closure, or
+superseding production certification.
+
+## 2026-09-03 Live Photo Share Intake Recovery Fix
+
+A paired-iPhone Share Extension observation isolated a Live Photo failure
+before durable intake: Apple Photos advertised `com.apple.live-photo` and a
+JPEG representation, but its first Live Photo file-representation request
+returned `NSItemProviderErrorDomain/-1000`. App Group readiness was verified,
+the durable external-intake request list remained empty, and subsequent host
+drains returned zero requests. Batch scheduling, Snapshot, Memory Engine,
+Renderer, Export, and Photo Library save-back were therefore not reached.
+
+The Share importer had two behavior-preserving defects. Its first dynamic
+file-representation failure was recorded as `loadItem/public.image`, obscuring
+the actual API and requested UTI. In addition, the `originalFormat` /
+`preserveMotion` policy returned after that first failure, which correctly
+prevented a silent still-image downgrade but incorrectly skipped the existing
+same-semantics in-place Live Photo representation attempt.
+
+`ShareManagedFileImporter` now records the real
+`loadFileRepresentation(requestedTypeIdentifier:)` operation and always tries
+the in-place Live Photo representation after the ordinary file representation
+has failed. Only after both dynamic-resource attempts fail does the existing
+policy decide whether a static-output configuration may continue or a
+motion-preserving request must fail explicitly. No persistence, configuration,
+Renderer, output, or original-media contract changed.
+
+The added regression checks first failed against the observed defect and then
+passed: the focused `MemoMarkShareIntakeDiagnosticsTests` ran 14/14 green and
+`ShareIntakeResponsibilitySplitTests` ran 9/9 green. The real
+`MemoMarkShareExtension` iPhoneOS target compiled successfully, and a signed
+`2.2.4 (101)` `MemoMarkiOS` build passed strict signature verification before
+in-place installation and launch on the paired iPhone. Device log monitoring
+is ready for the next Apple Photos share. A new Share-to-output round trip is
+still required to establish that this particular Apple Photos provider accepts
+the in-place representation path; until then this is a repaired and compiled
+recovery path, not a device-accepted Live Photo output claim. No App or Photos
+data was cleared, and no Git, TestFlight, App Store Connect, or App Store
+mutation was performed.
+
+## 2026-09-03 Live Photo Object-Only Provider Path And Deep-Layer Audit
+
+The subsequent paired-iPhone retry proved that the affected Apple Photos share
+provider also rejects the in-place package request with
+`NSItemProviderErrorDomain/-1000`; no durable intake request is written in
+that case. The provider nevertheless advertises `com.apple.live-photo`, so the
+Share Extension now tries its supported `PHLivePhoto` object representation
+after both file-package routes fail. `PHAssetResource.assetResources(for:)`
+materializes the full-size still and paired-video resources into a temporary
+same-basename directory, which is then copied once into the existing App Group
+managed intake location. The persisted item retains the Live Photo content
+type, allowing the established batch route and `LivePhotoSourceBundleLocator`
+to consume the pair without a static-image downgrade.
+
+The audit also found and closed two asynchronous failure modes in this new
+path: provider response de-duplication is now separate from final completion,
+so the 15-second intake timeout continues to cover resource extraction; and a
+timeout cancels any outstanding materialization task, whose cancellation checks
+prevent a late shared-container copy from becoming an orphaned source. The
+source regression contract covers the object route, pair extraction,
+timeout/final-completion separation, cancellation, and the existing
+motion-preserving fallback ordering. An isolated unsigned iPhoneOS build of
+the exact Share Extension source completed successfully, and `git diff --check`
+passed. A macOS focused test invocation compiled but stalled in Xcode's test
+host startup and was intentionally stopped; it is neither a test pass nor a
+product failure.
+
+Static review found no further downstream conversion or state-isolation issue:
+the Share path persists managed directories directly, the request retains its
+configuration snapshot and declared `com.apple.live-photo` type, the drain
+hands it to the established batch admission boundary, and the batch policy
+recognizes both the declared type and the same-basename bundle. This does not
+yet prove the Apple Photos object provider can hand its resources to the
+extension on the physical device. At this record point the paired iPhone was
+unavailable to Xcode's USB/Wi-Fi device channel, so signed deployment and the
+next system-log round trip remain open. No App Group, Photos, queue, or user
+configuration data was erased; no Git, TestFlight, App Store Connect, or App
+Store mutation was performed.
+
+## 2026-09-03 Live Photo Static-Representation Identity Recovery: Device Closure
+
+The next signed-device retry showed a third Apple Photos provider variant: it
+advertised `com.apple.live-photo`, rejected its file, in-place, and
+`PHLivePhoto` object representations, but successfully supplied a
+`public.jpeg` still for each selected item. That still is not an output source
+for a motion-preserving request. It carries local capture-time and pixel-size
+facts only, so the host app can resolve the original Apple Photos asset before
+any production task is created.
+
+The previous Share-boundary policy prematurely stopped after the dynamic
+representation failures when the frozen output policy was `originalFormat` or
+`preserveMotion`. That made the existing host-owned identity-recovery path
+unreachable. The boundary now always persists the offered still as a bounded
+recovery transport. `ShareCoordinator` remains the sole owner of the
+PhotoKit lookup: a unique match rewrites the payload to the original
+`com.apple.live-photo` asset; an ambiguous or unavailable match remains a Live
+Photo task and fails closed; only an explicitly static output policy may use
+the still as output.
+
+The revised focused host suite completed successfully in isolated DerivedData:
+`ShareIntakeResponsibilitySplitTests` and
+`ShareDrainMigrationRegressionTests`. It includes the static-transport
+admission, unique identity recovery, ambiguous fail-closed preservation, and
+explicit-static behavior. A strict-signature-verified `2.2.4 (101)` build was
+installed in place and launched on the paired iPhone 17 Pro Max
+(`00008150-000A043136A1401C`) without removing its container.
+
+The physical-device round trip then closed the reported Share-stage failure.
+All four selected provider items persisted successfully, each host lookup
+reported `result=matched`, and all four admitted tasks declared
+`contentType=com.apple.live-photo` with a recovered source identifier. Every
+task used `route=livePhoto`; Apple Photos resource observation found both a
+still and paired movie; and PhotoKit save read-back verified
+`livePhoto=true`, `stillResource=true`, `pairedVideoResource=true`, positive
+duration, and positive pixel size. No item followed a static JPEG output path.
+
+This closes the observed Apple Photos Share intake and motion-preserving
+write-back regression for this provider shape. It does not close the wider
+TX-001 or BP-001 carryovers, nor does it replace a separate manual visual and
+playback acceptance pass in the output album. No originals, App Group data,
+queue history, Git state, TestFlight, App Store Connect, or App Store state
+was mutated beyond the user-authorized in-place development-app installation
+and the resulting new output assets.

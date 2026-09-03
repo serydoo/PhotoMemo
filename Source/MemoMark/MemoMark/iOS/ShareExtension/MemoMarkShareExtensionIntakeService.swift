@@ -272,11 +272,19 @@ final class MemoMarkShareExtensionIntakeService {
                 compatibleWith:
                     .currentRuntime
             )
-        return min(
-            snapshot.batchLimit,
-            snapshot.remainingRecords
-                ?? snapshot.batchLimit
-        )
+        return ShareIntakeCapacityPolicy()
+            .maximumSupportedPhotoCount(
+                for: snapshot
+            )
+    }
+
+    private func requestCapacity(
+        from snapshot: MemoMarkCommerceSnapshot
+    ) -> Int {
+        ShareIntakeCapacityPolicy()
+            .maximumSupportedPhotoCount(
+                for: snapshot
+            )
     }
 
     init(
@@ -388,8 +396,17 @@ final class MemoMarkShareExtensionIntakeService {
                 .noSupportedImages
         }
 
-        guard providers.count <= maxSupportedPhotoCount,
-              maxSupportedPhotoCount > 0 else {
+        let commerceSnapshot =
+            commercePersistence
+            .loadSharedSnapshot(
+                compatibleWith:
+                    .currentRuntime
+            )
+        let requestCapacity = requestCapacity(
+            from: commerceSnapshot
+        )
+        guard providers.count <= requestCapacity,
+              requestCapacity > 0 else {
             let failureContext =
                 MemoMarkShareIntakeOperationSeed(
                     itemProviderCount:
@@ -407,7 +424,7 @@ final class MemoMarkShareExtensionIntakeService {
                         MemoMarkShareIntakeDiagnosticError
                         .make(
                             description:
-                                "Share Extension received \(providers.count) supported image providers; maxSupportedPhotoCount is \(maxSupportedPhotoCount).",
+                                "Share Extension received \(providers.count) supported image providers; requestCapacity is \(requestCapacity).",
                             code: 1010
                         )
                 )
@@ -416,7 +433,7 @@ final class MemoMarkShareExtensionIntakeService {
                 supportedProviderCount:
                     providers.count,
                 maxSupportedPhotoCount:
-                    maxSupportedPhotoCount,
+                    requestCapacity,
                 requestID: requestID
             )
 

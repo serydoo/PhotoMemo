@@ -238,7 +238,7 @@ struct ConfigurationCenterSummarySection: View {
                 }
             }
         }
-        .v1GroupedSurface()
+        .groupedSurface()
     }
 
     private var subjectIdentityDetail: String {
@@ -426,7 +426,7 @@ struct ConfigurationCenterSummarySection: View {
     }
 
     private var summaryDivider: some View {
-        V1HorizontalDivider(horizontalInset: 14)
+        HorizontalDivider(horizontalInset: 14)
     }
 }
 

@@ -56,53 +56,43 @@ struct ConfigurationCenterLocationDisplaySupportTests {
         )
     }
 
-    @Test("configuration center summary passes saved location display configuration")
-    func configurationCenterSummaryPassesSavedLocationDisplayConfiguration() throws {
-        let repositoryRoot =
-            URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let sourceURL =
-            repositoryRoot
-            .appendingPathComponent(
-                "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenteriOSView.swift"
-            )
-        let source =
-            try String(
-                contentsOf: sourceURL,
-                encoding: .utf8
-            )
-
-        let marker =
-            "ConfigurationCenterLocationDisplaySupport\n            .summaryValue("
-        let markerRange =
-            try #require(
-                source.range(of: marker)
-            )
-        let remainingSource =
-            String(
-                source[markerRange.lowerBound...]
-            )
-        let callEnd =
-            try #require(
-                remainingSource.range(of: "\n            )")
-            )
-        let callSource =
-            String(
-                remainingSource[..<callEnd.upperBound]
-            )
+    @Test("active configuration root persists selected location display configuration")
+    func activeConfigurationRootPersistsSelectedLocationDisplayConfiguration() throws {
+        let source = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
+        )
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+        let bindingsSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Bindings.swift"
+        )
+        let combinedSource = source + pagesSource + bindingsSource
+        let bindingStart = try #require(
+            bindingsSource.range(of: "var locationDisplayOptionBinding")?
+                .lowerBound
+        )
+        let bindingEnd = try #require(
+            bindingsSource.range(
+                of: "var timeDisplayOptionBinding",
+                range: bindingStart..<bindingsSource.endIndex
+            )?.lowerBound
+        )
+        let bindingSource = String(bindingsSource[bindingStart..<bindingEnd])
 
         #expect(
-            callSource.contains("selectedConfiguration:")
+            combinedSource.contains(
+                "selectedLocationOptionID:\n                locationDisplayOptionBinding"
+            )
         )
         #expect(
-            callSource.contains("savedLocationDisplayConfiguration")
+            bindingSource.contains(
+                ".selectedOptionID(\n                        fromConfiguration:\n                            locationDisplayConfiguration"
+            )
         )
-        #expect(
-            !callSource.contains("session.state")
-        )
+        #expect(bindingSource.contains("locationDisplayConfiguration ="))
+        #expect(combinedSource.contains(".saveLocationDisplayConfiguration("))
+        #expect(combinedSource.contains("activeConfigurationStatus = .dirty"))
     }
 
     @Test("selection change keeps the requested region and updates the location module configuration")
@@ -202,41 +192,23 @@ struct ConfigurationCenterLocationDisplaySupportTests {
         let detailSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterDetailSupportPanels.swift"
         )
-        let centerSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenteriOSView.swift"
+        let activeRootSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
-        let legacySource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
         )
+        let bindingsSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Bindings.swift"
+        )
+        let combinedSource = activeRootSource + pagesSource + bindingsSource
 
         #expect(!summarySource.contains(".disabled(isLocationSelectable == false)"))
         #expect(!detailSource.contains(".disabled(locationModule == nil)"))
-        #expect(!legacySource.contains(".disabled(!isLocationSelectable)"))
-        #expect(
-            centerSource.contains(
-                "selectedLocationDisplayConfiguration"
-            )
-        )
-        #expect(
-            centerSource.contains(
-                ".saveLocationDisplayConfiguration("
-            )
-        )
-        #expect(
-            centerSource.contains(
-                ".onAppear {"
-            )
-        )
-        #expect(
-            centerSource.contains(
-                "return selectedLocationDisplayConfiguration"
-            )
-        )
-        #expect(
-            legacySource.contains(
-                ".saveLocationDisplayConfiguration("
-            )
-        )
+        #expect(!activeRootSource.contains(".disabled(!isLocationSelectable)"))
+        #expect(combinedSource.contains("selectedLocationOptionID:"))
+        #expect(combinedSource.contains("locationDisplayOptionBinding"))
+        #expect(combinedSource.contains(".saveLocationDisplayConfiguration("))
     }
 }
 

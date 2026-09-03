@@ -46,8 +46,8 @@ private final class PresenterStubPhotoLibraryExportService:
 @Suite("Export album presenter", .serialized)
 struct ExportAlbumPresenterTests {
 
-    @Test("load projection reads album options through ExportCoordinator and auto-selects the first album when the picker has no selection")
-    func loadProjectionReadsAlbumOptionsThroughCoordinatorAndAutoSelectsFirstAlbum() async {
+    @Test("load projection reads album options through the application transaction and auto-selects the first album when the picker has no selection")
+    func loadProjectionReadsAlbumOptionsThroughTransactionAndAutoSelectsFirstAlbum() async {
 
         let stubService =
             PresenterStubPhotoLibraryExportService()
@@ -64,24 +64,18 @@ struct ExportAlbumPresenterTests {
             )
         ]
 
-        let coordinator =
-            ExportCoordinator(
-                exportService:
-                    RecordCardExportService(),
-                photoLibraryRepository:
-                    PhotoLibraryRepository(
-                        photoLibraryExportService:
-                            stubService
-                    )
+        let transaction =
+            LoadPhotoLibraryAlbumsTransaction(
+                albumAccess: stubService
             )
 
         let projection =
-            await V1ExportAlbumLoadingPresenter
+            await ExportAlbumLoadingPresenter
             .loadProjection(
                 currentAvailableAlbums: [],
                 selectedExistingAlbumIdentifier:
                     "",
-                coordinator: coordinator
+                transaction: transaction
             )
 
         #expect(
@@ -107,9 +101,9 @@ struct ExportAlbumPresenterTests {
     func projectionKeepsExistingPickerSelection() {
 
         let projection =
-            V1ExportAlbumLoadingPresenter
+            ExportAlbumLoadingPresenter
             .projectedState(
-                from: .success([
+                from: .loaded([
                     PhotoAlbumOption(
                         id: "album-a",
                         title: "Family",
@@ -147,9 +141,9 @@ struct ExportAlbumPresenterTests {
     func projectionSurfacesEmptyAlbumStatusMessage() {
 
         let projection =
-            V1ExportAlbumLoadingPresenter
+            ExportAlbumLoadingPresenter
             .projectedState(
-                from: .success([]),
+                from: .loaded([]),
                 currentAvailableAlbums: [],
                 selectedExistingAlbumIdentifier:
                     ""
@@ -182,13 +176,15 @@ struct ExportAlbumPresenterTests {
         ]
 
         let projection =
-            V1ExportAlbumLoadingPresenter
+            ExportAlbumLoadingPresenter
             .projectedState(
-                from: .failure(
-                    MemoMarkError(
-                        code: .photoLibrarySaveFailed,
+                from: .failed(
+                    PhotoLibraryAlbumLoadFailure(
                         message:
-                            "Unable to load system photo albums."
+                            "Unable to load system photo albums.",
+                        underlyingDescription:
+                            "fixture failure",
+                        diagnosticCode: nil
                     )
                 ),
                 currentAvailableAlbums:

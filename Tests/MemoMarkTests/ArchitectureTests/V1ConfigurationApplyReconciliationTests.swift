@@ -4,12 +4,12 @@ import Testing
 @testable import MemoMark
 
 @Suite("V1 configuration apply reconciliation")
-struct V1ConfigurationApplyReconciliationTests {
+struct ConfigurationSaveReconciliationTests {
 
     @Test("project success patch for new album with picker selection reloads albums restores subject and marks preset applied")
     func projectSuccessPatchForNewAlbumWithPickerSelectionReloadsAlbumsRestoresSubjectAndMarksPresetApplied() {
         let subject = ConfigurationCenterState.mock.selectedSubject
-        let receipt = V1ConfigurationApplyReceipt(
+        let receipt = SaveConfigurationReceipt(
             saveReceipt: V1ConfigurationSaveReceipt(
                 anchor: Anchor(
                     type: .birthday,
@@ -24,7 +24,7 @@ struct V1ConfigurationApplyReconciliationTests {
             )
         )
 
-        let patch = V1ConfigurationApplyResultPresenter.successPatch(
+        let patch = ConfigurationSaveResultPresenter.successPatch(
             receipt: receipt,
             outputTarget: .newAlbum,
             subjectForSaving: subject
@@ -41,7 +41,7 @@ struct V1ConfigurationApplyReconciliationTests {
 
     @Test("project failure patch surfaces error and skips success state")
     func projectFailurePatchSurfacesErrorAndSkipsSuccessState() {
-        let patch = V1ConfigurationApplyResultPresenter.failurePatch(
+        let patch = ConfigurationSaveResultPresenter.failurePatch(
             error: MemoMarkError(
                 code: .invalidInput,
                 message: "保存失败"

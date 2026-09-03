@@ -15,26 +15,26 @@ struct LegacyConfigurationCompatibilitySettings:
 
     var template: Template
     var badge: Badge?
-    var logoMode: V1LogoMode
+    var logoMode: ConfigurationLogoMode
     var locationConfiguration:
         ExpressionModuleConfiguration?
     var shouldWritePhotosDescription: Bool
     var photosDescriptionOverride: String
     var selectedAlbumIdentifier: String
     var selectedAlbumTitle: String
-    var mediaOutputMode: V1MediaOutputMode
+    var mediaOutputMode: MediaOutputMode
 
     init(
         template: Template,
         badge: Badge?,
-        logoMode: V1LogoMode,
+        logoMode: ConfigurationLogoMode,
         locationConfiguration:
             ExpressionModuleConfiguration?,
         shouldWritePhotosDescription: Bool,
         photosDescriptionOverride: String,
         selectedAlbumIdentifier: String,
         selectedAlbumTitle: String,
-        mediaOutputMode: V1MediaOutputMode
+        mediaOutputMode: MediaOutputMode
     ) {
         self.template = template
         self.badge = badge
@@ -438,7 +438,7 @@ extension ConfigurationLibraryRecord {
 extension ConfigurationLibraryRecord {
 
     static func migrating(
-        _ legacy: V1SubjectLibraryRecord,
+        _ legacy: SubjectLibrarySchemaV1Record,
         compatibility:
             LegacyConfigurationCompatibilitySettings,
         revision: Int,
@@ -552,7 +552,7 @@ extension ConfigurationLibraryRecord {
                 ownerID: badge?.id ?? preset.id
             )
             : nil
-        let logoMode: V1LogoMode = {
+        let logoMode: ConfigurationLogoMode = {
             switch requestedLogoMode {
             case .appleMini:
                 return .appleMini
@@ -806,7 +806,7 @@ extension ConfigurationLibraryRecord {
     }
 
     private static func livePhotoPolicy(
-        for mediaMode: V1MediaOutputMode
+        for mediaMode: MediaOutputMode
     ) -> MemoryConfigurationRecord
         .Output.LivePhotoPolicy {
         switch mediaMode {
@@ -835,7 +835,7 @@ extension ConfigurationLibraryRecord {
     }
 
     private static func albumDestination(
-        for target: V1IOSOutputTarget
+        for target: ConfigurationOutputTarget
     ) -> MemoryConfigurationRecord
         .Output.AlbumDescriptor.Destination {
         switch target {

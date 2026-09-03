@@ -177,7 +177,7 @@ enum ProductionConfigurationSnapshotFactory {
                 // `mediaMode` is a legacy persisted field. Production
                 // snapshots now derive output format from the source asset,
                 // so an old static-image value must not affect processing.
-                V1MediaOutputMode.originalFormat.rawValue,
+                MediaOutputMode.originalFormat.rawValue,
             livePhotoPolicyRawValue:
                 MemoryConfigurationRecord.Output.LivePhotoPolicy
                     .preserveMotion.rawValue,

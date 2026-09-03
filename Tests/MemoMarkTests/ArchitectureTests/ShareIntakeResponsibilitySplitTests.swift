@@ -56,14 +56,14 @@ struct ShareIntakeResponsibilitySplitTests {
         )
     }
 
-    @Test("Original-format Live Photo intake attempts recoverable static handoff after provider failure")
-    func originalFormatAttemptsRecoverableStaticHandoffAfterLivePhotoProviderFailure() {
+    @Test("Live Photo static payloads remain available as recovery transport for motion-preserving output")
+    func livePhotoStaticFallbackRemainsAvailableForIdentityRecovery() {
         #expect(
             LivePhotoStaticFallbackPolicy
                 .shouldStopAfterLiveRepresentationFailure(
                     errorCode: 3010,
                     mediaOutputModeRawValue:
-                        V1MediaOutputMode
+                        MediaOutputMode
                         .originalFormat
                         .rawValue
                 ) == false
@@ -80,7 +80,7 @@ struct ShareIntakeResponsibilitySplitTests {
             .shouldStopAfterLiveRepresentationFailure(
                 errorCode: 3010,
                 mediaOutputModeRawValue:
-                    V1MediaOutputMode
+                        MediaOutputMode
                     .staticImage
                     .rawValue
             ) == false
@@ -103,7 +103,7 @@ struct ShareIntakeResponsibilitySplitTests {
             .shouldStopAfterLiveRepresentationFailure(
                 errorCode: 3001,
                 mediaOutputModeRawValue:
-                    V1MediaOutputMode
+                    MediaOutputMode
                     .originalFormat
                     .rawValue
             ) == false
@@ -229,6 +229,40 @@ struct ShareIntakeResponsibilitySplitTests {
         )
     }
 
+    @Test("Managed importer delegates source materialization while preserving file-first orchestration")
+    func managedImporterDelegatesSourceMaterialization() throws {
+        let importerSource = try sourceText(
+            relativePath:
+                "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareManagedFileImporter.swift"
+        )
+        let materializerSource = try sourceText(
+            relativePath:
+                "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareManagedImportMaterializer.swift"
+        )
+
+        #expect(importerSource.contains("ShareManagedImportMaterializer"))
+        #expect(!importerSource.contains("MemoMarkImageFileReadiness"))
+        #expect(!importerSource.contains("createManagedCopyDetailed"))
+        #expect(
+            materializerSource.contains(
+                "struct ShareManagedImportMaterializer"
+            )
+        )
+        #expect(materializerSource.contains("createManagedCopyDetailed"))
+        #expect(materializerSource.contains("fromData: data"))
+        #expect(materializerSource.contains("SHA256.hash"))
+        #expect(
+            materializerSource.contains(
+                "recordSourcePreparationIfNeeded"
+            )
+        )
+        #expect(
+            materializerSource.contains(
+                "recordSourceUnavailableIfNeeded"
+            )
+        )
+    }
+
     @Test("Managed importer bounds provider waits and records timeout reasons")
     func managedImporterBoundsProviderWaits() throws {
         let source = try sourceText(
@@ -324,16 +358,7 @@ struct ShareIntakeResponsibilitySplitTests {
     private func sourceURL(
         relativePath: String
     ) -> URL {
-        let testsDirectory =
-            URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-        let repositoryRoot =
-            testsDirectory
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-
-        return repositoryRoot
+        MemoMarkTestPaths.repositoryRoot
             .appendingPathComponent(
                 relativePath
             )

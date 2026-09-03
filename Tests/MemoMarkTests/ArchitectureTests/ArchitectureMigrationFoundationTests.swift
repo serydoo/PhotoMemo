@@ -162,5 +162,100 @@ struct ArchitectureMigrationFoundationTests {
             forName: suiteName
         )
     }
+
+    @MainActor
+    @Test("BuildRecordCardTransaction preserves the established card-build result")
+    func buildRecordCardTransactionPreservesEstablishedCardBuildResult() throws {
+
+        let photo = SelectedPhoto(
+            sourceURL: URL(
+                fileURLWithPath: "/tmp/ArchitectureProduction.jpg"
+            ),
+            image: NSImage(
+                size: NSSize(
+                    width: 1200,
+                    height: 900
+                )
+            ),
+            metadata: PhotoMetadata(
+                captureDate: Date(
+                    timeIntervalSince1970: 1_719_772_800
+                ),
+                deviceBrand: "Apple",
+                deviceModel: "iPhone 15 Pro",
+                imageWidth: 4032,
+                imageHeight: 3024
+            )
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: .classicWhite.normalizedForEditing,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: true,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let expectedCard = RecordCardBuildService().buildCard(
+            from: photo,
+            configuration: configuration
+        )
+
+        let result = BuildRecordCardTransaction(
+            buildService: RecordCardBuildService()
+        ).buildCard(
+            from: photo,
+            configuration: configuration
+        )
+
+        switch result {
+        case .success(let card):
+            #expect(card.template == expectedCard.template)
+            #expect(card.metadata == expectedCard.metadata)
+            #expect(
+                card.exportDescriptionOverride
+                == expectedCard.exportDescriptionOverride
+            )
+        case .failure(let error):
+            Issue.record(
+                "Expected production card build to succeed, got \(error.message)"
+            )
+        }
+    }
+
+    @Test("Production card compilation has an off-main execution boundary")
+    func productionCardCompilationCanLeaveMainActor() async throws {
+        let photo = SelectedPhoto(
+            sourceURL: URL(fileURLWithPath: "/tmp/ArchitectureProduction.jpg"),
+            image: NSImage(size: NSSize(width: 1200, height: 900)),
+            metadata: PhotoMetadata(
+                captureDate: Date(timeIntervalSince1970: 1_719_772_800),
+                imageWidth: 4032,
+                imageHeight: 3024
+            )
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: .classicWhite.normalizedForEditing,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: true,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let transaction = BuildRecordCardTransaction(
+            buildService: RecordCardBuildService()
+        )
+
+        let result = await transaction.buildCardOffMainThread(
+            from: photo,
+            configuration: configuration
+        )
+
+        guard case .success(let card) = result else {
+            Issue.record("Expected off-main production card build to succeed")
+            return
+        }
+        #expect(card.metadata.imageWidth == 4032)
+        #expect(card.metadata.imageHeight == 3024)
+    }
 }
 #endif

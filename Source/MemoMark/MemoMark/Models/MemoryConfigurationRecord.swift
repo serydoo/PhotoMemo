@@ -224,7 +224,7 @@ struct MemoryConfigurationRecord:
                 }
             }
 
-            var mode: V1LogoMode
+            var mode: ConfigurationLogoMode
             var badge: BadgeDescriptor?
         }
 
@@ -339,7 +339,7 @@ struct MemoryConfigurationRecord:
             )
         }
 
-        var mediaMode: V1MediaOutputMode
+        var mediaMode: MediaOutputMode
         var livePhotoPolicy: LivePhotoPolicy
         var photosDescriptionPolicy:
             PhotosDescriptionPolicy

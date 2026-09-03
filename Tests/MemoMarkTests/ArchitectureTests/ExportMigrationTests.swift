@@ -57,8 +57,8 @@ private final class StubPhotoLibraryExportService:
 @Suite("Export migration", .serialized)
 struct ExportMigrationTests {
 
-    @Test("LoadExportAlbumOptionsIntent reads album options through ExportCoordinator")
-    func loadExportAlbumOptionsIntentReadsAlbumOptionsThroughCoordinator() async {
+    @Test("LoadPhotoLibraryAlbumsTransaction reads through the narrow album port")
+    func loadPhotoLibraryAlbumsTransactionReadsThroughNarrowAlbumPort() async {
 
         let stubService =
             StubPhotoLibraryExportService()
@@ -75,28 +75,17 @@ struct ExportMigrationTests {
             )
         ]
 
-        let coordinator =
-            ExportCoordinator(
-                exportService:
-                    RecordCardExportService(),
-                photoLibraryRepository:
-                    PhotoLibraryRepository(
-                        photoLibraryExportService:
-                            stubService
-                    )
-            )
-
         let result =
-            await LoadExportAlbumOptionsIntent(
-                coordinator: coordinator
+            await LoadPhotoLibraryAlbumsTransaction(
+                albumAccess: stubService
             )
             .execute()
 
         switch result {
-        case .success(let albums):
+        case .loaded(let albums):
             #expect(stubService.fetchAlbumOptionsCallCount == 1)
             #expect(albums == stubService.albumOptionsToReturn)
-        case .failure(let error):
+        case .failed(let error):
             Issue.record(
                 "Expected album-options intent to succeed, got \(error.message)"
             )
@@ -311,6 +300,32 @@ struct ExportMigrationTests {
             Issue.record(
                 "Expected new-album resolution to succeed, got \(error.message)"
             )
+        }
+    }
+
+    @Test("new album resolution fails when the composed export coordinator is unavailable")
+    func resolveOutputAlbumSelectionRequiresExportCoordinatorForNewAlbum() async {
+
+        let result =
+            await ResolveOutputAlbumSelectionIntent(
+                request:
+                    OutputAlbumSelectionRequest(
+                        outputTarget: .newAlbum,
+                        availableAlbums: [],
+                        selectedExistingAlbumIdentifier: "",
+                        newAlbumName: "MemoMark"
+                    ),
+                coordinator: nil
+            )
+            .execute()
+
+        switch result {
+        case .success:
+            Issue.record(
+                "A detached save transaction must not start a PhotoKit album operation."
+            )
+        case .failure(let error):
+            #expect(error.code == .configurationUnavailable)
         }
     }
 }

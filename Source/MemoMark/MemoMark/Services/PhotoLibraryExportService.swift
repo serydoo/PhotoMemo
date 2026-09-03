@@ -30,953 +30,8 @@ enum PhotoLibraryCommitInterruptionTestHook {
     #endif
 }
 
-actor PhotoLibrarySaveGate {
-
-    static let shared = PhotoLibrarySaveGate()
-
-    private struct Waiter {
-
-        let id: UUID
-        let continuation:
-            CheckedContinuation<Void, any Error>
-    }
-
-    private var isSaving = false
-    private var waiters: [Waiter] = []
-
-    func run<Result>(
-        _ operation: () async throws -> Result
-    ) async throws -> Result {
-
-        try await acquire()
-
-        do {
-            try Task.checkCancellation()
-            let result = try await operation()
-            release()
-            return result
-        } catch {
-            release()
-            throw error
-        }
-    }
-
-    private func acquire() async throws {
-        try Task.checkCancellation()
-
-        guard !isSaving else {
-            let waiterID = UUID()
-            try await withTaskCancellationHandler(
-                operation: {
-                    try await withCheckedThrowingContinuation {
-                        (continuation:
-                            CheckedContinuation<
-                                Void,
-                                any Error
-                            >) in
-
-                        guard !Task.isCancelled else {
-                            continuation.resume(
-                                throwing:
-                                    CancellationError()
-                            )
-                            return
-                        }
-
-                        waiters.append(
-                            Waiter(
-                                id: waiterID,
-                                continuation: continuation
-                            )
-                        )
-                    }
-                },
-                onCancel: {
-                    Task<Void, Never> {
-                        await self.cancelWaiter(
-                            id: waiterID
-                        )
-                    }
-                }
-            )
-            return
-        }
-
-        isSaving = true
-    }
-
-    private func release() {
-        guard !waiters.isEmpty else {
-            isSaving = false
-            return
-        }
-
-        let waiter = waiters.removeFirst()
-        waiter.continuation.resume()
-    }
-
-    private func cancelWaiter(id: UUID) {
-        guard let index = waiters.firstIndex(
-            where: { $0.id == id }
-        ) else {
-            return
-        }
-
-        let waiter = waiters.remove(at: index)
-        waiter.continuation.resume(
-            throwing: CancellationError()
-        )
-    }
-}
-
-enum PhotoLibrarySaveReceiptReconciliationDecision:
-    Equatable {
-
-    case reuseAsset
-    case awaitVisibility
-}
-
-struct PhotoLibrarySaveReceiptReconciliationPolicy {
-
-    func decision(
-        assetExists: Bool,
-        recordedAt: Date?
-    ) -> PhotoLibrarySaveReceiptReconciliationDecision {
-
-        if assetExists {
-            return .reuseAsset
-        }
-
-        // A missing fetch result does not prove that PhotoKit failed to
-        // commit. Permission and visibility can change independently.
-        _ = recordedAt
-        return .awaitVisibility
-    }
-}
-
-enum PhotoLibrarySaveTransactionFailureDecision:
-    Equatable {
-
-    case retrySave
-    case recoverExistingAsset
-}
-
-struct PhotoLibrarySaveTransactionFailurePolicy {
-
-    func decision(
-        assetExists: Bool
-    ) -> PhotoLibrarySaveTransactionFailureDecision {
-        assetExists
-            ? .recoverExistingAsset
-            : .retrySave
-    }
-}
-
-enum PhotoLibrarySaveTransactionRecovery {
-
-    static func resolve(
-        idempotencyKey: String?,
-        placeholderIdentifier: String?,
-        assetExists: Bool,
-        receiptStore: PhotoLibrarySaveReceiptStore
-    ) -> PhotoLibrarySaveTransactionFailureDecision {
-        let decision = PhotoLibrarySaveTransactionFailurePolicy()
-            .decision(assetExists: assetExists)
-
-        guard let idempotencyKey else {
-            return decision
-        }
-
-        switch decision {
-        case .retrySave:
-            // A completion error is explicit evidence that this transaction
-            // did not commit. Remove every local pointer to the failed
-            // attempt so the next invocation cannot be trapped in
-            // `awaitVisibility` forever.
-            receiptStore.removeReceipt(for: idempotencyKey)
-
-        case .recoverExistingAsset:
-            // A few PhotoKit failures are reported after the asset becomes
-            // visible. Preserve that asset rather than creating a duplicate.
-            // The placeholder is normally already attached to the pending
-            // intent; the fallback record also handles older intent formats.
-            if receiptStore.assetIdentifier(for: idempotencyKey) == nil {
-                if !receiptStore.materializePendingIntent(
-                    for: idempotencyKey
-                ),
-                   let placeholderIdentifier {
-                    _ = receiptStore.record(
-                        assetIdentifier: placeholderIdentifier,
-                        for: idempotencyKey
-                    )
-                }
-            }
-            _ = receiptStore.ensureCommitted(for: idempotencyKey)
-        }
-
-        return decision
-    }
-}
-
-enum PhotoLibrarySaveReceiptPhase:
-    String,
-    Codable,
-    Equatable,
-    Sendable {
-
-    case transactionSubmitted
-    case commitAcknowledged
-}
-
-struct PhotoLibrarySaveReceipt:
-    Codable,
-    Equatable,
-    Sendable {
-
-    let assetIdentifier: String
-    let recordedAt: Date?
-    let phase: PhotoLibrarySaveReceiptPhase
-}
-
-struct PhotoLibrarySaveIntent:
-    Codable,
-    Equatable,
-    Sendable {
-
-    let startedAt: Date
-    let assetIdentifier: String?
-}
-
-protocol PhotoLibraryReceiptAssetLocating {
-
-    func visibleAssetIdentifier(
-        for idempotencyKey: String
-    ) -> String?
-}
-
-struct PhotoLibrarySaveReceiptAssetLocator:
-    PhotoLibraryReceiptAssetLocating {
-
-    private let receiptStore:
-        PhotoLibrarySaveReceiptStore
-
-    init(
-        receiptStore: PhotoLibrarySaveReceiptStore
-    ) {
-        self.receiptStore = receiptStore
-    }
-
-    func visibleAssetIdentifier(
-        for idempotencyKey: String
-    ) -> String? {
-        guard let recordedIdentifier =
-                receiptStore.assetIdentifier(
-                    for: idempotencyKey
-                )
-                ?? receiptStore.pendingAssetIdentifier(
-                    for: idempotencyKey
-                ) else {
-            return nil
-        }
-
-        return PHAsset.fetchAssets(
-            withLocalIdentifiers: [recordedIdentifier],
-            options: nil
-        )
-        .firstObject?
-        .localIdentifier
-    }
-}
-
-nonisolated final class PhotoLibrarySaveReceiptStore:
-    @unchecked Sendable {
-
-    private struct StoredReceipt: Codable {
-
-        let assetIdentifier: String
-        let recordedAt: Date?
-        let phase: PhotoLibrarySaveReceiptPhase
-
-        init(
-            assetIdentifier: String,
-            recordedAt: Date?,
-            phase: PhotoLibrarySaveReceiptPhase
-        ) {
-            self.assetIdentifier = assetIdentifier
-            self.recordedAt = recordedAt
-            self.phase = phase
-        }
-
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(
-                keyedBy: CodingKeys.self
-            )
-            assetIdentifier = try container.decode(
-                String.self,
-                forKey: .assetIdentifier
-            )
-            recordedAt = try container.decodeIfPresent(
-                Date.self,
-                forKey: .recordedAt
-            )
-            phase = try container.decodeIfPresent(
-                PhotoLibrarySaveReceiptPhase.self,
-                forKey: .phase
-            ) ?? .transactionSubmitted
-        }
-
-        private enum CodingKeys: String, CodingKey {
-            case assetIdentifier
-            case recordedAt
-            case phase
-        }
-    }
-
-    private struct StoredIntent: Codable {
-
-        let startedAt: Date
-        let assetIdentifier: String?
-
-        init(
-            startedAt: Date,
-            assetIdentifier: String? = nil
-        ) {
-            self.startedAt = startedAt
-            self.assetIdentifier = assetIdentifier
-        }
-
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(
-                keyedBy: CodingKeys.self
-            )
-            startedAt = try container.decode(
-                Date.self,
-                forKey: .startedAt
-            )
-            assetIdentifier = try container.decodeIfPresent(
-                String.self,
-                forKey: .assetIdentifier
-            )
-        }
-
-        private enum CodingKeys: String, CodingKey {
-
-            case startedAt
-            case assetIdentifier
-        }
-    }
-
-    private let defaults: UserDefaults
-    private let receiptDataWriter:
-        (Data, String, UserDefaults) -> Void
-    private let synchronize: () -> Bool
-    private static let persistenceLock = NSLock()
-    private let keyPrefix =
-        "photomemo.photoLibrarySaveReceipt.v1"
-    private let intentKeyPrefix =
-        "photomemo.photoLibrarySaveIntent.v1"
-
-    init(
-        defaults: UserDefaults =
-            MemoMarkSharedContainer
-            .sharedUserDefaults,
-        receiptDataWriter:
-            ((Data, String, UserDefaults) -> Void)? = nil,
-        synchronize: (() -> Bool)? = nil
-    ) {
-        self.defaults = defaults
-        self.receiptDataWriter =
-            receiptDataWriter
-            ?? { data, key, defaults in
-                defaults.set(data, forKey: key)
-            }
-        self.synchronize =
-            synchronize
-            ?? { defaults.synchronize() }
-    }
-
-    func assetIdentifier(
-        for idempotencyKey: String
-    ) -> String? {
-        guard let key = storageKey(
-            for: idempotencyKey
-        ) else {
-            return nil
-        }
-
-        return Self.persistenceLock.withLock {
-            storedReceipt(forStorageKey: key)?
-                .assetIdentifier
-        }
-    }
-
-    func recordedAt(
-        for idempotencyKey: String
-    ) -> Date? {
-        guard let key = storageKey(
-            for: idempotencyKey
-        ) else {
-            return nil
-        }
-
-        return Self.persistenceLock.withLock {
-            storedReceipt(forStorageKey: key)?
-                .recordedAt
-        }
-    }
-
-    func receipt(
-        for idempotencyKey: String
-    ) -> PhotoLibrarySaveReceipt? {
-        guard let key = storageKey(
-            for: idempotencyKey
-        ) else {
-            return nil
-        }
-
-        return Self.persistenceLock.withLock {
-            guard let storedReceipt = storedReceipt(
-                forStorageKey: key
-            ) else {
-                return nil
-            }
-
-            return PhotoLibrarySaveReceipt(
-                assetIdentifier:
-                    storedReceipt.assetIdentifier,
-                recordedAt:
-                    storedReceipt.recordedAt,
-                phase:
-                    storedReceipt.phase
-            )
-        }
-    }
-
-    func hasPendingIntent(
-        for idempotencyKey: String
-    ) -> Bool {
-        guard let key = intentStorageKey(
-            for: idempotencyKey
-        ) else {
-            return false
-        }
-
-        return Self.persistenceLock.withLock {
-            defaults.object(forKey: key) != nil
-        }
-    }
-
-    func intent(
-        for idempotencyKey: String
-    ) -> PhotoLibrarySaveIntent? {
-        guard let key = intentStorageKey(
-            for: idempotencyKey
-        ) else {
-            return nil
-        }
-
-        return Self.persistenceLock.withLock {
-            guard let storedIntent = storedIntent(
-                forStorageKey: key
-            ) else {
-                return nil
-            }
-
-            return PhotoLibrarySaveIntent(
-                startedAt: storedIntent.startedAt,
-                assetIdentifier:
-                    storedIntent.assetIdentifier
-            )
-        }
-    }
-
-    func pendingAssetIdentifier(
-        for idempotencyKey: String
-    ) -> String? {
-        intent(for: idempotencyKey)?.assetIdentifier
-    }
-
-    @discardableResult
-    func recordIntent(
-        for idempotencyKey: String
-    ) -> Bool {
-        guard let key = storageKey(
-            for: idempotencyKey
-        ),
-        let intentKey = intentStorageKey(
-            for: idempotencyKey
-        ),
-        let encodedIntent = try? JSONEncoder()
-            .encode(
-                StoredIntent(
-                    startedAt: Date()
-                )
-            ) else {
-            return false
-        }
-
-        return Self.persistenceLock.withLock {
-            guard storedReceipt(
-                forStorageKey: key
-            ) == nil,
-            defaults.object(forKey: intentKey) == nil else {
-                return false
-            }
-
-            return writeAndVerify(
-                encodedIntent,
-                forKey: intentKey
-            )
-        }
-    }
-
-    @discardableResult
-    func recordIntentAssetIdentifier(
-        _ assetIdentifier: String,
-        for idempotencyKey: String
-    ) -> Bool {
-        let normalizedIdentifier =
-            assetIdentifier
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-        guard !normalizedIdentifier.isEmpty,
-              let intentKey = intentStorageKey(
-                  for: idempotencyKey
-              ) else {
-            return false
-        }
-
-        return Self.persistenceLock.withLock {
-            guard let existingIntent = storedIntent(
-                forStorageKey: intentKey
-            ) else {
-                return false
-            }
-
-            let updatedIntent = StoredIntent(
-                startedAt: existingIntent.startedAt,
-                assetIdentifier: normalizedIdentifier
-            )
-            guard let encodedIntent = try? JSONEncoder()
-                .encode(updatedIntent) else {
-                return false
-            }
-
-            return writeAndVerify(
-                encodedIntent,
-                forKey: intentKey
-            )
-        }
-    }
-
-    func removeIntent(
-        for idempotencyKey: String
-    ) {
-        guard let intentKey = intentStorageKey(
-            for: idempotencyKey
-        ) else {
-            return
-        }
-
-        Self.persistenceLock.withLock {
-            removeIntent(forStorageKey: intentKey)
-        }
-    }
-
-    @discardableResult
-    func markCommitted(
-        for idempotencyKey: String
-    ) -> Bool {
-        guard let key = storageKey(
-            for: idempotencyKey
-        ) else {
-            return false
-        }
-
-        return Self.persistenceLock.withLock {
-            guard let existingReceipt = storedReceipt(
-                forStorageKey: key
-            ) else {
-                return false
-            }
-
-            let committedReceipt = StoredReceipt(
-                assetIdentifier:
-                    existingReceipt.assetIdentifier,
-                recordedAt:
-                    existingReceipt.recordedAt,
-                phase:
-                    .commitAcknowledged
-            )
-            guard let encodedReceipt = try? JSONEncoder()
-                .encode(committedReceipt) else {
-                return false
-            }
-
-            guard writeAndVerify(
-                encodedReceipt,
-                forKey: key
-            ) else {
-                return false
-            }
-            defaults.removeObject(
-                forKey:
-                    timestampStorageKey(
-                        forStorageKey: key
-                    )
-            )
-            removeIntent(
-                forStorageKey:
-                    intentStorageKey(
-                        forStorageKey: key
-                    )
-            )
-            _ = synchronize()
-
-            return defaults.data(forKey: key)
-                == encodedReceipt
-        }
-    }
-
-    @discardableResult
-    func ensureCommitted(
-        for idempotencyKey: String
-    ) -> Bool {
-        guard let receipt = receipt(
-            for: idempotencyKey
-        ) else {
-            return false
-        }
-
-        guard receipt.phase
-                != .commitAcknowledged else {
-            return true
-        }
-
-        return markCommitted(
-            for: idempotencyKey
-        )
-    }
-
-    @discardableResult
-    func materializePendingIntent(
-        for idempotencyKey: String
-    ) -> Bool {
-        guard assetIdentifier(for: idempotencyKey) == nil else {
-            return true
-        }
-        guard let pendingIdentifier = pendingAssetIdentifier(
-            for: idempotencyKey
-        ) else {
-            return false
-        }
-
-        return record(
-            assetIdentifier: pendingIdentifier,
-            for: idempotencyKey
-        )
-    }
-
-    @discardableResult
-    func record(
-        assetIdentifier: String,
-        for idempotencyKey: String
-    ) -> Bool {
-        let normalizedIdentifier =
-            assetIdentifier
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-        guard !normalizedIdentifier.isEmpty,
-              let key = storageKey(
-                  for: idempotencyKey
-              ) else {
-            return false
-        }
-
-        let receipt = StoredReceipt(
-            assetIdentifier: normalizedIdentifier,
-            recordedAt: Date(),
-            phase: .transactionSubmitted
-        )
-        guard let encodedReceipt = try? JSONEncoder()
-            .encode(receipt) else {
-            return false
-        }
-
-        return Self.persistenceLock.withLock {
-            guard writeAndVerify(
-                encodedReceipt,
-                forKey: key
-            ) else {
-                return false
-            }
-            defaults.removeObject(
-                forKey:
-                    timestampStorageKey(
-                        forStorageKey: key
-                    )
-            )
-            removeIntent(
-                forStorageKey:
-                    intentStorageKey(
-                        forStorageKey: key
-                    )
-            )
-            _ = synchronize()
-            return true
-        }
-    }
-
-    func removeReceipt(
-        for idempotencyKey: String
-    ) {
-        guard let key = storageKey(
-            for: idempotencyKey
-        ) else {
-            return
-        }
-
-        Self.persistenceLock.withLock {
-            defaults.removeObject(forKey: key)
-            defaults.removeObject(
-                forKey:
-                    timestampStorageKey(
-                        forStorageKey: key
-                    )
-            )
-            removeIntent(
-                forStorageKey:
-                    intentStorageKey(
-                        forStorageKey: key
-                    )
-            )
-            _ = synchronize()
-        }
-    }
-
-    func removeReceipts(
-        for idempotencyKeys: Set<String>
-    ) {
-        let keys = idempotencyKeys.compactMap {
-            storageKey(for: $0)
-        }
-
-        Self.persistenceLock.withLock {
-            for key in keys {
-                defaults.removeObject(forKey: key)
-                defaults.removeObject(
-                    forKey:
-                        timestampStorageKey(
-                            forStorageKey: key
-                        )
-                )
-                removeIntent(
-                    forStorageKey:
-                        intentStorageKey(
-                            forStorageKey: key
-                        )
-                )
-            }
-            _ = synchronize()
-        }
-    }
-
-    func pruneReceipts(
-        retaining idempotencyKeys: Set<String>
-    ) {
-        let retainedStorageKeys = Set(
-            idempotencyKeys
-                .compactMap {
-                    storageKey(for: $0)
-                }
-        )
-        let retainedIntentStorageKeys = Set(
-            idempotencyKeys
-                .compactMap {
-                    intentStorageKey(for: $0)
-                }
-        )
-
-        Self.persistenceLock.withLock {
-            for key in retainedStorageKeys {
-                migrateLegacyReceiptIfNeeded(
-                    forStorageKey: key
-                )
-            }
-
-            let staleStorageKeys = defaults
-                .dictionaryRepresentation()
-                .keys
-                .filter {
-                    (
-                        $0.hasPrefix(keyPrefix + ".")
-                        || $0.hasPrefix(intentKeyPrefix + ".")
-                    )
-                    && (
-                        $0.hasSuffix(".recordedAt")
-                        || (
-                            !$0.hasPrefix(intentKeyPrefix + ".")
-                            && !retainedStorageKeys.contains($0)
-                        )
-                        || (
-                            $0.hasPrefix(intentKeyPrefix + ".")
-                            && !retainedIntentStorageKeys.contains($0)
-                        )
-                    )
-                }
-
-            for key in staleStorageKeys {
-                defaults.removeObject(forKey: key)
-            }
-            _ = synchronize()
-        }
-    }
-
-    private func storageKey(
-        for idempotencyKey: String
-    ) -> String? {
-        let normalizedKey =
-            idempotencyKey
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-            .replacingOccurrences(
-                of: "/",
-                with: "-"
-            )
-        guard !normalizedKey.isEmpty else {
-            return nil
-        }
-
-        return "\(keyPrefix).\(normalizedKey)"
-    }
-
-    private func timestampStorageKey(
-        forStorageKey storageKey: String
-    ) -> String {
-        "\(storageKey).recordedAt"
-    }
-
-    private func intentStorageKey(
-        for idempotencyKey: String
-    ) -> String? {
-        let normalizedKey =
-            idempotencyKey
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-            .replacingOccurrences(
-                of: "/",
-                with: "-"
-            )
-        guard !normalizedKey.isEmpty else {
-            return nil
-        }
-
-        return "\(intentKeyPrefix).\(normalizedKey)"
-    }
-
-    private func intentStorageKey(
-        forStorageKey storageKey: String
-    ) -> String {
-        let suffix = storageKey
-            .dropFirst((keyPrefix + ".").count)
-        return "\(intentKeyPrefix).\(suffix)"
-    }
-
-    private func storedReceipt(
-        forStorageKey storageKey: String
-    ) -> StoredReceipt? {
-        if let data = defaults.data(forKey: storageKey),
-           let receipt = try? JSONDecoder()
-            .decode(StoredReceipt.self, from: data) {
-            return receipt
-        }
-
-        guard let legacyIdentifier = defaults
-            .string(forKey: storageKey) else {
-            return nil
-        }
-
-        return StoredReceipt(
-            assetIdentifier: legacyIdentifier,
-            recordedAt:
-                defaults.object(
-                    forKey:
-                        timestampStorageKey(
-                        forStorageKey: storageKey
-                    )
-                ) as? Date,
-            phase: .transactionSubmitted
-        )
-    }
-
-    private func storedIntent(
-        forStorageKey storageKey: String
-    ) -> StoredIntent? {
-        guard let data = defaults.data(
-            forKey: storageKey
-        ) else {
-            return nil
-        }
-
-        return try? JSONDecoder()
-            .decode(
-                StoredIntent.self,
-                from: data
-            )
-    }
-
-    private func removeIntent(
-        forStorageKey storageKey: String
-    ) {
-        defaults.removeObject(forKey: storageKey)
-        _ = synchronize()
-    }
-
-    private func writeAndVerify(
-        _ data: Data,
-        forKey key: String
-    ) -> Bool {
-        let previousValue = defaults.object(forKey: key)
-        receiptDataWriter(data, key, defaults)
-        _ = synchronize()
-
-        guard defaults.data(forKey: key) == data else {
-            if let previousValue {
-                defaults.set(previousValue, forKey: key)
-            } else {
-                defaults.removeObject(forKey: key)
-            }
-            _ = synchronize()
-            return false
-        }
-
-        return true
-    }
-
-    private func migrateLegacyReceiptIfNeeded(
-        forStorageKey storageKey: String
-    ) {
-        guard defaults.data(forKey: storageKey) == nil,
-              let receipt = storedReceipt(
-                forStorageKey: storageKey
-              ),
-              let encodedReceipt = try? JSONEncoder()
-                .encode(receipt) else {
-            return
-        }
-
-        _ = writeAndVerify(
-            encodedReceipt,
-            forKey: storageKey
-        )
-    }
-}
-
-protocol PhotoLibraryExporting {
+protocol PhotoLibraryExporting:
+    PhotoLibraryAlbumAccessing {
 
     func fetchAlbumOptions() async throws -> [PhotoAlbumOption]
 
@@ -1100,17 +155,34 @@ final class PhotoLibraryExportService:
 
     private let metadataReader =
         PhotoMetadataReader()
-    private let receiptStore:
-        PhotoLibrarySaveReceiptStore
+    private let receiptLedger:
+        PhotoLibrarySaveReceiptLedger
+    private let placeholderIntentWriter:
+        PhotoLibraryPendingIntentPlaceholderWriter
+    private let photoLibraryGateway:
+        PhotoLibraryTransactionGateway
     private let receiptReconciliationPolicy =
         PhotoLibrarySaveReceiptReconciliationPolicy()
 
     init(
         receiptStore:
-            PhotoLibrarySaveReceiptStore =
-                PhotoLibrarySaveReceiptStore()
+            PhotoLibrarySaveReceiptStore? = nil,
+        photoLibraryGateway:
+            PhotoLibraryTransactionGateway? = nil
     ) {
-        self.receiptStore = receiptStore
+        let receiptLedger =
+            receiptStore.map {
+                PhotoLibrarySaveReceiptLedger(
+                    store: $0
+                )
+            }
+            ?? .shared
+        self.receiptLedger = receiptLedger
+        placeholderIntentWriter =
+            receiptLedger.placeholderIntentWriter
+        self.photoLibraryGateway =
+            photoLibraryGateway
+            ?? PhotoLibraryTransactionGateway.shared
     }
 
     func fetchAlbumOptions() async throws -> [PhotoAlbumOption] {
@@ -1123,13 +195,7 @@ final class PhotoLibraryExportService:
 
         var albums: [PhotoAlbumOption] = []
 
-        let fetchResult = PHAssetCollection.fetchAssetCollections(
-            with: .album,
-            subtype: .any,
-            options: nil
-        )
-
-        fetchResult.enumerateObjects { collection, _, _ in
+        for collection in photoLibraryGateway.albumCollections() {
 
             guard
                 let title = collection.localizedTitle?
@@ -1138,7 +204,7 @@ final class PhotoLibraryExportService:
                     ),
                 !title.isEmpty
             else {
-                return
+                continue
             }
 
             albums.append(
@@ -1175,35 +241,40 @@ final class PhotoLibraryExportService:
             throw PhotoLibraryExportError.unauthorized
         }
 
-        let albumTitle =
-            normalizedAlbumTitle(title)
+        // Album lookup and creation form one logical critical section. Without
+        // the shared gate, two configuration or batch tasks can both observe a
+        // missing title and create duplicate Photo Library albums.
+        return try await PhotoLibrarySaveGate.shared.run { [self] in
+            let albumTitle =
+                normalizedAlbumTitle(title)
 
-        if let existingAlbum =
-            fetchAlbum(withTitle: albumTitle) {
+            if let existingAlbum =
+                fetchAlbum(withTitle: albumTitle) {
+
+                return PhotoAlbumOption(
+                    id: existingAlbum.localIdentifier,
+                    title:
+                        existingAlbum.localizedTitle
+                        ?? albumTitle,
+                    localIdentifier:
+                        existingAlbum.localIdentifier
+                )
+            }
+
+            let createdAlbum =
+                try await createAlbum(
+                    named: albumTitle
+                )
 
             return PhotoAlbumOption(
-                id: existingAlbum.localIdentifier,
+                id: createdAlbum.localIdentifier,
                 title:
-                    existingAlbum.localizedTitle
+                    createdAlbum.localizedTitle
                     ?? albumTitle,
                 localIdentifier:
-                    existingAlbum.localIdentifier
+                    createdAlbum.localIdentifier
             )
         }
-
-        let createdAlbum =
-            try await createAlbum(
-                named: albumTitle
-            )
-
-        return PhotoAlbumOption(
-            id: createdAlbum.localIdentifier,
-            title:
-                createdAlbum.localizedTitle
-                ?? albumTitle,
-            localIdentifier:
-                createdAlbum.localIdentifier
-        )
     }
 
     func saveImage(
@@ -1255,7 +326,7 @@ final class PhotoLibraryExportService:
 
             if let idempotencyKey,
                let existingAsset =
-                try existingAsset(
+                try await existingAsset(
                     for: idempotencyKey
                 ) {
                 return PhotoLibrarySaveResult(
@@ -1270,7 +341,7 @@ final class PhotoLibraryExportService:
             try Task.checkCancellation()
 
             if let idempotencyKey {
-                guard receiptStore.recordIntent(
+                guard await receiptLedger.recordIntent(
                     for: idempotencyKey
                 ) else {
                     throw PhotoLibraryExportError
@@ -1280,7 +351,7 @@ final class PhotoLibraryExportService:
                 do {
                     try Task.checkCancellation()
                 } catch {
-                    receiptStore.removeIntent(
+                    await receiptLedger.removeIntent(
                         for: idempotencyKey
                     )
                     throw error
@@ -1326,9 +397,9 @@ final class PhotoLibraryExportService:
 
                 if let idempotencyKey {
                     didPersistPlaceholderIntent =
-                        self.receiptStore
-                        .recordIntentAssetIdentifier(
-                            placeholder.localIdentifier,
+                        self.placeholderIntentWriter.record(
+                            assetIdentifier:
+                                placeholder.localIdentifier,
                             for: idempotencyKey
                         )
                 }
@@ -1346,49 +417,65 @@ final class PhotoLibraryExportService:
                 }
             } catch {
                 let decision =
-                    PhotoLibrarySaveTransactionRecovery.resolve(
+                    await PhotoLibrarySaveTransactionRecovery.resolve(
                         idempotencyKey: idempotencyKey,
                         placeholderIdentifier: placeholderIdentifier,
                         assetExists: placeholderIdentifier
                             .flatMap(fetchAsset(with:)) != nil,
-                        receiptStore: receiptStore
+                        receiptLedger: receiptLedger
                     )
-                if decision == .recoverExistingAsset,
-                   !(error is CancellationError),
-                   let placeholderIdentifier {
-                    if let idempotencyKey {
-                        guard receiptStore
-                            .receipt(for: idempotencyKey)?
-                            .phase == .commitAcknowledged else {
-                            // The PhotoKit asset is visible, but the local
-                            // idempotency proof is not durable yet. Do not
-                            // report success without the proof that prevents
-                            // a later retry from creating a duplicate.
-                            throw PhotoLibraryExportError
-                                .savedAssetReadbackPending
-                        }
+                let receipt: PhotoLibrarySaveReceipt?
+                if let idempotencyKey {
+                    receipt = await receiptLedger.receipt(
+                        for: idempotencyKey
+                    )
+                } else {
+                    receipt = nil
+                }
+                switch PhotoLibraryAmbiguousCommitRecoveryPolicy()
+                    .resolution(
+                        decision: decision,
+                        wasCancelled: error is CancellationError,
+                        idempotencyKey: idempotencyKey,
+                        receipt: receipt
+                    ) {
+                case .reportRecoveredAsset:
+                    guard let placeholderIdentifier else {
+                        throw error
                     }
                     return PhotoLibrarySaveResult(
                         albumTitle: album?.localizedTitle ?? "",
                         assetLocalIdentifier: placeholderIdentifier
                     )
+                case .awaitReadback:
+                    throw PhotoLibraryExportError
+                        .savedAssetReadbackPending
+                case .rethrowFailure:
+                    throw error
                 }
-                throw error
             }
 
             try Task.checkCancellation()
 
             guard placeholderIdentifier != nil else {
-                if let idempotencyKey {
-                    receiptStore.removeReceipt(for: idempotencyKey)
+                if idempotencyKey != nil {
+                    // The external transaction has already returned. A
+                    // missing placeholder is therefore an ambiguous local
+                    // observation, not proof that the asset was not created.
+                    // Keep the submitted intent/receipt so a retry cannot
+                    // issue a second PhotoKit write.
+                    throw PhotoLibraryExportError
+                        .savedAssetReadbackPending
                 }
                 throw PhotoLibraryExportError.assetSaveFailed
             }
 
+            let savedAssetIdentifier = placeholderIdentifier ?? ""
+
             if let idempotencyKey {
                 guard didPersistPlaceholderIntent,
-                      receiptStore.record(
-                          assetIdentifier: placeholderIdentifier ?? "",
+                      await receiptLedger.record(
+                          assetIdentifier: savedAssetIdentifier,
                           for: idempotencyKey
                       ) else {
                     // The PhotoKit transaction has already completed. A
@@ -1408,7 +495,24 @@ final class PhotoLibraryExportService:
                 // The submission receipt remains the safe fallback if this
                 // acknowledgement cannot be persisted. Direct asset lookup
                 // still prevents a second PhotoKit write.
-                guard receiptStore.markCommitted(for: idempotencyKey) else {
+                guard await receiptLedger.markCommitted(
+                    for: idempotencyKey
+                ) else {
+                    throw PhotoLibraryExportError.savedAssetReadbackPending
+                }
+
+                // A successful PhotoKit completion callback is not by itself
+                // enough to project this durable batch task as completed. The
+                // exact receipt-backed asset must be visible through the
+                // direct identifier lookup; otherwise retain the receipt and
+                // let normal reconciliation resolve delayed visibility.
+                guard PhotoLibraryStaticSaveReadbackPolicy()
+                    .decision(
+                        assetExists:
+                            photoLibraryGateway.asset(
+                                with: savedAssetIdentifier
+                            ) != nil
+                    ) == .complete else {
                     throw PhotoLibraryExportError.savedAssetReadbackPending
                 }
             }
@@ -1418,7 +522,7 @@ final class PhotoLibraryExportService:
                     album?.localizedTitle
                     ?? "",
                 assetLocalIdentifier:
-                    placeholderIdentifier ?? ""
+                    savedAssetIdentifier
             )
         }
     }
@@ -1454,10 +558,15 @@ final class PhotoLibraryExportService:
             throw PhotoLibraryExportError.assetSaveFailed
         }
 
-        let temporaryURL =
-            try await exportAssetResourceToTemporaryFile(
-                for: asset
-            )
+        let temporaryURL: URL
+        do {
+            temporaryURL = try await photoLibraryGateway
+                .exportPhotoResourceToTemporaryFile(
+                    for: asset
+                )
+        } catch is PhotoLibraryTransactionGateway.Error {
+            throw PhotoLibraryExportError.assetSaveFailed
+        }
 
         defer {
             try? FileManager.default.removeItem(
@@ -1475,31 +584,30 @@ private extension PhotoLibraryExportService {
 
     func existingAsset(
         for idempotencyKey: String
-    ) throws -> PHAsset? {
+    ) async throws -> PHAsset? {
+        let recordedIdentifier =
+            await receiptLedger.assetIdentifier(
+                for: idempotencyKey
+            )
+        let pendingIdentifier =
+            await receiptLedger.pendingAssetIdentifier(
+                for: idempotencyKey
+            )
         guard let assetIdentifier =
-                receiptStore.assetIdentifier(
-                    for: idempotencyKey
-                )
-                ?? receiptStore.pendingAssetIdentifier(
-                    for: idempotencyKey
-                ) else {
+                recordedIdentifier
+                ?? pendingIdentifier else {
             return nil
         }
 
-        let asset =
-            PHAsset.fetchAssets(
-                withLocalIdentifiers: [
-                    assetIdentifier
-                ],
-                options: nil
-            )
-            .firstObject
+        let asset = fetchAsset(
+            with: assetIdentifier
+        )
 
         switch receiptReconciliationPolicy
             .decision(
                 assetExists: asset != nil,
                 recordedAt:
-                    receiptStore.recordedAt(
+                    await receiptLedger.recordedAt(
                         for: idempotencyKey
                     )
             ) {
@@ -1508,9 +616,9 @@ private extension PhotoLibraryExportService {
                 throw PhotoLibraryExportError
                     .savedAssetReadbackPending
             }
-            guard receiptStore.materializePendingIntent(
+            guard await receiptLedger.materializePendingIntent(
                 for: idempotencyKey
-            ), receiptStore.ensureCommitted(
+            ), await receiptLedger.ensureCommitted(
                 for: idempotencyKey
             ) else {
                 throw PhotoLibraryExportError
@@ -1534,24 +642,8 @@ private extension PhotoLibraryExportService {
 
     func requestAuthorizationIfNeeded() async -> PHAuthorizationStatus {
 
-        let currentStatus =
-            PHPhotoLibrary.authorizationStatus(
-                for: .readWrite
-            )
-
-        if currentStatus != .notDetermined {
-            return currentStatus
-        }
-
-        return await withCheckedContinuation { continuation in
-
-            PHPhotoLibrary.requestAuthorization(
-                for: .readWrite
-            ) { status in
-
-                continuation.resume(returning: status)
-            }
-        }
+        await photoLibraryGateway
+            .requestReadWriteAuthorization()
     }
 
     func resolvedAlbum(
@@ -1608,50 +700,25 @@ private extension PhotoLibraryExportService {
         with localIdentifier: String
     ) -> PHAssetCollection? {
 
-        PHAssetCollection
-            .fetchAssetCollections(
-                withLocalIdentifiers: [localIdentifier],
-                options: nil
-            )
-            .firstObject
+        photoLibraryGateway.album(
+            with: localIdentifier
+        )
     }
 
     func fetchAsset(
         with localIdentifier: String
     ) -> PHAsset? {
 
-        PHAsset.fetchAssets(
-            withLocalIdentifiers: [localIdentifier],
-            options: nil
-        ).firstObject
+        photoLibraryGateway.asset(
+            with: localIdentifier
+        )
     }
 
     func fetchAlbum(
         withTitle title: String
     ) -> PHAssetCollection? {
 
-        let fetchResult =
-            PHAssetCollection.fetchAssetCollections(
-                with: .album,
-                subtype: .any,
-                options: nil
-            )
-
-        var matchedAlbum: PHAssetCollection?
-
-        fetchResult.enumerateObjects { collection, _, stop in
-
-            guard
-                collection.localizedTitle == title
-            else {
-                return
-            }
-
-            matchedAlbum = collection
-            stop.pointee = true
-        }
-
-        return matchedAlbum
+        photoLibraryGateway.album(titled: title)
     }
 
     func createDefaultAlbum() async throws -> PHAssetCollection {
@@ -1665,29 +732,17 @@ private extension PhotoLibraryExportService {
         named title: String
     ) async throws -> PHAssetCollection {
 
-        var createdIdentifier: String?
         let albumTitle =
             normalizedAlbumTitle(title)
-
-        try await performChanges {
-
-            let request =
-                PHAssetCollectionChangeRequest
-                .creationRequestForAssetCollection(
-                    withTitle: albumTitle
-                )
-
-            createdIdentifier =
-                request.placeholderForCreatedAssetCollection
-                .localIdentifier
-        }
-
-        guard
-            let createdIdentifier,
-            let createdAlbum = fetchAlbum(
-                with: createdIdentifier
+        let createdAlbum: PHAssetCollection?
+        do {
+            createdAlbum = try await photoLibraryGateway.createAlbum(
+                named: albumTitle
             )
-        else {
+        } catch is PhotoLibraryTransactionGateway.Error {
+            throw PhotoLibraryExportError.albumCreateFailed
+        }
+        guard let createdAlbum else {
             throw PhotoLibraryExportError.albumCreateFailed
         }
 
@@ -1698,109 +753,13 @@ private extension PhotoLibraryExportService {
         _ changes: @escaping () -> Void
     ) async throws {
 
-        try await withCheckedThrowingContinuation {
-            (
-                continuation:
-                    CheckedContinuation<Void, Error>
-            ) in
-
-            PHPhotoLibrary.shared().performChanges(
+        do {
+            try await photoLibraryGateway.performChanges(
                 changes
-            ) { success, error in
-
-                if let error {
-                    continuation.resume(
-                        throwing: error
-                    )
-                    return
-                }
-
-                guard success else {
-                    continuation.resume(
-                        throwing:
-                            PhotoLibraryExportError
-                            .assetSaveFailed
-                    )
-                    return
-                }
-
-                continuation.resume()
-            }
-        }
-    }
-
-    func exportAssetResourceToTemporaryFile(
-        for asset: PHAsset
-    ) async throws -> URL {
-
-        let resources =
-            PHAssetResource.assetResources(
-                for: asset
             )
-
-        guard let resource =
-            resources.first(where: {
-                $0.type == .photo
-                    || $0.type == .fullSizePhoto
-            }) ?? resources.first
-        else {
+        } catch is PhotoLibraryTransactionGateway.Error {
             throw PhotoLibraryExportError.assetSaveFailed
         }
-
-        let temporaryFolder =
-            FileManager.default.temporaryDirectory
-            .appendingPathComponent(
-                "MemoMarkPhotoLibraryValidation",
-                isDirectory: true
-            )
-
-        try FileManager.default.createDirectory(
-            at: temporaryFolder,
-            withIntermediateDirectories: true
-        )
-
-        let baseName =
-            PhotoKitResourceFileName.value(
-                for: resource
-            )
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        let fileName =
-            baseName.isEmpty
-            ? "\(asset.localIdentifier).jpg"
-            : baseName
-
-        let targetURL =
-            temporaryFolder.appendingPathComponent(
-                UUID().uuidString + "_" + fileName
-            )
-
-        return try await withCheckedThrowingContinuation {
-            (
-                continuation:
-                    CheckedContinuation<URL, Error>
-            ) in
-
-            PHAssetResourceManager.default()
-                .writeData(
-                    for: resource,
-                    toFile: targetURL,
-                    options: nil
-                ) { error in
-
-                    if let error {
-                        continuation.resume(
-                            throwing: error
-                        )
-                        return
-                    }
-
-                    continuation.resume(
-                        returning: targetURL
-                    )
-                }
-        }
     }
+
 }

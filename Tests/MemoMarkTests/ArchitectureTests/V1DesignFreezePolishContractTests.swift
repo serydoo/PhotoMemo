@@ -7,22 +7,25 @@ struct V1DesignFreezePolishContractTests {
     @Test("home and subject presentation use the accepted quiet hierarchy")
     func homeAndSubjectHierarchy() throws {
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+        )
+        let presetRow = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomeMemoryPresetRow.swift"
         )
         let subject = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSupport.swift"
         )
         let backups = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/LocalConfigurationLibrarySheet.swift"
         )
         let anchors = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
 
         #expect(home.contains(".frame(width: 70, height: 70)"))
         #expect(home.contains(".font(.title2.weight(.bold))"))
-        #expect(home.contains("isSelected\n                ? \"checkmark.circle.fill\""))
-        #expect(home.contains("? Color.accentColor"))
+        #expect(presetRow.contains("isSelected ? \"checkmark.circle.fill\" : \"circle\""))
+        #expect(presetRow.contains("isSelected ? Color.accentColor"))
         #expect(!home.contains("上次修改："))
         #expect(subject.contains("subjectAvatar(size: 68)"))
         #expect(subject.contains("subjectAvatar(size: 60)"))
@@ -31,16 +34,19 @@ struct V1DesignFreezePolishContractTests {
         #expect(backups.contains("恢复时会保留当前配置"))
         #expect(anchors.contains(".buttonStyle(.borderedProminent)"))
         #expect(anchors.contains("LazyVGrid(columns: typeColumns"))
-        #expect(anchors.contains("V1TimeAnchorTodayPresenter.presentation("))
+        #expect(anchors.contains("TimeAnchorTodayPresenter.presentation("))
     }
 
     @Test("configuration center uses preview and state-aware save treatment")
     func configurationPreviewAndSaveState() throws {
         let options = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
+        )
+        let footer = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
         )
         let modules = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ModuleLibrarySurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ModuleLibrarySurface.swift"
         )
 
         #expect(options.contains("memoryExpressionPreview"))
@@ -54,9 +60,9 @@ struct V1DesignFreezePolishContractTests {
         #expect(!options.contains("horizontalTrailingWidth: 112"))
         #expect(!options.contains("V1MemoryExpressionPreviewSheet"))
         #expect(!options.contains("showsMemoryDisplayDetail"))
-        #expect(options.contains("saveActionButtonStyle"))
-        #expect(options.contains("configurationStatus == .saved"))
-        #expect(options.contains(".disabled(isSavingConfiguration || configurationStatus == .saved)"))
+        #expect(footer.contains("saveActionButtonStyle"))
+        #expect(footer.contains("configurationStatus == .saved"))
+        #expect(footer.contains(".disabled(isSavingConfiguration || configurationStatus == .saved)"))
         #expect(modules.contains("groupedModules"))
         #expect(modules.contains("ForEach(groupedModules"))
     }
@@ -67,24 +73,24 @@ struct V1DesignFreezePolishContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift"
         )
         let options = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
         let navigation = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1AdaptiveNavigationShell.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/AdaptiveNavigationShell.swift"
         )
 
-        #expect(output.contains("V1OutputPhotoDescriptionSection("))
-        #expect(output.contains("V1OutputSection("))
+        #expect(output.contains("OutputPhotoDescriptionSection("))
+        #expect(output.contains("OutputDestinationSection("))
         #expect(!output.contains("V1OutputResultSection"))
         #expect(!output.contains("V1OutputDashedDivider"))
         #expect(!output.contains("V1OutputRetentionRow"))
-        #expect(options.contains("V1OutputPhotoDescriptionContent("))
-        #expect(options.contains("V1OutputDestinationContent("))
-        #expect(!options.contains("V1OutputPhotoDescriptionSection("))
-        #expect(!options.contains("V1OutputSection("))
+        #expect(options.contains("OutputPhotoDescriptionContent("))
+        #expect(options.contains("OutputDestinationContent("))
+        #expect(!options.contains("OutputPhotoDescriptionSection("))
+        #expect(!options.contains("OutputDestinationSection("))
         #expect(options.contains("title: \"configuration.photo_description.title\""))
         #expect(options.contains("title: \"configuration.save_location.title\""))
-        #expect(!navigation.contains(".tag(V1EntryTab.output)"))
+        #expect(!navigation.contains(".tag(EntryTab.output)"))
         #expect(
             output.contains(
                 "usesCustomMemoryWriteText: $usesCustomMemoryWriteText"
@@ -109,19 +115,22 @@ struct V1DesignFreezePolishContractTests {
     @Test("photo-description changes return a saved configuration to the existing dirty save flow")
     func photoDescriptionChangesMarkOutputDirty() throws {
         let root = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
+        )
+        let pages = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
         )
         let rootObservation = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RootChangeObservationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/RootChangeObservationModifier.swift"
         )
 
         #expect(
-            root.contains(
+            pages.contains(
                 "usesCustomMemoryWriteText: $session.usesCustomMemoryWriteText"
             )
         )
         #expect(
-            root.contains(
+            pages.contains(
                 "customMemoryWriteText: $session.customMemoryWriteText"
             )
         )
@@ -148,10 +157,10 @@ struct V1DesignFreezePolishContractTests {
     @Test("progress and first run close with restrained factual feedback")
     func progressAndFirstRunFeedback() throws {
         let task = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
         )
         let welcome = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1WelcomePresentation.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/WelcomePresentation.swift"
         )
 
         #expect(task.contains("task.photoLibrary.hint"))

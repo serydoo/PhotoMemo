@@ -1,6 +1,6 @@
 #if os(iOS) && MEMOMARK_SHARE_EXTENSION
-import CryptoKit
 import Foundation
+import Photos
 import UniformTypeIdentifiers
 import UIKit
 
@@ -51,6 +51,12 @@ private final class ShareProviderCompletionGate:
         }
         isClaimed = true
         return true
+    }
+
+    func hasBeenClaimed() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return isClaimed
     }
 }
 
@@ -112,6 +118,9 @@ struct ShareManagedFileImporter {
     private let intakeStore:
         ExternalPhotoIntakeStore
 
+    private let materializer:
+        ShareManagedImportMaterializer
+
     private let providerLoader:
         ShareItemProviderLoader
 
@@ -129,6 +138,10 @@ struct ShareManagedFileImporter {
             UInt64 = 15_000_000_000
     ) {
         self.intakeStore = intakeStore
+        self.materializer =
+            ShareManagedImportMaterializer(
+                intakeStore: intakeStore
+            )
         self.providerLoader = providerLoader
         self.livePhotoRecovery =
             livePhotoRecovery
@@ -232,22 +245,6 @@ struct ShareManagedFileImporter {
                 firstLoadFailureContext =
                     firstLoadFailureContext
                     ?? failureContext
-
-                if LivePhotoStaticFallbackPolicy
-                    .shouldStopAfterLiveRepresentationFailure(
-                        errorCode:
-                            failureContext
-                            .errorSummary?
-                            .code,
-                        mediaOutputModeRawValue:
-                            mediaOutputModeRawValue,
-                        livePhotoPolicyRawValue:
-                            livePhotoPolicyRawValue
-                    ) {
-                    return .failed(
-                        failureContext
-                    )
-                }
             }
 
             let liveInPlaceLoadResult =
@@ -291,6 +288,51 @@ struct ShareManagedFileImporter {
             if
                 let failureContext =
                     liveInPlaceLoadResult
+                .failureContext,
+                firstLoadFailureContext == nil {
+                firstLoadFailureContext =
+                    failureContext
+            }
+
+            let liveObjectLoadResult =
+                await loadLivePhotoObjectRepresentationResult(
+                    from: provider,
+                    requestID: requestID,
+                    index: index,
+                    diagnosticsSeed:
+                        MemoMarkShareIntakeOperationSeed(
+                            itemProviderCount:
+                                itemProviderCount,
+                            supportedProviderCount:
+                                supportedProviderCount,
+                            providerIndex: index,
+                            requestedTypeIdentifier:
+                                livePhotoTypeIdentifier,
+                            preferredRegisteredTypeIdentifier:
+                                livePhotoTypeIdentifier
+                        ),
+                    requestedTypeIdentifier:
+                        livePhotoTypeIdentifier
+                )
+
+            if let importRecord =
+                liveObjectLoadResult.importRecord {
+                return outcomeForImportedRecord(
+                    importRecord,
+                    livePhotoTypeIdentifier:
+                        livePhotoTypeIdentifier,
+                    requestID: requestID,
+                    index: index,
+                    diagnosticsSeed:
+                        diagnosticsSeed,
+                    seenSourceKeys:
+                        &seenSourceKeys
+                )
+            }
+
+            if
+                let failureContext =
+                    liveObjectLoadResult
                     .failureContext,
                 firstLoadFailureContext == nil {
                 firstLoadFailureContext =
@@ -299,8 +341,9 @@ struct ShareManagedFileImporter {
 
             if
                 let failureContext =
-                    liveInPlaceLoadResult
-                    .failureContext,
+                    liveObjectLoadResult
+                    .failureContext
+                    ?? firstLoadFailureContext,
                 LivePhotoStaticFallbackPolicy
                 .shouldStopAfterLiveRepresentationFailure(
                     errorCode:
@@ -455,6 +498,247 @@ struct ShareManagedFileImporter {
 
 private extension ShareManagedFileImporter {
 
+    func loadLivePhotoObjectRepresentationResult(
+        from provider: NSItemProvider,
+        requestID: UUID,
+        index: Int,
+        diagnosticsSeed:
+            MemoMarkShareIntakeOperationSeed,
+        requestedTypeIdentifier: String
+    ) async -> FileRepresentationLoadResult {
+
+        let livePhotoObjectClass:
+            NSItemProviderReading.Type =
+            PHLivePhoto.self
+
+        guard provider.canLoadObject(
+            ofClass: livePhotoObjectClass
+        ) else {
+            let error =
+                MemoMarkShareIntakeDiagnosticError
+                .make(
+                    description:
+                        "The provider advertised a Live Photo but does not expose a PHLivePhoto object representation.",
+                    code: 3014
+                )
+            let failureContext =
+                diagnosticsSeed
+                .failureContext(
+                    stage: .load,
+                    operation:
+                        "loadObject(PHLivePhoto).unsupported",
+                    error: error
+                )
+            MemoMarkShareDiagnostics.record(
+                stage:
+                    .extensionLivePhotoRepresentationProbe,
+                message:
+                    MemoMarkShareLivePhotoRepresentationProbe
+                    .message(
+                        operation:
+                            "loadObject(PHLivePhoto)",
+                        providerIndex: index,
+                        typeIdentifier:
+                            requestedTypeIdentifier,
+                        resultDescription:
+                            "supported=false",
+                        url: nil,
+                        error: error
+                    ),
+                requestID: requestID
+            )
+            return FileRepresentationLoadResult(
+                importRecord: nil,
+                failureContext: failureContext
+            )
+        }
+
+        let suggestedName = provider.suggestedName
+
+        return await withCheckedContinuation {
+            (
+                continuation:
+                    CheckedContinuation<
+                        FileRepresentationLoadResult,
+                        Never
+                    >
+            ) in
+
+            let timeoutTask =
+                ShareProviderTimeoutTask()
+            // The provider may call its completion more than once. That is a
+            // different concern from the final result: materializing the
+            // PHLivePhoto resources is asynchronous and must remain covered
+            // by the same timeout as the provider request.
+            let providerResponseGate =
+                ShareProviderCompletionGate()
+            let completionGate =
+                ShareProviderCompletionGate()
+            let materializationTask =
+                ShareProviderTimeoutTask()
+            let progress =
+                provider.loadObject(
+                ofClass: livePhotoObjectClass
+            ) { [materializer] object, error in
+                guard providerResponseGate.claim(),
+                      !completionGate.hasBeenClaimed()
+                else {
+                    return
+                }
+
+                if let error {
+                    guard completionGate.claim() else {
+                        return
+                    }
+                    let wrappedError =
+                        MemoMarkShareIntakeDiagnosticError
+                        .make(
+                            description:
+                                "loadObject(PHLivePhoto) returned an error.",
+                            code: 3015,
+                            underlyingError: error
+                        )
+                    let failureContext =
+                        diagnosticsSeed
+                        .failureContext(
+                            stage: .load,
+                            operation:
+                                "loadObject(PHLivePhoto)",
+                            error: wrappedError
+                        )
+                    MemoMarkShareDiagnostics.record(
+                        stage:
+                            .extensionLivePhotoRepresentationProbe,
+                        message:
+                            MemoMarkShareLivePhotoRepresentationProbe
+                            .message(
+                                operation:
+                                    "loadObject(PHLivePhoto)",
+                                providerIndex: index,
+                                typeIdentifier:
+                                    requestedTypeIdentifier,
+                                url: nil,
+                                error: error
+                            ),
+                        requestID: requestID
+                    )
+                    timeoutTask.cancel()
+                    continuation.resume(
+                        returning:
+                            FileRepresentationLoadResult(
+                                importRecord: nil,
+                                failureContext: failureContext
+                            )
+                    )
+                    return
+                }
+
+                guard let livePhoto =
+                    object as? PHLivePhoto else {
+                    guard completionGate.claim() else {
+                        return
+                    }
+                    let failureContext =
+                        diagnosticsSeed
+                        .failureContext(
+                            stage: .load,
+                            operation:
+                                "loadObject(PHLivePhoto).missingObject",
+                            error:
+                                MemoMarkShareIntakeDiagnosticError
+                                .make(
+                                    description:
+                                        "loadObject(PHLivePhoto) completed without an object.",
+                                    code: 3016
+                                )
+                        )
+                    timeoutTask.cancel()
+                    continuation.resume(
+                        returning:
+                            FileRepresentationLoadResult(
+                                importRecord: nil,
+                                failureContext: failureContext
+                            )
+                    )
+                    return
+                }
+
+                let resourceTask = Task { @MainActor in
+                    let result =
+                        await materializer
+                        .materializeLivePhotoObject(
+                            livePhoto,
+                            requestID: requestID,
+                            index: index,
+                            preferredName: suggestedName,
+                            diagnosticsSeed: diagnosticsSeed
+                        )
+                    guard completionGate.claim() else {
+                        return
+                    }
+                    timeoutTask.cancel()
+                    continuation.resume(
+                        returning: result
+                    )
+                }
+                materializationTask.install(
+                    resourceTask
+                )
+            }
+
+            let timeoutWork = Task {
+                try? await Task.sleep(
+                    nanoseconds:
+                        providerLoadTimeoutNanoseconds
+                )
+                guard !Task.isCancelled else {
+                    return
+                }
+                guard completionGate.claim() else {
+                    return
+                }
+
+                progress.cancel()
+                materializationTask.cancel()
+                let failureContext =
+                    diagnosticsSeed
+                    .failureContext(
+                        stage: .load,
+                        operation:
+                            "loadObject(PHLivePhoto).timeout",
+                        supportID:
+                            ProductionDiagnosticSupportID
+                            .make(
+                                prefix: "SHR",
+                                operationID: requestID
+                            ),
+                        error:
+                            MemoMarkShareIntakeDiagnosticError
+                            .make(
+                                description:
+                                    "The source app did not provide the Live Photo object within 15 seconds.",
+                                code: 3017
+                            )
+                    )
+                MemoMarkShareDiagnostics.record(
+                    stage:
+                        .extensionProviderLoadTimedOut,
+                    message:
+                        "operation=loadObject(PHLivePhoto), providerIndex=\(index), requestedType=\(requestedTypeIdentifier)",
+                    requestID: requestID
+                )
+                continuation.resume(
+                    returning:
+                        FileRepresentationLoadResult(
+                            importRecord: nil,
+                            failureContext: failureContext
+                        )
+                )
+            }
+            timeoutTask.install(timeoutWork)
+        }
+    }
+
     func outcomeForImportedRecord(
         _ importRecord: ManagedImportRecord,
         livePhotoTypeIdentifier: String?,
@@ -556,7 +840,7 @@ private extension ShareManagedFileImporter {
                 provider.loadFileRepresentation(
                 forTypeIdentifier:
                     requestedTypeIdentifier
-            ) { [intakeStore] url, error in
+            ) { [materializer] url, error in
                 guard gate.claim() else {
                     return
                 }
@@ -568,10 +852,11 @@ private extension ShareManagedFileImporter {
                         message:
                             MemoMarkShareLivePhotoRepresentationProbe
                             .message(
-                                operation: "loadItem",
+                                operation:
+                                    "loadFileRepresentation",
                                 providerIndex: index,
                                 typeIdentifier:
-                                    UTType.image.identifier,
+                                    requestedTypeIdentifier,
                                 url: nil,
                                 error: error
                             ),
@@ -650,120 +935,28 @@ private extension ShareManagedFileImporter {
                     "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadFileRepresentation returned a file URL."
                 )
 
-                let sourceReadiness =
-                    MemoMarkImageFileReadiness
-                    .probe(
-                        at: url.standardizedFileURL
-                    )
-                ShareIntakeDiagnostics
-                    .recordSourcePreparationIfNeeded(
-                        sourceReadiness,
-                        requestID: requestID,
-                        index: index
-                    )
-
-                let originalFileName =
-                    Self.resolvedOriginalFileName(
-                        preferredName:
-                            suggestedName,
-                        sourceURL: url
-                    )
-
-                let copyResult =
-                    intakeStore
-                        .createManagedCopyDetailed(
-                            from: url,
-                            requestID: requestID,
-                            index: index,
-                            preferredOriginalFileName:
-                                originalFileName,
-                            requiresReadableImage:
-                                !allowsDirectoryPackage,
-                            diagnosticsSeed:
-                                diagnosticsSeed
-                        )
-
-                ShareIntakeDiagnostics.notice(
-                    "Provider[\(diagnosticsSeed.providerIndex ?? -1)] temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") managedDestinationCreated=\(copyResult.sharedContainerDestination != nil)"
-                )
-
-                guard let managedURL =
-                    copyResult.managedURL
-                else {
-                    ShareIntakeDiagnostics
-                        .recordSourceUnavailableIfNeeded(
-                            sourceReadiness,
-                            copyResult:
-                                copyResult,
-                            requestID:
-                                requestID,
-                            index:
-                                index
-                        )
-                    timeoutTask.cancel()
-                    continuation.resume(
-                        returning:
-                            FileRepresentationLoadResult(
-                                importRecord: nil,
-                                failureContext:
-                                    copyResult
-                                    .failureContext
-                                    ?? diagnosticsSeed
-                                    .failureContext(
-                                        stage: .copy,
-                                        operation:
-                                            "loadFileRepresentation.copyURL.missingManagedURL",
-                                        returnedURL:
-                                            url,
-                                        temporaryCopyResult:
-                                            copyResult
-                                            .temporaryCopyResult
-                                            ?? "missing-managed-url",
-                                        sharedContainerDestination:
-                                            copyResult
-                                            .sharedContainerDestination,
-                                        error:
-                                            MemoMarkShareIntakeDiagnosticError
-                                            .make(
-                                                description:
-                                                    "File representation copy did not produce a managed URL.",
-                                                code: 3007
-                                            )
-                                    )
-                            )
-                    )
-                    return
-                }
-
-                ShareIntakeDiagnostics
-                    .recordSourceReadyIfNeeded(
-                        sourceReadiness,
-                        requestID: requestID,
-                        index: index
-                    )
-
                 timeoutTask.cancel()
                 continuation.resume(
                     returning:
-                        FileRepresentationLoadResult(
-                            importRecord:
-                                ManagedImportRecord(
-                                    item:
-                                        ExternalPhotoIntakeItem(
-                                            managedURL:
-                                                managedURL,
-                                            originalFileName:
-                                                originalFileName,
-                                            contentTypeIdentifier:
-                                                diagnosticsSeed
-                                                .preferredRegisteredTypeIdentifier
-                                        ),
-                                    dedupeKey:
-                                        url
-                                        .standardizedFileURL
-                                        .path
-                                ),
-                            failureContext: nil
+                        materializer
+                        .materializeFileURL(
+                            url,
+                            requestID: requestID,
+                            index: index,
+                            preferredName: suggestedName,
+                            diagnosticsSeed: diagnosticsSeed,
+                            requiresReadableImage:
+                                !allowsDirectoryPackage,
+                            dedupeKey:
+                                url
+                                .standardizedFileURL
+                                .path,
+                            copyDiagnosticPrefix: "",
+                            missingManagedURLOperation:
+                                "loadFileRepresentation.copyURL.missingManagedURL",
+                            missingManagedURLDescription:
+                                "File representation copy did not produce a managed URL.",
+                            missingManagedURLErrorCode: 3007
                         )
                 )
             }
@@ -856,7 +1049,7 @@ private extension ShareManagedFileImporter {
                 provider.loadInPlaceFileRepresentation(
                     forTypeIdentifier:
                         requestedTypeIdentifier
-                ) { [intakeStore] url, isInPlace, error in
+                ) { [materializer] url, isInPlace, error in
                     MemoMarkShareDiagnostics.record(
                         stage:
                             .extensionLivePhotoRepresentationProbe,
@@ -955,119 +1148,26 @@ private extension ShareManagedFileImporter {
                         "Provider[\(diagnosticsSeed.providerIndex ?? -1)] loadInPlaceFileRepresentation returned a file URL. isInPlace=\(isInPlace)"
                     )
 
-                    let sourceReadiness =
-                        MemoMarkImageFileReadiness
-                        .probe(
-                            at: normalizedURL
-                        )
-                    ShareIntakeDiagnostics
-                        .recordSourcePreparationIfNeeded(
-                            sourceReadiness,
-                            requestID: requestID,
-                            index: index
-                        )
-
-                    let originalFileName =
-                        Self.resolvedOriginalFileName(
-                            preferredName:
-                                suggestedName,
-                            sourceURL:
-                                normalizedURL
-                        )
-
-                    let copyResult =
-                        intakeStore
-                        .createManagedCopyDetailed(
-                            from: normalizedURL,
-                            requestID: requestID,
-                            index: index,
-                            preferredOriginalFileName:
-                                originalFileName,
-                            requiresReadableImage:
-                                !allowsDirectoryPackage,
-                            diagnosticsSeed:
-                                diagnosticsSeed
-                        )
-
-                    ShareIntakeDiagnostics.notice(
-                        "Provider[\(diagnosticsSeed.providerIndex ?? -1)] inPlace temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") managedDestinationCreated=\(copyResult.sharedContainerDestination != nil)"
-                    )
-
-                    guard let managedURL =
-                        copyResult.managedURL
-                    else {
-                        ShareIntakeDiagnostics
-                            .recordSourceUnavailableIfNeeded(
-                                sourceReadiness,
-                                copyResult:
-                                    copyResult,
-                                requestID:
-                                    requestID,
-                                index:
-                                    index
-                            )
-                        timeoutTask.cancel()
-                        continuation.resume(
-                            returning:
-                                FileRepresentationLoadResult(
-                                    importRecord: nil,
-                                    failureContext:
-                                        copyResult
-                                        .failureContext
-                                        ?? diagnosticsSeed
-                                        .failureContext(
-                                            stage: .copy,
-                                            operation:
-                                                "loadInPlaceFileRepresentation.copyURL.missingManagedURL",
-                                            returnedURL:
-                                                normalizedURL,
-                                            temporaryCopyResult:
-                                                copyResult
-                                                .temporaryCopyResult
-                                                ?? "missing-managed-url",
-                                            sharedContainerDestination:
-                                                copyResult
-                                                .sharedContainerDestination,
-                                            error:
-                                                MemoMarkShareIntakeDiagnosticError
-                                                .make(
-                                                    description:
-                                                        "In-place file representation copy did not produce a managed URL.",
-                                                    code: 3014
-                                                )
-                                        )
-                                )
-                        )
-                        return
-                    }
-
-                    ShareIntakeDiagnostics
-                        .recordSourceReadyIfNeeded(
-                            sourceReadiness,
-                            requestID: requestID,
-                            index: index
-                        )
-
                     timeoutTask.cancel()
                     continuation.resume(
                         returning:
-                            FileRepresentationLoadResult(
-                                importRecord:
-                                    ManagedImportRecord(
-                                        item:
-                                            ExternalPhotoIntakeItem(
-                                                managedURL:
-                                                    managedURL,
-                                                originalFileName:
-                                                    originalFileName,
-                                                contentTypeIdentifier:
-                                                    diagnosticsSeed
-                                                    .preferredRegisteredTypeIdentifier
-                                            ),
-                                        dedupeKey:
-                                            "inPlace:\(normalizedURL.path)"
-                                    ),
-                                failureContext: nil
+                            materializer
+                            .materializeFileURL(
+                                normalizedURL,
+                                requestID: requestID,
+                                index: index,
+                                preferredName: suggestedName,
+                                diagnosticsSeed: diagnosticsSeed,
+                                requiresReadableImage:
+                                    !allowsDirectoryPackage,
+                                dedupeKey:
+                                    "inPlace:\(normalizedURL.path)",
+                                copyDiagnosticPrefix: "inPlace",
+                                missingManagedURLOperation:
+                                    "loadInPlaceFileRepresentation.copyURL.missingManagedURL",
+                                missingManagedURLDescription:
+                                    "In-place file representation copy did not produce a managed URL.",
+                                missingManagedURLErrorCode: 3014
                             )
                     )
                 }
@@ -1165,7 +1265,7 @@ private extension ShareManagedFileImporter {
                 forTypeIdentifier:
                     UTType.image.identifier,
                 options: nil
-            ) { [intakeStore] item, error in
+            ) { [materializer] item, error in
                 guard gate.claim() else {
                     return
                 }
@@ -1230,113 +1330,28 @@ private extension ShareManagedFileImporter {
                         "Provider[\(index)] loadItem returned a file URL."
                     )
 
-                    let sourceReadiness =
-                        MemoMarkImageFileReadiness
-                        .probe(
-                            at: normalizedURL
-                        )
-                    ShareIntakeDiagnostics
-                        .recordSourcePreparationIfNeeded(
-                            sourceReadiness,
-                            requestID: requestID,
-                            index: index
-                        )
-
-                    let originalFileName =
-                        Self.resolvedOriginalFileName(
-                            preferredName:
-                                suggestedName,
-                            sourceURL:
-                                normalizedURL
-                        )
-
-                    let copyResult =
-                        intakeStore
-                        .createManagedCopyDetailed(
-                            from: normalizedURL,
+                    let materialization =
+                        materializer
+                        .materializeFileURL(
+                            normalizedURL,
                             requestID: requestID,
                             index: index,
-                            preferredOriginalFileName:
-                                originalFileName,
-                            diagnosticsSeed:
-                                diagnosticsSeed
+                            preferredName: suggestedName,
+                            diagnosticsSeed: diagnosticsSeed,
+                            dedupeKey:
+                                "url:\(normalizedURL.path)",
+                            copyDiagnosticPrefix: "fallback",
+                            missingManagedURLOperation:
+                                "loadItem.copyURL.missingManagedURL",
+                            missingManagedURLDescription:
+                                "Fallback URL copy did not produce a managed URL.",
+                            missingManagedURLErrorCode: 3004
                         )
-
-                    ShareIntakeDiagnostics.notice(
-                        "Provider[\(index)] fallback temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") managedDestinationCreated=\(copyResult.sharedContainerDestination != nil)"
-                    )
-
-                    guard let managedURL =
-                        copyResult.managedURL
-                    else {
-                        ShareIntakeDiagnostics
-                            .recordSourceUnavailableIfNeeded(
-                                sourceReadiness,
-                                copyResult:
-                                    copyResult,
-                                requestID:
-                                    requestID,
-                                index:
-                                    index
-                            )
-                        timeoutTask.cancel()
-                        continuation.resume(
-                            returning:
-                                .failed(
-                                    copyResult
-                                    .failureContext
-                                    ?? diagnosticsSeed
-                                    .failureContext(
-                                        stage: .copy,
-                                        operation:
-                                            "loadItem.copyURL.missingManagedURL",
-                                        returnedURL:
-                                            normalizedURL,
-                                        temporaryCopyResult:
-                                            copyResult
-                                            .temporaryCopyResult
-                                            ?? "missing-managed-url",
-                                        sharedContainerDestination:
-                                            copyResult
-                                            .sharedContainerDestination,
-                                        error:
-                                            MemoMarkShareIntakeDiagnosticError
-                                            .make(
-                                                description:
-                                                    "Fallback URL copy did not produce a managed URL.",
-                                                code: 3004
-                                            )
-                                    )
-                                )
-                        )
-                        return
-                    }
-
-                    ShareIntakeDiagnostics
-                        .recordSourceReadyIfNeeded(
-                            sourceReadiness,
-                            requestID: requestID,
-                            index: index
-                        )
-
                     timeoutTask.cancel()
                     continuation.resume(
                         returning:
-                            .imported(
-                                ManagedImportRecord(
-                                    item:
-                                        ExternalPhotoIntakeItem(
-                                            managedURL:
-                                                managedURL,
-                                            originalFileName:
-                                                originalFileName,
-                                            contentTypeIdentifier:
-                                                diagnosticsSeed
-                                                .preferredRegisteredTypeIdentifier
-                                        ),
-                                    dedupeKey:
-                                        "url:\(normalizedURL.path)"
-                                )
+                            Self.fallbackOutcome(
+                                from: materialization
                             )
                     )
                     return
@@ -1365,10 +1380,10 @@ private extension ShareManagedFileImporter {
                         "Provider[\(index)] loadItem returnedDataBytes=\(data.count)"
                     )
 
-                    let copyResult =
-                        intakeStore
-                        .createManagedCopyDetailed(
-                            fromData: data,
+                    let materialization =
+                        materializer
+                        .materializeData(
+                            data,
                             requestID: requestID,
                             index: index,
                             preferredFileExtension:
@@ -1378,81 +1393,11 @@ private extension ShareManagedFileImporter {
                             diagnosticsSeed:
                                 diagnosticsSeed
                         )
-
-                    ShareIntakeDiagnostics.notice(
-                        "Provider[\(index)] fallback temporaryCopyResult=\(copyResult.temporaryCopyResult ?? "none") managedDestinationCreated=\(copyResult.sharedContainerDestination != nil)"
-                    )
-
-                    guard let managedURL =
-                        copyResult.managedURL
-                    else {
-                        timeoutTask.cancel()
-                        continuation.resume(
-                            returning:
-                                .failed(
-                                    copyResult
-                                    .failureContext
-                                    ?? diagnosticsSeed
-                                    .failureContext(
-                                        stage: .copy,
-                                        operation:
-                                            "loadItem.copyData.missingManagedURL",
-                                        temporaryCopyResult:
-                                            copyResult
-                                            .temporaryCopyResult
-                                            ?? "missing-managed-url",
-                                        sharedContainerDestination:
-                                            copyResult
-                                            .sharedContainerDestination,
-                                        error:
-                                            MemoMarkShareIntakeDiagnosticError
-                                            .make(
-                                                description:
-                                                    "Fallback data copy did not produce a managed URL.",
-                                                code: 3005
-                                            )
-                                    )
-                                )
-                        )
-                        return
-                    }
-
                     timeoutTask.cancel()
                     continuation.resume(
                         returning:
-                            .imported(
-                                ManagedImportRecord(
-                                    item:
-                                        ExternalPhotoIntakeItem(
-                                            managedURL:
-                                                managedURL,
-                                            originalFileName:
-                                                Self.resolvedOriginalFileName(
-                                                    preferredName:
-                                                        suggestedName
-                                                ),
-                                            sourceIdentifier:
-                                                Self
-                                                .fallbackDataSourceIdentifier(
-                                                    for: data,
-                                                    suggestedName:
-                                                        suggestedName,
-                                                    contentTypeIdentifier:
-                                                        diagnosticsSeed
-                                                        .preferredRegisteredTypeIdentifier
-                                                ),
-                                            contentTypeIdentifier:
-                                                diagnosticsSeed
-                                                .preferredRegisteredTypeIdentifier
-                                        ),
-                                    dedupeKey:
-                                        Self
-                                        .dedupeKey(
-                                            for: data,
-                                            suggestedName:
-                                                suggestedName
-                                        )
-                                )
+                            Self.fallbackOutcome(
+                                from: materialization
                             )
                     )
                     return
@@ -1559,6 +1504,27 @@ private extension ShareManagedFileImporter {
         }
     }
 
+    nonisolated static
+    func fallbackOutcome(
+        from materialization:
+            FileRepresentationLoadResult
+    ) -> ManagedImportOutcome {
+
+        if let importRecord =
+            materialization.importRecord {
+            return .imported(importRecord)
+        }
+
+        if let failureContext =
+            materialization.failureContext {
+            return .failed(failureContext)
+        }
+
+        preconditionFailure(
+            "Managed import materialization must return an import record or failure context."
+        )
+    }
+
     func unsupportedManagedImportOutcomeIfNeeded(
         _ importRecord: ManagedImportRecord,
         diagnosticsSeed:
@@ -1617,73 +1583,5 @@ private extension ShareManagedFileImporter {
         )
     }
 
-    nonisolated static
-    func fallbackDataSourceIdentifier(
-        for data: Data,
-        suggestedName: String?,
-        contentTypeIdentifier: String?
-    ) -> String? {
-
-        guard !PhotoProcessingInputPolicy
-            .isLivePhotoContentType(
-                contentTypeIdentifier
-                .flatMap(UTType.init)
-            )
-        else {
-            return nil
-        }
-
-        return dedupeKey(
-            for: data,
-            suggestedName:
-                suggestedName
-        )
-    }
-
-    nonisolated static
-    func resolvedOriginalFileName(
-        preferredName: String?,
-        sourceURL: URL? = nil
-    ) -> String? {
-
-        PhotoFileNameResolver
-            .sanitizedOriginalFileName(
-                preferredName
-            )
-            ?? PhotoFileNameResolver
-            .sanitizedOriginalFileName(
-                sourceURL?
-                .lastPathComponent
-            )
-    }
-
-    nonisolated static
-    func dedupeKey(
-        for data: Data,
-        suggestedName: String?
-    ) -> String {
-
-        let digest =
-            SHA256.hash(data: data)
-                .compactMap {
-                    String(
-                        format: "%02x",
-                        $0
-                    )
-                }
-                .joined()
-
-        let normalizedName =
-            suggestedName?
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ) ?? ""
-
-        if normalizedName.isEmpty {
-            return "data:\(digest)"
-        }
-
-        return "data:\(digest):\(normalizedName)"
-    }
 }
 #endif

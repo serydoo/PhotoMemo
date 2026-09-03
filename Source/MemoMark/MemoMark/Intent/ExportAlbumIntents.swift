@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-enum V1IOSOutputTarget:
+enum ConfigurationOutputTarget:
     String,
     Codable,
     CaseIterable,
@@ -44,7 +44,7 @@ enum V1IOSOutputTarget:
     }
 }
 
-enum V1MediaOutputMode:
+enum MediaOutputMode:
     String,
     CaseIterable,
     Identifiable,
@@ -92,7 +92,7 @@ enum V1MediaOutputMode:
     }
 }
 
-struct V1ResolvedAlbumSelection:
+struct ResolvedAlbumSelection:
     Hashable {
 
     let identifier: String
@@ -103,11 +103,11 @@ struct V1ResolvedAlbumSelection:
         String?
 }
 
-struct V1OutputAlbumSelectionRequest:
+struct OutputAlbumSelectionRequest:
     Hashable {
 
     let outputTarget:
-        V1IOSOutputTarget
+        ConfigurationOutputTarget
 
     let availableAlbums:
         [PhotoAlbumOption]
@@ -116,59 +116,6 @@ struct V1OutputAlbumSelectionRequest:
         String
 
     let newAlbumName: String
-}
-
-struct LoadExportAlbumOptionsIntent:
-    MemoMarkIntent {
-
-    let coordinator:
-        ExportCoordinator
-
-    func execute()
-    async -> MemoMarkResult<
-        [PhotoAlbumOption]
-    > {
-
-        await coordinator
-            .fetchAlbumOptions()
-    }
-}
-
-struct LoadV1ExportAlbumOptionsIntent:
-    MemoMarkIntent {
-
-    let coordinator:
-        ExportCoordinator?
-
-    func execute()
-    async -> MemoMarkResult<
-        [PhotoAlbumOption]
-    > {
-
-        if let coordinator {
-            return await LoadExportAlbumOptionsIntent(
-                coordinator: coordinator
-            )
-            .execute()
-        }
-
-        do {
-            return .success(
-                try await PhotoLibraryExportService()
-                .fetchAlbumOptions()
-            )
-        } catch {
-            return .failure(
-                .wrapped(
-                    error,
-                    code: .photoLibrarySaveFailed,
-                    message:
-                        error
-                        .localizedDescription
-                )
-            )
-        }
-    }
 }
 
 struct EnsureExportAlbumIntent:
@@ -191,24 +138,24 @@ struct EnsureExportAlbumIntent:
     }
 }
 
-struct ResolveV1OutputAlbumSelectionIntent:
+struct ResolveOutputAlbumSelectionIntent:
     MemoMarkIntent {
 
     let request:
-        V1OutputAlbumSelectionRequest
+        OutputAlbumSelectionRequest
 
     let coordinator:
         ExportCoordinator?
 
     func execute()
     async -> MemoMarkResult<
-        V1ResolvedAlbumSelection
+        ResolvedAlbumSelection
     > {
 
         switch request.outputTarget {
         case .automatic:
             return .success(
-                V1ResolvedAlbumSelection(
+                ResolvedAlbumSelection(
                     identifier:
                         MemoMarkAlbumSelection
                         .automaticIdentifier,
@@ -222,7 +169,7 @@ struct ResolveV1OutputAlbumSelectionIntent:
 
         case .applePhotos:
             return .success(
-                V1ResolvedAlbumSelection(
+                ResolvedAlbumSelection(
                     identifier:
                         MemoMarkAlbumSelection
                         .systemLibraryIdentifier,
@@ -247,7 +194,7 @@ struct ResolveV1OutputAlbumSelectionIntent:
                     })
             else {
                 return .success(
-                    V1ResolvedAlbumSelection(
+                    ResolvedAlbumSelection(
                         identifier:
                             MemoMarkAlbumSelection
                             .automaticIdentifier,
@@ -261,7 +208,7 @@ struct ResolveV1OutputAlbumSelectionIntent:
             }
 
             return .success(
-                V1ResolvedAlbumSelection(
+                ResolvedAlbumSelection(
                     identifier:
                         selectedAlbum.localIdentifier
                         ?? selectedAlbum.id,
@@ -273,34 +220,26 @@ struct ResolveV1OutputAlbumSelectionIntent:
             )
 
         case .newAlbum:
-            do {
-                let album: PhotoAlbumOption
-
-                if let coordinator {
-                    switch await EnsureExportAlbumIntent(
-                        title:
-                            request.newAlbumName,
-                        coordinator:
-                            coordinator
+            guard let coordinator else {
+                return .failure(
+                    MemoMarkError(
+                        code: .configurationUnavailable,
+                        message:
+                            "Unable to prepare a new output album without an active export coordinator."
                     )
-                    .execute() {
-                    case .success(let ensuredAlbum):
-                        album = ensuredAlbum
-                    case .failure(let error):
-                        return .failure(error)
-                    }
-                } else {
-                    album =
-                        try await PhotoLibraryExportService()
-                        .ensureAlbum(
-                            named:
-                                request
-                                .newAlbumName
-                        )
-                }
+                )
+            }
 
+            switch await EnsureExportAlbumIntent(
+                title:
+                    request.newAlbumName,
+                coordinator:
+                    coordinator
+            )
+            .execute() {
+            case .success(let album):
                 return .success(
-                    V1ResolvedAlbumSelection(
+                    ResolvedAlbumSelection(
                         identifier:
                             album.localIdentifier
                             ?? album.id,
@@ -310,19 +249,16 @@ struct ResolveV1OutputAlbumSelectionIntent:
                             album.id
                     )
                 )
-            } catch {
-                return .failure(
-                    .wrapped(
-                        error,
-                        code:
-                            .photoLibrarySaveFailed,
-                        message:
-                            error
-                            .localizedDescription
-                    )
-                )
+            case .failure(let error):
+                return .failure(error)
             }
         }
     }
 }
+
+// Historical names remain source-compatible while the active intent and
+// application transaction use responsibility-based names.
+typealias V1ResolvedAlbumSelection = ResolvedAlbumSelection
+typealias V1OutputAlbumSelectionRequest = OutputAlbumSelectionRequest
+typealias ResolveV1OutputAlbumSelectionIntent = ResolveOutputAlbumSelectionIntent
 #endif

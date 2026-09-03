@@ -40,8 +40,9 @@ struct ConfigurationCenterSymbolLanguageContractTests {
     func standardActionsKeepAppleSymbols() throws {
         let combined = try [
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterSidebarView.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
         ]
         .map(sourceText)
         .joined(separator: "\n")

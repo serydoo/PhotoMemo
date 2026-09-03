@@ -2,7 +2,7 @@
 import Foundation
 
 struct ConfigurationCompatibilityProjection: Equatable {
-    let subjectLibrary: V1SubjectLibraryRecord
+    let subjectLibrary: SubjectLibrarySchemaV1Record
     let productionConfigurationReference:
         ProductionConfigurationReference
     let selectedSubject: MemorySubject
@@ -14,7 +14,7 @@ struct ConfigurationCompatibilityProjection: Equatable {
     let photoDescriptionSettings:
         LegacyPhotoDescriptionSettings
     let editorState: LegacySettingsEditorState
-    let mediaOutputMode: V1MediaOutputMode
+    let mediaOutputMode: MediaOutputMode
     let savedAt: Date
 }
 
@@ -26,7 +26,7 @@ struct ConfigurationSnapshotProjectionInput {
     let selectedAlbumIdentifier: String
     let shouldWritePhotoDescription: Bool
     let photoDescriptionOverride: String
-    let mediaOutputMode: V1MediaOutputMode
+    let mediaOutputMode: MediaOutputMode
     let outputLanguage: MemoMarkLanguage
 
     init(
@@ -37,7 +37,7 @@ struct ConfigurationSnapshotProjectionInput {
         selectedAlbumIdentifier: String,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
-        mediaOutputMode: V1MediaOutputMode,
+        mediaOutputMode: MediaOutputMode,
         outputLanguage: MemoMarkLanguage =
             .defaultOutputLanguage
     ) {
@@ -104,7 +104,7 @@ struct ConfigurationProjectionService {
             // active production path is source-compatible and must not let a
             // retired static-image choice suppress Live Photo motion.
             mediaOutputModeRawValue:
-                V1MediaOutputMode.originalFormat.rawValue,
+                MediaOutputMode.originalFormat.rawValue,
             language: input.outputLanguage
         )
         guard let durableAggregate,
@@ -156,7 +156,7 @@ struct ConfigurationProjectionService {
             throw ConfigurationLibraryPersistenceError
                 .missingActiveSelection
         }
-        let subjectLibrary = V1SubjectLibraryRecord(
+        let subjectLibrary = SubjectLibrarySchemaV1Record(
             subjects: aggregate.subjects.map(\.subject),
             selectedSubjectID: activeSubjectID,
             memoryPresets: aggregate.subjects.flatMap {
@@ -244,8 +244,8 @@ struct ConfigurationProjectionService {
 
     private func legacyOutputConfiguration(
         _ output: MemoryConfigurationRecord.Output
-    ) -> V1SavedOutputConfiguration {
-        let outputTarget: V1IOSOutputTarget
+    ) -> SavedOutputConfigurationSchemaV1 {
+        let outputTarget: ConfigurationOutputTarget
         switch output.album.destination {
         case .automatic:
             outputTarget = .automatic
@@ -256,7 +256,7 @@ struct ConfigurationProjectionService {
         case .newAlbum:
             outputTarget = .newAlbum
         }
-        return V1SavedOutputConfiguration(
+        return SavedOutputConfigurationSchemaV1(
             outputTarget: outputTarget,
             mediaOutputMode: .originalFormat,
             selectedExistingAlbumIdentifier:

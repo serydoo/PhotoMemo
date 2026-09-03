@@ -1,54 +1,23 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1OutputAlbumLoadRequest: Equatable {
-    let id: UUID
-    let generation: Int
+struct OutputAlbumLoadContext: Equatable {
     let subjectID: UUID?
     let configurationID: UUID?
-    let outputTarget: V1IOSOutputTarget
+    let outputTarget: ConfigurationOutputTarget
     let selectedExistingAlbumIdentifier: String
 
     init(
-        id: UUID = UUID(),
-        generation: Int = 0,
         subjectID: UUID?,
         configurationID: UUID?,
-        outputTarget: V1IOSOutputTarget = .automatic,
+        outputTarget: ConfigurationOutputTarget = .automatic,
         selectedExistingAlbumIdentifier: String = ""
     ) {
-        self.id = id
-        self.generation = generation
         self.subjectID = subjectID
         self.configurationID = configurationID
         self.outputTarget = outputTarget
         self.selectedExistingAlbumIdentifier =
             selectedExistingAlbumIdentifier
-    }
-
-    func matches(
-        subjectID: UUID?,
-        configurationID: UUID?
-    ) -> Bool {
-        self.subjectID == subjectID
-            && self.configurationID == configurationID
-    }
-
-    func matches(
-        generation: Int,
-        subjectID: UUID?,
-        configurationID: UUID?,
-        outputTarget: V1IOSOutputTarget,
-        selectedExistingAlbumIdentifier: String
-    ) -> Bool {
-        self.generation == generation
-            && self.matches(
-                subjectID: subjectID,
-                configurationID: configurationID
-            )
-            && self.outputTarget == outputTarget
-            && self.selectedExistingAlbumIdentifier
-                == selectedExistingAlbumIdentifier
     }
 }
 
@@ -57,9 +26,9 @@ struct V1OutputAlbumLoadRequest: Equatable {
 ///
 /// This is a live UI projection only. The durable configuration aggregate and
 /// ConfigurationSession remain the owners of saved output truth.
-struct V1OutputDraftState {
-    var outputTarget: V1IOSOutputTarget = .automatic
-    var mediaOutputMode: V1MediaOutputMode = .originalFormat
+struct OutputDraftState {
+    var outputTarget: ConfigurationOutputTarget = .automatic
+    var mediaOutputMode: MediaOutputMode = .originalFormat
     var shouldWritePhotosDescription = true
     var photosDescriptionOverride = ""
     var configurationAlbumTitle = ""
@@ -71,8 +40,6 @@ struct V1OutputDraftState {
     var newAlbumName = MemoMarkAlbumSelection.defaultAlbumTitle
     var isLoadingAlbums = false
     var albumStatusMessage = ""
-    var activeAlbumLoadRequest: V1OutputAlbumLoadRequest?
-    var albumLoadGeneration = 0
 }
 #endif
 #endif

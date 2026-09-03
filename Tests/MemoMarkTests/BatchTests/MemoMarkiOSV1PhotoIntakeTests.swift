@@ -17,7 +17,7 @@ struct MemoMarkiOSV1PhotoIntakeTests {
             URL(fileURLWithPath: "/tmp/c.txt")
         ]
 
-        let resolved = V1PhotoIntakeURLResolver.resolve(urls)
+        let resolved = PhotoIntakeURLResolver.resolve(urls)
 
         #expect(resolved.count == 3)
         #expect(
@@ -29,7 +29,7 @@ struct MemoMarkiOSV1PhotoIntakeTests {
     @Test("builds a temporary URL using the suggested filename when available")
     func buildsTemporaryURLUsingSuggestedFilename() throws {
         let url =
-            try V1PhotoIntakeURLResolver.makeTemporaryURL(
+            try PhotoIntakeURLResolver.makeTemporaryURL(
                 suggestedFileName: "IMG_0001.HEIC",
                 contentType: .heic
             )
@@ -70,7 +70,7 @@ struct MemoMarkiOSV1PhotoIntakeTests {
         )
 
         let copiedURL =
-            try V1PhotoIntakeURLResolver
+            try PhotoIntakeURLResolver
             .copyTemporaryFileRepresentation(
                 from: sourceURL,
                 contentType: .heic
@@ -94,10 +94,60 @@ struct MemoMarkiOSV1PhotoIntakeTests {
         )
     }
 
+    @Test("stale intake cleanup removes only MemoMark picker temporary files")
+    func staleIntakeCleanupStaysInsidePickerDirectory() throws {
+        let pickerURL =
+            try PhotoIntakeURLResolver.makeTemporaryURL(
+                suggestedFileName: "stale.heic",
+                contentType: .heic
+            )
+        let outsideURL =
+            FileManager.default.temporaryDirectory
+            .appendingPathComponent(
+                "MemoMarkPickerOutside-\(UUID().uuidString).heic"
+            )
+        try Data([0x01]).write(to: pickerURL)
+        try Data([0x02]).write(to: outsideURL)
+        let symlinkURL =
+            pickerURL.deletingLastPathComponent()
+            .appendingPathComponent(
+                "outside-link-\(UUID().uuidString).heic"
+            )
+        try FileManager.default.createSymbolicLink(
+            at: symlinkURL,
+            withDestinationURL: outsideURL
+        )
+        defer {
+            try? FileManager.default.removeItem(at: pickerURL)
+            try? FileManager.default.removeItem(at: symlinkURL)
+            try? FileManager.default.removeItem(at: outsideURL)
+        }
+
+        PhotoIntakeURLResolver.discardTemporaryPickerFiles(
+            [pickerURL, outsideURL, symlinkURL]
+        )
+
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: pickerURL.path
+            )
+        )
+        #expect(
+            FileManager.default.fileExists(
+                atPath: outsideURL.path
+            )
+        )
+        #expect(
+            FileManager.default.fileExists(
+                atPath: symlinkURL.path
+            )
+        )
+    }
+
     @Test("V1 quick action unsupported message uses input policy diagnostics")
     func v1QuickActionUnsupportedMessageUsesInputPolicyDiagnostics() {
         let message =
-            V1PhotoIntakeUnsupportedMessagePresenter
+            PhotoIntakeUnsupportedMessagePresenter
             .message(
                 for: [
                     .gif
@@ -120,15 +170,15 @@ struct MemoMarkiOSV1PhotoIntakeTests {
     @Test("V1 quick action unsupported message keeps fallback when no rejection is known")
     func v1QuickActionUnsupportedMessageKeepsFallbackWhenNoRejectionIsKnown() {
         #expect(
-            V1PhotoIntakeUnsupportedMessagePresenter
+            PhotoIntakeUnsupportedMessagePresenter
             .message(for: [])
-            == V1PhotoIntakeUnsupportedMessagePresenter
+            == PhotoIntakeUnsupportedMessagePresenter
             .fallbackMessage
         )
         #expect(
-            V1PhotoIntakeUnsupportedMessagePresenter
+            PhotoIntakeUnsupportedMessagePresenter
             .message(for: [.heic])
-            == V1PhotoIntakeUnsupportedMessagePresenter
+            == PhotoIntakeUnsupportedMessagePresenter
             .fallbackMessage
         )
     }
@@ -141,7 +191,7 @@ struct MemoMarkiOSV1PhotoIntakeTests {
         ]
 
         let result =
-            await V1PhotoProcessingQuickActionCoordinator
+            await PhotoProcessingQuickActionCoordinator
             .processPickedPhotos(
                 saveCurrentConfiguration: {
                     events.append("save")
@@ -177,7 +227,7 @@ struct MemoMarkiOSV1PhotoIntakeTests {
             )
 
         let result =
-            await V1PhotoProcessingQuickActionCoordinator
+            await PhotoProcessingQuickActionCoordinator
             .processPickedPhotoItems(
                 saveCurrentConfiguration: {
                     events.append("save")
@@ -227,7 +277,7 @@ struct MemoMarkiOSV1PhotoIntakeTests {
         var receivedSnapshot: BatchConfigurationSnapshot?
 
         let result =
-            await V1PhotoProcessingQuickActionCoordinator
+            await PhotoProcessingQuickActionCoordinator
             .processPickedPhotoItems(
                 saveCurrentConfiguration: {
                     snapshot
@@ -252,7 +302,7 @@ struct MemoMarkiOSV1PhotoIntakeTests {
         var events: [String] = []
 
         let result =
-            await V1PhotoProcessingQuickActionCoordinator
+            await PhotoProcessingQuickActionCoordinator
             .processPickedPhotos(
                 saveCurrentConfiguration: {
                     events.append("save")
@@ -272,6 +322,176 @@ struct MemoMarkiOSV1PhotoIntakeTests {
         #expect(result.status == .configurationSaveFailed)
         #expect(result.submittedURLs.isEmpty)
         #expect(events == ["save"])
+    }
+
+    @Test("runtime reports configuration failure and empty import without submission")
+    @MainActor
+    func runtimeReportsFailureAndEmptyImportWithoutSubmission() async {
+        let coordinator = PhotoIntakeRuntimeCoordinator()
+        var submitCount = 0
+
+        let failedSave = await coordinator.perform(
+            requestedCount: 1,
+            saveCurrentConfiguration: { nil },
+            importItems: {
+                Issue.record("Import must not start when configuration save fails.")
+                return []
+            },
+            submit: { _, _ in submitCount += 1 }
+        )
+
+        let emptyImport = await coordinator.perform(
+            requestedCount: 1,
+            saveCurrentConfiguration: { Self.snapshot },
+            importItems: { [] },
+            submit: { _, _ in submitCount += 1 }
+        )
+
+        #expect(failedSave?.status == .configurationSaveFailed)
+        #expect(emptyImport?.status == .noSupportedPhotos)
+        #expect(submitCount == 0)
+    }
+
+    @Test("cancelling an active import prevents submission and stale UI completion")
+    @MainActor
+    func cancellationPreventsSubmissionAndCompletion() async {
+        let coordinator = PhotoIntakeRuntimeCoordinator()
+        let gate = PhotoIntakeImportGate()
+        var submittedItems: [ExternalPhotoIntakeItem] = []
+        var discardedItems: [ExternalPhotoIntakeItem] = []
+
+        let task = Task { @MainActor in
+            await coordinator.perform(
+                requestedCount: 1,
+                saveCurrentConfiguration: { Self.snapshot },
+                importItems: { await gate.wait() },
+                submit: { items, _ in submittedItems = items },
+                discardUnsubmittedItems: { discardedItems = $0 }
+            )
+        }
+
+        await gate.waitUntilSuspended()
+        coordinator.cancelActiveRequest()
+        gate.resume([Self.item(named: "cancelled.heic")])
+
+        #expect(await task.value == nil)
+        #expect(submittedItems.isEmpty)
+        #expect(
+            discardedItems
+            == [Self.item(named: "cancelled.heic")]
+        )
+    }
+
+    @Test("task cancellation clears its request identity and keeps the runtime reusable")
+    @MainActor
+    func taskCancellationClearsIdentityAndKeepsRuntimeReusable() async {
+        let coordinator = PhotoIntakeRuntimeCoordinator()
+        let gate = PhotoIntakeImportGate()
+        let cancelledItem = Self.item(named: "task-cancelled.heic")
+        let nextItem = Self.item(named: "next.heic")
+        var submittedItems: [ExternalPhotoIntakeItem] = []
+        var discardedItems: [ExternalPhotoIntakeItem] = []
+
+        let cancelledTask = Task { @MainActor in
+            await coordinator.perform(
+                requestedCount: 1,
+                saveCurrentConfiguration: { Self.snapshot },
+                importItems: { await gate.wait() },
+                submit: { items, _ in submittedItems.append(contentsOf: items) },
+                discardUnsubmittedItems: { discardedItems = $0 }
+            )
+        }
+
+        await gate.waitUntilSuspended()
+        cancelledTask.cancel()
+        gate.resume([cancelledItem])
+        #expect(await cancelledTask.value == nil)
+
+        let nextResult = await coordinator.perform(
+            requestedCount: 1,
+            saveCurrentConfiguration: { Self.snapshot },
+            importItems: { [nextItem] },
+            submit: { items, _ in submittedItems.append(contentsOf: items) }
+        )
+
+        #expect(discardedItems == [cancelledItem])
+        #expect(submittedItems == [nextItem])
+        #expect(nextResult?.status == .submitted)
+    }
+
+    @Test("a newer intake request rejects an older delayed completion")
+    @MainActor
+    func newerRequestRejectsOlderDelayedCompletion() async {
+        let coordinator = PhotoIntakeRuntimeCoordinator()
+        let firstGate = PhotoIntakeImportGate()
+        let firstItem = Self.item(named: "first.heic")
+        let secondItem = Self.item(named: "second.heic")
+        var submittedItems: [ExternalPhotoIntakeItem] = []
+
+        let firstTask = Task { @MainActor in
+            await coordinator.perform(
+                requestedCount: 1,
+                saveCurrentConfiguration: { Self.snapshot },
+                importItems: { await firstGate.wait() },
+                submit: { items, _ in submittedItems.append(contentsOf: items) }
+            )
+        }
+
+        await firstGate.waitUntilSuspended()
+        let secondResult = await coordinator.perform(
+            requestedCount: 1,
+            saveCurrentConfiguration: { Self.snapshot },
+            importItems: { [secondItem] },
+            submit: { items, _ in submittedItems.append(contentsOf: items) }
+        )
+        firstGate.resume([firstItem])
+
+        #expect(await firstTask.value == nil)
+        #expect(secondResult?.status == .submitted)
+        #expect(submittedItems == [secondItem])
+    }
+
+    private static var snapshot: BatchConfigurationSnapshot {
+        BatchConfigurationSnapshot(
+            template: .classicWhite,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: "test-album"
+        )
+    }
+
+    private static func item(
+        named name: String
+    ) -> ExternalPhotoIntakeItem {
+        ExternalPhotoIntakeItem(
+            managedURL: URL(fileURLWithPath: "/tmp/\(name)")
+        )
+    }
+}
+
+@MainActor
+private final class PhotoIntakeImportGate {
+
+    private var continuation:
+        CheckedContinuation<[ExternalPhotoIntakeItem], Never>?
+
+    func wait() async -> [ExternalPhotoIntakeItem] {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func waitUntilSuspended() async {
+        while continuation == nil {
+            await Task.yield()
+        }
+    }
+
+    func resume(_ items: [ExternalPhotoIntakeItem]) {
+        continuation?.resume(returning: items)
+        continuation = nil
     }
 }
 #endif

@@ -2,28 +2,28 @@
 import CoreGraphics
 import Foundation
 
-enum MemoMarkiOSV1EntrySection: Hashable {
+enum ConfigurationCenterSection: Hashable {
     case region(CardRegion)
     case logo
     case anchor
 }
 
 struct EntryNavigationState {
-    var flowState: V1EntryFlowState
-    var expandedEditorSections: Set<MemoMarkiOSV1EntrySection>
+    var flowState: EntryFlowState
+    var expandedEditorSections: Set<ConfigurationCenterSection>
     var profileOffsetY: CGFloat
     var previewOffsetY: CGFloat
 
     init() {
         self.init(
-            flowState: V1EntryFlowState(),
+            flowState: EntryFlowState(),
             expandedEditorSections: [],
             profileOffsetY: 0,
             previewOffsetY: 0
         )
     }
 
-    init(flowState: V1EntryFlowState) {
+    init(flowState: EntryFlowState) {
         self.init(
             flowState: flowState,
             expandedEditorSections: [],
@@ -33,8 +33,8 @@ struct EntryNavigationState {
     }
 
     init(
-        flowState: V1EntryFlowState,
-        expandedEditorSections: Set<MemoMarkiOSV1EntrySection>,
+        flowState: EntryFlowState,
+        expandedEditorSections: Set<ConfigurationCenterSection>,
         profileOffsetY: CGFloat = 0,
         previewOffsetY: CGFloat = 0
     ) {
@@ -59,16 +59,16 @@ struct EntryNavigationState {
     }
 
     mutating func apply(
-        _ transition: (V1EntryFlowState) -> V1EntryFlowState
+        _ transition: (EntryFlowState) -> EntryFlowState
     ) {
         flowState = transition(flowState)
     }
 
     mutating func openSettings(
-        presentation: V1EntryPresentation
+        presentation: EntryPresentation
     ) {
         apply { state in
-            V1EntryFlowCoordinator.openSettings(
+            EntryFlowCoordinator.openSettings(
                 presentation: presentation,
                 from: state
             )
@@ -88,7 +88,7 @@ struct EntryNavigationState {
     }
 
     mutating func setEditorSection(
-        _ section: MemoMarkiOSV1EntrySection,
+        _ section: ConfigurationCenterSection,
         isExpanded: Bool
     ) {
         if isExpanded {

@@ -141,7 +141,7 @@ final class ConfigurationCoordinator {
         settingsRepository.loadTimeDisplayConfiguration()
     }
 
-    func saveV1SubjectLibrary(
+    func saveSubjectLibrary(
         subjects: [MemorySubject],
         selectedSubjectID: MemorySubject.ID?,
         memoryPresets: [MemoryPreset] = [],
@@ -149,7 +149,7 @@ final class ConfigurationCoordinator {
     ) -> MemoMarkResult<Void> {
 
         settingsRepository
-            .saveV1SubjectLibrary(
+            .saveSubjectLibrary(
                 subjects: subjects,
                 selectedSubjectID: selectedSubjectID,
                 memoryPresets: memoryPresets,
@@ -159,11 +159,26 @@ final class ConfigurationCoordinator {
         return .success(())
     }
 
-    func saveV1Configuration(
+    @available(*, deprecated, message: "Use saveSubjectLibrary(...) instead.")
+    func saveV1SubjectLibrary(
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?,
+        memoryPresets: [MemoryPreset] = [],
+        selectedMemoryPresetID: MemoryPreset.ID? = nil
+    ) -> MemoMarkResult<Void> {
+        saveSubjectLibrary(
+            subjects: subjects,
+            selectedSubjectID: selectedSubjectID,
+            memoryPresets: memoryPresets,
+            selectedMemoryPresetID: selectedMemoryPresetID
+        )
+    }
+
+    func saveConfiguration(
         _ request:
-            V1ConfigurationSaveRequest
+            ConfigurationSaveRequest
     ) -> MemoMarkResult<
-        V1ConfigurationSaveReceipt
+        ConfigurationSaveReceipt
     > {
 
         let anchor =
@@ -203,7 +218,7 @@ final class ConfigurationCoordinator {
         if request.shouldSaveSubjectLibrary,
            !request.subjects.isEmpty || request.subject != nil {
             settingsRepository
-                .saveV1SubjectLibrary(
+                .saveSubjectLibrary(
                     subjects:
                         subjectsForSaving(
                             selectedSubject:
@@ -253,20 +268,30 @@ final class ConfigurationCoordinator {
         applyLiveDefaultConfiguration(snapshot)
 
         return .success(
-            V1ConfigurationSaveReceipt(
+            ConfigurationSaveReceipt(
                 anchor: anchor
             )
         )
     }
 
-    func loadV1ConfigurationBootstrapState()
+    /// Compatibility entry point for callers that still submit the historical
+    /// configuration transport. New application code should use
+    /// `saveConfiguration(_:)` so the active path carries stable vocabulary.
+    @available(*, deprecated, message: "Use saveConfiguration(_:) instead.")
+    func saveV1Configuration(
+        _ request: ConfigurationSaveRequest
+    ) -> MemoMarkResult<ConfigurationSaveReceipt> {
+        saveConfiguration(request)
+    }
+
+    func loadConfigurationBootstrapState()
     -> MemoMarkResult<
-        V1ConfigurationBootstrapState
+        ConfigurationBootstrapState
     > {
 
         .success(
             settingsRepository
-            .loadV1ConfigurationBootstrapState()
+            .loadConfigurationBootstrapState()
         )
     }
 

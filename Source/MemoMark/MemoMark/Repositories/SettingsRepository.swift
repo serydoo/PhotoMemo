@@ -68,7 +68,7 @@ final class SettingsRepository {
             )
     }
 
-    func saveV1SubjectLibrary(
+    func saveSubjectLibrary(
         subjects: [MemorySubject],
         selectedSubjectID: MemorySubject.ID?,
         memoryPresets: [MemoryPreset] = [],
@@ -76,13 +76,28 @@ final class SettingsRepository {
     ) {
 
         settingsService
-            .saveV1SubjectLibrary(
+            .saveSubjectLibrary(
                 subjects: subjects,
                 selectedSubjectID: selectedSubjectID,
                 memoryPresets: memoryPresets,
                 selectedMemoryPresetID:
                     selectedMemoryPresetID
             )
+    }
+
+    @available(*, deprecated, message: "Use saveSubjectLibrary(...) instead.")
+    func saveV1SubjectLibrary(
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?,
+        memoryPresets: [MemoryPreset] = [],
+        selectedMemoryPresetID: MemoryPreset.ID? = nil
+    ) {
+        saveSubjectLibrary(
+            subjects: subjects,
+            selectedSubjectID: selectedSubjectID,
+            memoryPresets: memoryPresets,
+            selectedMemoryPresetID: selectedMemoryPresetID
+        )
     }
 
     func savePhotoDescriptionSettings(
@@ -121,7 +136,7 @@ final class SettingsRepository {
     }
 
     func saveMediaOutputMode(
-        _ mode: V1MediaOutputMode
+        _ mode: MediaOutputMode
     ) {
         settingsService
             .saveMediaOutputMode(mode)
@@ -144,12 +159,12 @@ final class SettingsRepository {
             )
     }
 
-    func loadV1ConfigurationBootstrapState()
-    -> V1ConfigurationBootstrapState {
+    func loadConfigurationBootstrapState()
+    -> ConfigurationBootstrapState {
 
         let bootstrapReadState =
             settingsService
-            .loadV1BootstrapReadState()
+            .loadConfigurationBootstrapReadState()
         if let aggregate =
             bootstrapReadState.configurationLibrary,
            let state = bootstrapState(
@@ -157,7 +172,7 @@ final class SettingsRepository {
            ) {
             return state
         }
-        let subjectLibrary: V1SubjectLibraryRecord?
+        let subjectLibrary: SubjectLibrarySchemaV1Record?
         let subjectLibraryReadFailure:
             MemoMarkSharedDefaultsReadFailure?
 
@@ -194,7 +209,7 @@ final class SettingsRepository {
              .decodingFailed:
             savedBadge = nil
         }
-        let logoMode: V1LogoMode
+        let logoMode: ConfigurationLogoMode
 
         if savedBadge?.name
             == OptimizedSubjectAvatarAsset.subjectAvatarBadgeName {
@@ -207,7 +222,7 @@ final class SettingsRepository {
         }
 
         let outputTarget:
-            V1IOSOutputTarget
+            ConfigurationOutputTarget
         let selectedExistingAlbumIdentifier:
             String
 
@@ -244,7 +259,7 @@ final class SettingsRepository {
             : trimmedAlbumTitle
 
         let legacyBootstrapState =
-            V1ConfigurationBootstrapState(
+            ConfigurationBootstrapState(
                 configurationLibraryRecoveryFailed:
                     bootstrapReadState
                     .configurationLibraryRecoveryFailed,
@@ -281,7 +296,7 @@ final class SettingsRepository {
             )
 
         let migrationLibrary:
-            V1SubjectLibraryRecord? = {
+            SubjectLibrarySchemaV1Record? = {
                 guard !bootstrapReadState
                     .configurationLibraryRecoveryFailed else {
                     return nil
@@ -297,7 +312,7 @@ final class SettingsRepository {
                 let defaults =
                     ConfigurationCenterMockSeed
                     .makeState()
-                return V1SubjectLibraryRecord(
+                return SubjectLibrarySchemaV1Record(
                     subjects: defaults.subjects,
                     selectedSubjectID:
                         defaults.selectedSubjectID,
@@ -358,8 +373,8 @@ final class SettingsRepository {
     private func bootstrapState(
         from aggregate: ConfigurationLibraryRecord,
         preservingPresentationFrom legacyState:
-            V1ConfigurationBootstrapState? = nil
-    ) -> V1ConfigurationBootstrapState? {
+            ConfigurationBootstrapState? = nil
+    ) -> ConfigurationBootstrapState? {
         guard let active = Self.activeSelection(
             in: aggregate
         ) else {
@@ -367,11 +382,11 @@ final class SettingsRepository {
         }
 
         let projection =
-            V1ConfigurationDraftProjection(
+            ConfigurationDraftProjection(
                 configuration:
                     active.configuration
             )
-        return V1ConfigurationBootstrapState(
+        return ConfigurationBootstrapState(
             configurationLibrary: aggregate,
             draftProjection: projection,
             subjects:

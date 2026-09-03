@@ -40,15 +40,7 @@ struct ProcessShareIntent:
         ProcessedShareRequest
     > {
 
-        executeSynchronously()
-    }
-
-    func executeSynchronously()
-    -> MemoMarkResult<
-        ProcessedShareRequest
-    > {
-
-        coordinator.process(
+        await coordinator.process(
             request: request,
             consumedPayloadKeys:
                 consumedPayloadKeys

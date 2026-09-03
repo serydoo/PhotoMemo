@@ -19,9 +19,6 @@ struct MemoMarkServiceContainer {
     let photoLibraryExportService:
         PhotoLibraryExportService
 
-    let batchProcessingCoordinator:
-        BatchProcessingCoordinator
-
     let batchNotificationService:
         BatchNotificationService
 
@@ -80,6 +77,22 @@ struct MemoMarkCoordinatorContainer {
 }
 
 @MainActor
+struct MemoMarkApplicationTransactionContainer {
+
+    let loadConfigurationBootstrap:
+        LoadConfigurationBootstrapTransaction
+
+    let loadPhotoLibraryAlbums:
+        LoadPhotoLibraryAlbumsTransaction
+
+    let saveConfiguration:
+        SaveConfigurationTransaction
+
+    let loadProductionConfigurationSnapshot:
+        LoadProductionConfigurationSnapshotTransaction
+}
+
+@MainActor
 final class AppEnvironment {
 
     let defaults:
@@ -96,6 +109,9 @@ final class AppEnvironment {
     let coordinators:
         MemoMarkCoordinatorContainer
 
+    let transactions:
+        MemoMarkApplicationTransactionContainer
+
     let batchQueueStore:
         BatchQueueStore
 
@@ -108,6 +124,8 @@ final class AppEnvironment {
         services: MemoMarkServiceContainer,
         repositories: MemoMarkRepositoryContainer,
         coordinators: MemoMarkCoordinatorContainer,
+        transactions:
+            MemoMarkApplicationTransactionContainer,
         batchQueueStore: BatchQueueStore,
         externalIntakeCenter:
             ExternalPhotoIntakeCenter
@@ -120,6 +138,8 @@ final class AppEnvironment {
             repositories
         self.coordinators =
             coordinators
+        self.transactions =
+            transactions
         self.batchQueueStore =
             batchQueueStore
         self.externalIntakeCenter =
@@ -200,17 +220,6 @@ final class AppEnvironment {
                 photoLibraryRepository:
                     photoLibraryRepository
             )
-        let batchProcessingCoordinator =
-            BatchProcessingCoordinator(
-                importService:
-                    photoImportService,
-                cardBuildService:
-                    recordCardBuildService,
-                exportService:
-                    recordCardExportService,
-                photoLibraryExportService:
-                    photoLibraryExportService
-            )
         let resolvedExternalIntakeCenter =
             externalIntakeCenter
             ?? ExternalPhotoIntakeCenter(
@@ -230,16 +239,19 @@ final class AppEnvironment {
                 defaults: defaults,
                 settingsService:
                     settingsService,
-                executionCoordinator:
-                    batchProcessingCoordinator,
                 notificationService:
                     batchNotificationService,
                 externalIntakeStore:
                     externalIntakeStore,
                 photoRepository:
                     photoRepository,
-                previewCoordinator:
-                    previewCoordinator,
+                photoLibraryExportService:
+                    photoLibraryExportService,
+                buildRecordCard:
+                    BuildRecordCardTransaction(
+                        buildService:
+                            recordCardBuildService
+                    ),
                 exportCoordinator:
                     exportCoordinator,
                 persistence:
@@ -266,8 +278,6 @@ final class AppEnvironment {
                     recordCardExportService,
                 photoLibraryExportService:
                     photoLibraryExportService,
-                batchProcessingCoordinator:
-                    batchProcessingCoordinator,
                 batchNotificationService:
                     batchNotificationService,
                 externalIntakeStore:
@@ -350,7 +360,8 @@ final class AppEnvironment {
                             productionDiagnosticsRepository,
                         applyLiveDefaultConfiguration: {
                             snapshot in
-                            resolvedBatchQueueStore
+                            repositories
+                            .queue
                                 .updateDefaultConfiguration(
                                     snapshot
                                 )
@@ -359,6 +370,32 @@ final class AppEnvironment {
                                     snapshot
                                 )
                         }
+                    )
+            )
+
+        let transactions =
+            MemoMarkApplicationTransactionContainer(
+                loadConfigurationBootstrap:
+                    LoadConfigurationBootstrapTransaction(
+                        settingsRepository:
+                            repositories.settings
+                    ),
+                loadPhotoLibraryAlbums:
+                    LoadPhotoLibraryAlbumsTransaction(
+                        albumAccess:
+                            photoLibraryExportService
+                    ),
+                saveConfiguration:
+                    SaveConfigurationTransaction(
+                        configurationCoordinator:
+                            coordinators.configuration,
+                        exportCoordinator:
+                            coordinators.export
+                    ),
+                loadProductionConfigurationSnapshot:
+                    LoadProductionConfigurationSnapshotTransaction(
+                        configurationRepository:
+                            repositories.configuration
                     )
             )
 
@@ -371,6 +408,8 @@ final class AppEnvironment {
                 repositories,
             coordinators:
                 coordinators,
+            transactions:
+                transactions,
             batchQueueStore:
                 resolvedBatchQueueStore,
             externalIntakeCenter:

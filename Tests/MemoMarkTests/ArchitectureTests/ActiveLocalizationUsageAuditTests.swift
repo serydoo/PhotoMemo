@@ -10,8 +10,7 @@ struct ActiveLocalizationUsageAuditTests {
     // excludes Share Extension, Widget, macOS-only views, and coordinators
     // whose strings are developer diagnostics rather than UI copy.
     private let activeSurfaceFiles = [
-        "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift",
-        "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenteriOSView.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift",
         "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterActiveRegionEditorSection.swift",
         "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterDetailPanelSection.swift",
         "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterDetailSupportPanels.swift",
@@ -27,16 +26,16 @@ struct ActiveLocalizationUsageAuditTests {
         "Source/MemoMark/MemoMark/iOS/Views/MemoryWriteOptionPresenter.swift",
         "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSBackgroundStatusSheet.swift",
         "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSBackgroundStatusSheetSupportViews.swift",
-        "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationPageSurface.swift",
-        "Source/MemoMark/MemoMark/iOS/Views/V1HomeFeedbackSection.swift",
-        "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/ConfigurationPageSurface.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/HomeFeedbackSection.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift",
         "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift",
-        "Source/MemoMark/MemoMark/iOS/Views/V1ReleaseNotesSheet.swift",
-        "Source/MemoMark/MemoMark/iOS/Views/V1SettingsExpressionGuide.swift",
-        "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift",
-        "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift",
-        "Source/MemoMark/MemoMark/iOS/Views/V1WelcomeAndSettingsPresentationModifier.swift",
-        "Source/MemoMark/MemoMark/iOS/Views/V1WelcomePresentation.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/ReleaseNotesSheet.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/SettingsExpressionGuide.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/WelcomeAndSettingsPresentationModifier.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/WelcomePresentation.swift",
         "Source/MemoMark/MemoMark/Services/MemoMarkCommerceStore.swift"
     ]
 

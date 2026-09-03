@@ -39,9 +39,9 @@ final class QueueRepository {
         urls: [URL],
         launchSource: BatchJobLaunchSource,
         title: String?
-    ) -> BatchJob? {
+    ) async -> BatchJob? {
 
-        batchQueueStore.enqueue(
+        await batchQueueStore.enqueue(
             urls: urls,
             launchSource: launchSource,
             title: title
@@ -56,9 +56,9 @@ final class QueueRepository {
             ExternalPhotoImportSummary? = nil,
         intakeRequestID: UUID? = nil,
         title: String? = nil
-    ) -> BatchJob? {
+    ) async -> BatchJob? {
 
-        batchQueueStore.enqueue(
+        await batchQueueStore.enqueue(
             payloads: payloads,
             configuration: configuration,
             launchSource: launchSource,
@@ -72,9 +72,9 @@ final class QueueRepository {
 
     func retryFailedTasks(
         in jobID: UUID
-    ) {
+    ) async {
 
-        batchQueueStore
+        await batchQueueStore
             .retryFailedTasks(
                 in: jobID
             )
@@ -82,17 +82,17 @@ final class QueueRepository {
 
     func cancelJob(
         _ jobID: UUID
-    ) {
+    ) async {
 
-        batchQueueStore
+        await batchQueueStore
             .cancelJob(jobID)
     }
 
     func clearCompletedHistory(
         preserving jobID: UUID?
-    ) {
+    ) async {
 
-        batchQueueStore
+        await batchQueueStore
             .clearTerminalExternalJobHistory(
                 preserving: jobID
             )

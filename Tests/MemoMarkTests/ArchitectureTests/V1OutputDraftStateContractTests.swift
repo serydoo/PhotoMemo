@@ -11,10 +11,10 @@ struct V1OutputDraftStateContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputDraftState.swift"
         )
         let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
 
-        #expect(stateSource.contains("struct V1OutputDraftState"))
+        #expect(stateSource.contains("struct OutputDraftState"))
         for property in [
             "outputTarget",
             "mediaOutputMode",
@@ -34,7 +34,7 @@ struct V1OutputDraftStateContractTests {
             )
         }
 
-        #expect(rootSource.contains("private var outputDraftState"))
+        #expect(rootSource.contains("var outputDraftState"))
         #expect(!rootSource.contains("private var outputTarget"))
         #expect(!rootSource.contains("private var availableAlbums"))
         #expect(!rootSource.contains("private var isLoadingAlbums"))

@@ -3,15 +3,17 @@ import Foundation
 
 @MainActor
 final class BatchQueueExecution {
-    typealias TaskReference = BatchQueueCoordinator.TaskReference
+    typealias TaskReference = BatchTaskReference
 
     private let queueCoordinator: BatchQueueCoordinator
 
     init(
-        coordinator: BatchProcessingCoordinator? = nil,
         externalIntakeStore: ExternalPhotoIntakeStore? = nil,
         photoRepository: PhotoRepository? = nil,
-        previewCoordinator: PreviewCoordinator? = nil,
+        photoLibraryExportService:
+            PhotoLibraryExportService? = nil,
+        buildRecordCard:
+            BuildRecordCardTransaction? = nil,
         exportCoordinator: ExportCoordinator? = nil,
         livePhotoProcessor: (any LivePhotoBatchTaskProcessing)? = nil,
         outputFilenameSequenceStore:
@@ -20,12 +22,19 @@ final class BatchQueueExecution {
         productionDiagnostics:
             ProductionDiagnosticsRepository? = nil,
         renderHealthValidator: @escaping
-            @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
-                ProductionRenderHealthCheck.validate
+            @MainActor (RecordCard, BatchConfigurationSnapshot) async throws -> [CardTextBlock] = {
+                card,
+                configuration in
+                try ProductionRenderHealthCheck.validate(
+                    card: card,
+                    configuration: configuration
+                )
+            }
     ) {
-        let resolvedCoordinator = coordinator ?? BatchProcessingCoordinator()
         let resolvedPhotoImportService = PhotoImportService()
-        let resolvedPhotoLibraryExportService = PhotoLibraryExportService()
+        let resolvedPhotoLibraryExportService =
+            photoLibraryExportService
+            ?? PhotoLibraryExportService()
         let resolvedPhotoLibraryRepository = PhotoLibraryRepository(
             photoLibraryExportService: resolvedPhotoLibraryExportService
         )
@@ -33,9 +42,11 @@ final class BatchQueueExecution {
             importService: resolvedPhotoImportService,
             photoLibraryExportService: resolvedPhotoLibraryExportService
         )
-        let resolvedPreviewCoordinator = previewCoordinator ?? PreviewCoordinator(
-            buildService: RecordCardBuildService()
-        )
+        let resolvedBuildRecordCard =
+            buildRecordCard
+            ?? BuildRecordCardTransaction(
+                buildService: RecordCardBuildService()
+            )
         let resolvedOutputFilenameSequenceStore =
             outputFilenameSequenceStore
             ?? .shared
@@ -54,17 +65,20 @@ final class BatchQueueExecution {
                 productionDiagnostics
         )
         let resolvedResourceLifecycle = BatchTaskResourceLifecycle(
-            coordinator: resolvedCoordinator,
             externalIntakeStore: resolvedExternalIntakeStore
         )
         let resolvedLivePhotoProcessor = livePhotoProcessor ?? LivePhotoBatchTaskProcessor(
+            buildRecordCard:
+                resolvedBuildRecordCard,
+            photoLibraryExportService:
+                resolvedPhotoLibraryExportService,
             diagnosticsDefaults: diagnosticsDefaults,
             outputFilenameSequenceStore:
                 resolvedOutputFilenameSequenceStore
         )
         let taskProcessor = BatchTaskProcessor(
             photoRepository: resolvedPhotoRepository,
-            previewCoordinator: resolvedPreviewCoordinator,
+            buildRecordCard: resolvedBuildRecordCard,
             exportCoordinator: resolvedExportCoordinator,
             livePhotoProcessor: resolvedLivePhotoProcessor,
             diagnosticsRecorder: resolvedDiagnosticsRecorder,
@@ -123,12 +137,20 @@ final class BatchQueueExecution {
             )
     }
 
-    func processingLoop(in store: BatchQueueStore) async {
-        await queueCoordinator.processingLoop(in: store)
+    func processingLoop(
+        in runtime: any BatchQueueProcessingRuntime
+    ) async {
+        await queueCoordinator.processingLoop(in: runtime)
     }
 
-    func processTask(at reference: TaskReference, in store: BatchQueueStore) async {
-        await queueCoordinator.processTask(at: reference, in: store)
+    func processTask(
+        at reference: TaskReference,
+        in runtime: any BatchQueueProcessingRuntime
+    ) async {
+        await queueCoordinator.processTask(
+            at: reference,
+            in: runtime
+        )
     }
 
     func nextPendingTaskReference(in jobs: [BatchJob]) -> TaskReference? {

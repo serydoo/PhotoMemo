@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1ExportAlbumLoadProjection:
+struct OutputAlbumLoadProjection:
     Hashable {
 
     let availableAlbums:
@@ -14,23 +14,73 @@ struct V1ExportAlbumLoadProjection:
         String
 }
 
+enum OutputAlbumRuntimeUpdate: Equatable {
+    case loadingStarted
+    case loadingEnded
+    case completed(OutputAlbumLoadProjection)
+}
+
+/// Owns album-load request identity and stale-completion suppression without
+/// owning the output draft, PhotoKit access, or durable configuration truth.
 @MainActor
-enum V1ExportAlbumLoadingPresenter {
+final class OutputAlbumRuntimeCoordinator {
+
+    private var activeRequestID: UUID?
+
+    func load(
+        context: OutputAlbumLoadContext,
+        performLoad: () async -> OutputAlbumLoadProjection,
+        currentContext: () -> OutputAlbumLoadContext,
+        apply: (OutputAlbumRuntimeUpdate) -> Void
+    ) async {
+        let requestID = UUID()
+        activeRequestID = requestID
+        apply(.loadingStarted)
+
+        let projection = await performLoad()
+        let shouldApply =
+            !Task.isCancelled
+            && activeRequestID == requestID
+            && currentContext() == context
+
+        guard shouldApply else {
+            finishRejectedRequest(
+                requestID,
+                apply: apply
+            )
+            return
+        }
+
+        activeRequestID = nil
+        apply(.completed(projection))
+    }
+
+    private func finishRejectedRequest(
+        _ requestID: UUID,
+        apply: (OutputAlbumRuntimeUpdate) -> Void
+    ) {
+        guard activeRequestID == requestID else {
+            return
+        }
+        activeRequestID = nil
+        apply(.loadingEnded)
+    }
+}
+
+@MainActor
+enum ExportAlbumLoadingPresenter {
 
     static func loadProjection(
         currentAvailableAlbums:
             [PhotoAlbumOption],
         selectedExistingAlbumIdentifier:
             String,
-        coordinator:
-            ExportCoordinator?
-    ) async -> V1ExportAlbumLoadProjection {
+        transaction:
+            LoadPhotoLibraryAlbumsTransaction
+    ) async -> OutputAlbumLoadProjection {
 
         let result =
-            await LoadV1ExportAlbumOptionsIntent(
-                coordinator: coordinator
-            )
-            .execute()
+            await transaction.execute()
 
         return projectedState(
             from: result,
@@ -43,18 +93,16 @@ enum V1ExportAlbumLoadingPresenter {
 
     static func projectedState(
         from result:
-            MemoMarkResult<
-                [PhotoAlbumOption]
-            >,
+            LoadPhotoLibraryAlbumsResult,
         currentAvailableAlbums:
             [PhotoAlbumOption],
         selectedExistingAlbumIdentifier:
             String
-    ) -> V1ExportAlbumLoadProjection {
+    ) -> OutputAlbumLoadProjection {
 
         switch result {
-        case .success(let albums):
-            return V1ExportAlbumLoadProjection(
+        case .loaded(let albums):
+            return OutputAlbumLoadProjection(
                 availableAlbums: albums,
                 selectedExistingAlbumIdentifier:
                     resolvedSelectionIdentifier(
@@ -68,8 +116,8 @@ enum V1ExportAlbumLoadingPresenter {
                     : ""
             )
 
-        case .failure(let error):
-            return V1ExportAlbumLoadProjection(
+        case .failed(let error):
+            return OutputAlbumLoadProjection(
                 availableAlbums:
                     currentAvailableAlbums,
                 selectedExistingAlbumIdentifier:
@@ -81,7 +129,7 @@ enum V1ExportAlbumLoadingPresenter {
     }
 }
 
-private extension V1ExportAlbumLoadingPresenter {
+private extension ExportAlbumLoadingPresenter {
 
     static func resolvedSelectionIdentifier(
         from albums: [PhotoAlbumOption],

@@ -203,26 +203,26 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         session.restoreConfigurationLibrary(aggregate)
 
-        let context = V1PreviewCompositionContext(
+        let context = MemoryCardPreviewCompositionContext(
             subject: subject,
             birthdayDate: subject.referenceDate,
             locationDisplayConfiguration: nil
         )
-        let engine = V1PreviewCompositionEngine()
+        let engine = MemoryCardPreviewCompositionEngine()
 
-        func draftsAfterStartupBootstrap() throws -> [CardRegion: V1EditorDraft] {
+        func draftsAfterStartupBootstrap() throws -> [CardRegion: MemoryCardEditorDraft] {
             let configuration = try #require(
                 session.selectedMemoryConfiguration
             )
-            var drafts = V1ConfigurationDraftProjection(
+            var drafts = ConfigurationDraftProjection(
                 configuration: configuration
             ).regionDrafts
-            drafts = V1DraftBootstrapCoordinator(
+            drafts = ConfigurationDraftBootstrapCoordinator(
                 session: session,
                 context: context,
                 engine: engine
             ).bootstrapDrafts { region in
-                V1DraftBridge.editorDraft(
+                DraftBridge.editorDraft(
                     from: engine.defaultDraft(
                         for: region,
                         templateID: session.activeTemplateID(for: region),
@@ -718,12 +718,12 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         ]
         state.selectedMemoryPresetID = configuration.id
         let session = ConfigurationSession(state: state)
-        let candidate = try V1ConfigurationAggregateCandidateBuilder.build(
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
             from: aggregate,
-            draft: V1ConfigurationAggregateDraft(
+            draft: ConfigurationAggregateDraft(
                 title: "After",
                 regionDrafts: [
-                    .slotA: V1EditorDraft(items: [.text("After")])
+                    .slotA: MemoryCardEditorDraft(items: [.text("After")])
                 ],
                 regionTemplateIDs: [.slotA: "after.recorder"],
                 locationConfiguration: nil,
@@ -1117,7 +1117,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.state.configurationLibrary?.activeSubjectID == secondSubject.id)
         #expect(session.state.configurationLibrary?.activeConfigurationID == secondConfiguration.id)
         #expect(session.selectedMemoryConfiguration == secondConfiguration)
-        let restoredDrafts = V1ConfigurationDraftProjection(
+        let restoredDrafts = ConfigurationDraftProjection(
             configuration: try #require(session.selectedMemoryConfiguration)
         ).regionDrafts
         #expect(
@@ -1248,8 +1248,8 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         let session = ConfigurationSession(state: state)
 
-        func selectedProjection() throws -> V1ConfigurationDraftProjection {
-            V1ConfigurationDraftProjection(
+        func selectedProjection() throws -> ConfigurationDraftProjection {
+            ConfigurationDraftProjection(
                 configuration: try #require(
                     session.selectedMemoryConfiguration
                 )
@@ -1565,14 +1565,14 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         title: String,
         templateValue: String,
         locationStyle: String,
-        logoMode: V1LogoMode,
+        logoMode: ConfigurationLogoMode,
         badge: Badge,
         memoryText: String,
         descriptionEnabled: Bool,
         descriptionOverride: String,
         albumIdentifier: String,
         albumTitle: String,
-        mediaMode: V1MediaOutputMode
+        mediaMode: MediaOutputMode
     ) -> MemoryConfigurationRecord {
         var template = Template.classicWhite
         template.name = title

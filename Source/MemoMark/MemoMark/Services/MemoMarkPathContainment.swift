@@ -1,6 +1,6 @@
 import Foundation
 
-enum MemoMarkPathContainment {
+nonisolated enum MemoMarkPathContainment {
 
     static func contains(
         _ candidateURL: URL,

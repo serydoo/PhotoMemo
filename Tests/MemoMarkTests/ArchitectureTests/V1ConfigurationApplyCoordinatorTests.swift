@@ -5,7 +5,7 @@ import Testing
 
 @MainActor
 @Suite("V1 configuration apply coordinator")
-struct V1ConfigurationApplyCoordinatorTests {
+struct SaveConfigurationTransactionTests {
 
     @Test("apply resolves album selection before saving the V1 configuration aggregate")
     func applyResolvesAlbumSelectionBeforeSavingTheV1ConfigurationAggregate() async {
@@ -28,7 +28,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                 )
             )
         let request =
-            V1ConfigurationApplyRequest(
+            SaveConfigurationCommand(
                 subject:
                     ConfigurationCenterState
                     .mock
@@ -68,7 +68,7 @@ struct V1ConfigurationApplyCoordinatorTests {
             V1ConfigurationSaveRequest?
 
         let coordinator =
-            V1ConfigurationApplyCoordinator(
+            SaveConfigurationTransaction(
                 resolveAlbumSelection: {
                     albumRequest in
                     receivedAlbumRequest =
@@ -152,7 +152,7 @@ struct V1ConfigurationApplyCoordinatorTests {
     @Test("apply with no configuration coordinator fails instead of falling back to direct settings writes")
     func applyWithNoConfigurationCoordinatorFailsInsteadOfFallingBackToDirectSettingsWrites() async {
         let coordinator =
-            V1ConfigurationApplyCoordinator(
+            SaveConfigurationTransaction(
                 configurationCoordinator:
                     nil,
                 exportCoordinator:
@@ -162,7 +162,7 @@ struct V1ConfigurationApplyCoordinatorTests {
         let result =
             await coordinator
             .apply(
-                V1ConfigurationApplyRequest(
+                SaveConfigurationCommand(
                     subject: nil,
                     subjects: [],
                     selectedSubjectID: nil,
@@ -216,7 +216,7 @@ struct V1ConfigurationApplyCoordinatorTests {
             false
 
         let coordinator =
-            V1ConfigurationApplyCoordinator(
+            SaveConfigurationTransaction(
                 resolveAlbumSelection: {
                     _ in
                     .failure(expectedError)
@@ -242,7 +242,7 @@ struct V1ConfigurationApplyCoordinatorTests {
         let result =
             await coordinator
             .apply(
-                V1ConfigurationApplyRequest(
+                SaveConfigurationCommand(
                     subject:
                         ConfigurationCenterState
                         .mock
@@ -302,7 +302,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                 )
             )
         let request =
-            V1ConfigurationApplyRequest(
+            SaveConfigurationCommand(
                 subject:
                     ConfigurationCenterState
                     .mock
@@ -343,7 +343,7 @@ struct V1ConfigurationApplyCoordinatorTests {
             V1ConfigurationSaveRequest?
 
         let coordinator =
-            V1ConfigurationApplyCoordinator(
+            SaveConfigurationTransaction(
                 resolveAlbumSelection: {
                     _ in
                     .success(
@@ -423,7 +423,7 @@ struct V1ConfigurationApplyCoordinatorTests {
                 message: "保存协调器不可用"
             )
 
-        let result = await V1ConfigurationApplyCoordinator(
+        let result = await SaveConfigurationTransaction(
             resolveAlbumSelection: {
                 _ in
                 .success(
@@ -445,7 +445,7 @@ struct V1ConfigurationApplyCoordinatorTests {
             }
         )
         .apply(
-            V1ConfigurationApplyRequest(
+            SaveConfigurationCommand(
                 subject:
                     ConfigurationCenterState
                     .mock

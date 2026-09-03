@@ -222,13 +222,13 @@ struct MediaOutputPolicyTests {
     }
 
     @Test("Maps V1 output mode choices to Live Photo processing intent")
-    func mapsV1OutputModeChoicesToLivePhotoProcessingIntent() throws {
+    func mapsOutputModeChoicesToLivePhotoProcessingIntent() throws {
         let originalFormatIntent =
-            V1MediaOutputMode
+            MediaOutputMode
             .originalFormat
             .mediaProcessingIntent
         let staticImageIntent =
-            V1MediaOutputMode
+            MediaOutputMode
             .staticImage
             .mediaProcessingIntent
 
@@ -279,13 +279,13 @@ struct MediaOutputPolicyTests {
                 photoDescriptionOverride: "",
                 selectedAlbumIdentifier: "",
                 mediaOutputModeRawValue:
-                    V1MediaOutputMode
+                    MediaOutputMode
                     .staticImage
                     .rawValue
             )
 
         #expect(
-            snapshot.v1MediaOutputMode == .staticImage
+            snapshot.mediaOutputMode == .staticImage
         )
     }
 
@@ -301,7 +301,7 @@ struct MediaOutputPolicyTests {
                 photoDescriptionOverride: "",
                 selectedAlbumIdentifier: "",
                 mediaOutputModeRawValue:
-                    V1MediaOutputMode
+                    MediaOutputMode
                     .staticImage
                     .rawValue,
                 livePhotoPolicyRawValue:
@@ -312,7 +312,7 @@ struct MediaOutputPolicyTests {
             )
 
         #expect(
-            snapshot.v1MediaOutputMode == .staticImage
+            snapshot.mediaOutputMode == .staticImage
         )
     }
 
@@ -335,7 +335,7 @@ struct MediaOutputPolicyTests {
             )
 
         #expect(
-            snapshot.v1MediaOutputMode == .staticImage
+            snapshot.mediaOutputMode == .staticImage
         )
     }
 

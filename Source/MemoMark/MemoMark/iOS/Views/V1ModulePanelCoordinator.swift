@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1ModulePanelCoordinator {
+struct ModulePanelCoordinator {
 
     struct State:
         Equatable {
@@ -53,7 +53,7 @@ struct V1ModulePanelCoordinator {
         var nextState =
             state
         nextState.activeRegion =
-            V1ModuleLibraryPresenter
+            ModuleLibraryPresenter
             .resolvedActiveRegion(
                 isPresented: isPresented,
                 currentRegion:
@@ -70,7 +70,7 @@ struct V1ModulePanelCoordinator {
             state
 
         if let storage =
-            V1ModuleLibraryPresenter
+            ModuleLibraryPresenter
             .recordedUsageStorage(
                 for: module,
                 currentStorage:

@@ -4,23 +4,26 @@ import AppKit
 #endif
 
 #if os(macOS)
+@MainActor
 final class MemoMarkAppDelegate:
     NSObject,
     NSApplicationDelegate {
+
+    var openURLsHandler:
+        (@MainActor ([URL]) -> Void)?
+
+    private var pendingURLBatches = [[URL]]()
+
+    override init() {
+        super.init()
+    }
 
     func application(
         _ application: NSApplication,
         open urls: [URL]
     ) {
 
-        Task { @MainActor in
-            ExternalPhotoIntakeCenter
-                .shared
-                .submit(
-                    urls: urls,
-                    source: .fileOpen
-                )
-        }
+        routeOpenURLs(urls)
     }
 
     func application(
@@ -28,19 +31,12 @@ final class MemoMarkAppDelegate:
         openFile filename: String
     ) -> Bool {
 
-        Task { @MainActor in
-            ExternalPhotoIntakeCenter
-                .shared
-                .submit(
-                    urls: [
-                        URL(
-                            fileURLWithPath:
-                                filename
-                        )
-                    ],
-                    source: .fileOpen
-                )
-        }
+        routeOpenURLs([
+            URL(
+                fileURLWithPath:
+                    filename
+            )
+        ])
 
         return true
     }
@@ -50,22 +46,39 @@ final class MemoMarkAppDelegate:
         openFiles filenames: [String]
     ) {
 
-        Task { @MainActor in
-            ExternalPhotoIntakeCenter
-                .shared
-                .submit(
-                    urls: filenames.map {
-                        URL(
-                            fileURLWithPath: $0
-                        )
-                    },
-                    source: .fileOpen
+        routeOpenURLs(
+            filenames.map {
+                URL(
+                    fileURLWithPath: $0
                 )
-        }
+            }
+        )
 
         sender.reply(
             toOpenOrPrint: .success
         )
+    }
+
+    private func routeOpenURLs(_ urls: [URL]) {
+        guard !urls.isEmpty else {
+            return
+        }
+
+        if let openURLsHandler {
+            openURLsHandler(urls)
+        } else {
+            // AppKit can deliver file-open events before SwiftUI has mounted
+            // the root scene. Retain them until the composed runtime handler
+            // is installed instead of falling back to a global intake center.
+            pendingURLBatches.append(urls)
+        }
+    }
+
+    func install(openURLsHandler: @escaping @MainActor ([URL]) -> Void) {
+        self.openURLsHandler = openURLsHandler
+        let pendingURLBatches = self.pendingURLBatches
+        self.pendingURLBatches.removeAll(keepingCapacity: false)
+        pendingURLBatches.forEach(openURLsHandler)
     }
 }
 #endif

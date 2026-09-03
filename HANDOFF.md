@@ -10,6 +10,24 @@
 - 本次授权范围包含 Git 暂存、提交和推送 GitHub；不包含 TestFlight 上传、App Store Connect 上传或 App Store 提交。真机最终视觉验收仍以产品负责人在实体 iPhone 17 Pro Max 上的复测为准。
 - 当前材料入口：`Docs/07_Releases/2026-08-27-2.2.2-*`；旧 `2026-08-26-2.2.2-*` 保留为构建 90 历史候选事实。
 
+# 2026-09-03 2.2.4 (101) 重构整理与持续使用接续点
+
+- 用户已确认本轮人工检查基本通过，包含输出相册中的视觉与播放检查；对应
+  发布清单项目已关闭。该结论不替代自动化测试、Instruments 或正式生产认证。
+- 重构后的文件归属、责任目录、旧/新入口边界和候选整理顺序记录在
+  `Docs/03_Engineering/2026-09-03-post-refactor-file-organization.md`，当前
+  目录索引同步更新到 `Docs/PROJECT_STRUCTURE.md` 和
+  `Source/MemoMark/MemoMark/iOS/Views/README.md`。
+- 当前 iOS 活动入口为 `MemoMarkConfigurationCenterView`；不恢复
+  `ConfigurationCenteriOSView`、旧 MainView 或临时双入口。新活动文件不得再
+  引入阶段式 `V1` 名称；真正的 schema/迁移兼容名称保留不动。
+- 继续使用期间按最小切片处理新问题。除非出现可复现的行为或性能问题，暂不
+  重新启动全仓库拆分、兼容命名迁移或大型 Store/Processor 降行数工程。
+- Git 暂存、提交、推送、TestFlight、App Store Connect 和 App Store 提交均未
+  执行，仍需后续单独授权。
+
+---
+
 ## 2026-08-26 2.2.2 收尾与同步接续点（当前）
 
 - 当前工程：`Source/MemoMark/MemoMark.xcodeproj`；版本 `2.2.2 (90)`；GitHub 基点
@@ -4630,7 +4648,7 @@ Architecture freeze follow-up:
   - 只把 `PhotoMemoiOSV1View` 里已经完全独立成型的纯 UI support views 拆出去
 
 - 新增：
-  - [V1IOSViewSupportComponents.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/V1IOSViewSupportComponents.swift)
+  - [ConfigurationCenterViewSupportComponents.swift](/Users/rui/Desktop/PhotoMemo/Source/PhotoMemo/PhotoMemo/iOS/Views/ConfigurationCenterViewSupportComponents.swift)
     - 现在承接：
       - `V1CardSurface`
       - `V1PreviewCard`

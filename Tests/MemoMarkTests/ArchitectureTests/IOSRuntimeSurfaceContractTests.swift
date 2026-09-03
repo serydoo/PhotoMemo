@@ -17,8 +17,8 @@ struct IOSRuntimeSurfaceContractTests {
             )
 
         #expect(
-            rootSceneSource.contains("MemoMarkiOSV1View("),
-            "Expected the iOS runtime root to render the accepted V1 root view."
+            rootSceneSource.contains("MemoMarkConfigurationCenterView("),
+            "Expected the iOS runtime root to render the accepted Configuration Center root view."
         )
         #expect(
             !rootSceneSource.contains("MemoMarkiOSTemporaryEntryView("),
@@ -27,6 +27,53 @@ struct IOSRuntimeSurfaceContractTests {
         #expect(
             !rootSceneSource.contains("MemoMarkiOSTemporaryEntryConfiguration"),
             "Main iOS runtime should not carry temporary-entry configuration state anymore."
+        )
+
+        let configurationSource =
+            try String(
+                contentsOfFile:
+                    MemoMarkTestPaths.path(
+                        "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
+                    ),
+                encoding: .utf8
+            )
+        #expect(
+            configurationSource.contains(
+                ".accessibilityIdentifier(\"configuration-center-root\")"
+            ),
+            "The Configuration Center must expose one stable semantic root for UI automation."
+        )
+        #expect(
+            configurationSource.contains("runtimeEnvironment: runtimeEnvironment"),
+            "Presentation capabilities must flow from the root into the Home surface."
+        )
+
+        let homeSource =
+            try String(
+                contentsOfFile:
+                    MemoMarkTestPaths.path(
+                        "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+                    ),
+                encoding: .utf8
+            )
+        #expect(
+            homeSource.contains(
+                ".accessibilityIdentifier(\"home-photo-picker\")"
+            ),
+            "The photo-picker action must remain discoverable independent of interface language."
+        )
+
+        let intakeSource =
+            try String(
+                contentsOfFile:
+                    MemoMarkTestPaths.path(
+                        "Source/MemoMark/MemoMark/iOS/Views/UIKitPhotoPicker.swift"
+                    ),
+                encoding: .utf8
+            )
+        #expect(
+            intakeSource.contains(".livePhotos"),
+            "The production picker must explicitly include complete Live Photos."
         )
     }
 }

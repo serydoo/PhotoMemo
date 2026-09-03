@@ -416,6 +416,141 @@ struct MemoMarkBackgroundStatusServiceTests {
         #expect(snapshot.activePipelineStepIndex == 0)
     }
 
+    @Test("Background status reprojects presentation text when the interface language changes")
+    func backgroundStatusReprojectsPresentationTextForInterfaceLanguage() throws {
+        let suiteName =
+            "MemoMark.BackgroundStatusServiceTests.language.\(UUID().uuidString)"
+        let defaults = try #require(
+            UserDefaults(suiteName: suiteName)
+        )
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let configuration = BatchConfigurationSnapshot(
+            template: .classicWhite,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: true,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let job = makeJob(
+            title: "Language projection",
+            source: .shareExtension,
+            phase: .queued,
+            updatedAt: 500,
+            configuration: configuration
+        )
+        defaults.set(
+            try JSONEncoder().encode([job]),
+            forKey: "photomemo.batchQueue.jobs"
+        )
+
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            automaticallyStartsProcessing: false
+        )
+        let interfaceLanguage =
+            InterfaceLanguageBox(
+                .english
+            )
+        let service = MemoMarkBackgroundStatusService(
+            batchQueueStore: store,
+            interfaceLanguageProvider: {
+                interfaceLanguage.value
+            }
+        )
+
+        #expect(
+            service.currentSnapshot?.pipelineSteps.map(\.title)
+            == [
+                "Receive Photos",
+                "Read Details",
+                "Create Memory Card",
+                "Save to Photo Library",
+                "Complete"
+            ]
+        )
+        #expect(
+            service.currentSnapshot?.queueLines.first?
+            .contains("Waiting to start") == true
+        )
+        #expect(
+            service.currentSnapshot?.statusMessage
+            .contains("Waiting to resume") == true
+        )
+
+        interfaceLanguage.value = .japanese
+        service.refreshPresentation()
+
+        #expect(
+            service.currentSnapshot?.pipelineSteps.map(\.title)
+            == [
+                "写真を受信",
+                "情報を読み取る",
+                "メモリーカードを作成",
+                "写真ライブラリに保存",
+                "完了"
+            ]
+        )
+        #expect(
+            service.currentSnapshot?.queueLines.first?
+            .contains("開始待ち") == true
+        )
+        #expect(
+            service.currentSnapshot?.statusMessage
+            .contains("再開を待機中") == true
+        )
+    }
+
+    @Test("Status projection selects the active task and keeps queue facts immutable")
+    func statusProjectionSelectsActiveTask() throws {
+        let configuration = BatchConfigurationSnapshot(
+            template: .classicWhite,
+            badge: nil,
+            anchor: nil,
+            shouldWritePhotoDescription: true,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let activeJob = makeJob(
+            title: "Active projection",
+            source: .shareExtension,
+            phase: .exporting,
+            updatedAt: 500,
+            configuration: configuration
+        )
+        let queuedJob = makeJob(
+            title: "Queued projection",
+            source: .quickAction,
+            phase: .queued,
+            updatedAt: 400,
+            configuration: configuration
+        )
+        let projection = MemoMarkBackgroundStatusProjection(
+            textCatalog: MemoMarkBackgroundStatusTextCatalog(
+                language: .english
+            )
+        )
+
+        let snapshot = try #require(
+            projection.resolvedSnapshot(
+                externalJobs: [activeJob, queuedJob],
+                activeJobID: activeJob.id,
+                activeTaskID: activeJob.tasks[0].id
+            )
+        )
+
+        #expect(snapshot.jobID == activeJob.id)
+        #expect(snapshot.currentPhase == .exporting)
+        #expect(snapshot.presentationState == .active)
+        #expect(snapshot.queuedJobCount == 1)
+        #expect(snapshot.queueLines.count == 2)
+    }
+
     private func makeJob(
         id: UUID = UUID(),
         title: String,
@@ -453,6 +588,18 @@ struct MemoMarkBackgroundStatusServiceTests {
                 )
             ]
         )
+    }
+}
+
+@MainActor
+private final class InterfaceLanguageBox {
+
+    var value: MemoMarkLanguage
+
+    init(
+        _ value: MemoMarkLanguage
+    ) {
+        self.value = value
     }
 }
 #endif

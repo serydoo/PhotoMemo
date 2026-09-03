@@ -19,6 +19,38 @@ struct SubjectAvatarCropSheetContractTests {
         #expect(source.contains(".toolbarBackground(.visible, for: .navigationBar)"))
     }
 
+    @Test("crop stage clips portrait and landscape image overflow")
+    func cropStageClipsImageOverflow() throws {
+        let source = try String(
+            contentsOfFile: MemoMarkTestPaths.path(
+                "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectAvatarCropSheet.swift"
+            ),
+            encoding: .utf8
+        )
+
+        #expect(
+            source.contains(
+                ".frame(\n                        width: canvasSize.width,\n                        height: canvasSize.height\n                    )\n                    .clipped()"
+            )
+        )
+    }
+
+    @Test("crop stage establishes a square layout before measuring the image")
+    func cropStageEstablishesSquareLayoutBeforeMeasuringImage() throws {
+        let source = try String(
+            contentsOfFile: MemoMarkTestPaths.path(
+                "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectAvatarCropSheet.swift"
+            ),
+            encoding: .utf8
+        )
+
+        #expect(
+            source.contains(
+                "Color.clear\n            .aspectRatio(1, contentMode: .fit)\n            .overlay"
+            )
+        )
+    }
+
     @Test("crop editor keeps the primary action as completion")
     func cropEditorKeepsPrimaryActionAsCompletion() throws {
         let source = try String(

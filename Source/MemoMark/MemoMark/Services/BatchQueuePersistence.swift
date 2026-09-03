@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-protocol BatchQueuePersistenceBackend {
+nonisolated protocol BatchQueuePersistenceBackend {
 
     func loadData(
         forKey key: String
@@ -13,7 +13,7 @@ protocol BatchQueuePersistenceBackend {
     ) throws
 }
 
-struct UserDefaultsBatchQueuePersistenceBackend:
+nonisolated struct UserDefaultsBatchQueuePersistenceBackend:
     BatchQueuePersistenceBackend {
 
     let defaults: UserDefaults
@@ -59,8 +59,13 @@ struct UserDefaultsBatchQueuePersistenceBackend:
     }
 }
 
-struct FileBatchQueuePersistenceBackend:
+nonisolated struct FileBatchQueuePersistenceBackend:
     BatchQueuePersistenceBackend {
+
+    /// Stable on-disk schema filename. The V1 suffix is a persisted schema
+    /// contract, not a product-stage label, and must remain compatible.
+    private static let schemaV1Filename =
+        "jobs-v1.json"
 
     private let baseDirectoryURL: URL
 
@@ -122,13 +127,13 @@ struct FileBatchQueuePersistenceBackend:
                 isDirectory: true
             )
             .appendingPathComponent(
-                "jobs-v1.json",
+                Self.schemaV1Filename,
                 isDirectory: false
             )
     }
 }
 
-private enum FileBatchQueuePersistenceError:
+nonisolated private enum FileBatchQueuePersistenceError:
     LocalizedError {
 
     case unsupportedStorageKey(String)
@@ -144,7 +149,7 @@ private enum FileBatchQueuePersistenceError:
     }
 }
 
-private enum UserDefaultsBatchQueuePersistenceError:
+nonisolated private enum UserDefaultsBatchQueuePersistenceError:
     LocalizedError {
 
     case readBackMismatch(key: String)
@@ -157,7 +162,7 @@ private enum UserDefaultsBatchQueuePersistenceError:
     }
 }
 
-private enum BatchQueuePersistenceVerificationError:
+nonisolated private enum BatchQueuePersistenceVerificationError:
     LocalizedError {
 
     case readBackMismatch(key: String)
@@ -170,7 +175,7 @@ private enum BatchQueuePersistenceVerificationError:
     }
 }
 
-struct BatchQueuePersistence {
+nonisolated struct BatchQueuePersistence {
 
     static let storageKey =
         "photomemo.batchQueue.jobs"
@@ -352,115 +357,32 @@ struct BatchQueuePersistence {
         loadPersistedJobsResult().value ?? []
     }
 
+    @MainActor
     func normalizeJobsForResume(
         _ jobs: inout [BatchJob],
         protectedTaskIDs: Set<UUID> = [],
         deriveJobState:
             ([BatchTask]) -> BatchJobState
     ) -> Bool {
-
-        var changed = false
-
-        for jobIndex in jobs.indices {
-            for taskIndex in jobs[jobIndex]
-                .tasks.indices {
-
-                let phase =
-                    jobs[jobIndex]
-                    .tasks[taskIndex]
-                    .phase
-
-                guard !phase.isTerminal else {
-                    continue
-                }
-
-                // A durable receipt means Apple Photos may already own the
-                // output even when direct readback is temporarily unavailable.
-                guard !protectedTaskIDs.contains(
-                    jobs[jobIndex].tasks[taskIndex].id
-                ) else {
-                    continue
-                }
-
-                if isMissingManagedIntakeSource(
-                    jobs[jobIndex]
-                        .tasks[taskIndex]
-                        .sourceURL
-                ) {
-                    let taskID = jobs[jobIndex]
-                        .tasks[taskIndex].id
-                    let failure =
-                        ProductionDiagnosticFailureClassifier
-                        .processing(
-                            phase: phase.rawValue,
-                            classification:
-                                BatchTaskFailure
-                                .Classification
-                                .interrupted.rawValue,
-                            operationID: taskID,
-                            error:
-                                CocoaError(.fileNoSuchFile),
-                            language: .interfaceStored
-                        )
-                    jobs[jobIndex]
-                        .tasks[taskIndex]
-                        .phase = .failed
-                    jobs[jobIndex]
-                        .tasks[taskIndex]
-                        .renderedFileURL = nil
-                    jobs[jobIndex]
-                        .tasks[taskIndex]
-                        .failure =
-                        BatchTaskFailure(
-                            phase: phase,
-                            message: failure.userMessage,
-                            classification: .interrupted,
-                            canRetry: false,
-                            diagnosticCode:
-                                failure.code.rawValue,
-                            supportID:
-                                failure.supportID
-                        )
-                    jobs[jobIndex]
-                        .tasks[taskIndex]
-                        .progress =
-                        BatchTaskProgress(
-                            currentUnit: 0,
-                            totalUnits: 1,
-                            stage: .failed
-                        )
-                    changed = true
-                    continue
-                }
-
-                jobs[jobIndex]
-                    .tasks[taskIndex]
-                    .phase = .queued
-                jobs[jobIndex]
-                    .tasks[taskIndex]
-                    .renderedFileURL = nil
-                jobs[jobIndex]
-                    .tasks[taskIndex]
-                    .progress =
-                    BatchTaskProgress(
-                        currentUnit: 0,
-                        totalUnits: 1,
-                        stage: .waitingToResume
+        _ = deriveJobState
+        let sourceInspector =
+            BatchQueueResumeSourceInspector()
+        return BatchQueueResumePolicy()
+            .normalize(
+                &jobs,
+                protectedTaskIDs:
+                    protectedTaskIDs,
+                isMissingManagedSource:
+                    sourceInspector.isMissingManagedSource,
+                missingSourceFailure: {
+                    phase,
+                    taskID in
+                    sourceInspector.missingSourceFailure(
+                        phase: phase,
+                        taskID: taskID
                     )
-                changed = true
-            }
-
-            let derivedState =
-                deriveJobState(
-                    jobs[jobIndex].tasks
-                )
-            if jobs[jobIndex].state != derivedState {
-                jobs[jobIndex].state = derivedState
-                changed = true
-            }
-        }
-
-        return changed
+                }
+            )
     }
 
     @discardableResult
@@ -531,28 +453,6 @@ struct BatchQueuePersistence {
                 )
             )
         }
-    }
-}
-
-private extension BatchQueuePersistence {
-
-    func isMissingManagedIntakeSource(
-        _ url: URL
-    ) -> Bool {
-
-        let normalizedURL =
-            url.standardizedFileURL
-        guard MemoMarkPathContainment.contains(
-            normalizedURL,
-            root: MemoMarkSharedContainer.externalIntakeDirectoryURL
-        ) else {
-            return false
-        }
-
-        return !FileManager.default.fileExists(
-            atPath:
-                normalizedURL.path
-        )
     }
 }
 

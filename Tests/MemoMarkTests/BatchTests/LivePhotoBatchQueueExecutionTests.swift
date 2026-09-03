@@ -597,7 +597,7 @@ struct LivePhotoBatchQueueExecutionTests {
                     .originalFormat
             )
 
-        _ = store.enqueue(
+        _ = await store.enqueue(
             payloads: [
                 BatchTaskIntakePayload(
                     sourceURL:
@@ -632,7 +632,7 @@ struct LivePhotoBatchQueueExecutionTests {
         )
         #expect(
             processor.requests.first?.configuration
-                .v1MediaOutputMode
+                .mediaOutputMode
             == .originalFormat
         )
         #expect(
@@ -725,7 +725,7 @@ struct LivePhotoBatchQueueExecutionTests {
                 .portraitJPEG
             )
 
-        _ = store.enqueue(
+        _ = await store.enqueue(
             payloads: [
                 BatchTaskIntakePayload(
                     sourceURL: sourceURL,
@@ -925,7 +925,7 @@ struct LivePhotoBatchQueueExecutionTests {
                     .originalFormat
             )
 
-        _ = store.enqueue(
+        _ = await store.enqueue(
             payloads: [
                 BatchTaskIntakePayload(
                     sourceURL: bundleURL,
@@ -1055,7 +1055,7 @@ struct LivePhotoBatchQueueExecutionTests {
                     .originalFormat
             )
 
-        _ = store.enqueue(
+        _ = await store.enqueue(
             payloads: [
                 BatchTaskIntakePayload(
                     sourceURL: stillURL,
@@ -1267,7 +1267,7 @@ private extension LivePhotoBatchQueueExecutionTests {
 
     @MainActor
     func makeConfiguration(
-        outputMode: V1MediaOutputMode
+        outputMode: MediaOutputMode
     ) -> BatchConfigurationSnapshot {
         BatchConfigurationSnapshot(
             template:

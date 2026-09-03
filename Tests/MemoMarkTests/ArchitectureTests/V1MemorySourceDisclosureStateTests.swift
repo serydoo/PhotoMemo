@@ -3,13 +3,13 @@ import Foundation
 import Testing
 @testable import MemoMark
 
-@Suite("V1 memory source disclosure state")
-struct V1MemorySourceDisclosureStateTests {
+@Suite("memory source disclosure state")
+struct MemorySourceDisclosureStateTests {
 
     @Test("manual collapse remains while the subject is unchanged")
     func manualCollapseRemainsForSameSubject() {
         let subjectID = UUID()
-        var state = V1MemorySourceDisclosureState(
+        var state = MemorySourceDisclosureState(
             selectedSubjectID: subjectID
         )
 
@@ -23,7 +23,7 @@ struct V1MemorySourceDisclosureStateTests {
     func switchingSubjectsForcesExpansion() {
         let firstSubjectID = UUID()
         let secondSubjectID = UUID()
-        var state = V1MemorySourceDisclosureState(
+        var state = MemorySourceDisclosureState(
             selectedSubjectID: firstSubjectID,
             isExpanded: false
         )
@@ -37,7 +37,7 @@ struct V1MemorySourceDisclosureStateTests {
     @Test("manual expansion changes presentation state only")
     func manualExpansionChangesPresentationStateOnly() {
         let subjectID = UUID()
-        var state = V1MemorySourceDisclosureState(
+        var state = MemorySourceDisclosureState(
             selectedSubjectID: subjectID,
             isExpanded: false
         )
@@ -49,19 +49,19 @@ struct V1MemorySourceDisclosureStateTests {
     }
 }
 
-@Suite("V1 memory expression disclosure state")
-struct V1MemoryExpressionDisclosureStateTests {
+@Suite("memory expression disclosure state")
+struct MemoryExpressionDisclosureStateTests {
 
     @Test("memory expression details start expanded")
     func memoryExpressionDetailsStartExpanded() {
-        let state = V1MemoryExpressionDisclosureState()
+        let state = MemoryExpressionDisclosureState()
 
         #expect(state.isExpanded)
     }
 
     @Test("manual disclosure changes presentation state only")
     func manualDisclosureChangesPresentationStateOnly() {
-        var state = V1MemoryExpressionDisclosureState()
+        var state = MemoryExpressionDisclosureState()
 
         state.setExpanded(true)
         #expect(state.isExpanded)
@@ -71,19 +71,19 @@ struct V1MemoryExpressionDisclosureStateTests {
     }
 }
 
-@Suite("V1 configuration disclosure preferences")
-struct V1ConfigurationDisclosureStateTests {
+@Suite("configuration disclosure preferences")
+struct ConfigurationDisclosureStateTests {
 
     @Test("all configuration sections start expanded for a new defaults domain")
     func newConfigurationStartsExpanded() {
         let defaults = UserDefaults(
-            suiteName: "V1ConfigurationDisclosureStateTests.new"
+            suiteName: "ConfigurationDisclosureStateTests.new"
         )!
         defaults.removePersistentDomain(
-            forName: "V1ConfigurationDisclosureStateTests.new"
+            forName: "ConfigurationDisclosureStateTests.new"
         )
 
-        let state = V1ConfigurationDisclosureState(defaults: defaults)
+        let state = ConfigurationDisclosureState(defaults: defaults)
 
         #expect(state.memorySourceDisclosureState.isExpanded)
         #expect(state.memoryExpressionDisclosureState.isExpanded)
@@ -95,12 +95,12 @@ struct V1ConfigurationDisclosureStateTests {
 
     @Test("manual section changes persist without touching configuration data")
     func manualSectionChangesPersist() {
-        let suiteName = "V1ConfigurationDisclosureStateTests.persist"
+        let suiteName = "ConfigurationDisclosureStateTests.persist"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
 
-        var state = V1ConfigurationDisclosureState(defaults: defaults)
-        for section in V1ConfigurationDisclosureState.Section.allCases {
+        var state = ConfigurationDisclosureState(defaults: defaults)
+        for section in ConfigurationDisclosureState.Section.allCases {
             state.setExpanded(
                 false,
                 for: section,
@@ -108,20 +108,20 @@ struct V1ConfigurationDisclosureStateTests {
             )
         }
 
-        let restored = V1ConfigurationDisclosureState(defaults: defaults)
+        let restored = ConfigurationDisclosureState(defaults: defaults)
 
-        for section in V1ConfigurationDisclosureState.Section.allCases {
+        for section in ConfigurationDisclosureState.Section.allCases {
             #expect(!restored.isExpanded(for: section))
         }
     }
 
     @Test("changing the selected subject reopens memory source")
     func changingSubjectReopensMemorySource() {
-        let suiteName = "V1ConfigurationDisclosureStateTests.subject"
+        let suiteName = "ConfigurationDisclosureStateTests.subject"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
 
-        var state = V1ConfigurationDisclosureState(defaults: defaults)
+        var state = ConfigurationDisclosureState(defaults: defaults)
         state.synchronizeSelectedSubject(
             selectedSubjectID: UUID(),
             defaults: defaults
@@ -140,7 +140,7 @@ struct V1ConfigurationDisclosureStateTests {
         #expect(
             defaults.bool(
                 forKey:
-                    V1ConfigurationDisclosureState.StorageKey
+                    ConfigurationDisclosureState.StorageKey
                     .memorySource
             )
         )
@@ -154,10 +154,10 @@ struct V1ConfigurationDisclosureStateTests {
         defaults.set(
             false,
             forKey:
-                V1ConfigurationDisclosureState.StorageKey.memorySource
+                ConfigurationDisclosureState.StorageKey.memorySource
         )
 
-        var state = V1ConfigurationDisclosureState(defaults: defaults)
+        var state = ConfigurationDisclosureState(defaults: defaults)
         state.synchronizeSelectedSubject(
             selectedSubjectID: UUID(),
             defaults: defaults
@@ -167,7 +167,7 @@ struct V1ConfigurationDisclosureStateTests {
         #expect(
             !defaults.bool(
                 forKey:
-                    V1ConfigurationDisclosureState.StorageKey.memorySource
+                    ConfigurationDisclosureState.StorageKey.memorySource
             )
         )
     }
@@ -178,7 +178,7 @@ struct V1ConfigurationDisclosureStateTests {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
 
-        var state = V1ConfigurationDisclosureState(defaults: defaults)
+        var state = ConfigurationDisclosureState(defaults: defaults)
         state.synchronizeSelectedSubject(
             selectedSubjectID: UUID(),
             defaults: defaults

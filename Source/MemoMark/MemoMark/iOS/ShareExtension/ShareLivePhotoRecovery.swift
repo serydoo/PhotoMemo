@@ -27,6 +27,9 @@ struct ShareLivePhotoRecovery {
                 at: importRecord.managedURL
             )
 
+        // A complete still-plus-movie package is already a real Live Photo
+        // source. Only a flattened provider payload needs the static fallback
+        // recovery hint used by the host app.
         guard !readiness.canResolveBundle else {
             return importRecord
         }

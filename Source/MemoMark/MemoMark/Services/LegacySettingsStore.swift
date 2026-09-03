@@ -121,7 +121,7 @@ final class LegacySettingsStore {
     }
 
     @discardableResult
-    func saveSubjectLibrary(_ record: V1SubjectLibraryRecord) -> Bool {
+    func saveSubjectLibrary(_ record: SubjectLibrarySchemaV1Record) -> Bool {
         do {
             try setEncoded(record, forKey: Keys.subjectLibrary)
             return true
@@ -207,14 +207,14 @@ final class LegacySettingsStore {
         )
     }
 
-    func saveMediaOutputMode(_ mode: V1MediaOutputMode) {
+    func saveMediaOutputMode(_ mode: MediaOutputMode) {
         defaults.set(mode.rawValue, forKey: Keys.mediaOutputMode)
     }
 
-    func loadMediaOutputMode() -> V1MediaOutputMode {
+    func loadMediaOutputMode() -> MediaOutputMode {
         guard let rawValue = defaults.string(
             forKey: Keys.mediaOutputMode
-        ), let mode = V1MediaOutputMode(rawValue: rawValue) else {
+        ), let mode = MediaOutputMode(rawValue: rawValue) else {
             return .originalFormat
         }
         return mode
@@ -391,9 +391,9 @@ final class LegacySettingsStore {
     }
 
     func loadSubjectLibraryResult()
-    -> MemoMarkSharedDefaultsReadResult<V1SubjectLibraryRecord> {
+    -> MemoMarkSharedDefaultsReadResult<SubjectLibrarySchemaV1Record> {
         decodeValueResult(
-            V1SubjectLibraryRecord.self,
+            SubjectLibrarySchemaV1Record.self,
             forKey: Keys.subjectLibrary
         )
     }

@@ -7,15 +7,15 @@ import Testing
 struct PreviewCompositionMigrationTests {
 
     @MainActor
-    @Test("BootstrapV1PreviewDraftsIntent preserves the current default V1 preview texts")
+    @Test("BootstrapMemoryCardPreviewDraftsIntent preserves the current default V1 preview texts")
     func bootstrapIntentPreservesCurrentDefaultV1PreviewTexts() throws {
 
         let engine =
-            V1PreviewCompositionEngine()
+            MemoryCardPreviewCompositionEngine()
         let subject =
             previewSubject()
         let context =
-            V1PreviewCompositionContext(
+            MemoryCardPreviewCompositionContext(
                 subject: subject,
                 birthdayDate: try #require(
                     Calendar.current.date(
@@ -29,7 +29,7 @@ struct PreviewCompositionMigrationTests {
             )
 
         let result =
-            BootstrapV1PreviewDraftsIntent(
+            BootstrapMemoryCardPreviewDraftsIntent(
                 templateIDsByRegion:
                     Dictionary(
                         uniqueKeysWithValues:
@@ -114,13 +114,13 @@ struct PreviewCompositionMigrationTests {
     }
 
     @MainActor
-    @Test("BuildV1PreviewRenderModelIntent resolves known tokens and mirrors production removal for unknown tokens")
+    @Test("BuildMemoryCardPreviewRenderModelIntent resolves known tokens and mirrors production removal for unknown tokens")
     func buildRenderModelIntentMirrorsProductionUnknownTokenBehavior() {
 
         let engine =
-            V1PreviewCompositionEngine()
+            MemoryCardPreviewCompositionEngine()
         let context =
-            V1PreviewCompositionContext(
+            MemoryCardPreviewCompositionContext(
                 subject: previewSubject(),
                 birthdayDate:
                     Calendar.current.date(
@@ -132,22 +132,22 @@ struct PreviewCompositionMigrationTests {
                     ) ?? Date()
             )
         let captureDateItem =
-            V1PreviewDraftItem.token(
-                V1PreviewCompositionModule
+            MemoryCardPreviewDraftItem.token(
+                MemoryCardPreviewCompositionModule
                     .captureDate
                     .title,
                 value: "旧值",
                 templateValue:
-                    V1PreviewCompositionModule
+                    MemoryCardPreviewCompositionModule
                     .captureDate
                     .rendererToken,
                 systemImage:
-                    V1PreviewCompositionModule
+                    MemoryCardPreviewCompositionModule
                     .captureDate
                     .systemImage
             )
         let unknownItem =
-            V1PreviewDraftItem.token(
+            MemoryCardPreviewDraftItem.token(
                 "未知",
                 value: "保持原样",
                 templateValue: "{{not_mapped}}",
@@ -156,7 +156,7 @@ struct PreviewCompositionMigrationTests {
 
         let captureDateModel =
             renderModel(
-                for: V1PreviewDraft(
+                for: MemoryCardPreviewDraft(
                     items: [captureDateItem]
                 ),
                 context: context,
@@ -164,7 +164,7 @@ struct PreviewCompositionMigrationTests {
             )
         let unknownItemModel =
             renderModel(
-                for: V1PreviewDraft(
+                for: MemoryCardPreviewDraft(
                     items: [unknownItem]
                 ),
                 context: context,
@@ -194,9 +194,9 @@ struct PreviewCompositionMigrationTests {
     func subjectNicknameModuleSavesProductionNicknameToken() {
 
         let engine =
-            V1PreviewCompositionEngine()
+            MemoryCardPreviewCompositionEngine()
         let context =
-            V1PreviewCompositionContext(
+            MemoryCardPreviewCompositionContext(
                 subject: previewSubject(),
                 birthdayDate:
                     Calendar.current.date(
@@ -215,7 +215,7 @@ struct PreviewCompositionMigrationTests {
         let model =
             renderModel(
                 for:
-                    V1PreviewDraft(
+                    MemoryCardPreviewDraft(
                         items: [item]
                     ),
                 context: context,
@@ -223,7 +223,7 @@ struct PreviewCompositionMigrationTests {
             )
 
         #expect(
-            V1PreviewCompositionModule
+            MemoryCardPreviewCompositionModule
                 .subjectNickname
                 .rendererToken == "{{subject_nickname}}"
         )
@@ -242,13 +242,13 @@ struct PreviewCompositionMigrationTests {
 
     @Test("Dynamic preview modules save production renderer tokens")
     func dynamicPreviewModulesSaveProductionRendererTokens() {
-        let engine = V1PreviewCompositionEngine()
-        let context = V1PreviewCompositionContext(
+        let engine = MemoryCardPreviewCompositionEngine()
+        let context = MemoryCardPreviewCompositionContext(
             subject: previewSubject(),
             birthdayDate: Date(timeIntervalSince1970: 0)
         )
 
-        for module in V1PreviewCompositionModule.allCases
+        for module in MemoryCardPreviewCompositionModule.allCases
             where module != .custom {
             let item = engine.makeModuleItem(
                 module,
@@ -264,8 +264,8 @@ struct PreviewCompositionMigrationTests {
 
     @Test("Custom preview module remains literal content")
     func customPreviewModuleRemainsLiteralContent() {
-        let engine = V1PreviewCompositionEngine()
-        let context = V1PreviewCompositionContext(
+        let engine = MemoryCardPreviewCompositionEngine()
+        let context = MemoryCardPreviewCompositionContext(
             subject: nil,
             birthdayDate: Date(timeIntervalSince1970: 0)
         )
@@ -277,11 +277,11 @@ struct PreviewCompositionMigrationTests {
         #expect(item.savedValue == item.value)
         #expect(
             item.savedValue
-            != V1PreviewCompositionModule.custom.rendererToken
+            != MemoryCardPreviewCompositionModule.custom.rendererToken
         )
         #expect(
             engine.templateText(
-                for: V1PreviewDraft(items: [item])
+                for: MemoryCardPreviewDraft(items: [item])
             ) == item.value
         )
     }
@@ -336,13 +336,13 @@ struct PreviewCompositionMigrationTests {
     }
 
     @MainActor
-    @Test("BuildV1PreviewRenderModelIntent preserves the current slot B and slot D wording")
+    @Test("BuildMemoryCardPreviewRenderModelIntent preserves the current slot B and slot D wording")
     func buildRenderModelIntentPreservesCurrentSlotBWordingAndSmartTimeWording() {
 
         let engine =
-            V1PreviewCompositionEngine()
+            MemoryCardPreviewCompositionEngine()
         let context =
-            V1PreviewCompositionContext(
+            MemoryCardPreviewCompositionContext(
                 subject: previewSubject(),
                 birthdayDate:
                     Calendar.current.date(
@@ -354,7 +354,7 @@ struct PreviewCompositionMigrationTests {
                     ) ?? Date()
             )
         let slotBDraft =
-            V1PreviewDraft(
+            MemoryCardPreviewDraft(
                 items: [
                     .text("记录于"),
                     engine.makeModuleItem(
@@ -368,7 +368,7 @@ struct PreviewCompositionMigrationTests {
                 ]
             )
         let slotDDraft =
-            V1PreviewDraft(
+            MemoryCardPreviewDraft(
                 items: [
                     engine.makeModuleItem(
                         .smartTime,
@@ -400,11 +400,11 @@ struct PreviewCompositionMigrationTests {
     func v1PreviewLocationModuleKeepsLegacyTokenWhileSourcingDisplayValueFromExpressionContext() {
 
         let engine =
-            V1PreviewCompositionEngine()
+            MemoryCardPreviewCompositionEngine()
         let subject =
             previewSubject()
         let context =
-            V1PreviewCompositionContext(
+            MemoryCardPreviewCompositionContext(
                 subject: subject,
                 birthdayDate: subject.referenceDate
             )
@@ -412,7 +412,7 @@ struct PreviewCompositionMigrationTests {
         let model =
             renderModel(
                 for:
-                    V1PreviewDraft(
+                    MemoryCardPreviewDraft(
                         items: [
                             engine.makeModuleItem(
                                 .location,
@@ -440,7 +440,7 @@ struct PreviewCompositionMigrationTests {
             try String(
                 contentsOfFile:
                     MemoMarkTestPaths.path(
-                        "Source/MemoMark/MemoMark/iOS/Views/V1PreviewCompositionEngine.swift"
+                        "Source/MemoMark/MemoMark/iOS/Views/MemoryCardPreviewCompositionEngine.swift"
                     ),
                 encoding: .utf8
             )
@@ -502,14 +502,14 @@ struct PreviewCompositionMigrationTests {
                 decorations: []
             )
         let engine =
-            V1PreviewCompositionEngine()
+            MemoryCardPreviewCompositionEngine()
         let context =
-            V1PreviewCompositionContext(
+            MemoryCardPreviewCompositionContext(
                 subject: subject,
                 birthdayDate: birthday
             )
         let slotADraft =
-            V1PreviewDraft(
+            MemoryCardPreviewDraft(
                 items: [
                     .text("记录"),
                     engine.makeModuleItem(
@@ -531,12 +531,12 @@ struct PreviewCompositionMigrationTests {
 }
 
 private func renderModel(
-    for draft: V1PreviewDraft,
-    context: V1PreviewCompositionContext,
-    engine: V1PreviewCompositionEngine
-) -> V1PreviewRenderModel {
+    for draft: MemoryCardPreviewDraft,
+    context: MemoryCardPreviewCompositionContext,
+    engine: MemoryCardPreviewCompositionEngine
+) -> MemoryCardPreviewRenderModel {
 
-    switch BuildV1PreviewRenderModelIntent(
+    switch BuildMemoryCardPreviewRenderModelIntent(
         draft: draft,
         context: context,
         engine: engine
@@ -548,7 +548,7 @@ private func renderModel(
         Issue.record(
             "Expected preview render-model build to succeed, got \(error.message)"
         )
-        return V1PreviewRenderModel(
+        return MemoryCardPreviewRenderModel(
             templateSourceText: "",
             displayText: ""
         )

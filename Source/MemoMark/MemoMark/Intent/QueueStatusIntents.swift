@@ -119,15 +119,7 @@ struct ClearCompletedQueueHistoryIntent:
         Void
     > {
 
-        executeSynchronously()
-    }
-
-    func executeSynchronously()
-    -> MemoMarkResult<
-        Void
-    > {
-
-        coordinator
+        await coordinator
             .clearCompletedHistory(
                 preserving: preservingJobID
             )

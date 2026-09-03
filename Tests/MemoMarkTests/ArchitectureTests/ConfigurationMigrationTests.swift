@@ -268,7 +268,7 @@ struct ConfigurationMigrationTests {
             SettingsService(defaults: defaults)
         let bootstrap =
             try Self.requireSuccess(
-                await LoadV1ConfigurationBootstrapIntent(
+                await LoadConfigurationBootstrapIntent(
                     coordinator: coordinator
                 )
                 .execute(),
@@ -529,7 +529,7 @@ struct ConfigurationMigrationTests {
             )
         let bootstrap =
             try Self.requireSuccess(
-                await LoadV1ConfigurationBootstrapIntent(
+                await LoadConfigurationBootstrapIntent(
                     coordinator: coordinator
                 )
                 .execute(),
@@ -762,8 +762,8 @@ struct ConfigurationMigrationTests {
     }
 
     @MainActor
-    @Test("LoadV1ConfigurationBootstrapIntent restores custom logo and existing-album bootstrap state through configuration seams")
-    func loadV1ConfigurationBootstrapIntentRestoresCustomLogoAndExistingAlbumBootstrapState() async throws {
+    @Test("LoadConfigurationBootstrapIntent restores custom logo and existing-album bootstrap state through configuration seams")
+    func loadConfigurationBootstrapIntentRestoresCustomLogoAndExistingAlbumBootstrapState() async throws {
 
         let suiteName =
             "MemoMark.ConfigurationMigrationTests.bootstrapCustom.\(UUID().uuidString)"
@@ -804,7 +804,7 @@ struct ConfigurationMigrationTests {
                 defaults: defaults
             )
         let result =
-            await LoadV1ConfigurationBootstrapIntent(
+            await LoadConfigurationBootstrapIntent(
                 coordinator: coordinator
             )
             .execute()
@@ -959,7 +959,7 @@ struct ConfigurationMigrationTests {
             )
         let bootstrap =
             try Self.requireSuccess(
-                await LoadV1ConfigurationBootstrapIntent(
+                await LoadConfigurationBootstrapIntent(
                     coordinator: coordinator
                 )
                 .execute(),
@@ -986,8 +986,8 @@ struct ConfigurationMigrationTests {
     }
 
     @MainActor
-    @Test("LoadV1ConfigurationBootstrapIntent normalizes automatic and system-library bootstrap state")
-    func loadV1ConfigurationBootstrapIntentNormalizesAutomaticAndSystemLibraryBootstrapState() async throws {
+    @Test("LoadConfigurationBootstrapIntent normalizes automatic and system-library bootstrap state")
+    func loadConfigurationBootstrapIntentNormalizesAutomaticAndSystemLibraryBootstrapState() async throws {
 
         let suiteName =
             "MemoMark.ConfigurationMigrationTests.bootstrapNormalization.\(UUID().uuidString)"
@@ -1021,7 +1021,7 @@ struct ConfigurationMigrationTests {
                 defaults: defaults
             )
         let systemResult =
-            await LoadV1ConfigurationBootstrapIntent(
+            await LoadConfigurationBootstrapIntent(
                 coordinator: coordinator
             )
             .execute()
@@ -1055,7 +1055,7 @@ struct ConfigurationMigrationTests {
         )
 
         let automaticResult =
-            await LoadV1ConfigurationBootstrapIntent(
+            await LoadConfigurationBootstrapIntent(
                 coordinator: coordinator
             )
             .execute()
@@ -1081,8 +1081,8 @@ struct ConfigurationMigrationTests {
     }
 
     @MainActor
-    @Test("LoadV1ConfigurationBootstrapIntent keeps existing-album bootstrap state when the saved badge payload is corrupted")
-    func loadV1ConfigurationBootstrapIntentKeepsExistingAlbumStateWhenBadgePayloadIsCorrupted() async throws {
+    @Test("LoadConfigurationBootstrapIntent keeps existing-album bootstrap state when the saved badge payload is corrupted")
+    func loadConfigurationBootstrapIntentKeepsExistingAlbumStateWhenBadgePayloadIsCorrupted() async throws {
 
         let suiteName =
             "MemoMark.ConfigurationMigrationTests.bootstrapCorruptedBadge.\(UUID().uuidString)"
@@ -1120,7 +1120,7 @@ struct ConfigurationMigrationTests {
                 defaults: defaults
             )
         let result =
-            await LoadV1ConfigurationBootstrapIntent(
+            await LoadConfigurationBootstrapIntent(
                 coordinator: coordinator
             )
             .execute()
@@ -1154,8 +1154,8 @@ struct ConfigurationMigrationTests {
     }
 
     @MainActor
-    @Test("LoadV1ConfigurationBootstrapIntent preserves subject-library decode failure diagnostics")
-    func loadV1ConfigurationBootstrapIntentPreservesSubjectLibraryDecodeFailureDiagnostics() async throws {
+    @Test("LoadConfigurationBootstrapIntent preserves subject-library decode failure diagnostics")
+    func loadConfigurationBootstrapIntentPreservesSubjectLibraryDecodeFailureDiagnostics() async throws {
 
         let suiteName =
             "MemoMark.ConfigurationMigrationTests.subjectLibraryFailure.\(UUID().uuidString)"
@@ -1185,7 +1185,7 @@ struct ConfigurationMigrationTests {
             )
         let bootstrap =
             try Self.requireSuccess(
-                await LoadV1ConfigurationBootstrapIntent(
+                await LoadConfigurationBootstrapIntent(
                     coordinator: coordinator
                 )
                 .execute(),
@@ -1558,7 +1558,7 @@ struct ConfigurationMigrationTests {
         #expect(
             defaults.string(
                 forKey: "photomemo.v1.mediaOutputMode"
-            ) == V1MediaOutputMode.originalFormat.rawValue
+            ) == MediaOutputMode.originalFormat.rawValue
         )
     }
 
@@ -1682,7 +1682,7 @@ struct ConfigurationMigrationTests {
         )
         let bootstrap = SettingsRepository(
             settingsService: restarted
-        ).loadV1ConfigurationBootstrapState()
+        ).loadConfigurationBootstrapState()
 
         #expect(bootstrap.configurationLibrary != nil)
         #expect(bootstrap.draftProjection?.title == "Aggregate Truth")
@@ -2112,7 +2112,7 @@ struct ConfigurationMigrationTests {
             forKey: "photomemo.selectedAlbumTitle"
         )
         defaults.set(
-            V1MediaOutputMode.staticImage.rawValue,
+            MediaOutputMode.staticImage.rawValue,
             forKey: "photomemo.v1.mediaOutputMode"
         )
         defaults.set(

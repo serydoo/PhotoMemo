@@ -18,7 +18,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(root.contains(".preferredColorScheme(preferredColorScheme)"))
         #expect(
             root.contains(
-                "#if os(iOS)\n        MemoMarkiOSV1View("
+                "#if os(iOS)\n        MemoMarkConfigurationCenterView("
             )
         )
         #expect(root.contains("case .system:"))
@@ -36,20 +36,20 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("shared runtime headings resolve through the selected interface language")
     func sharedRuntimeHeadingsResolveLocalization() throws {
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
         )
-        let configuration = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+        let configurationRowLayout = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionRowLayout.swift"
         )
         let advanced = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1AdvancedModulesSheet.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/AdvancedModulesSheet.swift"
         )
 
         let pageHeaderStart = try #require(
-            support.range(of: "struct V1PageHeader: View")
+            support.range(of: "struct ConfigurationPageHeader: View")
         )
         let pageHeaderEnd = try #require(
-            support.range(of: "struct V1ConfigurationSheetSubtitle: View")
+            support.range(of: "struct ConfigurationSheetSubtitle: View")
         )
         let pageHeader = support[
             pageHeaderStart.lowerBound..<pageHeaderEnd.lowerBound
@@ -57,22 +57,22 @@ struct AppleNativeProductSurfaceContractTests {
 
         let sheetSubtitleStart = pageHeaderEnd
         let sheetSubtitleEnd = try #require(
-            support.range(of: "struct V1CompactSelectionLabel: View")
+            support.range(of: "struct CompactSelectionLabel: View")
         )
         let sheetSubtitle = support[
             sheetSubtitleStart.lowerBound..<sheetSubtitleEnd.lowerBound
         ]
 
         let rowHeadingStart = try #require(
-            configuration.range(of: "private func configurationRowHeading")
+            configurationRowLayout.range(of: "private func configurationRowHeading")
         )
         let rowHeadingEnd = try #require(
-            configuration.range(
+            configurationRowLayout.range(
                 of: "private func configurationRowTrailing",
-                range: rowHeadingStart.upperBound..<configuration.endIndex
+                range: rowHeadingStart.upperBound..<configurationRowLayout.endIndex
             )
         )
-        let rowHeading = configuration[
+        let rowHeading = configurationRowLayout[
             rowHeadingStart.lowerBound..<rowHeadingEnd.lowerBound
         ]
 
@@ -159,7 +159,7 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("shared cards preserve VoiceOver order and increased contrast")
     func sharedCardsSupportSystemAccessibilityPreferences() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
         )
 
         #expect(source.contains("@Environment(\\.colorSchemeContrast)"))
@@ -171,10 +171,13 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("configuration and processing apply subtractive visual hierarchy")
     func configurationAndProcessingApplySubtractiveVisualHierarchy() throws {
         let configuration = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
+        )
+        let rowLayout = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionRowLayout.swift"
         )
         let processing = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
         )
 
         let textFirstRowCount =
@@ -183,18 +186,18 @@ struct AppleNativeProductSurfaceContractTests {
             ).count - 1
 
         #expect(textFirstRowCount == 5)
-        #expect(configuration.contains("Text(localized(detail))"))
-        #expect(configuration.contains(".foregroundStyle(.secondary)"))
+        #expect(rowLayout.contains("Text(localized(detail))"))
+        #expect(rowLayout.contains(".foregroundStyle(.secondary)"))
         #expect(!processing.contains(".fill(Color.accentColor)"))
         #expect(!processing.contains("Color.accentColor.opacity(0.16)"))
-        #expect(processing.contains(".fill(ConfigurationUI.controlBackground)"))
+        #expect(processing.contains(".fill(ConfigurationUI.controlBackground.opacity(0.54))"))
         #expect(processing.contains(".stroke(ConfigurationUI.faintHairline)"))
     }
 
     @Test("processing surface separates result states from live progress")
     func processingSurfaceSeparatesResultStatesFromLiveProgress() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
         )
 
         #expect(!source.contains("Circle()\n                    .fill(presentation.currentTask.tint.color)"))
@@ -218,23 +221,23 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift"
         )
         let configuration = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
         let regionEditor = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1RegionEditorCluster.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
         )
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
         )
 
-        #expect(output.contains("V1OutputPhotoDescriptionSection("))
-        #expect(output.contains("V1OutputSection("))
-        #expect(output.contains("V1OutputPhotoDescriptionContent("))
-        #expect(output.contains("V1OutputDestinationContent("))
-        #expect(configuration.contains("V1OutputPhotoDescriptionContent("))
-        #expect(configuration.contains("V1OutputDestinationContent("))
-        #expect(!configuration.contains("V1OutputPhotoDescriptionSection("))
-        #expect(!configuration.contains("V1OutputSection("))
+        #expect(output.contains("OutputPhotoDescriptionSection("))
+        #expect(output.contains("OutputDestinationSection("))
+        #expect(output.contains("OutputPhotoDescriptionContent("))
+        #expect(output.contains("OutputDestinationContent("))
+        #expect(configuration.contains("OutputPhotoDescriptionContent("))
+        #expect(configuration.contains("OutputDestinationContent("))
+        #expect(!configuration.contains("OutputPhotoDescriptionSection("))
+        #expect(!configuration.contains("OutputDestinationSection("))
         #expect(configuration.contains("title: \"configuration.photo_description.title\""))
         #expect(configuration.contains("title: \"configuration.save_location.title\""))
         #expect(!output.contains("V1OutputRetentionRow("))
@@ -243,7 +246,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(!output.contains("title: \"回到哪里\",\n                systemImage:"))
         #expect(!output.contains("private struct V1MemoryWriteExplanation"))
         #expect(!output.contains("let tint: Color\n    let title: String\n    let subtitle: String"))
-        #expect(support.contains("struct V1TitledSectionSurface"))
+        #expect(support.contains("struct ConfigurationTitledSectionSurface"))
         #expect(regionEditor.contains("Text(\"这里的内容会怎样使用？\")"))
         #expect(!regionEditor.contains("Label(\"这里的内容会怎样使用？\", systemImage:"))
         #expect(regionEditor.contains("private var editorFooterNote"))
@@ -252,35 +255,38 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("processing and output share titled card hierarchy")
     func processingAndOutputShareTitledCardHierarchy() throws {
         let processing = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
+        )
+        let recentHistory = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/TaskRecentHistorySurface.swift"
         )
         let output = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift"
         )
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
         )
         let configuration = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
 
-        #expect(support.contains("struct V1TitledSectionCard"))
+        #expect(support.contains("struct ConfigurationTitledSectionCard"))
         #expect(support.contains("HStack(alignment: .center, spacing: 8)"))
-        #expect(configuration.contains("V1ConfigurationCompactSectionRow("))
-        #expect(configuration.contains("V1SectionCardMetrics.cardHeaderContentSpacing"))
+        #expect(configuration.contains("ConfigurationCompactSectionRow("))
+        #expect(configuration.contains("ConfigurationSectionCardMetrics.cardHeaderContentSpacing"))
         #expect(support.contains(".font(.headline.weight(.semibold))"))
         #expect(support.contains(".font(.caption)"))
-        #expect(processing.contains("task.recent.title"))
+        #expect(processing.contains("TaskRecentHistorySurface("))
+        #expect(recentHistory.contains("task.recent.title"))
         #expect(processing.contains("taskStatusPill("))
-        #expect(processing.contains("isRecentTasksSheetPresented = true"))
-        #expect(processing.contains("V1CardHeaderIconButton("))
-        #expect(processing.contains("systemImage: \"ellipsis\""))
-        #expect(processing.contains(".frame(width: 40, height: 40)"))
-        #expect(processing.contains("ConfigurationUI.controlBackground"))
-        #expect(processing.contains(".foregroundStyle(Color.accentColor)"))
-        #expect(!processing.contains("Text(\"…\")"))
-        #expect(!processing.contains("V1SectionHeading(\n                    \"最近任务\""))
-        #expect(!processing.contains("systemImage: MemoMarkSymbol.processing.name,\n                    tint: .blue"))
+        #expect(recentHistory.contains("isSheetPresented = true"))
+        #expect(recentHistory.contains("ConfigurationCardHeaderIconButton("))
+        #expect(recentHistory.contains("systemImage: \"ellipsis\""))
+        #expect(recentHistory.contains(".frame(minHeight: 70)"))
+        #expect(recentHistory.contains(".foregroundStyle(Color.accentColor)"))
+        #expect(!recentHistory.contains("Text(\"…\")"))
+        #expect(!recentHistory.contains("ConfigurationSectionHeading(\n                    \"最近任务\""))
+        #expect(!recentHistory.contains("systemImage: MemoMarkSymbol.processing.name,\n                    tint: .blue"))
         #expect(output.contains("private var existingAlbumControlRow"))
         #expect(output.contains(".frame(width: 36, height: 36)"))
         #expect(output.contains(".foregroundStyle(.secondary)"))
@@ -291,7 +297,10 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("home summary cards follow configuration heading hierarchy")
     func homeSummaryCardsFollowConfigurationHeadingHierarchy() throws {
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+        )
+        let presetRow = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomeMemoryPresetRow.swift"
         )
 
         #expect(home.contains("home.presets.title"))
@@ -302,22 +311,22 @@ struct AppleNativeProductSurfaceContractTests {
                 "activeConfigurationStatus =\n                    update.activeConfigurationStatus"
             )
         )
-        #expect(!home.contains("private struct V1HomeConfigurationCard"))
+        #expect(!home.contains("private struct HomeConfigurationCard"))
         #expect(!home.contains("systemImage: MemoMarkSymbol.memorySubject.name"))
         #expect(!home.contains("systemImage: MemoMarkSymbol.configuration.name"))
         #expect(home.contains("HStack(spacing: 8)"))
         #expect(home.contains(".frame(width: 48, height: 48)"))
-        #expect(home.contains(".frame(width: 26, height: 30)"))
+        #expect(presetRow.contains(".frame(width: 26, height: 30)"))
     }
 
     @Test("actions use accent while reading destinations stay neutral")
     func actionsUseAccentWhileReadingDestinationsStayNeutral() throws {
         let sourcePaths = [
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSHomeCardPrimitives.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/HomeCardPrimitives.swift",
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterSummarySection.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionRowLayout.swift",
             "Source/MemoMark/MemoMark/iOS/Views/IOSCompactEntryRow.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSupport.swift"
         ]
 
         for sourcePath in sourcePaths {
@@ -337,7 +346,7 @@ struct AppleNativeProductSurfaceContractTests {
         }
 
         let progress = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
         )
         let applePhotosRow = try #require(
             progress.range(of: "private var photoLibraryLinkRow: some View")
@@ -354,40 +363,43 @@ struct AppleNativeProductSurfaceContractTests {
             )
         )
 
-        let settings = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+        let disclosureSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
         )
-        let disclosureStart = try #require(
-            settings.range(
-                of: "private struct V1SettingsDisclosureSection"
-            )?.lowerBound
+        let supportRows = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsSupportRowComponents.swift"
         )
-        let actionSource = settings[..<disclosureStart]
-        let disclosureSource = settings[disclosureStart...]
 
-        #expect(actionSource.contains(".foregroundStyle(Color.accentColor)"))
+        let feedback = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/FeedbackSupportContent.swift"
+        )
+        #expect(feedback.contains("SettingsLinkRow("))
+        #expect(supportRows.contains(".foregroundStyle(Color.accentColor)"))
         #expect(disclosureSource.contains(".foregroundStyle(.tertiary)"))
     }
 
     @Test("memory subject sections and interface preferences use restrained hierarchy")
     func memorySubjectSectionsAndInterfacePreferencesUseRestrainedHierarchy() throws {
         let overview = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift"
         )
         let editorFlow = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift"
         )
         let editor = try sourceText(
             "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
         )
         let settings = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
+        )
+        let disclosure = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
         )
 
         #expect(overview.contains("title: \"基础资料\""))
         #expect(overview.contains("title: \"时间锚点\""))
-        #expect(overview.contains("V1TitledSectionSurface("))
-        #expect(!overview.contains("V1TitledSectionCard("))
+        #expect(overview.contains("ConfigurationTitledSectionSurface("))
+        #expect(!overview.contains("ConfigurationTitledSectionCard("))
         #expect(overview.contains("subjectBasicInformation"))
         #expect(overview.contains(".v1CardChrome()"))
         #expect(overview.contains(".frame(maxWidth: .infinity, alignment: .center)"))
@@ -395,29 +407,29 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(editorFlow.contains("title: \"基础资料\""))
         #expect(editorFlow.contains("title: \"时间锚点\""))
         #expect(editorFlow.contains("private func subjectSectionHeader("))
-        #expect(!editorFlow.contains("V1TitledSectionCard("))
+        #expect(!editorFlow.contains("ConfigurationTitledSectionCard("))
         #expect(editor.contains("contactAvatarEditor"))
         #expect(editor.contains("private var identityOverviewFieldsGroup"))
-        #expect(editor.contains("V1HorizontalDivider(horizontalInset: 12)"))
-        #expect(editor.contains(".v1GroupedSurface()"))
+        #expect(editor.contains("HorizontalDivider(horizontalInset: 12)"))
+        #expect(editor.contains(".groupedSurface()"))
         #expect(settings.contains("case interfacePreferences"))
         #expect(settings.contains("section: .interfacePreferences"))
-        #expect(settings.contains("trailingValue: interfacePreferencesSummary"))
-        #expect(settings.contains("private var adaptiveDisclosureHeader"))
-        #expect(settings.contains("private var verticalDisclosureHeader"))
-        #expect(settings.contains("if let trailingValue,"))
+        #expect(settings.contains("trailingValue: InterfacePreferencesContent.summary("))
+        #expect(disclosure.contains("private var adaptiveDisclosureHeader"))
+        #expect(disclosure.contains("private var verticalDisclosureHeader"))
+        #expect(disclosure.contains("if let trailingValue,"))
     }
 
     @Test("Application surfaces are semantic while fixed output previews stay light")
     func applicationSurfacesAreSemanticAndOutputPreviewsStayLight() throws {
         let welcome = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1WelcomePresentation.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/WelcomePresentation.swift"
         )
         let subjectOverview = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSupport.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSupport.swift"
         )
         let subjectAnchors = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewCardSections.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewCardSections.swift"
         )
         let subjectEditor = try sourceText(
             "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
@@ -432,10 +444,13 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterIOSSupportViews.swift"
         )
         let accessory = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1AccessoryEntrySection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/AccessoryEntrySection.swift"
         )
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+        )
+        let presetRow = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomeMemoryPresetRow.swift"
         )
 
         #expect(!welcome.contains(".fill(Color.white.opacity(0.94))"))
@@ -452,13 +467,13 @@ struct AppleNativeProductSurfaceContractTests {
             )
         )
         #expect(accessory.contains(".environment(\\.colorScheme, .light)"))
-        #expect(home.contains(".environment(\\.colorScheme, .light)"))
+        #expect(presetRow.contains(".environment(\\.colorScheme, .light)"))
     }
 
     @Test("processing surface avoids dashboard and import-first language")
     func processingSurfaceAvoidsDashboardLanguage() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
         )
 
         #expect(!source.contains("overviewStrip"))
@@ -474,8 +489,8 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift"
         )
 
-        #expect(source.contains("V1OutputPhotoDescriptionSection("))
-        #expect(source.contains("V1OutputSection("))
+        #expect(source.contains("OutputPhotoDescriptionSection("))
+        #expect(source.contains("OutputDestinationSection("))
         #expect(source.contains("output.save.saved"))
         #expect(source.contains("output.save.action"))
         #expect(source.contains("configurationStatus == .saved"))
@@ -497,11 +512,11 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("home keeps product objects and removes repeated promotion")
     func homeKeepsObjectsAndRemovesRepeatedPromotion() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
 
         #expect(!source.contains("developmentBackgroundSection"))
-        #expect(!source.contains("V1HomeFeedbackSection"))
+        #expect(!source.contains("HomeFeedbackSection"))
         #expect(source.contains("profileSection"))
         #expect(source.contains("currentPresetSection"))
         #expect(source.contains("选择照片"))
@@ -510,30 +525,30 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("primary pages reserve cards for objects instead of section wrappers")
     func primaryPagesReserveCardsForObjects() throws {
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
         let configuration = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
         let settings = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
         )
         let support = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
         )
 
-        #expect(support.contains("struct V1TitledSectionSurface"))
+        #expect(support.contains("struct ConfigurationTitledSectionSurface"))
         #expect(home.contains("currentPresetSection"))
         #expect(home.contains("profileSection"))
         #expect(configuration.contains(".v1SectionSurfaceLayout()"))
-        #expect(!settings.contains("V1ConfigurationCardContainer(\n            background: sectionBackground"))
+        #expect(!settings.contains("ConfigurationCardContainer(\n            background: sectionBackground"))
         #expect(settings.contains("memoMarkPlusSection"))
     }
 
     @Test("settings opens getting started first and keeps secondary sections collapsed")
     func settingsStartsGettingStartedAndCollapsesSecondarySections() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
         )
 
         #expect(source.contains("private var isGettingStartedExpanded = true"))
@@ -544,7 +559,11 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(source.contains("private var memoMarkPlusSection"))
         #expect(!source.contains("private func settingsTonalIcon"))
         #expect(!source.contains("private func settingsThumbnailStack"))
-        #expect(source.contains("private func settingsPrivacyRow"))
+        #expect(source.contains("DataSafetySupportContent("))
+        let supportRows = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsSupportRowComponents.swift"
+        )
+        #expect(supportRows.contains("struct SettingsPrivacyRow"))
     }
 
     @Test("interactive surfaces respect reduced motion")
@@ -553,7 +572,7 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/MemoMark/MemoMark/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift",
             "Source/MemoMark/MemoMark/ConfigurationCenter/MemoryCard/InteractiveMemoryCardConfigurationComponentDock.swift",
             "Source/MemoMark/MemoMark/ConfigurationCenter/MemoryCard/InteractiveMemoryCardCompactPreview.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
         ]
 
         for path in paths {
@@ -565,21 +584,20 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("configuration center presents objects instead of engineering regions")
     func configurationCenterUsesUserFacingHierarchy() throws {
         let options = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
-        let center = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenteriOSView.swift"
+        let footer = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
         )
         let preview = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterTopPreviewSection.swift"
         )
 
-        #expect(options.contains("保存当前配置"))
-        #expect(options.contains("更多配置操作"))
+        #expect(footer.contains("configuration.editor.save"))
+        #expect(footer.contains("更多配置操作"))
         #expect(options.contains("configuration.card_style.title"))
         #expect(options.contains("configuration.layout.title"))
         #expect(!options.contains("index: \"1.\""))
-        #expect(center.contains("ConfigurationCenter"))
         #expect(preview.contains("configuration.preview"))
         #expect(!preview.contains("Apple Photos -> Share"))
         #expect(!preview.contains("workflowChips"))
@@ -588,15 +606,19 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("primary product rows grow with accessibility text")
     func primaryRowsUseContentDrivenHeight() throws {
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
         let processing = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1TaskPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
+        )
+        let recentHistory = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/TaskRecentHistorySurface.swift"
         )
 
         #expect(!home.contains("CGFloat(memoryPresets.count) * 92"))
-        #expect(processing.contains(".frame(minHeight: 70)"))
-        #expect(!processing.contains(".frame(height: 70)"))
+        #expect(processing.contains("TaskRecentHistorySurface("))
+        #expect(recentHistory.contains(".frame(minHeight: 70)"))
+        #expect(!recentHistory.contains(".frame(height: 70)"))
     }
 
     @Test("card row separators use one symmetric semantic hairline")
@@ -605,28 +627,28 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/MemoMark/MemoMark/ConfigurationCenter/Components/InspectorSectionView.swift"
         )
         let configuration = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
         let output = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift"
         )
 
-        #expect(support.contains("struct V1HorizontalDivider"))
+        #expect(support.contains("struct HorizontalDivider"))
         #expect(support.contains("ConfigurationUI.faintHairline"))
-        #expect(configuration.contains("V1HorizontalDivider("))
+        #expect(configuration.contains("HorizontalDivider("))
         #expect(!configuration.contains("private var optionDivider"))
         #expect(!configuration.contains(".padding(\n                .leading,"))
-        #expect(output.contains("V1HorizontalDivider()"))
+        #expect(output.contains("HorizontalDivider()"))
         #expect(!output.contains("private struct V1OutputDivider"))
     }
 
     @Test("memory subject detail separates reading from basic information editing")
     func memorySubjectDetailSeparatesReadingFromEditing() throws {
         let detail = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift"
         )
         let editor = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift"
         )
 
         #expect(detail.contains("subjectIdentitySummary"))
@@ -635,33 +657,33 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(detail.contains("ToolbarItem(placement: .topBarLeading)"))
         #expect(!detail.contains("ToolbarItem(placement: .topBarTrailing)"))
         #expect(detail.contains("private var editSubjectButton"))
-        #expect(detail.contains("V1CardHeaderIconButton("))
+        #expect(detail.contains("ConfigurationCardHeaderIconButton("))
         #expect(detail.contains("systemImage: \"pencil\""))
         #expect(detail.contains("accessibilityLabel: \"编辑记忆对象\""))
-        #expect(detail.contains("V1TitledSectionSurface("))
-        #expect(!detail.contains("V1TitledSectionCard("))
+        #expect(detail.contains("ConfigurationTitledSectionSurface("))
+        #expect(!detail.contains("ConfigurationTitledSectionCard("))
         #expect(!detail.contains("onSaveSubject"))
         #expect(!detail.contains("当前使用"))
         #expect(!detail.contains("mode: .identityOverview"))
         #expect(editor.contains("mode: .identityOverview"))
         #expect(editor.contains("private func subjectSectionHeader("))
-        #expect(!editor.contains("V1TitledSectionCard("))
+        #expect(!editor.contains("ConfigurationTitledSectionCard("))
         #expect(editor.contains("删除记忆对象"))
     }
 
     @Test("memory subject detail presents anchors as ordered long press modules")
     func memorySubjectDetailPresentsAnchorModules() throws {
         let detail = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectOverviewSheetSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift"
         )
         let anchors = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
         let source = detail + anchors
 
         #expect(source.contains("Array(subject.timeAnchors.enumerated())"))
         #expect(source.contains("id: \\.element.id"))
-        #expect(source.contains("V1IOSSubjectAnchorDetailModule"))
+        #expect(source.contains("SubjectAnchorDetailModule"))
         #expect(source.contains("contextMenu"))
         #expect(source.contains("添加锚点"))
         #expect(source.contains("最多保留 5 个时间锚点"))
@@ -674,12 +696,12 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("single destructive decisions use centered alerts")
     func destructiveDecisionsUseCenteredAlerts() throws {
         let paths = [
-            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectConfigurationFlow.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectTimeAnchorRow.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift",
+            "Source/MemoMark/MemoMark/iOS/Views/LocalConfigurationLibrarySheet.swift"
         ]
 
         for path in paths {
@@ -692,22 +714,22 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("destructive entry points use native red semantics")
     func destructiveEntryPointsUseNativeSemantics() throws {
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
         let configuration = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ConfigurationOptionList.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
         )
         let subjectEditor = try sourceText(
-            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectTimeAnchorRow.swift"
         )
         let anchors = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
         let subject = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift"
         )
         let backups = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/LocalConfigurationLibrarySheet.swift"
         )
 
         for source in [home, configuration, subjectEditor, anchors, subject, backups] {
@@ -726,16 +748,16 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("every visible delete entry point declares destructive red semantics")
     func everyVisibleDeleteEntryPointDeclaresDestructiveRedSemantics() throws {
         let home = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1HomePageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
         let subjectEditor = try sourceText(
-            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectTimeAnchorRow.swift"
         )
         let anchors = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
         let backups = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1LocalConfigurationLibrarySheet.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/LocalConfigurationLibrarySheet.swift"
         )
         let customFields = try sourceText(
             "Source/MemoMark/MemoMark/ConfigurationCenter/Inspector/MemoryBlockInspectorCustomFieldsSection.swift"
@@ -771,7 +793,7 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("bottom primary actions use a softened system tint")
     func bottomPrimaryActionsUseASoftenedSystemTint() throws {
         let sharedSupport = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSViewSupportComponents.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
         )
         let tokens = try sourceText(
             "Source/MemoMark/MemoMark/App/MemoMarkDesignTokens.swift"
@@ -821,10 +843,10 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("time anchor dialog copy names the consequence")
     func timeAnchorDialogCopyNamesTheConsequence() throws {
         let detail = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
         let editor = try sourceText(
-            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectTimeAnchorRow.swift"
         )
 
         #expect(detail.contains("此操作无法撤销。"))
@@ -836,7 +858,7 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("time anchor deletion validates the current session state")
     func timeAnchorDeletionUsesCurrentSessionState() throws {
         let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectAnchorDetailSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
 
         #expect(source.contains("session.state.selectedSubject?.timeAnchors.count"))
@@ -850,10 +872,10 @@ struct AppleNativeProductSurfaceContractTests {
     @Test("memory subject editor separates cancel save and delete outcomes")
     func memorySubjectEditorSeparatesCompletionOutcomes() throws {
         let editor = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1IOSSubjectConfigurationFlow.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift"
         )
         let presentation = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SubjectPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectPresentationModifier.swift"
         )
 
         #expect(editor.contains("onCancel:"))

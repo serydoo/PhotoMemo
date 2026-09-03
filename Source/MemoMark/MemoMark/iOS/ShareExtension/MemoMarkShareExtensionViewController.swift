@@ -121,7 +121,7 @@ final class MemoMarkShareExtensionViewController:
     private var sharedPhotoCount = 0
 
     private var configurationReadiness =
-        V1SavedConfigurationReadiness(
+        SavedConfigurationReadiness(
             isReady: false,
             presetTitle: nil
         )
@@ -185,7 +185,7 @@ private extension MemoMarkShareExtensionViewController {
         configurePreviewViews()
 
         let previewCard =
-            makeCardContainer(
+            ShareExtensionSurfaceFactory.makeCardContainer(
                 contentView:
                     makePreviewStack()
             )
@@ -193,13 +193,13 @@ private extension MemoMarkShareExtensionViewController {
             previewCard
 
         let summaryCard =
-            makeTitledSectionContainer(
+            ShareExtensionSurfaceFactory.makeTitledSectionContainer(
                 title: localized(
                     "share.summary.title",
                     fallback: "This Share"
                 ),
                 contentView:
-                    makeInnerCardContainer(
+                    ShareExtensionSurfaceFactory.makeInnerCardContainer(
                         contentView: makeSummaryStack()
                     )
             )
@@ -207,10 +207,10 @@ private extension MemoMarkShareExtensionViewController {
             summaryCard
 
         let statusCard =
-            makeTitledSectionContainer(
+            ShareExtensionSurfaceFactory.makeTitledSectionContainer(
                 headerView: statusTitleLabel,
                 contentView:
-                    makeInnerCardContainer(
+                    ShareExtensionSurfaceFactory.makeInnerCardContainer(
                         contentView: makeStatusStack()
                     )
             )
@@ -1056,7 +1056,7 @@ private extension MemoMarkShareExtensionViewController {
 
         if addsDivider {
             stack.addArrangedSubview(
-                makeInsetDivider()
+                ShareExtensionSurfaceFactory.makeInsetDivider()
             )
         }
 
@@ -1076,228 +1076,6 @@ private extension MemoMarkShareExtensionViewController {
             entry.row.accessibilityValue =
                 entry.valueLabel.text
         }
-    }
-
-    func makeInsetDivider() -> UIView {
-
-        let container =
-            UIView()
-        container.translatesAutoresizingMaskIntoConstraints =
-            false
-
-        let divider =
-            UIView()
-        divider.translatesAutoresizingMaskIntoConstraints =
-            false
-        divider.backgroundColor =
-            .separator
-        container.addSubview(divider)
-
-        NSLayoutConstraint.activate([
-            divider.topAnchor.constraint(equalTo: container.topAnchor),
-            divider.leadingAnchor.constraint(
-                equalTo: container.leadingAnchor,
-                constant: MemoMarkDesignTokens.Layout.dividerInset
-            ),
-            divider.trailingAnchor.constraint(
-                equalTo: container.trailingAnchor,
-                constant: -MemoMarkDesignTokens.Layout.dividerInset
-            ),
-            divider.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            divider.heightAnchor.constraint(
-                equalToConstant: 1 / UIScreen.main.scale
-            )
-        ])
-
-        return container
-    }
-
-    func makeTitledCardContainer(
-        title: String,
-        contentView: UIView
-    ) -> UIView {
-
-        let titleLabel =
-            UILabel()
-        titleLabel.font =
-            MemoMarkDesignTokens.Typography.moduleTitle.uiFont()
-        titleLabel.adjustsFontForContentSizeCategory =
-            true
-        titleLabel.numberOfLines =
-            0
-        titleLabel.text =
-            title
-        titleLabel.accessibilityTraits =
-            .header
-
-        return makeTitledCardContainer(
-            headerView: titleLabel,
-            contentView: contentView
-        )
-    }
-
-    func makeTitledSectionContainer(
-        title: String,
-        contentView: UIView
-    ) -> UIView {
-        let titleLabel = UILabel()
-        titleLabel.font = MemoMarkDesignTokens.Typography.moduleTitle.uiFont()
-        titleLabel.adjustsFontForContentSizeCategory = true
-        titleLabel.numberOfLines = 0
-        titleLabel.text = title
-        titleLabel.accessibilityTraits = .header
-
-        let stack = UIStackView(arrangedSubviews: [titleLabel, contentView])
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.axis = .vertical
-        stack.alignment = .fill
-        stack.spacing = 12
-        return stack
-    }
-
-    func makeTitledSectionContainer(
-        headerView: UIView,
-        contentView: UIView
-    ) -> UIView {
-        let stack = UIStackView(arrangedSubviews: [headerView, contentView])
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.axis = .vertical
-        stack.alignment = .fill
-        stack.spacing = 12
-        return stack
-    }
-
-    func makeTitledCardContainer(
-        headerView: UIView,
-        contentView: UIView
-    ) -> UIView {
-
-        let stack =
-            UIStackView(
-                arrangedSubviews: [
-                    headerView,
-                    contentView
-                ]
-            )
-        stack.translatesAutoresizingMaskIntoConstraints =
-            false
-        stack.axis =
-            .vertical
-        stack.alignment =
-            .fill
-        stack.spacing =
-            12
-
-        return makeCardContainer(
-            contentView: stack,
-            padding:
-                MemoMarkDesignTokens
-                .Layout
-                .compactCardPadding
-        )
-    }
-
-    func makeInnerCardContainer(
-        contentView: UIView
-    ) -> UIView {
-
-        let container =
-            UIView()
-        container.translatesAutoresizingMaskIntoConstraints =
-            false
-        container.backgroundColor =
-            .systemBackground
-        container.layer.cornerRadius =
-            MemoMarkDesignTokens
-            .Layout
-            .compactInnerCardCornerRadius
-        container.layer.cornerCurve =
-            .continuous
-        container.layer.borderColor =
-            UIColor.separator.withAlphaComponent(0.35).cgColor
-        container.layer.borderWidth =
-            1 / UIScreen.main.scale
-        container.addSubview(
-            contentView
-        )
-
-        NSLayoutConstraint.activate([
-            contentView.topAnchor.constraint(
-                equalTo: container.topAnchor,
-                constant:
-                    MemoMarkDesignTokens
-                    .Layout
-                    .compactInnerCardPadding
-            ),
-            contentView.leadingAnchor.constraint(
-                equalTo: container.leadingAnchor,
-                constant:
-                    MemoMarkDesignTokens
-                    .Layout
-                    .compactInnerCardPadding
-            ),
-            contentView.trailingAnchor.constraint(
-                equalTo: container.trailingAnchor,
-                constant:
-                    -MemoMarkDesignTokens
-                    .Layout
-                    .compactInnerCardPadding
-            ),
-            contentView.bottomAnchor.constraint(
-                equalTo: container.bottomAnchor,
-                constant:
-                    -MemoMarkDesignTokens
-                    .Layout
-                    .compactInnerCardPadding
-            )
-        ])
-
-        return container
-    }
-
-    func makeCardContainer(
-        contentView: UIView,
-        padding: CGFloat =
-            MemoMarkDesignTokens.Layout.compactCardPadding
-    ) -> UIView {
-
-        let container =
-            UIView()
-        container.translatesAutoresizingMaskIntoConstraints =
-            false
-        container.backgroundColor =
-            .secondarySystemBackground
-        container.layer.cornerRadius =
-            MemoMarkDesignTokens.Layout.compactCardCornerRadius
-        container.layer.cornerCurve = .continuous
-        container.addSubview(
-            contentView
-        )
-
-        NSLayoutConstraint.activate([
-            contentView.topAnchor.constraint(
-                equalTo:
-                    container.topAnchor,
-                constant: padding
-            ),
-            contentView.leadingAnchor.constraint(
-                equalTo:
-                    container.leadingAnchor,
-                constant: padding
-            ),
-            contentView.trailingAnchor.constraint(
-                equalTo:
-                    container.trailingAnchor,
-                constant: -padding
-            ),
-            contentView.bottomAnchor.constraint(
-                equalTo:
-                    container.bottomAnchor,
-                constant: -padding
-            )
-        ])
-
-        return container
     }
 
     func loadInputItems() {
@@ -1340,7 +1118,7 @@ private extension MemoMarkShareExtensionViewController {
 
         configurationReadiness =
             snapshotService
-            .loadV1ConfigurationReadiness()
+            .loadConfigurationReadiness()
 
         let snapshot =
             snapshotService.loadSnapshot()

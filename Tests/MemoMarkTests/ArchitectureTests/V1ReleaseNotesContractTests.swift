@@ -7,13 +7,13 @@ struct V1ReleaseNotesContractTests {
     @Test("about presents the current release notes inside the app")
     func aboutPresentsCurrentReleaseNotesInsideTheApp() throws {
         let settingsSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1SettingsPageSurface.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
         )
         let releaseNotesSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ReleaseNotesSheet.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ReleaseNotesSheet.swift"
         )
 
-        #expect(settingsSource.contains("V1ReleaseNotesSheet("))
+        #expect(settingsSource.contains("ReleaseNotesSheet("))
         #expect(!settingsSource.contains("https://github.com/serydoo/MemoMark/releases"))
         #expect(releaseNotesSource.contains("let version: String"))
         #expect(releaseNotesSource.contains("settings.release_notes.header"))
@@ -23,7 +23,7 @@ struct V1ReleaseNotesContractTests {
     @Test("release notes keep Chinese and English content in parity")
     func releaseNotesKeepChineseAndEnglishContentInParity() throws {
         let releaseNotesSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/V1ReleaseNotesSheet.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/ReleaseNotesSheet.swift"
         )
         let simplifiedChinese = try sourceText(
             "Source/MemoMark/MemoMark/zh-Hans.lproj/Localizable.strings"

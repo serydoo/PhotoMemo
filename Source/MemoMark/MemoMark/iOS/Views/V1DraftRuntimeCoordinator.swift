@@ -2,33 +2,33 @@
 import Foundation
 
 @MainActor
-struct V1DraftRuntimeCoordinator {
+struct DraftRuntimeCoordinator {
 
     private let loadViewState:
-        () -> V1DraftOrchestrationCoordinator.ViewState
+        () -> DraftOrchestrationCoordinator.ViewState
     private let updateViewState:
-        (V1DraftOrchestrationCoordinator.ViewState) -> Void
+        (DraftOrchestrationCoordinator.ViewState) -> Void
     private let makeDefaultDraft:
-        (CardRegion) -> V1EditorDraft
+        (CardRegion) -> MemoryCardEditorDraft
     private let refreshPreviewText:
-        (CardRegion, V1PreviewDraft) -> Void
+        (CardRegion, MemoryCardPreviewDraft) -> Void
     private let refreshPreviewTexts:
-        ([CardRegion: V1PreviewDraft]) -> Void
+        ([CardRegion: MemoryCardPreviewDraft]) -> Void
 
     init(
-        loadViewState: @escaping () -> V1DraftOrchestrationCoordinator.ViewState,
+        loadViewState: @escaping () -> DraftOrchestrationCoordinator.ViewState,
         updateViewState: @escaping (
-            V1DraftOrchestrationCoordinator.ViewState
+            DraftOrchestrationCoordinator.ViewState
         ) -> Void,
         makeDefaultDraft: @escaping (
             CardRegion
-        ) -> V1EditorDraft,
+        ) -> MemoryCardEditorDraft,
         refreshPreviewText: @escaping (
             CardRegion,
-            V1PreviewDraft
+            MemoryCardPreviewDraft
         ) -> Void,
         refreshPreviewTexts: @escaping (
-            [CardRegion: V1PreviewDraft]
+            [CardRegion: MemoryCardPreviewDraft]
         ) -> Void
     ) {
         self.loadViewState = loadViewState
@@ -39,17 +39,17 @@ struct V1DraftRuntimeCoordinator {
     }
 
     init(
-        loadViewState: @escaping () -> V1DraftOrchestrationCoordinator.ViewState,
+        loadViewState: @escaping () -> DraftOrchestrationCoordinator.ViewState,
         updateViewState: @escaping (
-            V1DraftOrchestrationCoordinator.ViewState
+            DraftOrchestrationCoordinator.ViewState
         ) -> Void,
         makeDefaultDraft: @escaping (
             CardRegion
-        ) -> V1EditorDraft,
-        previewSyncCoordinator: V1PreviewSyncCoordinator,
+        ) -> MemoryCardEditorDraft,
+        previewSyncCoordinator: PreviewSyncCoordinator,
         renderModel: @escaping (
-            V1PreviewDraft
-        ) -> V1PreviewRenderModel
+            MemoryCardPreviewDraft
+        ) -> MemoryCardPreviewRenderModel
     ) {
         self.init(
             loadViewState: loadViewState,
@@ -75,8 +75,8 @@ struct V1DraftRuntimeCoordinator {
 
     func draft(
         for region: CardRegion
-    ) -> V1EditorDraft {
-        V1DraftOrchestrationCoordinator
+    ) -> MemoryCardEditorDraft {
+        DraftOrchestrationCoordinator
             .draft(
                 for: region,
                 viewState: loadViewState(),
@@ -89,7 +89,7 @@ struct V1DraftRuntimeCoordinator {
         for region: CardRegion
     ) {
         applyMutationState(
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .setActiveTextItem(
                 itemID,
                 for: region,
@@ -104,7 +104,7 @@ struct V1DraftRuntimeCoordinator {
         for region: CardRegion
     ) {
         applyMutationUpdate(
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .updateTextItem(
                 id: itemID,
                 text: text,
@@ -121,7 +121,7 @@ struct V1DraftRuntimeCoordinator {
         to region: CardRegion
     ) {
         applyMutationUpdate(
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .prependText(
                 text,
                 for: region,
@@ -137,7 +137,7 @@ struct V1DraftRuntimeCoordinator {
         to region: CardRegion
     ) {
         applyMutationUpdate(
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .appendText(
                 text,
                 for: region,
@@ -153,7 +153,7 @@ struct V1DraftRuntimeCoordinator {
         from region: CardRegion
     ) {
         applyMutationUpdate(
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .removeItem(
                 id: itemID,
                 from: region,
@@ -170,7 +170,7 @@ struct V1DraftRuntimeCoordinator {
         from region: CardRegion
     ) -> Bool {
         let update =
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .removePreviousComposedItem(
                 before: textItemID,
                 from: region,
@@ -187,13 +187,13 @@ struct V1DraftRuntimeCoordinator {
     }
 
     func insert(
-        _ item: V1ContentItem,
+        _ item: MemoryCardContentItem,
         into region: CardRegion
     ) {
         applyMutationUpdate(
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .insert(
-                V1DraftBridge
+                DraftBridge
                 .mutationItem(from: item),
                 into: region,
                 in: mutationState,
@@ -203,13 +203,13 @@ struct V1DraftRuntimeCoordinator {
         )
     }
 
-    func replaceDraft(_ draft: V1EditorDraft, for region: CardRegion) {
+    func replaceDraft(_ draft: MemoryCardEditorDraft, for region: CardRegion) {
         var viewState = loadViewState()
         guard viewState.regionDrafts[region] != draft else { return }
         viewState.regionDrafts[region] = draft
         viewState.activeConfigurationStatus = .dirty
         updateViewState(viewState)
-        refreshPreviewText(region, V1DraftBridge.previewDraft(from: draft))
+        refreshPreviewText(region, DraftBridge.previewDraft(from: draft))
     }
 
     func refreshPreview(
@@ -217,7 +217,7 @@ struct V1DraftRuntimeCoordinator {
     ) {
         refreshPreviewText(
             region,
-            V1DraftBridge.previewDraft(
+            DraftBridge.previewDraft(
                 from: draft(for: region)
             )
         )
@@ -233,7 +233,7 @@ struct V1DraftRuntimeCoordinator {
         for regions: [CardRegion]
     ) {
         refreshPreviewTexts(
-            V1DraftOrchestrationCoordinator
+            DraftOrchestrationCoordinator
                 .dynamicPreviewDrafts(
                     for: regions,
                     viewState: loadViewState(),
@@ -244,7 +244,7 @@ struct V1DraftRuntimeCoordinator {
     }
 
     func bootstrapDrafts(
-        using bootstrapCoordinator: V1DraftBootstrapCoordinator
+        using bootstrapCoordinator: ConfigurationDraftBootstrapCoordinator
     ) {
         var viewState = loadViewState()
         viewState.regionDrafts =
@@ -258,8 +258,8 @@ struct V1DraftRuntimeCoordinator {
     }
 
     private var mutationState:
-        V1DraftMutationCoordinator.State {
-        V1DraftOrchestrationCoordinator
+        DraftMutationCoordinator.State {
+        DraftOrchestrationCoordinator
             .mutationState(
                 from: loadViewState()
             )
@@ -267,28 +267,28 @@ struct V1DraftRuntimeCoordinator {
 
     private func makeDefaultMutationDraft(
         for region: CardRegion
-    ) -> V1DraftMutationDraft {
-        V1DraftBridge.mutationDraft(
+    ) -> DraftMutationDraft {
+        DraftBridge.mutationDraft(
             from: makeDefaultDraft(region)
         )
     }
 
     private func applyMutationState(
         _ state:
-            V1DraftMutationCoordinator.State
+            DraftMutationCoordinator.State
     ) {
         updateViewState(
-            V1DraftOrchestrationCoordinator
+            DraftOrchestrationCoordinator
                 .viewState(from: state)
         )
     }
 
     private func applyMutationUpdate(
         _ update:
-            V1DraftMutationCoordinator.Update
+            DraftMutationCoordinator.Update
     ) {
         let application =
-            V1DraftOrchestrationCoordinator
+            DraftOrchestrationCoordinator
             .applyMutationUpdate(update)
         updateViewState(
             application.viewState

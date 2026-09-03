@@ -9,24 +9,17 @@ struct V1ConfigurationLanguageRestorationContractTests {
     func savedConfigurationLanguageIsAppliedToTheSession() throws {
         let source = try String(
             contentsOf: repositoryRoot.appendingPathComponent(
-                "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSV1View.swift"
+                "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Runtime.swift"
             ),
             encoding: .utf8
         )
         let methodStart = try #require(
             source.range(
-                of: "private func applyConfigurationDraftProjection("
+                of: "func applyConfigurationDraftProjection("
             )
         )
-        let nextMethod = try #require(
-            source.range(
-                of: "\n    private func applyBootstrapFlowPatch(",
-                range: methodStart.lowerBound..<source.endIndex
-            )
-        )
-
         #expect(
-            source[methodStart.lowerBound..<nextMethod.lowerBound]
+            source[methodStart.lowerBound..<source.endIndex]
                 .contains("session.language = projection.language")
         )
     }

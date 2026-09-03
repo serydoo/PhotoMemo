@@ -98,7 +98,7 @@ struct ConfigurationCenterSidebarView: View {
             }
             .padding(.top, 18)
             .padding(.bottom, 22)
-            .v1AdaptiveScrollContent(
+            .adaptiveScrollContent(
                 horizontalPadding: 14
             )
         }

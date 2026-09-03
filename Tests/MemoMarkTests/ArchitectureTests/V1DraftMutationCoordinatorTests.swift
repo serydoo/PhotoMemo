@@ -9,12 +9,12 @@ struct V1DraftMutationCoordinatorTests {
     @Test("draft(for:) falls back to the provided default draft when no local region draft exists")
     func draftForFallsBackToDefaultDraft() {
         let defaultDraft =
-            V1DraftMutationDraft(
+            DraftMutationDraft(
                 items: [.text("默认文案")]
             )
 
         let resolved =
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .draft(
                 for: .slotA,
                 state: .init(),
@@ -28,7 +28,7 @@ struct V1DraftMutationCoordinatorTests {
     func prependTextRoutesFocusAndMarksDraftDirty() {
         let trailing = UUID()
         let initialDraft =
-            V1DraftMutationDraft(
+            DraftMutationDraft(
                 items: [
                     .token(
                         value: "记录",
@@ -38,14 +38,14 @@ struct V1DraftMutationCoordinatorTests {
                 ]
             )
         let initialState =
-            V1DraftMutationCoordinator.State(
+            DraftMutationCoordinator.State(
                 regionDrafts: [.slotA: initialDraft],
                 activeTextItemIDs: [:],
                 activeConfigurationStatus: .idle
             )
 
         let update =
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .prependText(
                 "前缀",
                 for: .slotA,
@@ -76,7 +76,7 @@ struct V1DraftMutationCoordinatorTests {
     func appendTextKeepsSingleTrailingInputAndRoutesFocus() {
         let emptyTail = UUID()
         let initialDraft =
-            V1DraftMutationDraft(
+            DraftMutationDraft(
                 items: [
                     .token(
                         value: "记录",
@@ -87,7 +87,7 @@ struct V1DraftMutationCoordinatorTests {
             )
 
         let update =
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .appendText(
                 "结尾",
                 for: .slotB,
@@ -113,7 +113,7 @@ struct V1DraftMutationCoordinatorTests {
         let removedToken = UUID()
         let emptyTail = UUID()
         let initialDraft =
-            V1DraftMutationDraft(
+            DraftMutationDraft(
                 items: [
                     .text("前文", id: keptText),
                     .token(
@@ -126,7 +126,7 @@ struct V1DraftMutationCoordinatorTests {
             )
 
         let update =
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .removeItem(
                 id: removedToken,
                 from: .slotC,
@@ -148,7 +148,7 @@ struct V1DraftMutationCoordinatorTests {
         let tokenID = UUID()
         let trailingText = UUID()
         let initialDraft =
-            V1DraftMutationDraft(
+            DraftMutationDraft(
                 items: [
                     .text("前文", id: leadingText),
                     .token(
@@ -160,14 +160,14 @@ struct V1DraftMutationCoordinatorTests {
                 ]
             )
         let initialState =
-            V1DraftMutationCoordinator.State(
+            DraftMutationCoordinator.State(
                 regionDrafts: [.slotA: initialDraft],
                 activeTextItemIDs: [.slotA: trailingText],
                 activeConfigurationStatus: .idle
             )
 
         let update =
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .removePreviousComposedItem(
                 before: trailingText,
                 from: .slotA,
@@ -191,21 +191,21 @@ struct V1DraftMutationCoordinatorTests {
         let leadingText = UUID()
         let trailingText = UUID()
         let initialDraft =
-            V1DraftMutationDraft(
+            DraftMutationDraft(
                 items: [
                     .text("前文", id: leadingText),
                     .text("", id: trailingText)
                 ]
             )
         let initialState =
-            V1DraftMutationCoordinator.State(
+            DraftMutationCoordinator.State(
                 regionDrafts: [.slotA: initialDraft],
                 activeTextItemIDs: [.slotA: trailingText],
                 activeConfigurationStatus: .idle
             )
 
         let update =
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .removePreviousComposedItem(
                 before: trailingText,
                 from: .slotA,
@@ -222,21 +222,21 @@ struct V1DraftMutationCoordinatorTests {
         let leadingText = UUID()
         let trailingText = UUID()
         let initialDraft =
-            V1DraftMutationDraft(
+            DraftMutationDraft(
                 items: [
                     .text("前文", id: leadingText),
                     .text("", id: trailingText)
                 ]
             )
         let initialState =
-            V1DraftMutationCoordinator.State(
+            DraftMutationCoordinator.State(
                 regionDrafts: [.slotD: initialDraft],
                 activeTextItemIDs: [.slotD: leadingText],
                 activeConfigurationStatus: .idle
             )
 
         let update =
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .insert(
                 .token(
                     title: "拍摄信息",
@@ -270,7 +270,7 @@ struct V1DraftMutationCoordinatorTests {
     func insertBeforeActiveEmptyTrailingTextReusesTrailingSlot() {
         let emptyTail = UUID()
         let initialDraft =
-            V1DraftMutationDraft(
+            DraftMutationDraft(
                 items: [
                     .token(
                         value: "记录",
@@ -280,14 +280,14 @@ struct V1DraftMutationCoordinatorTests {
                 ]
             )
         let initialState =
-            V1DraftMutationCoordinator.State(
+            DraftMutationCoordinator.State(
                 regionDrafts: [.slotA: initialDraft],
                 activeTextItemIDs: [.slotA: emptyTail],
                 activeConfigurationStatus: .idle
             )
 
         let update =
-            V1DraftMutationCoordinator
+            DraftMutationCoordinator
             .insert(
                 .token(
                     value: "地点",
@@ -309,7 +309,7 @@ struct V1DraftMutationCoordinatorTests {
     @Test("normalizeTrailingTextInput appends a trailing text item after a non-text item and removes duplicate empty trailing text inputs")
     func normalizeTrailingTextInputAppendsTailAndRemovesDuplicates() {
         var tokenOnly =
-            V1DraftMutationDraft(
+            DraftMutationDraft(
                 items: [
                     .token(
                         value: "记录",
@@ -322,7 +322,7 @@ struct V1DraftMutationCoordinatorTests {
         #expect(tokenOnly.items.map(\.value) == ["记录", ""])
 
         var duplicateTrailing =
-            V1DraftMutationDraft(
+            DraftMutationDraft(
                 items: [
                     .text("前文"),
                     .text(""),

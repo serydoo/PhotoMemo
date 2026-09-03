@@ -1,6 +1,6 @@
 # MemoMark Current Brief
 
-Last updated: 2026-08-28
+Last updated: 2026-08-30
 
 This is a compact routing brief for a new Codex session. It is not a
 replacement for the project constitution, accepted specifications, contracts,
@@ -15,6 +15,9 @@ follow the linked source-of-truth document.
   measurable Classic and Minimal studies, and bounded existing-surface polish.
 - Engineering loop: close `TX-001` Export Commit Protocol, `BP-001` enforced
   single-task memory contract, and publish superseding production certification.
+- Architecture loop: execute the behavior-preserving core modernization in
+  RFC-002 and ADR-011. Internal owners and facades may change; product features,
+  durable compatibility, media truth, and Apple Photos guarantees may not.
 - Expression Style production implementation and broader production claims
   remain gated by the V4 Product Design Review and Engineering gate.
 
@@ -25,6 +28,10 @@ follow the linked source-of-truth document.
 - Build: `100`
 - Latest current-state record: `Docs/CURRENT_STATUS.md`
 - Latest handoff record: `HANDOFF.md` (historical continuity; read on demand)
+- Queue architecture: runtime durable mutations are actor-owned by
+  `BatchQueueDurableLedger`; `BatchQueueStore` is the main-actor compatibility
+  and presentation facade. Startup-only receipt reconciliation remains an
+  isolated pre-actor Bootstrap Adapter.
 
 The build and test evidence for build 100 does not imply physical-device visual
 acceptance or production certification. The 100 package still needs installation
@@ -45,6 +52,11 @@ and review on the paired physical iPhone 17 Pro Max where the task requires it.
 - Share Extension is an intake boundary; heavy processing remains outside it.
 - Existing Card Content Editor input geometry follows the canonical line-box
   specification and UIKit/TextKit caret ownership.
+
+The concrete Swift types and facade boundaries that currently implement these
+contracts are not frozen. RFC-002 defines their additive migration into Domain,
+Application Transaction, Platform Adapter, Presentation Feature, and
+Composition Root ownership.
 
 ## Verification Defaults
 
@@ -68,6 +80,9 @@ Read only the sources relevant to the task after this brief:
 
 - Product stage and frozen architecture: `PROJECT_CONSTITUTION.md`,
   `Docs/MASTER_PLAN.md`, and the accepted V4 kickoff.
+- Core architecture modernization:
+  `Docs/02_Architecture/RFC-002-Behavior-Preserving-Core-Architecture-Modernization.md`
+  and `Docs/ADR/ADR-011-Application-Transactions-And-Dependency-Direction.md`.
 - Current implementation and milestone evidence: `Docs/CURRENT_STATUS.md`.
 - Product research: `Research/README.md` and the relevant V4 research document.
 - Apple-platform boundary: `APPLE_PLATFORM_EXPERT.md`.

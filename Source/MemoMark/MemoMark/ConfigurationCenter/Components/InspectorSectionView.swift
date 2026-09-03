@@ -126,7 +126,7 @@ enum ConfigurationUI {
 
 }
 
-struct V1HorizontalDivider: View {
+struct HorizontalDivider: View {
 
     let horizontalInset: CGFloat
 
@@ -274,7 +274,7 @@ struct ConfigurationPanelChrome: ViewModifier {
 /// Level-2 surface for semantically grouped rows. It deliberately has no
 /// shadow; the group boundary comes from system background contrast and one
 /// hairline.
-struct V1GroupedSurface: ViewModifier {
+struct GroupedSurface: ViewModifier {
 
     let background: Color
 
@@ -325,10 +325,10 @@ extension View {
         )
     }
 
-    func v1GroupedSurface(
+    func groupedSurface(
         background: Color = ConfigurationUI.panelBackground
     ) -> some View {
-        modifier(V1GroupedSurface(background: background))
+        modifier(GroupedSurface(background: background))
     }
 }
 #endif

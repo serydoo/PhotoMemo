@@ -194,7 +194,7 @@ final class ConfigurationSession: ObservableObject {
 
     @discardableResult
     func reconcileConfigurationLibrarySave(
-        candidate: V1ConfigurationAggregateCandidate,
+        candidate: ConfigurationAggregateCandidate,
         receipt: ConfigurationLibrarySaveReceipt
     ) -> ConfigurationPersistenceReconciliationOutcome {
         persistenceReconciler.reconcileConfigurationLibrarySave(
@@ -302,8 +302,8 @@ final class ConfigurationSession: ObservableObject {
     }
 
     func saveCurrentMemoryPreset(
-        logoMode: V1LogoMode? = nil,
-        outputConfiguration: V1SavedOutputConfiguration? = nil
+        logoMode: ConfigurationLogoMode? = nil,
+        outputConfiguration: SavedOutputConfigurationSchemaV1? = nil
     ) {
         guard let presetIndex =
             editingState.writableSelectedMemoryPresetIndex()
@@ -331,8 +331,8 @@ final class ConfigurationSession: ObservableObject {
     }
 
     func createMemoryPresetFromCurrent(
-        logoMode: V1LogoMode? = nil,
-        outputConfiguration: V1SavedOutputConfiguration? = nil
+        logoMode: ConfigurationLogoMode? = nil,
+        outputConfiguration: SavedOutputConfigurationSchemaV1? = nil
     ) {
         createMemoryPresetFromCurrent(
             savedAt: nil,
@@ -348,8 +348,8 @@ final class ConfigurationSession: ObservableObject {
     }
 
     func persistenceSnapshotForCurrentConfiguration(
-        logoMode: V1LogoMode? = nil,
-        outputConfiguration: V1SavedOutputConfiguration? = nil,
+        logoMode: ConfigurationLogoMode? = nil,
+        outputConfiguration: SavedOutputConfigurationSchemaV1? = nil,
         savedAt: Date = Date()
     ) -> (
         memoryPresets: [MemoryPreset],
@@ -520,8 +520,8 @@ private extension ConfigurationSession {
     func createMemoryPresetFromCurrent(
         savedAt: Date?,
         applyImmediately: Bool,
-        logoMode: V1LogoMode?,
-        outputConfiguration: V1SavedOutputConfiguration?
+        logoMode: ConfigurationLogoMode?,
+        outputConfiguration: SavedOutputConfigurationSchemaV1?
     ) {
         let basePreset = MemoryPreset(
             title: editingState.currentDefaultMemoryPresetTitle,

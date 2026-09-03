@@ -4,7 +4,7 @@ import Testing
 @testable import MemoMark
 
 @Suite("V1 configuration apply runtime coordinator")
-struct V1ConfigurationApplyRuntimeCoordinatorTests {
+struct ConfigurationSaveRuntimeCoordinatorTests {
 
     @Test("aggregate apply saves the complete candidate and reconciles the durable receipt")
     @MainActor
@@ -18,16 +18,13 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             configurationRevision: 4,
             compatibilityProjectionFailure: nil
         )
-        let legacyRequest = Self.makeRequest(
-            subject: ConfigurationCenterState.mock.selectedSubject
-        )
         var savedAggregate: ConfigurationLibraryRecord?
-        var reconciledCandidate: V1ConfigurationAggregateCandidate?
+        var reconciledCandidate: ConfigurationAggregateCandidate?
         var reconciledReceipt: ConfigurationLibrarySaveReceipt?
         var projectedConfiguration: MemoryConfigurationRecord?
         var legacyApplyCount = 0
-        var statuses: [V1ConfigurationApplyViewStatus] = []
-        let applyCoordinator = V1ConfigurationApplyCoordinator(
+        var statuses: [ConfigurationSaveViewStatus] = []
+        let applyCoordinator = SaveConfigurationTransaction(
             resolveAlbumSelection: { _ in
                 .success(
                     .init(
@@ -54,8 +51,8 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             }
         )
 
-        let coordinator = V1ConfigurationApplyRuntimeCoordinator(
-            applyRequest: { _ in
+        let coordinator = ConfigurationSaveRuntimeCoordinator(
+            applyLegacyRequest: { _ in
                 legacyApplyCount += 1
                 return .failure(
                     MemoMarkError(
@@ -85,11 +82,9 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             updateStatus: { statuses.append($0) }
         )
 
-        let wasSuccessful = await coordinator.apply(
+        let wasSuccessful = await coordinator.applyAggregate(
             configurationLibrary: aggregate,
             aggregateDraft: draft,
-            legacyRequest: legacyRequest,
-            outputTarget: .existingAlbum,
             availableAlbums: []
         )
 
@@ -136,9 +131,9 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
                 ),
             diagnosticOperationID: operationID
         )
-        var statuses: [V1ConfigurationApplyViewStatus] = []
-        let coordinator = V1ConfigurationApplyRuntimeCoordinator(
-            applyRequest: { _ in
+        var statuses: [ConfigurationSaveViewStatus] = []
+        let coordinator = ConfigurationSaveRuntimeCoordinator(
+            applyLegacyRequest: { _ in
                 Issue.record("Aggregate apply must not use legacy save.")
                 return .failure(
                     MemoMarkError(
@@ -149,7 +144,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             },
             applyAggregateRequest: { candidate, _ in
                 .success(
-                    V1ConfigurationAggregateApplyReceipt(
+                    SaveConfigurationAggregateReceipt(
                         candidate: candidate,
                         saveReceipt: receipt,
                         albumSelection: .init(
@@ -168,13 +163,9 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             updateStatus: { statuses.append($0) }
         )
 
-        let wasSuccessful = await coordinator.apply(
+        let wasSuccessful = await coordinator.applyAggregate(
             configurationLibrary: aggregate,
             aggregateDraft: draft,
-            legacyRequest: Self.makeRequest(
-                subject: ConfigurationCenterState.mock.selectedSubject
-            ),
-            outputTarget: .automatic,
             availableAlbums: []
         )
 
@@ -198,12 +189,9 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         let configurationID = try #require(
             aggregate.activeConfigurationID
         )
-        let legacyRequest = Self.makeRequest(
-            subject: ConfigurationCenterState.mock.selectedSubject
-        )
         var projectedConfiguration: MemoryConfigurationRecord?
-        let coordinator = V1ConfigurationApplyRuntimeCoordinator(
-            applyRequest: { _ in
+        let coordinator = ConfigurationSaveRuntimeCoordinator(
+            applyLegacyRequest: { _ in
                 Issue.record("Aggregate apply must not use legacy save.")
                 return .failure(
                     MemoMarkError(
@@ -214,7 +202,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             },
             applyAggregateRequest: { candidate, _ in
                 .success(
-                    V1ConfigurationAggregateApplyReceipt(
+                    SaveConfigurationAggregateReceipt(
                         candidate: candidate,
                         saveReceipt: ConfigurationLibrarySaveReceipt(
                             revision: 12,
@@ -244,11 +232,9 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             updateStatus: { _ in }
         )
 
-        let wasSuccessful = await coordinator.apply(
+        let wasSuccessful = await coordinator.applyAggregate(
             configurationLibrary: aggregate,
             aggregateDraft: draft,
-            legacyRequest: legacyRequest,
-            outputTarget: .existingAlbum,
             availableAlbums: []
         )
 
@@ -261,9 +247,6 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
     func aggregateSaveFailureKeepsOldProductionDirty() async throws {
         let aggregate = try Self.makeAggregate()
         let draft = Self.makeAggregateDraft(title: "Unsaved")
-        let legacyRequest = Self.makeRequest(
-            subject: ConfigurationCenterState.mock.selectedSubject
-        )
         let configuration = try #require(
             aggregate.subjects.first?.configurations.first
         )
@@ -287,8 +270,8 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         session.updateSelectedMemoryPresetTitle("Unsaved")
         var legacyApplyCount = 0
         var reconcileCount = 0
-        var statuses: [V1ConfigurationApplyViewStatus] = []
-        let applyCoordinator = V1ConfigurationApplyCoordinator(
+        var statuses: [ConfigurationSaveViewStatus] = []
+        let applyCoordinator = SaveConfigurationTransaction(
             resolveAlbumSelection: { _ in
                 .success(
                     .init(
@@ -317,8 +300,8 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             }
         )
 
-        let coordinator = V1ConfigurationApplyRuntimeCoordinator(
-            applyRequest: { _ in
+        let coordinator = ConfigurationSaveRuntimeCoordinator(
+            applyLegacyRequest: { _ in
                 legacyApplyCount += 1
                 return .failure(
                     MemoMarkError(
@@ -347,11 +330,9 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             updateStatus: { statuses.append($0) }
         )
 
-        let wasSuccessful = await coordinator.apply(
+        let wasSuccessful = await coordinator.applyAggregate(
             configurationLibrary: aggregate,
             aggregateDraft: draft,
-            legacyRequest: legacyRequest,
-            outputTarget: .existingAlbum,
             availableAlbums: []
         )
 
@@ -375,13 +356,13 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         #expect(message.contains("故障编号：CFG-"))
     }
 
-    @Test("missing aggregate uses the legacy apply path")
+    @Test("legacy compatibility requires an explicit apply path")
     @MainActor
     func missingAggregateUsesLegacyApplyPath() async {
         let request = Self.makeRequest(
             subject: ConfigurationCenterState.mock.selectedSubject
         )
-        let receipt = V1ConfigurationApplyReceipt(
+        let receipt = SaveConfigurationReceipt(
             saveReceipt: V1ConfigurationSaveReceipt(
                 anchor: Anchor(
                     type: .birthday,
@@ -398,8 +379,8 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         var legacyApplyCount = 0
         var aggregateApplyCount = 0
 
-        let coordinator = V1ConfigurationApplyRuntimeCoordinator(
-            applyRequest: { _ in
+        let coordinator = ConfigurationSaveRuntimeCoordinator(
+            applyLegacyRequest: { _ in
                 legacyApplyCount += 1
                 return .success(receipt)
             },
@@ -419,12 +400,9 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             updateStatus: { _ in }
         )
 
-        let wasSuccessful = await coordinator.apply(
-            configurationLibrary: nil,
-            aggregateDraft: nil,
-            legacyRequest: request,
+        let wasSuccessful = await coordinator.applyLegacyCompatibility(
+            request,
             outputTarget: .automatic,
-            availableAlbums: []
         )
 
         #expect(wasSuccessful)
@@ -440,7 +418,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         let request =
             Self.makeRequest(subject: subject)
         let receipt =
-            V1ConfigurationApplyReceipt(
+            SaveConfigurationReceipt(
                 saveReceipt: V1ConfigurationSaveReceipt(
                     anchor: Anchor(
                         type: .birthday,
@@ -461,11 +439,11 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         var didSaveCurrentPreset = false
         var didApplySelectedPreset = false
         var selectedExistingAlbumIdentifier = ""
-        var outputTarget = V1IOSOutputTarget.newAlbum
-        var statuses: [V1ConfigurationApplyViewStatus] = []
+        var outputTarget = ConfigurationOutputTarget.newAlbum
+        var statuses: [ConfigurationSaveViewStatus] = []
         let coordinator =
-            V1ConfigurationApplyRuntimeCoordinator(
-                applyRequest: { receivedRequest in
+            ConfigurationSaveRuntimeCoordinator(
+                applyLegacyRequest: { receivedRequest in
                     #expect(receivedRequest == request)
                     return .success(receipt)
                 },
@@ -510,10 +488,10 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         #expect(didApplySelectedPreset == true)
         #expect(
             statuses == [
-                V1ConfigurationApplyViewStatus(
+                ConfigurationSaveViewStatus(
                     status: .saving
                 ),
-                V1ConfigurationApplyViewStatus(
+                ConfigurationSaveViewStatus(
                     status: .saved
                 )
             ]
@@ -538,7 +516,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             selectedMemoryPresetID:
                 candidate.selectedMemoryPresetID
         )
-        let receipt = V1ConfigurationApplyReceipt(
+        let receipt = SaveConfigurationReceipt(
             saveReceipt: V1ConfigurationSaveReceipt(
                 anchor: Anchor(
                     type: .birthday,
@@ -553,8 +531,8 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             )
         )
         let coordinator =
-            V1ConfigurationApplyRuntimeCoordinator(
-                applyRequest: { _ in
+            ConfigurationSaveRuntimeCoordinator(
+                applyLegacyRequest: { _ in
                     .success(receipt)
                 },
                 reloadAlbums: {},
@@ -585,7 +563,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
 
         let wasSuccessful = await coordinator.apply(
             request,
-            outputTarget: V1IOSOutputTarget.automatic
+            outputTarget: ConfigurationOutputTarget.automatic
         )
 
         #expect(wasSuccessful)
@@ -608,7 +586,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         let durableID = UUID(
             uuidString: "94949494-9494-9494-9494-949494949494"
         )!
-        let receipt = V1ConfigurationApplyReceipt(
+        let receipt = SaveConfigurationReceipt(
             saveReceipt: V1ConfigurationSaveReceipt(
                 anchor: Anchor(
                     type: .birthday,
@@ -623,8 +601,8 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             )
         )
         var reconciledIdentity: (UUID?, Int?)?
-        let coordinator = V1ConfigurationApplyRuntimeCoordinator(
-            applyRequest: { _ in .success(receipt) },
+        let coordinator = ConfigurationSaveRuntimeCoordinator(
+            applyLegacyRequest: { _ in .success(receipt) },
             reloadAlbums: {},
             setSelectedExistingAlbumIdentifier: { _ in },
             restoreSubject: { _ in },
@@ -642,7 +620,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
 
         let wasSuccessful = await coordinator.apply(
             request,
-            outputTarget: V1IOSOutputTarget.automatic,
+            outputTarget: ConfigurationOutputTarget.automatic,
             configurationSaveReceipt:
                 ConfigurationLibrarySaveReceipt(
                     revision: 11,
@@ -672,7 +650,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
             selectedMemoryPresetID:
                 candidate.selectedMemoryPresetID
         )
-        let receipt = V1ConfigurationApplyReceipt(
+        let receipt = SaveConfigurationReceipt(
             saveReceipt: V1ConfigurationSaveReceipt(
                 anchor: Anchor(
                     type: .birthday,
@@ -686,11 +664,11 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
                 pickerSelectionIdentifier: nil
             )
         )
-        var statuses: [V1ConfigurationApplyViewStatus] = []
+        var statuses: [ConfigurationSaveViewStatus] = []
 
         let coordinator =
-            V1ConfigurationApplyRuntimeCoordinator(
-                applyRequest: { _ in
+            ConfigurationSaveRuntimeCoordinator(
+                applyLegacyRequest: { _ in
                     session.updateSelectedMemoryPresetTitle(
                         "等待期间更新的配置"
                     )
@@ -737,10 +715,10 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         #expect(session.selectedMemoryPresetIsApplied == false)
         #expect(
             statuses == [
-                V1ConfigurationApplyViewStatus(
+                ConfigurationSaveViewStatus(
                     status: .saving
                 ),
-                V1ConfigurationApplyViewStatus(
+                ConfigurationSaveViewStatus(
                     status: .dirty
                 )
             ]
@@ -763,11 +741,11 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         var didSaveCurrentPreset = false
         var didApplySelectedPreset = false
         var reconcileCount = 0
-        var statuses: [V1ConfigurationApplyViewStatus] = []
+        var statuses: [ConfigurationSaveViewStatus] = []
 
         let coordinator =
-            V1ConfigurationApplyRuntimeCoordinator(
-                applyRequest: { _ in
+            ConfigurationSaveRuntimeCoordinator(
+                applyLegacyRequest: { _ in
                     .failure(error)
                 },
                 reloadAlbums: {
@@ -799,7 +777,7 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         let wasSuccessful =
             await coordinator.apply(
                 request,
-                outputTarget: V1IOSOutputTarget.automatic
+                outputTarget: ConfigurationOutputTarget.automatic
             )
 
         #expect(wasSuccessful == false)
@@ -810,10 +788,10 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         #expect(reconcileCount == 0)
         #expect(
             statuses == [
-                V1ConfigurationApplyViewStatus(
+                ConfigurationSaveViewStatus(
                     status: .saving
                 ),
-                V1ConfigurationApplyViewStatus(
+                ConfigurationSaveViewStatus(
                     status: .failure(message: "保存失败")
                 )
             ]
@@ -824,8 +802,8 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
         subject: MemorySubject?,
         memoryPresets: [MemoryPreset] = [],
         selectedMemoryPresetID: MemoryPreset.ID? = nil
-    ) -> V1ConfigurationApplyRequest {
-        V1ConfigurationApplyRequest(
+    ) -> SaveConfigurationCommand {
+        SaveConfigurationCommand(
             subject: subject,
             subjects: subject.map { [$0] } ?? [],
             selectedSubjectID: subject?.id,
@@ -893,11 +871,11 @@ struct V1ConfigurationApplyRuntimeCoordinatorTests {
 
     private static func makeAggregateDraft(
         title: String
-    ) -> V1ConfigurationAggregateDraft {
-        V1ConfigurationAggregateDraft(
+    ) -> ConfigurationAggregateDraft {
+        ConfigurationAggregateDraft(
             title: title,
             regionDrafts: [
-                .slotA: V1EditorDraft(items: [.text("After Recorder")])
+                .slotA: MemoryCardEditorDraft(items: [.text("After Recorder")])
             ],
             regionTemplateIDs: [.slotA: "after.recorder"],
             locationConfiguration: nil,

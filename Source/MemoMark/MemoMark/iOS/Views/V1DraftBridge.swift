@@ -1,22 +1,22 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-struct V1DraftBridge {
+struct DraftBridge {
 
     struct ViewState: Hashable {
-        var regionDrafts: [CardRegion: V1EditorDraft]
+        var regionDrafts: [CardRegion: MemoryCardEditorDraft]
         var activeTextItemIDs: [CardRegion: UUID]
         var activeConfigurationStatus:
-            V1ConfigurationStatus
+            ConfigurationPersistenceStatus
     }
 
     nonisolated static func mutationState(
-        regionDrafts: [CardRegion: V1EditorDraft],
+        regionDrafts: [CardRegion: MemoryCardEditorDraft],
         activeTextItemIDs: [CardRegion: UUID],
         activeConfigurationStatus:
-            V1ConfigurationStatus
-    ) -> V1DraftMutationCoordinator.State {
-        V1DraftMutationCoordinator.State(
+            ConfigurationPersistenceStatus
+    ) -> DraftMutationCoordinator.State {
+        DraftMutationCoordinator.State(
             regionDrafts: regionDrafts.mapValues(mutationDraft(from:)),
             activeTextItemIDs: activeTextItemIDs,
             activeConfigurationStatus:
@@ -25,7 +25,7 @@ struct V1DraftBridge {
     }
 
     nonisolated static func viewState(
-        from state: V1DraftMutationCoordinator.State
+        from state: DraftMutationCoordinator.State
     ) -> ViewState {
         ViewState(
             regionDrafts: state.regionDrafts.mapValues(editorDraft(from:)),
@@ -36,9 +36,9 @@ struct V1DraftBridge {
     }
 
     nonisolated static func previewDraft(
-        from draft: V1EditorDraft
-    ) -> V1PreviewDraft {
-        V1PreviewDraft(
+        from draft: MemoryCardEditorDraft
+    ) -> MemoryCardPreviewDraft {
+        MemoryCardPreviewDraft(
             items:
                 draft.items.map(
                     previewItem(from:)
@@ -47,9 +47,9 @@ struct V1DraftBridge {
     }
 
     nonisolated static func mutationDraft(
-        from draft: V1EditorDraft
-    ) -> V1DraftMutationDraft {
-        V1DraftMutationDraft(
+        from draft: MemoryCardEditorDraft
+    ) -> DraftMutationDraft {
+        DraftMutationDraft(
             items:
                 draft.items.map(
                     mutationItem(from:)
@@ -58,9 +58,9 @@ struct V1DraftBridge {
     }
 
     nonisolated static func editorDraft(
-        from draft: V1PreviewDraft
-    ) -> V1EditorDraft {
-        V1EditorDraft(
+        from draft: MemoryCardPreviewDraft
+    ) -> MemoryCardEditorDraft {
+        MemoryCardEditorDraft(
             items:
                 draft.items.map(
                     editorItem(from:)
@@ -69,9 +69,9 @@ struct V1DraftBridge {
     }
 
     nonisolated static func editorDraft(
-        from draft: V1DraftMutationDraft
-    ) -> V1EditorDraft {
-        V1EditorDraft(
+        from draft: DraftMutationDraft
+    ) -> MemoryCardEditorDraft {
+        MemoryCardEditorDraft(
             items:
                 draft.items.map(
                     editorItem(from:)
@@ -80,9 +80,9 @@ struct V1DraftBridge {
     }
 
     nonisolated static func editorItem(
-        from item: V1PreviewDraftItem
-    ) -> V1ContentItem {
-        V1ContentItem(
+        from item: MemoryCardPreviewDraftItem
+    ) -> MemoryCardContentItem {
+        MemoryCardContentItem(
             id: item.id,
             sourceItemID: item.sourceItemID,
             kind:
@@ -97,9 +97,9 @@ struct V1DraftBridge {
     }
 
     nonisolated static func previewItem(
-        from item: V1ContentItem
-    ) -> V1PreviewDraftItem {
-        V1PreviewDraftItem(
+        from item: MemoryCardContentItem
+    ) -> MemoryCardPreviewDraftItem {
+        MemoryCardPreviewDraftItem(
             id: item.id,
             sourceItemID: item.sourceItemID,
             kind:
@@ -114,9 +114,9 @@ struct V1DraftBridge {
     }
 
     nonisolated static func mutationItem(
-        from item: V1ContentItem
-    ) -> V1DraftMutationItem {
-        V1DraftMutationItem(
+        from item: MemoryCardContentItem
+    ) -> DraftMutationItem {
+        DraftMutationItem(
             id: item.id,
             sourceItemID: item.sourceItemID,
             kind:
@@ -131,9 +131,9 @@ struct V1DraftBridge {
     }
 
     nonisolated private static func editorItem(
-        from item: V1DraftMutationItem
-    ) -> V1ContentItem {
-        V1ContentItem(
+        from item: DraftMutationItem
+    ) -> MemoryCardContentItem {
+        MemoryCardContentItem(
             id: item.id,
             sourceItemID: item.sourceItemID,
             kind:
@@ -148,8 +148,8 @@ struct V1DraftBridge {
     }
 
     nonisolated private static func mutationKind(
-        from kind: V1ContentItem.Kind
-    ) -> V1DraftMutationItem.Kind {
+        from kind: MemoryCardContentItem.Kind
+    ) -> DraftMutationItem.Kind {
         switch kind {
         case .text:
             return .text
@@ -163,8 +163,8 @@ struct V1DraftBridge {
     }
 
     nonisolated private static func previewKind(
-        from kind: V1ContentItem.Kind
-    ) -> V1PreviewDraftItem.Kind {
+        from kind: MemoryCardContentItem.Kind
+    ) -> MemoryCardPreviewDraftItem.Kind {
         switch kind {
         case .text:
             return .text
@@ -178,8 +178,8 @@ struct V1DraftBridge {
     }
 
     nonisolated private static func editorKind(
-        from kind: V1PreviewDraftItem.Kind
-    ) -> V1ContentItem.Kind {
+        from kind: MemoryCardPreviewDraftItem.Kind
+    ) -> MemoryCardContentItem.Kind {
         switch kind {
         case .text:
             return .text
@@ -193,8 +193,8 @@ struct V1DraftBridge {
     }
 
     nonisolated private static func editorKind(
-        from kind: V1DraftMutationItem.Kind
-    ) -> V1ContentItem.Kind {
+        from kind: DraftMutationItem.Kind
+    ) -> MemoryCardContentItem.Kind {
         switch kind {
         case .text:
             return .text

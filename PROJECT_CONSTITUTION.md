@@ -34,10 +34,21 @@ Engineering Loop closes `TX-001`, `BP-001`, and a superseding production
 certification before Expression Style production implementation or any broader
 production-capability claim.
 
-V4 is MemoMark's final sustained refinement stage. It does not authorize a
-large-scale core-flow or architecture rewrite. After V4, routine version updates
-stop unless a material issue, Apple-platform change, or required compatibility
-maintenance justifies a scoped release.
+V4 is MemoMark's final sustained refinement stage. It does not authorize an
+unbounded product-flow rewrite or new feature surface. On 2026-08-29, the
+product owner explicitly authorized the behavior-preserving internal core
+architecture modernization defined by
+`Docs/02_Architecture/RFC-002-Behavior-Preserving-Core-Architecture-Modernization.md`.
+That amendment allows current types, facades, ownership boundaries, dependency
+direction, folders, and eventual compile-time modules to be redesigned. It does
+not allow current features, durable compatibility, memory truth, original-photo
+protection, Apple Photos lifecycle guarantees, Configuration Center product
+architecture, or accepted Renderer/Layout/media fidelity to be lost.
+
+The modernization must remain additive and evidence-gated: contracts first,
+new owner second, callers migrated third, old path removed last. After V4,
+routine version updates stop unless a material issue, Apple-platform change, or
+required compatibility maintenance justifies a scoped release.
 
 Historical V1-V3 sections below remain binding foundations or evidence unless
 a later accepted V4 decision explicitly amends them. Historical stage labels

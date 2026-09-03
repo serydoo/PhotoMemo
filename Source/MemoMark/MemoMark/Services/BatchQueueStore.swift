@@ -3,7 +3,9 @@ import Foundation
 import Combine
 
 @MainActor
-final class BatchQueueStore: ObservableObject {
+final class BatchQueueStore:
+    ObservableObject,
+    BatchTaskExecutionRuntime {
 
     @Published private(set) var jobs: [BatchJob] = []
 
@@ -38,20 +40,40 @@ final class BatchQueueStore: ObservableObject {
     private let persistence:
         BatchQueuePersistence
 
+    private let durableCommandGate =
+        BatchQueueCommandGate()
+
+    private lazy var durableLedger:
+        BatchQueueDurableLedger =
+        BatchQueueDurableLedger.bootstrap(
+            persistence: persistence
+        ).ledger
+
     private let history:
         BatchQueueHistory
 
     private let notifications:
         BatchQueueNotifications
 
-    private let commercePersistence:
-        MemoMarkCommercePersistence
+    private let commerceAccounting:
+        BatchQueueCommerceAccounting
 
     private let saveReceiptStore:
         PhotoLibrarySaveReceiptStore
 
+    private let saveReceiptLedger:
+        PhotoLibrarySaveReceiptLedger
+
     private let photoLibraryReceiptAssetLocator:
         any PhotoLibraryReceiptAssetLocating
+
+    private let photoLibraryReceiptResumeRecoveryPlanner:
+        PhotoLibraryReceiptResumeRecoveryPlanner
+
+    private let bootstrapReceiptReconciler:
+        BatchQueueBootstrapReceiptReconciler
+    private let bootstrapRecoveryNormalizer:
+        BatchQueueBootstrapRecoveryNormalizer
 
     private let productionDiagnostics:
         ProductionDiagnosticsRepository?
@@ -60,8 +82,6 @@ final class BatchQueueStore: ObservableObject {
         Task<Void, Never>?
 
     private var persistenceBlocked = false
-
-    private var persistenceRecoveryRequiresReload = false
 
     private var pendingCommerceSnapshot:
         MemoMarkCommerceSnapshot?
@@ -75,16 +95,16 @@ final class BatchQueueStore: ObservableObject {
     init(
         defaults: UserDefaults? = nil,
         settingsService: SettingsService? = nil,
-        executionCoordinator:
-            BatchProcessingCoordinator? = nil,
         notificationService:
             BatchNotificationService? = nil,
         externalIntakeStore:
             ExternalPhotoIntakeStore? = nil,
         photoRepository:
             PhotoRepository? = nil,
-        previewCoordinator:
-            PreviewCoordinator? = nil,
+        photoLibraryExportService:
+            PhotoLibraryExportService? = nil,
+        buildRecordCard:
+            BuildRecordCardTransaction? = nil,
         exportCoordinator:
             ExportCoordinator? = nil,
         livePhotoProcessor:
@@ -100,8 +120,14 @@ final class BatchQueueStore: ObservableObject {
             ProductionDiagnosticsRepository? = nil,
         automaticallyStartsProcessing: Bool = true,
         renderHealthValidator: @escaping
-            @MainActor (RecordCard, BatchConfigurationSnapshot) throws -> [CardTextBlock] =
-                ProductionRenderHealthCheck.validate
+            @MainActor (RecordCard, BatchConfigurationSnapshot) async throws -> [CardTextBlock] = {
+                card,
+                configuration in
+                try ProductionRenderHealthCheck.validate(
+                    card: card,
+                    configuration: configuration
+                )
+            }
     ) {
         let resolvedDefaults =
             defaults
@@ -118,17 +144,16 @@ final class BatchQueueStore: ObservableObject {
             resolvedSettingsService
         self.automaticallyStartsProcessing =
             automaticallyStartsProcessing
-        self.execution =
+        let resolvedExecution =
             BatchQueueExecution(
-                coordinator:
-                    executionCoordinator
-                    ?? BatchProcessingCoordinator(),
                 externalIntakeStore:
                     resolvedExternalIntakeStore,
                 photoRepository:
                     photoRepository,
-                previewCoordinator:
-                    previewCoordinator,
+                photoLibraryExportService:
+                    photoLibraryExportService,
+                buildRecordCard:
+                    buildRecordCard,
                 exportCoordinator:
                     exportCoordinator,
                 livePhotoProcessor:
@@ -142,13 +167,16 @@ final class BatchQueueStore: ObservableObject {
                 renderHealthValidator:
                     renderHealthValidator
             )
-        self.persistence =
+        self.execution = resolvedExecution
+        let resolvedQueuePersistence =
             persistence
             ?? (defaults == nil
                 ? BatchQueuePersistence()
                 : BatchQueuePersistence(
                     defaults: resolvedDefaults
                 ))
+        self.persistence =
+            resolvedQueuePersistence
         self.history =
             BatchQueueHistory(
                 externalIntakeStore:
@@ -159,25 +187,63 @@ final class BatchQueueStore: ObservableObject {
                 notificationService:
                     notificationService
             )
-        self.commercePersistence =
-            MemoMarkCommercePersistence(
-                defaults: resolvedDefaults
+        let resolvedCommerceAccounting =
+            BatchQueueCommerceAccounting(
+                persistence:
+                    MemoMarkCommercePersistence(
+                        defaults: resolvedDefaults
+                    )
             )
+        self.commerceAccounting =
+            resolvedCommerceAccounting
+        let usesSharedReceiptPersistence =
+            saveReceiptStore == nil
+            && defaults == nil
         let resolvedSaveReceiptStore =
             saveReceiptStore
-            ?? PhotoLibrarySaveReceiptStore(
-                defaults: resolvedDefaults
-            )
+            ?? (usesSharedReceiptPersistence
+                ? PhotoLibrarySaveReceiptLedger.sharedStore
+                : PhotoLibrarySaveReceiptStore(
+                    defaults: resolvedDefaults
+                ))
         self.saveReceiptStore = resolvedSaveReceiptStore
-        self.photoLibraryReceiptAssetLocator =
+        let resolvedSaveReceiptLedger =
+            usesSharedReceiptPersistence
+            ? .shared
+            : PhotoLibrarySaveReceiptLedger(
+                store: resolvedSaveReceiptStore
+            )
+        self.saveReceiptLedger = resolvedSaveReceiptLedger
+        let resolvedPhotoLibraryReceiptAssetLocator =
             photoLibraryReceiptAssetLocator
-            ?? PhotoLibrarySaveReceiptAssetLocator(
-                receiptStore: resolvedSaveReceiptStore
+            ?? PhotoLibrarySaveReceiptAssetLocator()
+        self.photoLibraryReceiptAssetLocator =
+            resolvedPhotoLibraryReceiptAssetLocator
+        self.photoLibraryReceiptResumeRecoveryPlanner =
+            PhotoLibraryReceiptResumeRecoveryPlanner(
+                receiptLedger: resolvedSaveReceiptLedger,
+                assetLocator: resolvedPhotoLibraryReceiptAssetLocator
+            )
+        let resolvedBootstrapReceiptReconciler =
+            BatchQueueBootstrapReceiptReconciler(
+                saveReceiptStore: resolvedSaveReceiptStore,
+                assetLocator:
+                    resolvedPhotoLibraryReceiptAssetLocator
+            )
+        self.bootstrapReceiptReconciler =
+            resolvedBootstrapReceiptReconciler
+        self.bootstrapRecoveryNormalizer =
+            BatchQueueBootstrapRecoveryNormalizer(
+                persistence: resolvedQueuePersistence,
+                receiptReconciler:
+                    resolvedBootstrapReceiptReconciler,
+                deriveJobState:
+                    resolvedExecution.derivedJobState(from:)
             )
         self.productionDiagnostics =
             productionDiagnostics
         self.commerceSnapshot =
-            self.commercePersistence
+            resolvedCommerceAccounting
             .loadSharedSnapshot(
                 compatibleWith:
                     .currentRuntime
@@ -200,22 +266,21 @@ final class BatchQueueStore: ObservableObject {
             lastErrorMessage = error.message
             persistenceBlocked = true
             isPersistenceBlocked = true
-            persistenceRecoveryRequiresReload = true
         }
 
         guard !persistenceBlocked else {
             return
         }
 
-        reconcileCommittedPhotoLibraryReceiptsForResume()
+        applyBootstrapReceiptReconciliation()
         guard !persistenceBlocked else {
             return
         }
-        normalizeJobsForResume()
+        normalizeJobsDuringBootstrap()
         guard !persistenceBlocked else {
             return
         }
-        reconcileSaveReceiptsWithPersistedJobs()
+        pruneBootstrapReceipts()
         guard !persistenceBlocked else {
             return
         }
@@ -224,7 +289,9 @@ final class BatchQueueStore: ObservableObject {
             return
         }
         if self.automaticallyStartsProcessing {
-            startProcessingIfNeeded()
+            Task { @MainActor [weak self] in
+                await self?.startProcessingIfNeeded()
+            }
         }
     }
 
@@ -241,7 +308,7 @@ final class BatchQueueStore: ObservableObject {
         urls: [URL],
         launchSource: BatchJobLaunchSource = .inAppPreview,
         title: String? = nil
-    ) -> BatchJob? {
+    ) async -> BatchJob? {
 
         let payloads = urls.map {
             BatchTaskIntakePayload(
@@ -249,7 +316,7 @@ final class BatchQueueStore: ObservableObject {
             )
         }
 
-        return enqueue(
+        return await enqueue(
             payloads: payloads,
             configuration:
                 defaultConfigurationSnapshot,
@@ -266,7 +333,37 @@ final class BatchQueueStore: ObservableObject {
             ExternalPhotoImportSummary? = nil,
         intakeRequestID: UUID? = nil,
         title: String? = nil
-    ) -> BatchJob? {
+    ) async -> BatchJob? {
+
+        let admission = await withDurableCommand {
+            await admitJob(
+                payloads: payloads,
+                configuration: configuration,
+                launchSource: launchSource,
+                intakeSummary: intakeSummary,
+                intakeRequestID: intakeRequestID,
+                title: title
+            )
+        }
+        guard let admission else {
+            return nil
+        }
+        if admission.didInsert,
+           automaticallyStartsProcessing {
+            await startProcessingIfNeeded()
+        }
+        return admission.job
+    }
+
+    private func admitJob(
+        payloads: [BatchTaskIntakePayload],
+        configuration: BatchConfigurationSnapshot,
+        launchSource: BatchJobLaunchSource,
+        intakeSummary:
+            ExternalPhotoImportSummary?,
+        intakeRequestID: UUID?,
+        title: String?
+    ) async -> BatchQueueAdmission? {
 
         if let intakeRequestID,
            let existingJob = jobs.first(
@@ -275,30 +372,16 @@ final class BatchQueueStore: ObservableObject {
                    == intakeRequestID
                }
            ) {
-            return existingJob
+            return BatchQueueAdmission(
+                job: existingJob,
+                didInsert: false
+            )
         }
 
-        let reservedRecordCount =
-            jobs.reduce(into: 0) { count, job in
-                count += job.tasks.count {
-                    !$0.phase.isTerminal
-                }
-            }
         let maximumAdmissionCount =
-            MemoMarkCommercePolicy(
-                isPlus:
-                    commerceSnapshot.isPlus,
-                totalAllowance:
-                    commerceSnapshot.totalAllowance,
-                batchLimit:
-                    commerceSnapshot.batchLimit
-            )
-            .maximumAdmissionCount(
-                after:
-                    commerceSnapshot
-                    .successfulRecordCount,
-                reservedRecordCount:
-                    reservedRecordCount
+            commerceAccounting.admissionCapacity(
+                among: jobs,
+                current: commerceSnapshot
             )
 
         guard payloads.count
@@ -332,23 +415,19 @@ final class BatchQueueStore: ObservableObject {
             return nil
         }
 
-        let jobsBeforeAdmission = jobs
-        let pendingReceiptKeysBeforeAdmission =
-            pendingSaveReceiptRemovalKeys
-        jobs.insert(job, at: 0)
-        guard persistJobs() else {
-            jobs = jobsBeforeAdmission
-            pendingSaveReceiptRemovalKeys =
-                pendingReceiptKeysBeforeAdmission
+        let result = await durableLedger.admit(job)
+        guard let admission =
+                await projectDurableTransaction(result) else {
             return nil
         }
-        scheduleStartNotificationIfNeeded(
-            for: job.id
-        )
-        if automaticallyStartsProcessing {
-            startProcessingIfNeeded()
+
+        guard admission.didInsert else {
+            return admission
         }
-        return job
+        scheduleStartNotificationIfNeeded(
+            for: admission.job.id
+        )
+        return admission
     }
 
     func updateCommerceSnapshot(
@@ -362,48 +441,40 @@ final class BatchQueueStore: ObservableObject {
 
     func retryFailedTasks(
         in jobID: UUID
-    ) {
+    ) async {
+
+        let didRetry = await withDurableCommand {
+            await retryFailedTasksCommand(
+                in: jobID
+            )
+        }
+        if didRetry {
+            await startProcessingIfNeeded()
+        }
+    }
+
+    private func retryFailedTasksCommand(
+        in jobID: UUID
+    ) async -> Bool {
 
         guard let job = jobs.first(
             where: { $0.id == jobID }
         ) else {
-            return
+            return false
         }
 
-        let retryableTaskCount =
-            job.tasks.count {
-                $0.phase == .failed
-                && ($0.failure?.canRetry ?? true)
-            }
-        let reservedRecordCount =
-            jobs.reduce(into: 0) { count, currentJob in
-                count += currentJob.tasks.count {
-                    !$0.phase.isTerminal
-                }
-            }
-        let maximumAdmissionCount =
-            MemoMarkCommercePolicy(
-                isPlus:
-                    commerceSnapshot.isPlus,
-                totalAllowance:
-                    commerceSnapshot.totalAllowance,
-                batchLimit:
-                    commerceSnapshot.batchLimit
-            )
-            .maximumAdmissionCount(
-                after:
-                    commerceSnapshot
-                    .successfulRecordCount,
-                reservedRecordCount:
-                    reservedRecordCount
-            )
+        let admission = commerceAccounting.retryAdmission(
+            for: job,
+            among: jobs,
+            current: commerceSnapshot
+        )
 
-        guard retryableTaskCount > 0,
-              retryableTaskCount
-                <= maximumAdmissionCount else {
-            if retryableTaskCount > 0 {
+        guard admission.retryableTaskCount > 0,
+              admission.retryableTaskCount
+                <= admission.maximumAdmissionCount else {
+            if admission.retryableTaskCount > 0 {
                 lastErrorMessage =
-                    maximumAdmissionCount == 0
+                    admission.maximumAdmissionCount == 0
                     ? commerceLocalized(
                         "commerce.queue.allowance_completed",
                         fallback: "免费成长记录额度已使用完，请在时光记中了解 MemoMark+。"
@@ -411,29 +482,35 @@ final class BatchQueueStore: ObservableObject {
                     : commerceFormatted(
                         "commerce.queue.retry_available_format",
                         fallback: "当前剩余额度可重试 %lld 张照片。",
-                        Int64(maximumAdmissionCount)
+                        Int64(admission.maximumAdmissionCount)
                     )
             }
-            return
+            return false
         }
 
-        guard execution.retryFailedTasks(
-            in: &jobs,
-            jobID: jobID
-        ) else {
+        let result = await durableLedger
+            .retryFailedTasks(in: jobID)
+        guard let didRetry =
+                await projectDurableTransaction(result),
+              didRetry else {
             lastErrorMessage = "重试没有开始，请重新打开处理进度后再试。"
-            return
+            return false
         }
-
-        guard persistJobs() else {
-            return
-        }
-        startProcessingIfNeeded()
+        return true
     }
 
     func cancelJob(
         _ jobID: UUID
-    ) {
+    ) async {
+
+        await withDurableCommand {
+            await cancelJobCommand(jobID)
+        }
+    }
+
+    private func cancelJobCommand(
+        _ jobID: UUID
+    ) async {
 
         let queuedSourceURLs =
             jobs.first {
@@ -446,14 +523,10 @@ final class BatchQueueStore: ObservableObject {
             .map(\.sourceURL)
             ?? []
 
-        guard execution.cancelJob(
-            in: &jobs,
-            jobID: jobID
-        ) else {
-            return
-        }
-
-        guard persistJobs() else {
+        let result = await durableLedger.cancelJob(jobID)
+        guard let didCancel =
+                await projectDurableTransaction(result),
+              didCancel else {
             return
         }
 
@@ -465,7 +538,7 @@ final class BatchQueueStore: ObservableObject {
         }
     }
 
-    func startProcessingIfNeeded() {
+    func startProcessingIfNeeded() async {
 
         guard !persistenceBlocked else {
             return
@@ -475,8 +548,11 @@ final class BatchQueueStore: ObservableObject {
             return
         }
 
-        reconcileCommittedPhotoLibraryReceiptsForResume()
+        await reconcileCommittedPhotoLibraryReceiptsForResume()
         guard !persistenceBlocked else {
+            return
+        }
+        guard processingTask == nil else {
             return
         }
 
@@ -504,11 +580,11 @@ final class BatchQueueStore: ObservableObject {
             .count
     }
 
-    func stopProcessingForBackgroundExpiration() {
+    func stopProcessingForBackgroundExpiration() async {
         guard processingTask != nil else {
             return
         }
-        markActiveTaskAsBackgroundExpiredIfNeeded()
+        await markActiveTaskAsBackgroundExpiredIfNeeded()
         processingTask?.cancel()
     }
 
@@ -519,16 +595,18 @@ final class BatchQueueStore: ObservableObject {
         processingTask?.cancel()
     }
 
-    private func markActiveTaskAsBackgroundExpiredIfNeeded() {
+    private func markActiveTaskAsBackgroundExpiredIfNeeded() async {
         guard let activeJobID,
               let activeTaskID,
-              let jobIndex = jobs.firstIndex(where: { $0.id == activeJobID }),
-              let taskIndex = jobs[jobIndex].tasks.firstIndex(where: { $0.id == activeTaskID })
+              let task = jobs
+                .first(where: { $0.id == activeJobID })?
+                .tasks
+                .first(where: { $0.id == activeTaskID })
         else {
             return
         }
 
-        let currentPhase = jobs[jobIndex].tasks[taskIndex].phase
+        let currentPhase = task.phase
         guard !currentPhase.isTerminal,
               currentPhase != .savingToPhotoLibrary
         else {
@@ -538,16 +616,14 @@ final class BatchQueueStore: ObservableObject {
             return
         }
 
-        let taskID = jobs[jobIndex].tasks[taskIndex].id
+        let taskID = task.id
         let diagnosticFailure = ProductionDiagnosticFailureClassifier
             .backgroundExpired(
                 phase: currentPhase.rawValue,
                 operationID: taskID,
                 language: .interfaceStored
             )
-        jobs[jobIndex].tasks[taskIndex].renderedFileURL = nil
-        jobs[jobIndex].tasks[taskIndex].notificationAttachmentURL = nil
-        jobs[jobIndex].tasks[taskIndex].failure = BatchTaskFailure(
+        let failure = BatchTaskFailure(
             phase: currentPhase,
             message: diagnosticFailure.userMessage,
             classification: .interrupted,
@@ -555,97 +631,87 @@ final class BatchQueueStore: ObservableObject {
             diagnosticCode: diagnosticFailure.code.rawValue,
             supportID: diagnosticFailure.supportID
         )
-        jobs[jobIndex].tasks[taskIndex].progress = BatchTaskProgress(
-            currentUnit: 0,
-            totalUnits: 1,
-            stage: .backgroundExpired
-        )
-        // Publish the terminal phase last. Observers use the phase as the
-        // durable-state boundary; publishing it first could expose a failed
-        // task before its diagnostic and progress fields were fully written.
-        jobs[jobIndex].tasks[taskIndex].phase = .failed
-        jobs[jobIndex].updatedAt = Date()
-        jobs[jobIndex].state = execution.derivedJobState(from: jobs[jobIndex].tasks)
-        setLastErrorMessage(diagnosticFailure.userMessage)
-        _ = persistJobs()
+        await withDurableCommand {
+            let result = await durableLedger
+                .expireActiveTask(
+                    at: BatchTaskReference(
+                        jobID: activeJobID,
+                        taskID: activeTaskID
+                    ),
+                    failure: failure
+                )
+            guard await projectDurableTransaction(result) == true else {
+                return
+            }
+            setLastErrorMessage(
+                diagnosticFailure.userMessage
+            )
+        }
     }
 
-    func retryPersistence() {
+    func retryPersistence() async {
 
         guard persistenceBlocked else {
             return
         }
-
-        switch persistence.loadPersistedJobsResult() {
-        case .success(let loadedJobs):
-            if persistenceRecoveryRequiresReload {
-                // Startup may have failed before an in-memory queue existed.
-                // Rehydrate first; never let the empty startup fallback
-                // overwrite a queue that became readable later.
-                jobs = loadedJobs
-                lastDurableJobs = loadedJobs
+        let recovered = await withDurableCommand {
+            let result = await durableLedger.recover()
+            switch result {
+            case .recovered(let snapshot):
+                jobs = snapshot.jobs
+                lastDurableJobs = snapshot.jobs
                 pendingSaveReceiptRemovalKeys = []
                 lastDurableSaveReceiptRemovalKeys = []
-            }
+                persistenceBlocked = false
+                isPersistenceBlocked = false
+                startupPersistenceError = nil
+                lastErrorMessage = ""
+                history.commitResourceCleanup(
+                    retaining: jobs
+                )
+                return true
 
-            if let error = persistence.persistJobs(jobs).error {
+            case .failure(let error, let snapshot):
+                jobs = snapshot.jobs
+                lastDurableJobs = snapshot.jobs
                 startupPersistenceError = error
                 lastErrorMessage = error.message
-                return
+                persistenceBlocked = true
+                isPersistenceBlocked = true
+                return false
             }
-
-            // The queue itself is durable again. Clear the queue-level block
-            // before secondary reconciliation so a later receipt/commerce
-            // failure reports its own recoverable cause instead of leaving a
-            // stale startup decoding error visible to the user.
-            persistenceBlocked = false
-            isPersistenceBlocked = false
-            persistenceRecoveryRequiresReload = false
-            startupPersistenceError = nil
-            lastErrorMessage = ""
-
-            history.commitResourceCleanup(
-                retaining: jobs
-            )
-            removePendingSaveReceipts()
-            lastDurableJobs = jobs
-            lastDurableSaveReceiptRemovalKeys =
-                pendingSaveReceiptRemovalKeys
-            reconcileSaveReceiptsWithPersistedJobs()
-            guard !persistenceBlocked else {
-                return
-            }
-
-            if let pendingCommerceSnapshot {
-                guard persistCommerceSnapshot(
-                    pendingCommerceSnapshot,
-                    failureMessage: "同步使用额度时无法完成本地保存，处理已暂停。"
-                ) else {
-                    return
-                }
-            }
-
-            reconcileCommerceUsageWithDurableJobs()
-            guard !persistenceBlocked else {
-                return
-            }
-            startProcessingIfNeeded()
-        case .failure(let error):
-            startupPersistenceError = error
-            lastErrorMessage = error.message
-            isPersistenceBlocked = true
         }
+
+        guard recovered else {
+            return
+        }
+        await reconcileSaveReceiptsWithPersistedJobs()
+
+        if let pendingCommerceSnapshot {
+            guard persistCommerceSnapshot(
+                pendingCommerceSnapshot,
+                failureMessage: "同步使用额度时无法完成本地保存，处理已暂停。"
+            ) else {
+                return
+            }
+        }
+
+        reconcileCommerceUsageWithDurableJobs()
+        guard !persistenceBlocked else {
+            return
+        }
+        await startProcessingIfNeeded()
     }
 
     /// Retries a blocked persistence state when the application returns to a
     /// usable lifecycle phase. The method is intentionally idempotent so
     /// callers can invoke it from both UI recovery and lifecycle refresh.
-    func retryPersistenceIfNeeded() {
+    func retryPersistenceIfNeeded() async {
         guard persistenceBlocked else {
             return
         }
 
-        retryPersistence()
+        await retryPersistence()
     }
 
     var usageSnapshot: BatchUsageSnapshot {
@@ -687,7 +753,7 @@ final class BatchQueueStore: ObservableObject {
         )
     }
 
-    func retryLatestFailedTasks() {
+    func retryLatestFailedTasks() async {
 
         guard let latestFailureSummary else {
             return
@@ -698,53 +764,28 @@ final class BatchQueueStore: ObservableObject {
             return
         }
 
-        retryFailedTasks(
+        await retryFailedTasks(
             in: latestFailureSummary.jobID
         )
     }
 
     func clearTerminalExternalJobHistory(
         preserving preservedJobID: UUID?
-    ) {
-
-        let originalJobs = jobs
-        let originalCount = originalJobs.count
-
-        jobs =
-            jobs.filter { job in
-                if job.id == preservedJobID {
-                    return true
-                }
-
-                guard job.launchSource != .inAppPreview else {
-                    return true
-                }
-
-                guard job.tasks.allSatisfy({
-                    $0.phase.isTerminal
-                }) else {
-                    return true
-                }
-
-                return false
+    ) async {
+        await withDurableCommand {
+            let result = await durableLedger
+                .clearTerminalExternalHistory(
+                    preserving: preservedJobID
+                )
+            guard let removal =
+                    await projectDurableTransaction(result),
+                  removal.didChange else {
+                return
             }
-
-        guard jobs.count != originalCount else {
-            return
+            await saveReceiptLedger.removeReceipts(
+                for: removal.removedTaskIDs
+            )
         }
-
-        let retainedJobIDs = Set(jobs.map(\.id))
-        pendingSaveReceiptRemovalKeys.formUnion(
-            originalJobs
-            .filter {
-                !retainedJobIDs.contains($0.id)
-            }
-            .flatMap(\.tasks)
-            .map {
-                $0.id.uuidString
-            }
-        )
-        persistJobs()
     }
 }
 
@@ -752,56 +793,23 @@ final class BatchQueueStore: ObservableObject {
 
 extension BatchQueueStore {
 
-    func reconcileCommittedPhotoLibraryReceiptsForResume() {
+    func applyBootstrapReceiptReconciliation() {
 
-        let savingTaskReferences:
-            [BatchQueueExecution.TaskReference] = jobs.flatMap { job in
-            job.tasks.compactMap { task in
-                guard task.phase
-                        == BatchTaskPhase
-                        .savingToPhotoLibrary else {
-                    return nil
-                }
-                return BatchQueueExecution.TaskReference(
-                    jobID: job.id,
-                    taskID: task.id
-                )
-            }
+        let completions =
+            bootstrapReceiptReconciler
+            .reconcileCommittedReceipts(
+                in: jobs
+            )
+        guard !completions.isEmpty else {
+            return
         }
-        var didReconcile = false
         var reconciledTasks: [BatchTask] = []
         var reconciledResourceURLs:
             [(rendered: URL?, source: URL)] = []
 
-        for reference in savingTaskReferences {
-            guard let task = currentTask(at: reference),
-                  task.phase
-                    == BatchTaskPhase
-                    .savingToPhotoLibrary,
-                  let assetIdentifier =
-                    photoLibraryReceiptAssetLocator
-                    .visibleAssetIdentifier(
-                        for: task.id.uuidString
-                    ) else {
-                continue
-            }
-
-            // Startup reconciliation has directly observed the exact
-            // PhotoKit asset. Upgrade the local receipt before completing the
-            // durable queue projection. A receipt that is already committed
-            // needs no write; otherwise a failed upgrade must leave the task
-            // in its recoverable saving phase instead of projecting success
-            // without durable acknowledgement.
-            if saveReceiptStore.assetIdentifier(
-                for: task.id.uuidString
-            ) == nil,
-               !saveReceiptStore.materializePendingIntent(
-                   for: task.id.uuidString
-               ) {
-                continue
-            }
-            guard saveReceiptStore.ensureCommitted(
-                for: task.id.uuidString
+        for completion in completions {
+            guard let task = currentTask(
+                at: completion.reference
             ) else {
                 continue
             }
@@ -813,13 +821,13 @@ extension BatchQueueStore {
                 )
             )
 
-            updateTask(
-                at: reference,
+            updateTaskDuringBootstrap(
+                at: completion.reference,
                 persist: false,
                 recordsSuccessfulSave: false
             ) { task in
                 task.renderedFileURL = nil
-                task.savedAssetIdentifier = assetIdentifier
+                task.savedAssetIdentifier = completion.assetIdentifier
                 task.failure = nil
                 task.phase = .completed
                 task.progress = BatchTaskProgress(
@@ -828,17 +836,18 @@ extension BatchQueueStore {
                     stage: .completed
                 )
             }
-            if let completedTask = currentTask(at: reference) {
+            if let completedTask = currentTask(
+                at: completion.reference
+            ) {
                 reconciledTasks.append(completedTask)
             }
-            didReconcile = true
         }
 
-        guard didReconcile else {
+        guard !reconciledTasks.isEmpty else {
             return
         }
 
-        guard persistJobs() else {
+        guard persistJobsDuringBootstrap() else {
             return
         }
 
@@ -856,6 +865,73 @@ extension BatchQueueStore {
         }
     }
 
+    func reconcileCommittedPhotoLibraryReceiptsForResume() async {
+        await withDurableCommand {
+            let reconciliationCommands =
+                await photoLibraryReceiptResumeRecoveryPlanner.commands(
+                    for: jobs
+                )
+            guard !reconciliationCommands.isEmpty else {
+                return
+            }
+            let result = await durableLedger.transaction { jobs in
+                var mutations: [BatchQueueTaskMutation] = []
+                let policy = BatchQueueTransitionPolicy()
+                for command in reconciliationCommands {
+                    let mutation: BatchQueueTaskMutation?
+                    switch command {
+                    case .complete(
+                        let reference,
+                        let assetIdentifier
+                    ):
+                        mutation = policy
+                            .reconcileCommittedPhotoLibrarySave(
+                                at: reference,
+                                in: &jobs,
+                                assetIdentifier: assetIdentifier,
+                                now: Date()
+                            )
+                    case .permissionRecoveryRequired(
+                        let reference,
+                        let failure
+                    ):
+                        mutation = policy.apply(
+                            .failed(failure),
+                            at: reference,
+                            in: &jobs,
+                            now: Date()
+                        )
+                    }
+                    if let mutation {
+                        mutations.append(mutation)
+                    }
+                }
+                return mutations.isEmpty
+                    ? .unchanged(mutations)
+                    : .commit(mutations)
+            }
+            guard let mutations =
+                    await projectDurableTransaction(result) else {
+                return
+            }
+
+            for mutation in mutations {
+                recordSuccessfulSaveIfNeeded(
+                    for: mutation.updated
+                )
+                if let failure = mutation.updated.failure {
+                    lastErrorMessage = failure.message
+                }
+                execution.cleanupTemporaryFileIfNeeded(
+                    at: mutation.previous.renderedFileURL
+                )
+                execution.cleanupManagedSourceIfNeeded(
+                    at: mutation.previous.sourceURL
+                )
+            }
+        }
+    }
+
     func nextPendingTaskReference()
     -> BatchQueueExecution.TaskReference? {
 
@@ -864,109 +940,139 @@ extension BatchQueueStore {
         )
     }
 
-    func normalizeJobsForResume() {
+    func normalizeJobsDuringBootstrap() {
 
-        let existingFailureTaskIDs = Set(
-            jobs.flatMap(\.tasks)
-                .filter { $0.failure != nil }
-                .map(\.id)
-        )
-        let protectedTaskIDs =
-            unresolvedPhotoLibrarySaveTaskIDs()
-
-        guard persistence.normalizeJobsForResume(
-            &jobs,
-            protectedTaskIDs: protectedTaskIDs,
-            deriveJobState:
-                execution.derivedJobState
-        ) else {
+        let result =
+            bootstrapRecoveryNormalizer.normalize(
+                &jobs
+            )
+        guard result.didChange else {
             return
         }
 
-        persistJobs()
+        persistJobsDuringBootstrap()
 
         guard let productionDiagnostics else {
             return
         }
-        let recoveredFailures:
-            [(UUID, BatchTask, BatchTaskFailure)] =
-            jobs.flatMap { job in
-            job.tasks.compactMap { task in
-                guard !existingFailureTaskIDs.contains(task.id),
-                      let failure = task.failure else {
-                    return nil
-                }
-                return (job.id, task, failure)
-            }
-        }
         Task {
-            for (jobID, task, failure) in recoveredFailures {
-                let pixelSize = MediaPixelSize(
-                    fileURL: task.sourceURL
+            await BatchQueueRecoveryDiagnosticsReporter.record(
+                result.recoveredFailures,
+                to: productionDiagnostics
+            )
+        }
+    }
+
+    func normalizeJobsForResume() async {
+        await withDurableCommand {
+            let sourceInspector =
+                BatchQueueResumeSourceInspector()
+            let existingFailureTaskIDs = Set(
+                jobs.flatMap(\.tasks)
+                    .filter { $0.failure != nil }
+                    .map(\.id)
+            )
+            let protectedTaskIDs =
+                await unresolvedPhotoLibrarySaveTaskIDs()
+            var missingSourceURLs = Set<URL>()
+            var missingFailures:
+                [UUID: BatchTaskFailure] = [:]
+
+            for task in jobs.flatMap(\.tasks)
+            where !task.phase.isTerminal
+                && !protectedTaskIDs.contains(task.id)
+                && sourceInspector.isMissingManagedSource(
+                    task.sourceURL
+                ) {
+                missingSourceURLs.insert(
+                    task.sourceURL.standardizedFileURL
                 )
-                await productionDiagnostics.record(
-                    ProductionDiagnosticEvent(
-                        operationID: task.id,
-                        category: .processing,
-                        stage:
-                            "processing.recovery.\(failure.phase.rawValue)",
-                        outcome: .failed,
-                        errorCode:
-                            failure.diagnosticCode.flatMap {
-                                ProductionDiagnosticErrorCode(
-                                    rawValue: $0
-                                )
-                            },
-                        context:
-                            ProductionDiagnosticContext(
-                                jobID: jobID,
-                                taskID: task.id,
-                                mediaContentTypeIdentifier:
-                                    task.contentTypeIdentifier,
-                                mediaPixelWidth:
-                                    pixelSize?.width,
-                                mediaPixelHeight:
-                                    pixelSize?.height,
-                                processingPhase:
-                                    failure.phase.rawValue
-                            )
+                missingFailures[task.id] =
+                    sourceInspector.missingSourceFailure(
+                        phase: task.phase,
+                        taskID: task.id
                     )
+            }
+
+            let unavailableSourceURLs =
+                missingSourceURLs
+            let unavailableSourceFailures =
+                missingFailures
+
+            let result = await durableLedger.transaction { jobs in
+                let changed = BatchQueueResumePolicy()
+                    .normalize(
+                        &jobs,
+                        protectedTaskIDs:
+                            protectedTaskIDs,
+                        isMissingManagedSource: { url in
+                            unavailableSourceURLs.contains(
+                                url.standardizedFileURL
+                            )
+                        },
+                        missingSourceFailure: {
+                            phase,
+                            taskID in
+                            unavailableSourceFailures[taskID]
+                            ?? BatchTaskFailure(
+                                phase: phase,
+                                message:
+                                    "接收的照片副本已不可用。",
+                                classification:
+                                    .interrupted,
+                                canRetry: false
+                            )
+                        }
+                    )
+                return changed
+                    ? .commit(true)
+                    : .unchanged(false)
+            }
+            guard await projectDurableTransaction(result) != nil,
+                  let productionDiagnostics else {
+                return
+            }
+            let recoveredFailures:
+                [BatchQueueRecoveredFailure] =
+                jobs.flatMap { job in
+                    job.tasks.compactMap { task in
+                        guard !existingFailureTaskIDs
+                                .contains(task.id),
+                              let failure = task.failure else {
+                            return nil
+                        }
+                        return BatchQueueRecoveredFailure(
+                            jobID: job.id,
+                            task: task,
+                            failure: failure
+                        )
+                    }
+                }
+            Task {
+                await BatchQueueRecoveryDiagnosticsReporter.record(
+                    recoveredFailures,
+                    to: productionDiagnostics
                 )
             }
         }
     }
 
     func unresolvedPhotoLibrarySaveTaskIDs()
-    -> Set<UUID> {
-
-        Set(
-            jobs.flatMap(\.tasks)
-                .compactMap { task in
-                    guard task.phase
-                            == BatchTaskPhase
-                            .savingToPhotoLibrary else {
-                        return nil
-                    }
-
-                    let hasAssetReceipt =
-                        saveReceiptStore.assetIdentifier(
-                            for: task.id.uuidString
-                        ) != nil
-                    let hasPendingIntent =
-                        saveReceiptStore.hasPendingIntent(
-                            for: task.id.uuidString
-                        )
-                    guard hasAssetReceipt || hasPendingIntent else {
-                        return nil
-                    }
-
-                    return task.id
-                }
-        )
+    async -> Set<UUID> {
+        var taskIDs = Set<UUID>()
+        for task in jobs.flatMap(\.tasks)
+        where task.phase == .savingToPhotoLibrary {
+            if await saveReceiptLedger.hasRecoveryEvidence(
+                for: task.id.uuidString
+            ) {
+                taskIDs.insert(task.id)
+            }
+        }
+        return taskIDs
     }
 
     @discardableResult
-    func persistJobs() -> Bool {
+    private func persistJobsDuringBootstrap() -> Bool {
 
         guard !persistenceBlocked else {
             return false
@@ -1008,6 +1114,64 @@ extension BatchQueueStore {
         }
     }
 
+    private func withDurableCommand<Value>(
+        _ operation: () async -> Value
+    ) async -> Value {
+        await durableCommandGate.acquire()
+        let value = await operation()
+        await durableCommandGate.release()
+        return value
+    }
+
+    private func projectDurableTransaction<Value: Sendable>(
+        _ result:
+            BatchQueueDurableTransactionResult<Value>
+    ) async -> Value? {
+        switch result {
+        case .committed(let value, let snapshot):
+            let previousJobs = jobs
+            let retainedTaskIDs = Set(
+                snapshot.jobs.flatMap(\.tasks).map(\.id)
+            )
+            let removedReceiptKeys = Set(
+                previousJobs
+                    .flatMap(\.tasks)
+                    .filter {
+                        !retainedTaskIDs.contains($0.id)
+                    }
+                    .map { $0.id.uuidString }
+            )
+            jobs = snapshot.jobs
+            lastDurableJobs = snapshot.jobs
+            persistenceBlocked = false
+            isPersistenceBlocked = false
+            startupPersistenceError = nil
+            history.commitResourceCleanup(
+                from: previousJobs,
+                retaining: jobs
+            )
+            await saveReceiptLedger.removeReceipts(
+                for: removedReceiptKeys
+            )
+            return value
+
+        case .unchanged(let value, let snapshot):
+            jobs = snapshot.jobs
+            lastDurableJobs = snapshot.jobs
+            return value
+
+        case .failure(let error, let snapshot):
+            jobs = snapshot.jobs
+            lastDurableJobs = snapshot.jobs
+            lastErrorMessage = error.message
+            startupPersistenceError = error
+            persistenceBlocked = true
+            isPersistenceBlocked = true
+            processingTask?.cancel()
+            return nil
+        }
+    }
+
     func removePendingSaveReceipts() {
         saveReceiptStore.removeReceipts(
             for: pendingSaveReceiptRemovalKeys
@@ -1015,14 +1179,18 @@ extension BatchQueueStore {
         pendingSaveReceiptRemovalKeys.removeAll()
     }
 
-    func reconcileSaveReceiptsWithPersistedJobs() {
-        saveReceiptStore.pruneReceipts(
+    func pruneBootstrapReceipts() {
+        bootstrapReceiptReconciler.pruneReceipts(
+            retaining: jobs
+        )
+    }
+
+    func reconcileSaveReceiptsWithPersistedJobs() async {
+        await saveReceiptLedger.pruneReceipts(
             retaining: Set(
                 jobs
-                .flatMap(\.tasks)
-                .map {
-                    $0.id.uuidString
-                }
+                    .flatMap(\.tasks)
+                    .map { $0.id.uuidString }
             )
         )
     }
@@ -1046,8 +1214,7 @@ extension BatchQueueStore {
         await notifications
             .deliverProgressNotificationIfNeeded(
                 for: jobID,
-                stage: stage,
-                in: self
+                stage: stage
             )
     }
 
@@ -1064,19 +1231,19 @@ extension BatchQueueStore {
 
     func processingLoopDidFinish(
         shouldRestart: Bool = true
-    ) {
+    ) async {
 
         processingTask = nil
         clearProcessingIndicators()
 
         if !shouldRestart {
-            normalizeJobsForResume()
+            await normalizeJobsForResume()
         }
 
         if shouldRestart,
            canContinueProcessing,
            nextPendingTaskReference() != nil {
-            startProcessingIfNeeded()
+            await startProcessingIfNeeded()
         }
     }
 
@@ -1154,25 +1321,63 @@ extension BatchQueueStore {
     func cleanupManagedSourceForDurablyTerminalTask(
         at reference:
             BatchQueueExecution.TaskReference
-    ) -> Bool {
-
-        guard let task = currentTask(
-            at: reference
-        ),
-        task.phase.isTerminal,
-        persistJobs() else {
-            return false
+    ) async -> Bool {
+        await withDurableCommand {
+            let snapshot = await durableLedger.snapshot()
+            guard !snapshot.isPersistenceBlocked,
+                  let task = snapshot.jobs
+                    .first(where: {
+                        $0.id == reference.jobID
+                    })?
+                    .tasks
+                    .first(where: {
+                        $0.id == reference.taskID
+                    }),
+                  task.phase.isTerminal else {
+                return false
+            }
+            jobs = snapshot.jobs
+            execution
+                .cleanupManagedSourceIfNeeded(
+                    at: task.sourceURL
+                )
+            return true
         }
-
-        execution
-            .cleanupManagedSourceIfNeeded(
-                at: task.sourceURL
-            )
-        return true
     }
 
     @discardableResult
-    func updateTask(
+    func applyExecutionEvent(
+        _ event: BatchTaskExecutionEvent,
+        at reference:
+            BatchQueueExecution.TaskReference,
+        historyCoverCandidate:
+            BatchJobHistoryCover? = nil
+    ) async -> Bool {
+        return await withDurableCommand {
+            let result = await durableLedger.apply(
+                event,
+                at: reference,
+                historyCoverCandidate:
+                    historyCoverCandidate
+            )
+            guard let optionalMutation =
+                    await projectDurableTransaction(result),
+                  let mutation = optionalMutation else {
+                return false
+            }
+
+            if mutation.previous.phase != .completed,
+               mutation.updated.phase == .completed {
+                recordSuccessfulSaveIfNeeded(
+                    for: mutation.updated
+                )
+            }
+            return true
+        }
+    }
+
+    @discardableResult
+    private func updateTaskDuringBootstrap(
         at reference:
             BatchQueueExecution.TaskReference,
         persist: Bool = true,
@@ -1208,7 +1413,7 @@ extension BatchQueueStore {
             return true
         }
 
-        guard persistJobs() else {
+        guard persistJobsDuringBootstrap() else {
             return false
         }
 
@@ -1226,64 +1431,20 @@ extension BatchQueueStore {
         for task: BatchTask
     ) {
 
-        guard task.savedAssetIdentifier != nil,
-              !commerceSnapshot.isPlus else {
+        let outcome = commerceAccounting.recordSuccessfulSave(
+            for: task,
+            current: commerceSnapshot
+        )
+        guard !outcome.requiresRecovery else {
+            lastErrorMessage = "记录使用额度时无法完成本地保存，处理已暂停。"
+            persistenceBlocked = true
+            isPersistenceBlocked = true
+            processingTask?.cancel()
             return
         }
-
-        if commercePersistence.hasRecordedSuccessfulSave(
-            taskID: task.id,
-            environment: commerceSnapshot.environment
-        ) {
+        guard let nextCommerceSnapshot = outcome.updatedSnapshot else {
             return
         }
-
-        if !commercePersistence.recordSuccessfulSave(
-            taskID: task.id,
-            environment: commerceSnapshot.environment
-        ) {
-            // Another process may have recorded the same completed task
-            // between the idempotency check above and this write. Treat that
-            // already-durable state as success instead of blocking the queue.
-            guard commercePersistence.hasRecordedSuccessfulSave(
-                taskID: task.id,
-                environment: commerceSnapshot.environment
-            ) else {
-                lastErrorMessage = "记录使用额度时无法完成本地保存，处理已暂停。"
-                persistenceBlocked = true
-                isPersistenceBlocked = true
-                processingTask?.cancel()
-                return
-            }
-        }
-
-        let bonus =
-            commercePersistence
-            .bonusAllowance(
-                environment:
-                    commerceSnapshot.environment
-            )
-        let nextCommerceSnapshot =
-            MemoMarkCommerceSnapshot(
-                environment:
-                    commerceSnapshot.environment,
-                accessSource: .free,
-                successfulRecordCount:
-                    commercePersistence
-                    .successfulRecordCount(
-                        environment:
-                            commerceSnapshot.environment
-                    ),
-                totalAllowance:
-                    MemoMarkCommercePolicy
-                    .baseFreeAllowance
-                    + bonus,
-                batchLimit:
-                    MemoMarkCommercePolicy
-                    .freeBatchLimit,
-                firstRecorderDate: nil,
-                updatedAt: Date()
-            )
         guard persistCommerceSnapshot(
             nextCommerceSnapshot,
             failureMessage: "同步使用额度时无法完成本地保存，处理已暂停。"
@@ -1293,69 +1454,20 @@ extension BatchQueueStore {
     }
 
     private func reconcileCommerceUsageWithDurableJobs() {
-        guard !commerceSnapshot.isPlus else {
-            return
-        }
-
-        let completedTaskIDs = Set(
-            jobs
-                .flatMap(\.tasks)
-                .filter {
-                    $0.phase == .completed
-                    && $0.savedAssetIdentifier != nil
-                }
-                .map(\.id)
+        let outcome = commerceAccounting.reconcile(
+            completedJobs: jobs,
+            current: commerceSnapshot
         )
-
-        guard commercePersistence.reconcileSuccessfulSaves(
-            taskIDs: completedTaskIDs,
-            environment: commerceSnapshot.environment
-        ) else {
+        guard !outcome.requiresRecovery else {
             lastErrorMessage = "无法校准已完成记录的本地使用额度，处理已暂停。"
             persistenceBlocked = true
             isPersistenceBlocked = true
             processingTask?.cancel()
             return
         }
-
-        let successfulRecordCount =
-            commercePersistence.successfulRecordCount(
-                environment: commerceSnapshot.environment
-            )
-        guard successfulRecordCount
-                != commerceSnapshot.successfulRecordCount else {
+        guard let reconciledSnapshot = outcome.updatedSnapshot else {
             return
         }
-
-        let reconciledSnapshot =
-            MemoMarkCommerceSnapshot(
-                environment: commerceSnapshot.environment,
-                accessSource: .free,
-                successfulRecordCount: successfulRecordCount,
-                totalAllowance: MemoMarkCommercePolicy
-                    .resolved(
-                        for: commerceSnapshot.environment,
-                        bonusAllowance:
-                            commercePersistence.bonusAllowance(
-                                environment:
-                                    commerceSnapshot.environment
-                            )
-                    )
-                    .totalAllowance,
-                batchLimit: MemoMarkCommercePolicy
-                    .resolved(
-                        for: commerceSnapshot.environment,
-                        bonusAllowance:
-                            commercePersistence.bonusAllowance(
-                                environment:
-                                    commerceSnapshot.environment
-                            )
-                    )
-                    .batchLimit,
-                firstRecorderDate: nil,
-                updatedAt: Date()
-            )
-
         guard persistCommerceSnapshot(
             reconciledSnapshot,
             failureMessage: "无法保存校准后的使用额度，处理已暂停。"
@@ -1369,7 +1481,7 @@ extension BatchQueueStore {
         _ snapshot: MemoMarkCommerceSnapshot,
         failureMessage: String
     ) -> Bool {
-        guard commercePersistence.saveSharedSnapshot(snapshot) else {
+        guard commerceAccounting.saveSharedSnapshot(snapshot) else {
             pendingCommerceSnapshot = snapshot
             lastErrorMessage = failureMessage
             persistenceBlocked = true
@@ -1404,63 +1516,39 @@ extension BatchQueueStore {
     }
 
     func markStartNotificationSent(
-        at jobIndex: Int
-    ) {
-
-        guard jobs.indices.contains(jobIndex)
-        else {
-            return
+        for jobID: UUID
+    ) async {
+        await withDurableCommand {
+            let result = await durableLedger
+                .markStartNotificationSent(
+                    for: jobID
+                )
+            _ = await projectDurableTransaction(result)
         }
-
-        jobs[jobIndex]
-            .startNotificationSentAt =
-            Date()
-        persistJobs()
     }
 
     func markFinalNotificationSent(
-        at jobIndex: Int
-    ) {
-
-        guard jobs.indices.contains(jobIndex)
-        else {
-            return
+        for jobID: UUID
+    ) async {
+        await withDurableCommand {
+            let result = await durableLedger
+                .markFinalNotificationSent(
+                    for: jobID
+                )
+            _ = await projectDurableTransaction(result)
         }
-
-        jobs[jobIndex]
-            .finalNotificationSentAt =
-            Date()
-        persistJobs()
     }
 
     func releaseNotificationAttachmentsIfCovered(
         for jobID: UUID
-    ) {
-        guard let index = jobs.firstIndex(where: { $0.id == jobID }),
-              jobs[index].historyCover != nil,
-              jobs[index].tasks.allSatisfy({ $0.phase.isTerminal }) else {
-            return
+    ) async {
+        await withDurableCommand {
+            let result = await durableLedger
+                .releaseNotificationAttachmentsIfCovered(
+                    for: jobID
+                )
+            _ = await projectDurableTransaction(result)
         }
-        for taskIndex in jobs[index].tasks.indices {
-            jobs[index].tasks[taskIndex].notificationAttachmentURL = nil
-        }
-        persistJobs()
-    }
-
-    func markProgressNotificationSent(
-        at jobIndex: Int,
-        stage: String
-    ) {
-
-        guard jobs.indices.contains(jobIndex)
-        else {
-            return
-        }
-
-        jobs[jobIndex]
-            .lastProgressNotificationStage =
-            stage
-        persistJobs()
     }
 
     private func commerceLocalized(

@@ -109,18 +109,18 @@ struct WorkspaceConfigurationSlot:
     }
 }
 
-struct V1ConfigurationBootstrapReadState {
+struct ConfigurationBootstrapReadState {
     let configurationLibrary: ConfigurationLibraryRecord?
     let configurationLibraryRecoveryFailed: Bool
     let subjectLibraryResult:
-        MemoMarkSharedDefaultsReadResult<V1SubjectLibraryRecord>
+        MemoMarkSharedDefaultsReadResult<SubjectLibrarySchemaV1Record>
     let subjectResult:
         MemoMarkSharedDefaultsReadResult<MemorySubject>
     let badgeResult:
         MemoMarkSharedDefaultsReadResult<Badge>
     let selectedAlbumIdentifier: String
     let selectedAlbumTitle: String
-    let mediaOutputMode: V1MediaOutputMode
+    let mediaOutputMode: MediaOutputMode
 }
 
 @MainActor
@@ -149,7 +149,7 @@ final class SettingsService: ObservableObject {
     @Published var selectedAnchorIDString = ""
     @Published var selectedAlbumIdentifier = ""
     @Published var selectedAlbumTitle = ""
-    @Published var mediaOutputMode: V1MediaOutputMode = .originalFormat
+    @Published var mediaOutputMode: MediaOutputMode = .originalFormat
     @Published var activeConfigurationSlotID:
         WorkspaceConfigurationSlotID = .slot1
     @Published var configurationSlots:
@@ -285,13 +285,13 @@ final class SettingsService: ObservableObject {
         legacyStore.saveSelectedMemorySubject(subject)
     }
 
-    func saveV1SubjectLibrary(
+    func saveSubjectLibrary(
         subjects: [MemorySubject],
         selectedSubjectID: MemorySubject.ID?,
         memoryPresets: [MemoryPreset] = [],
         selectedMemoryPresetID: MemoryPreset.ID? = nil
     ) {
-        let record = V1SubjectLibraryRecord(
+        let record = SubjectLibrarySchemaV1Record(
             subjects: subjects,
             selectedSubjectID: selectedSubjectID,
             memoryPresets: memoryPresets,
@@ -304,6 +304,21 @@ final class SettingsService: ObservableObject {
             $0.id == selectedSubjectID
         } ?? subjects.first
         saveSelectedMemorySubject(selectedSubject)
+    }
+
+    @available(*, deprecated, message: "Use saveSubjectLibrary(...) instead.")
+    func saveV1SubjectLibrary(
+        subjects: [MemorySubject],
+        selectedSubjectID: MemorySubject.ID?,
+        memoryPresets: [MemoryPreset] = [],
+        selectedMemoryPresetID: MemoryPreset.ID? = nil
+    ) {
+        saveSubjectLibrary(
+            subjects: subjects,
+            selectedSubjectID: selectedSubjectID,
+            memoryPresets: memoryPresets,
+            selectedMemoryPresetID: selectedMemoryPresetID
+        )
     }
 
     func savePhotoDescriptionSettings() {
@@ -327,7 +342,7 @@ final class SettingsService: ObservableObject {
         legacyStore.saveTimeDisplayConfiguration(configuration)
     }
 
-    func saveMediaOutputMode(_ mode: V1MediaOutputMode) {
+    func saveMediaOutputMode(_ mode: MediaOutputMode) {
         mediaOutputMode = mode
         legacyStore.saveMediaOutputMode(mode)
     }
@@ -368,7 +383,7 @@ final class SettingsService: ObservableObject {
         legacyStore.saveEditorState(currentEditorState)
     }
 
-    func reloadV1BootstrapState() {
+    func reloadBootstrapState() {
         switch legacyStore.loadBadgeResult() {
         case .noValue:
             break
@@ -380,28 +395,45 @@ final class SettingsService: ObservableObject {
         restoreEditorState()
     }
 
-    func loadV1SelectedSubjectResult()
+    @available(*, deprecated, message: "Use reloadBootstrapState() instead.")
+    func reloadV1BootstrapState() {
+        reloadBootstrapState()
+    }
+
+    func loadSelectedSubjectResult()
     -> MemoMarkSharedDefaultsReadResult<MemorySubject> {
         legacyStore.loadSelectedMemorySubjectResult()
     }
 
-    func loadV1SubjectLibraryResult()
-    -> MemoMarkSharedDefaultsReadResult<V1SubjectLibraryRecord> {
+    @available(*, deprecated, message: "Use loadSelectedSubjectResult() instead.")
+    func loadV1SelectedSubjectResult()
+    -> MemoMarkSharedDefaultsReadResult<MemorySubject> {
+        loadSelectedSubjectResult()
+    }
+
+    func loadSubjectLibraryResult()
+    -> MemoMarkSharedDefaultsReadResult<SubjectLibrarySchemaV1Record> {
         legacyStore.loadSubjectLibraryResult()
     }
 
-    func loadV1BootstrapReadState()
-    -> V1ConfigurationBootstrapReadState {
+    @available(*, deprecated, message: "Use loadSubjectLibraryResult() instead.")
+    func loadV1SubjectLibraryResult()
+    -> MemoMarkSharedDefaultsReadResult<SubjectLibrarySchemaV1Record> {
+        loadSubjectLibraryResult()
+    }
+
+    func loadConfigurationBootstrapReadState()
+    -> ConfigurationBootstrapReadState {
         restoreEditorState()
-        return V1ConfigurationBootstrapReadState(
+        return ConfigurationBootstrapReadState(
             configurationLibrary:
                 configurationLibraryStore.recoveredAggregate,
             configurationLibraryRecoveryFailed:
                 configurationLibraryStartupRecoveryError != nil,
             subjectLibraryResult:
-                loadV1SubjectLibraryResult(),
+                loadSubjectLibraryResult(),
             subjectResult:
-                loadV1SelectedSubjectResult(),
+                loadSelectedSubjectResult(),
             badgeResult:
                 legacyStore.loadBadgeResult(),
             selectedAlbumIdentifier:

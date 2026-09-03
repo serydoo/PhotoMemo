@@ -16,7 +16,7 @@ struct V1FirstRunConfigurationFactoryTests {
             )
         )
 
-        let subject = V1SubjectLibraryFactory.makeFirstRunSubject(
+        let subject = SubjectLibraryFactory.makeFirstRunSubject(
             name: "  示例昵称  ",
             birthday: date
         )
@@ -46,7 +46,7 @@ struct V1FirstRunConfigurationFactoryTests {
 
     @Test
     func firstRunSubjectFallsBackToMemorySubjectName() {
-        let subject = V1SubjectLibraryFactory.makeFirstRunSubject(
+        let subject = SubjectLibraryFactory.makeFirstRunSubject(
             name: "   ",
             birthday: Date(timeIntervalSince1970: 0)
         )
