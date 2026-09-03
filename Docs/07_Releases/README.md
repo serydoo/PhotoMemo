@@ -18,10 +18,10 @@ The current local source-checkpoint package is `2.2.4 (101)`. It records the
 behavior-preserving core architecture modernization and the resulting
 configuration, queue, media-save, Share-intake, and presentation responsibility
 cleanup. Its state is `Version Locked; Manual Acceptance Complete; Engineering
-Follow-ups Deferred`: the working tree is on `main`, but no Git commit, push,
-TestFlight upload, or App Store action has occurred. The user-confirmed manual
-checks are recorded separately from automated tests and formal production
-certification.
+Follow-ups Deferred`: the working tree is on `main` and the source checkpoint
+has been committed and pushed to GitHub as `ac95ab3`. No TestFlight upload or
+App Store action has occurred. The user-confirmed manual checks are recorded
+separately from automated tests and formal production certification.
 
 - [`2026-09-03-2.2.4-release-notes.md`](2026-09-03-2.2.4-release-notes.md)
 - [`2026-09-03-2.2.4-app-store-whats-new.md`](2026-09-03-2.2.4-app-store-whats-new.md)

@@ -23,8 +23,9 @@
   引入阶段式 `V1` 名称；真正的 schema/迁移兼容名称保留不动。
 - 继续使用期间按最小切片处理新问题。除非出现可复现的行为或性能问题，暂不
   重新启动全仓库拆分、兼容命名迁移或大型 Store/Processor 降行数工程。
-- Git 暂存、提交、推送、TestFlight、App Store Connect 和 App Store 提交均未
-  执行，仍需后续单独授权。
+- Git 暂存、提交和推送已完成：提交为 `ac95ab3`，已同步到
+  `origin/main`。TestFlight、App Store Connect 和 App Store 提交均未执行，
+  仍需后续单独授权。
 
 ---
 

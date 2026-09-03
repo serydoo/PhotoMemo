@@ -18,10 +18,11 @@
   `ConfigurationCenteriOSView` and temporary dual-entry path are not restored.
   Existing compatibility `V1` names remain only where they represent a real
   schema/migration bridge or a separately deferred naming slice.
-- The working tree remains intentionally uncommitted. No Git staging, commit,
-  push, TestFlight upload, App Store Connect mutation, or App Store submission
-  was performed. Full macOS test-run repeatability, TX-001, BP-001, and formal
-  superseding production certification remain deferred observation follow-ups.
+- The refactor is now committed and pushed to GitHub `main` as `ac95ab3`
+  (`refactor: close 2.2.4 architecture reorganization`). No TestFlight upload,
+  App Store Connect mutation, or App Store submission was performed. Full
+  macOS test-run repeatability, TX-001, BP-001, and formal superseding
+  production certification remain deferred observation follow-ups.
 
 ## 2026-09-03 Build 100 — Background Status Projection P1 Closure
 
