@@ -837,6 +837,17 @@ struct SubjectOverviewPresenterTests {
         )
         #expect(!normalizedFactRow.contains("VStack(alignment: .leading, spacing: 4)"))
     }
+
+    @Test("subject overview uses the resolved expression subject in its narrative")
+    func subjectOverviewUsesResolvedExpressionSubject() throws {
+        let overviewSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift"
+        )
+
+        #expect(overviewSource.contains("resolvedExpressionSubjectText"))
+        #expect(overviewSource.contains("subject.overview.expression_summary"))
+        #expect(!overviewSource.contains("围绕 TA 展开"))
+    }
 }
 
 private extension SubjectOverviewPresenterTests {

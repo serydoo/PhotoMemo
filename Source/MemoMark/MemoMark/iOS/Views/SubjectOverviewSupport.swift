@@ -140,7 +140,7 @@ private struct SubjectPrimaryCard<StatisticsStrip: View>: View {
         let language = MemoMarkLanguage.interfaceStored
         let format = language.localized(
             key: "home.subject.anchor_count_format",
-            fallback: "%lld 个重要日子"
+            fallback: "%lld 个时间锚点"
         )
         return String(
             format: format,
@@ -195,7 +195,8 @@ struct TodayTimeAnswerStrip: View {
             let presentation = TimeAnchorTodayPresenter.presentation(
                 anchor: anchor,
                 subjectName: subjectName,
-                referenceDate: context.date
+                referenceDate: context.date,
+                outputLanguage: .interfaceStored
             )
 
             VStack(alignment: .leading, spacing: 8) {

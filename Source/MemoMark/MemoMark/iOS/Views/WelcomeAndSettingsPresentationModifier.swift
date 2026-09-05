@@ -29,8 +29,7 @@ struct WelcomeAndSettingsPresentationModifier<SettingsContent: View>:
                     language: .interfaceStored,
                     onClose: nil
                 )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+                .memoMarkSheet(.browser)
             }
             .sheet(isPresented: binding(\.showsSettingsPage)) {
                 NavigationStack {

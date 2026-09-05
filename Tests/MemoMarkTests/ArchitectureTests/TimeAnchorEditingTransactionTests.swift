@@ -30,7 +30,7 @@ struct TimeAnchorEditingTransactionTests {
         #expect(source.contains(".safeAreaInset(edge: .top, spacing: 0)"))
         #expect(
             source.contains(
-                "选择一个时间起点，让照片拥有时间答案。"
+                "选择一个时间锚点，让照片拥有时间答案。"
             )
         )
         let nameRow = try sourceSection(
@@ -87,7 +87,7 @@ struct TimeAnchorEditingTransactionTests {
                 ".frame(minHeight: SubjectTimeAnchorMetrics.rowHeight)"
             )
         let usesExplicitCustomNameLabel = source.contains(
-            "Text(\"自定义锚点名称\")"
+            "Text(\"自定义时间锚点名称\")"
         )
 
         #expect(disablesFullSwipe)
@@ -131,9 +131,9 @@ struct TimeAnchorEditingTransactionTests {
 
         #expect(sheetSource.contains("\"新增时间锚点\""))
         #expect(sheetSource.contains("\"编辑时间锚点\""))
-        #expect(sheetSource.contains("\"锚点日期\""))
-        #expect(sheetSource.contains("\"锚点类型\""))
-        #expect(sheetSource.contains("\"自定义锚点名称\""))
+        #expect(sheetSource.contains("\"时间锚点日期\""))
+        #expect(sheetSource.contains("\"时间锚点类型\""))
+        #expect(sheetSource.contains("\"自定义时间锚点名称\""))
         #expect(!sheetSource.contains("Section(\"时间与类别\")"))
         #expect(!sheetSource.contains("Picker(\n                            \"类型\""))
         #expect(!sheetSource.contains("Text(\"锚点名称\")"))
@@ -193,7 +193,7 @@ struct TimeAnchorEditingTransactionTests {
         )
         #expect(
             normalizedSource.contains(
-                "Button(\"删除锚点\", role: .destructive)"
+                "Button(\"删除时间锚点\", role: .destructive)"
             )
         )
     }
@@ -243,7 +243,7 @@ struct TimeAnchorEditingTransactionTests {
             expressionStyle: .defaultStyle(for: .birthday)
         )
         let other = MemorySubject.TimeAnchor(
-            title: "重要日子",
+            title: "时间锚点",
             date: Date(timeIntervalSince1970: 2_000),
             note: "",
             anchorType: .custom,

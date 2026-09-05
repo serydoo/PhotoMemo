@@ -96,7 +96,7 @@ struct MemoMarkNarrativeLanguageContractTests {
         #expect(subjectEditor.contains("mode: .identityOverview"))
         #expect(subjectOverview.contains("subjectBasicInformation"))
         #expect(timeAnchorEditor.contains("navigationTitle"))
-        #expect(timeAnchorEditor.contains("选择一个时间起点"))
+        #expect(timeAnchorEditor.contains("选择一个时间锚点"))
     }
 
     @Test("macOS labels and localized help use the same product vocabulary")
@@ -135,17 +135,17 @@ struct MemoMarkNarrativeLanguageContractTests {
         )
         #expect(
             simplifiedChinese.contains(
-                "\"回忆对象重要时刻\" = \"回忆对象重要时刻\";"
+                "\"回忆对象重要时刻\" = \"回忆对象时间锚点\";"
             )
         )
         #expect(
             english.contains(
-                "\"回忆对象重要时刻\" = \"Important moments for the Memory Subject\";"
+                "\"回忆对象重要时刻\" = \"Time Anchors for the Memory Subject\";"
             )
         )
         #expect(
             simplifiedChinese.contains(
-                "\"选择一个时间起点，让照片拥有时间答案。\" = \"选择一个时间起点，让照片拥有时间答案。\";"
+                "\"选择一个时间锚点，让照片拥有时间答案。\" = \"选择一个时间锚点，让照片拥有时间答案。\";"
             )
         )
         #expect(

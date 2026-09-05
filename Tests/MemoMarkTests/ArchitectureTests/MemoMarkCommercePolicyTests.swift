@@ -206,7 +206,76 @@ struct MemoMarkCommercePolicyTests {
                 .maximumAdmissionCount(
                     after: 9_999,
                     reservedRecordCount: 500
-                ) == 40
+        ) == 40
+        )
+    }
+
+    @Test("subscription and founder access include every first-party style")
+    func paidAccessIncludesFirstPartyStyles() {
+        let paidStyles = MemoryAnchorExpressionStyle.availableStyles(
+            for: .birthday
+        ).filter {
+            MemoMarkCommerceCapability.allowsFirstPartyExpressionStyle(
+                $0,
+                accessSource: .plusSubscription
+            )
+        }
+        #expect(
+            paidStyles.count
+            == MemoryAnchorExpressionStyle.availableStyles(
+                for: .birthday
+            ).count
+        )
+        #expect(
+            !MemoMarkCommerceCapability
+                .allowsFirstPartyExpressionStyle(
+                    .birthdayCeremonial,
+                    accessSource: .free
+                )
+        )
+        #expect(
+            MemoMarkCommerceCapability
+                .allowsFirstPartyExpressionStyle(
+                    .birthdayNatural,
+                    accessSource: .free
+                )
+        )
+    }
+
+    @Test("expired subscription snapshot no longer grants plus access")
+    func expiredSubscriptionSnapshotIsNotPlus() {
+        let snapshot = MemoMarkCommerceSnapshot(
+            environment: .production,
+            accessSource: .plusSubscription,
+            successfulRecordCount: 0,
+            totalAllowance: nil,
+            batchLimit: 40,
+            firstRecorderDate: nil,
+            validThrough: Date(timeIntervalSince1970: 100),
+            updatedAt: Date(timeIntervalSince1970: 100)
+        )
+        #expect(!snapshot.isPlus)
+        #expect(snapshot.isSubscription)
+        #expect(!snapshot.isFounderLifetime)
+    }
+
+    @Test("free access keeps one object and one time anchor")
+    func freeAccessUsesTheFoundationalLimits() {
+        #expect(MemoMarkCommerceCapability.freeObjectLimit == 1)
+        #expect(MemoMarkCommerceCapability.freeTimeAnchorLimit == 1)
+        #expect(
+            MemoMarkCommerceCapability
+                .allowsFirstPartyExpressionStyle(
+                    .birthdayNatural,
+                    accessSource: .free
+                )
+        )
+        #expect(
+            !MemoMarkCommerceCapability
+                .allowsFirstPartyExpressionStyle(
+                    .birthdayWarm,
+                    accessSource: .free
+                )
         )
     }
 }

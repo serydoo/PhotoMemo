@@ -1,5 +1,16 @@
 # MemoMark Handoff
 
+# 2026-09-03 2.2.4 TestFlight 外部测试提交
+
+- Xcode Cloud 最新归档已在 App Store Connect 处理完成，出口合规声明已保存。
+- 已将最新 `2.2.4` 构建加入外部测试群组
+  `MemoMark/时光记-初步测试，欢迎大家`，并提交近期重构与稳定性维护说明。
+- 该群组当前有 287 名测试员并启用公开链接；App Store Connect 当前状态为
+  “正在等待审核”，自动通知测试员选项已保留。审核通过前不要把它描述为已可
+  下载；后续以页面状态和测试员反馈为准。
+- 本次仅执行 TestFlight 外部测试提交，没有执行 App Store 提交；TX-001、
+  BP-001 和正式生产认证仍保持未关闭。
+
 # 2026-08-27 2.2.2（构建 95）Xcode Cloud 归档兼容性修复（当前）
 
 - 当前工程：`Source/MemoMark/MemoMark.xcodeproj`；marketing version 保持 `2.2.2`，构建号更新为 `95`。

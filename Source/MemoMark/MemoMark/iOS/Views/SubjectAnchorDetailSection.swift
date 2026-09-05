@@ -8,15 +8,21 @@ struct SubjectAnchorDetailSection: View {
 
     let onPersistSubjectChanges: () -> Void
     let allowsSwipeDeletion: Bool
+    let isPlusAccess: Bool
+    let onRequestCommerce: () -> Void
 
     init(
         session: ConfigurationSession,
         onPersistSubjectChanges: @escaping () -> Void,
-        allowsSwipeDeletion: Bool = false
+        allowsSwipeDeletion: Bool = false,
+        isPlusAccess: Bool = true,
+        onRequestCommerce: @escaping () -> Void = {}
     ) {
         self.session = session
         self.onPersistSubjectChanges = onPersistSubjectChanges
         self.allowsSwipeDeletion = allowsSwipeDeletion
+        self.isPlusAccess = isPlusAccess
+        self.onRequestCommerce = onRequestCommerce
     }
 
     @State
@@ -111,7 +117,7 @@ struct SubjectAnchorDetailSection: View {
             .accessibilityIdentifier("subject-anchor-group")
             .sheet(
                 item: $editingDraft,
-                onDismiss: commitEditingDraft
+                onDismiss: cancelEditingDraft
             ) { draft in
                 SubjectAnchorCompactEditor(
                     initialAnchor: draft.anchor,
@@ -120,10 +126,12 @@ struct SubjectAnchorDetailSection: View {
                     },
                     onSave: {
                         commitEditingDraft()
+                    },
+                    onCancel: {
+                        cancelEditingDraft()
                     }
                 )
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
+                .memoMarkSheet(.editor, detents: [.large])
             }
             .alert(
                 pendingDeleteAnchor.map { "删除“\($0.title)”？" }
@@ -140,11 +148,11 @@ struct SubjectAnchorDetailSection: View {
                 Button("取消", role: .cancel) {
                     pendingDeleteAnchor = nil
                 }
-                Button("删除锚点", role: .destructive) {
+                Button("删除时间锚点", role: .destructive) {
                     deletePendingAnchor()
                 }
             } message: {
-                Text("使用这个锚点的配置需要重新选择锚点。此操作无法撤销。")
+                Text("使用这个时间锚点的配置需要重新选择时间锚点。此操作无法撤销。")
             }
             .alert(
                 "至少保留一个时间锚点",
@@ -152,13 +160,18 @@ struct SubjectAnchorDetailSection: View {
             ) {
                 Button("好", role: .cancel) {}
             } message: {
-                Text("新增另一个锚点后，才能删除当前锚点。")
+                Text("新增另一个时间锚点后，才能删除当前时间锚点。")
             }
         }
     }
 
     private var addAnchorModule: some View {
         Button {
+            guard canAddTimeAnchor else {
+                onRequestCommerce()
+                return
+            }
+
             let anchor = MemorySubject.TimeAnchor(
                 title: AnchorType.custom.suggestedTitle,
                 date: Date(),
@@ -176,7 +189,11 @@ struct SubjectAnchorDetailSection: View {
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.green)
 
-                Text("添加锚点")
+                Text(
+                    canAddTimeAnchor
+                    ? "添加时间锚点"
+                    : "订阅 MemoMark+ 后添加更多时间锚点"
+                )
                     .font(.body)
                     .foregroundStyle(.primary)
 
@@ -189,6 +206,12 @@ struct SubjectAnchorDetailSection: View {
         .buttonStyle(.plain)
         .accessibilityLabel("添加时间锚点")
         .accessibilityIdentifier("subject-add-anchor")
+    }
+
+    private var canAddTimeAnchor: Bool {
+        isPlusAccess
+            || (session.state.selectedSubject?.timeAnchors.count ?? 0)
+            < MemoMarkCommerceCapability.freeTimeAnchorLimit
     }
 
     private func requestDeletion(
@@ -245,6 +268,10 @@ struct SubjectAnchorDetailSection: View {
         onPersistSubjectChanges()
         self.editingDraft = nil
     }
+
+    private func cancelEditingDraft() {
+        editingDraft = nil
+    }
 }
 
 private struct AnchorDraft: Identifiable {
@@ -300,10 +327,10 @@ struct SubjectAnchorDetailModule: View {
         .accessibilityLabel(
             "\(anchor.title)，\(dateText)，\(anchorTypeAccessibilityLabel)"
         )
-        .accessibilityAction(named: "配置锚点") {
+        .accessibilityAction(named: "配置时间锚点") {
             onConfigure()
         }
-        .accessibilityAction(named: "删除锚点") {
+        .accessibilityAction(named: "删除时间锚点") {
             onDelete()
         }
         .accessibilityIdentifier("subject-anchor-row")
@@ -325,7 +352,8 @@ struct SubjectAnchorDetailModule: View {
                     TimeAnchorTodayPresenter.presentation(
                         anchor: anchor,
                         subjectName: subjectName,
-                        referenceDate: context.date
+                        referenceDate: context.date,
+                        outputLanguage: .interfaceStored
                     ).value
                 )
                 .font(.caption.weight(.medium))
@@ -390,15 +418,18 @@ private struct SubjectAnchorCompactEditor: View {
 
     let onChange: (MemorySubject.TimeAnchor) -> Void
     let onSave: () -> Void
+    let onCancel: () -> Void
 
     init(
         initialAnchor: MemorySubject.TimeAnchor,
         onChange: @escaping (MemorySubject.TimeAnchor) -> Void,
-        onSave: @escaping () -> Void
+        onSave: @escaping () -> Void,
+        onCancel: @escaping () -> Void
     ) {
         _anchor = State(initialValue: initialAnchor)
         self.onChange = onChange
         self.onSave = onSave
+        self.onCancel = onCancel
     }
 
     var body: some View {
@@ -409,8 +440,6 @@ private struct SubjectAnchorCompactEditor: View {
 
                     todayAnswerPreview
 
-                    saveButton
-
                     usageGuidance
                 }
                 .padding(.horizontal, ConfigurationUI.contentColumnPadding)
@@ -418,13 +447,20 @@ private struct SubjectAnchorCompactEditor: View {
             }
             .safeAreaInset(edge: .top, spacing: 0) {
                 ConfigurationSheetSubtitle(
-                    "选择一个时间起点，让照片拥有时间答案。"
+                    "选择一个时间锚点，让照片拥有时间答案。"
                 )
             }
             .scrollDismissesKeyboard(.interactively)
             .background(ConfigurationUI.appBackground)
             .navigationTitle("时间锚点")
             .navigationBarTitleDisplayMode(.inline)
+            .memoMarkEditorSheetToolbar(
+                cancelTitle: "取消",
+                doneTitle: "完成",
+                doneAccessibilityIdentifier: "anchor-editor-save",
+                onCancel: onCancel,
+                onDone: onSave
+            )
             .accessibilityIdentifier("subject-anchor-editor")
             .sensoryFeedback(
                 .selection,
@@ -480,26 +516,13 @@ private struct SubjectAnchorCompactEditor: View {
         .submitLabel(.done)
     }
 
-    private var saveButton: some View {
-        Button {
-            onSave()
-        } label: {
-            Text("保存时间锚点")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.regular)
-        .font(.subheadline.weight(.semibold))
-        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
-        .accessibilityIdentifier("anchor-editor-save")
-    }
-
     private var todayAnswerPreview: some View {
         TimelineView(.periodic(from: .now, by: 3_600)) { context in
             let presentation = TimeAnchorTodayPresenter.presentation(
                 anchor: anchor,
                 subjectName: anchor.title,
-                referenceDate: context.date
+                referenceDate: context.date,
+                outputLanguage: .interfaceStored
             )
 
             VStack(alignment: .leading, spacing: 9) {
@@ -572,7 +595,7 @@ private struct SubjectAnchorCompactEditor: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                Text("设置这个重要日子发生或开始的日期。")
+                Text("设置这个时间锚点发生或开始的日期。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -675,7 +698,7 @@ private struct SubjectAnchorCompactEditor: View {
         case .exam:
             return "用照片拍摄时间表达距离目标还有多久。"
         case .custom:
-            return "为旅行、毕业、搬家或其他人生时刻设置自己的时间起点。"
+            return "为旅行、毕业、搬家或其他人生时刻设置自己的时间锚点。"
         }
     }
 
@@ -730,7 +753,7 @@ private struct SubjectAnchorCompactEditor: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            guidanceRow(number: 1, text: "在配置中心选择这个重要日子。")
+            guidanceRow(number: 1, text: "在配置中心选择这个时间锚点。")
             guidanceRow(number: 2, text: "处理照片时，会按每张照片的拍摄时间计算。")
             guidanceRow(number: 3, text: "最终怎样写在记忆卡上，仍然由你决定。")
         }

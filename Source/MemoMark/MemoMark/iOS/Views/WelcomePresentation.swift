@@ -35,7 +35,7 @@ struct WelcomePresentation: Equatable {
         WelcomePresentation(
             title: "时光记",
             subtitle: "让照片记得，它在人生里的位置。",
-            message: "时光记会把照片里的时间，和你选择的人、重要时刻放在一起，留下更容易读懂的回忆；原图保持不变。",
+            message: "时光记会把照片里的时间，和你选择的人、时间锚点放在一起，留下更容易读懂的回忆；原图保持不变。",
             features: [
                 .init(
                     id: "local-first",
@@ -81,7 +81,7 @@ struct WelcomePresentation: Equatable {
             ),
             message: language.localized(
                 key: "welcome.message",
-                fallback: "时光记会把照片里的时间，和你选择的人、重要时刻放在一起，留下更容易读懂的回忆；原图保持不变。"
+                fallback: "时光记会把照片里的时间，和你选择的人、时间锚点放在一起，留下更容易读懂的回忆；原图保持不变。"
             ),
             features: [
                 .init(
@@ -343,7 +343,7 @@ struct FirstRunConfigurationSheet: View {
 
                         Text(language.localized(
                             key: "welcome.first_run.intro_title",
-                            fallback: "从一个人和一个重要时刻开始。"
+                            fallback: "从一个人和一个时间锚点开始。"
                         ))
                             .font(.title2.weight(.semibold))
 
@@ -391,7 +391,7 @@ struct FirstRunConfigurationSheet: View {
 
                 Section(language.localized(
                     key: "welcome.first_run.important_date",
-                    fallback: "重要日期"
+                    fallback: "时间锚点"
                 )) {
                     DatePicker(
                         language.localized(
@@ -432,7 +432,7 @@ struct FirstRunConfigurationSheet: View {
                     Label(
                         language.localized(
                             key: "welcome.first_run.next_time",
-                            fallback: "按这个重要时刻呈现时间变化"
+                            fallback: "按这个时间锚点呈现时间变化"
                         ),
                         systemImage: "rectangle.and.text.magnifyingglass"
                     )
@@ -532,7 +532,7 @@ struct FirstRunConfigurationSheet: View {
         guard isFirstRunConfigurationReady else {
             errorMessage = language.localized(
                 key: "welcome.first_run.invalid_date",
-                fallback: "请选择有效的重要日期。"
+                fallback: "请选择有效的时间锚点日期。"
             )
             return
         }

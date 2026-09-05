@@ -6,7 +6,7 @@ import Testing
 @Suite("Configuration center memory display support")
 struct ConfigurationCenterMemoryDisplaySupportTests {
 
-    @Test("summary uses the active anchor expression style and formula preview")
+    @Test("summary uses the active anchor expression style and resolved preview")
     func summaryUsesActiveAnchorExpressionStyle() {
         let subject = MemorySubject(
             identity: .init(
@@ -47,16 +47,60 @@ struct ConfigurationCenterMemoryDisplaySupportTests {
                 .summaryValue(subject: subject)
             == "温馨"
         )
-        #expect(
-            ConfigurationCenterMemoryDisplaySupport
-                .summaryDetail(subject: subject)
-            == "之前：等待示例昵称到来，还有倒计时天数｜当时：示例昵称今天来到这个世界啦！｜之后：陪示例昵称走到年龄结果"
-        )
+        let detail = ConfigurationCenterMemoryDisplaySupport
+            .summaryDetail(subject: subject)
+        #expect(!detail.contains("年龄结果"))
+        #expect(!detail.contains("倒计时天数"))
+        #expect(detail.contains("示例昵称"))
         #expect(
             ConfigurationCenterMemoryDisplaySupport
                 .availableStyles(subject: subject)
             == MemoryAnchorExpressionStyle.availableStyles(for: .birthday)
         )
+    }
+
+    @Test("summary detail uses a resolved memory result instead of formula placeholders")
+    func summaryDetailUsesResolvedMemoryResultInsteadOfFormulaPlaceholders() {
+        let subject = MemorySubject(
+            identity: .init(
+                displayName: "示例昵称",
+                shortName: "示例昵称"
+            ),
+            relationship: .init(
+                role: "家庭",
+                label: "宝宝"
+            ),
+            definition: "",
+            referenceDate: Date(timeIntervalSince1970: 0),
+            timeAnchors: [
+                .init(
+                    id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+                    title: "出生",
+                    date: Date(timeIntervalSince1970: 0),
+                    note: "宝宝出生日期",
+                    anchorType: .birthday,
+                    expressionStyle: .birthdayNatural
+                )
+            ],
+            activeTimeAnchorID: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            behavior: .init(
+                primaryAnchor: "出生",
+                iconStrategy: .autoMatch,
+                badgeStrategy: .fixed,
+                memoryExpression: .init(
+                    title: "默认表达",
+                    blocks: []
+                )
+            ),
+            decorations: []
+        )
+
+        let detail = ConfigurationCenterMemoryDisplaySupport
+            .summaryDetail(subject: subject)
+
+        #expect(!detail.contains("年龄结果"))
+        #expect(!detail.contains("倒计时天数"))
+        #expect(detail.contains("示例昵称"))
     }
 
     @Test("summary falls back cleanly when there is no active subject anchor")
@@ -69,7 +113,7 @@ struct ConfigurationCenterMemoryDisplaySupportTests {
         #expect(
             ConfigurationCenterMemoryDisplaySupport
                 .summaryDetail(subject: nil)
-            == "先选择记忆对象和当前生效锚点，再决定这张卡片要用哪一种表达方式。"
+            == "先选择记忆对象和当前生效时间锚点，再决定这张卡片要用哪一种表达方式。"
         )
         #expect(
             ConfigurationCenterMemoryDisplaySupport

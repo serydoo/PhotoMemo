@@ -19,7 +19,7 @@ struct SubjectOverviewFooter: View {
             }
             .buttonStyle(.bordered)
 
-            Text("当前生效时间锚点已经收拢到配置中心切换；如果还要维护头像、基本资料或锚点内容，再进入专属配置页继续编辑。")
+            Text("当前生效时间锚点已经收拢到配置中心切换；如果还要维护头像、基本资料或时间锚点内容，再进入专属配置页继续编辑。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(

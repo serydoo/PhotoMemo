@@ -187,8 +187,7 @@ struct SettingsPageSurface: View {
                 language: interfaceLanguage,
                 version: appVersion
             )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
+            .memoMarkSheet(.browser)
         }
         .sheet(isPresented: $showsWorkflowGuide) {
             WorkflowGuideSurface(
@@ -200,8 +199,7 @@ struct SettingsPageSurface: View {
                     showsWorkflowGuide = false
                 }
             )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
+            .memoMarkSheet(.browser)
         }
         .sheet(item: $diagnosticExportItem) { item in
             DiagnosticsShareSheet(
@@ -317,6 +315,13 @@ struct SettingsPageSurface: View {
                 )
             }
 
+            if commerceSnapshot.isSubscription {
+                return localized(
+                    "commerce.settings.subscription_status",
+                    fallback: "MemoMark+ 订阅会员 · 无限记录"
+                )
+            }
+
             return localized(
                 "commerce.settings.plus_status",
                 fallback: "已解锁 · 无限记录"
@@ -362,6 +367,12 @@ struct SettingsPageSurface: View {
         }
 
         if commerceSnapshot.isPlus {
+            if commerceSnapshot.isSubscription {
+                return localized(
+                    "commerce.settings.subscription_detail",
+                    fallback: "订阅由 Apple 管理，可在设置中管理或恢复。"
+                )
+            }
             return localized(
                 "commerce.settings.plus_detail",
                 fallback: "权益由 Apple 管理，并可恢复购买。"
@@ -528,9 +539,15 @@ struct SettingsPageSurface: View {
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
+            .memoMarkBrowserSheetToolbar(
+                doneTitle: interfaceLanguage.localized(
+                    key: "common.done",
+                    fallback: "完成"
+                ),
+                onDone: { showsAboutMemoMark = false }
+            )
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
+        .memoMarkSheet(.browser)
     }
 
     private var expressionGuideSheet: some View {
@@ -568,8 +585,7 @@ struct SettingsPageSurface: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
+        .memoMarkSheet(.browser)
     }
 
     private var aboutSection: some View {

@@ -24,7 +24,7 @@ struct SettingsExpressionGuide: View {
             Text(
                 localized(
                     "settings.expression.guide.introduction",
-                    fallback: "继续看看不同重要日子可以怎样表达。"
+                    fallback: "继续看看不同时间锚点可以怎样表达。"
                 )
             )
                 .font(.caption)
@@ -73,7 +73,7 @@ struct SettingsExpressionGuide: View {
             Text(
                 localized(
                     "settings.expression.guide.header",
-                    fallback: "同一个重要日子，在到来前、当天和之后，会有不同说法。"
+                    fallback: "同一个时间锚点，在到来前、当天和之后，会有不同说法。"
                 )
             )
                 .font(.subheadline.weight(.semibold))

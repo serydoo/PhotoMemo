@@ -32,7 +32,7 @@ enum SubjectLibraryFactory {
             expressionStyle: .birthdayNatural
         )
         let customAnchor = MemorySubject.TimeAnchor(
-            title: "重要日子",
+            title: "时间锚点",
             date: Calendar.current.date(
                 byAdding: .month,
                 value: 6,
@@ -102,7 +102,7 @@ enum SubjectLibraryFactory {
             )
         let customAnchor =
             MemorySubject.TimeAnchor(
-                title: "重要日子",
+                title: "时间锚点",
                 date:
                     Calendar.current.date(
                         byAdding: .month,

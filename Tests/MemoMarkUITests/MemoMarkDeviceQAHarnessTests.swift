@@ -203,8 +203,8 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         }
         revealConfigurationOption(cardEditor)
         XCTAssertTrue(
-            cardEditor.exists,
-            "The expanded layout section did not expose card content editing."
+            cardEditor.isHittable,
+            "The expanded layout section did not expose a tappable card content editor."
         )
 
         cardEditor.tap()
@@ -224,7 +224,12 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
     }
 
     private func revealConfigurationOption(_ option: XCUIElement) {
-        for _ in 0..<3 where !option.exists {
+        // `exists` and even `isHittable` can remain true while the element's
+        // center sits inside the fixed save-action/TabView region. Keep the
+        // target comfortably above that region before tapping it.
+        let preferredBottom = application.frame.maxY - 180
+        for _ in 0..<5 where
+            !option.isHittable || option.frame.maxY > preferredBottom {
             application.swipeUp()
             RunLoop.current.run(until: Date().addingTimeInterval(0.35))
         }

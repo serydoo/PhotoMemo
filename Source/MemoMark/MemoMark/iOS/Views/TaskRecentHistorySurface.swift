@@ -159,18 +159,18 @@ struct TaskRecentHistorySurface: View {
             ))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button(interfaceLanguage.localized(
                         key: "common.done",
                         fallback: "完成"
                     )) {
                         isSheetPresented = false
                     }
+                    .fontWeight(.semibold)
                 }
             }
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
+        .memoMarkSheet(.browser)
     }
 
     private var emptyState: some View {

@@ -139,7 +139,7 @@ struct MemorySubjectEditingDraftTests {
             )
         )
 
-        #expect(anchors.map(\.title) == ["生日", "百天", "重要日子"])
+        #expect(anchors.map(\.title) == ["生日", "百天", "时间锚点"])
         #expect(anchors[0].date == referenceDate)
         #expect(anchors[1].date == hundredthDay)
         #expect(anchors[2].date == halfYear)

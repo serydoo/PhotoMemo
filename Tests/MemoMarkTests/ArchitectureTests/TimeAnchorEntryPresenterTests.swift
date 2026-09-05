@@ -44,7 +44,7 @@ struct TimeAnchorEntryPresenterTests {
 
         #expect(
             presentation.rowSubtitle
-            == "主体与当前生效锚点"
+            == "主体与当前生效时间锚点"
         )
         #expect(
             presentation.rowValue
@@ -56,12 +56,11 @@ struct TimeAnchorEntryPresenterTests {
         )
         #expect(
             presentation.formulaTitle
-            == "本锚点对应输出公式如下"
+            == "按照片时间生成的真实预览"
         )
-        #expect(
-            presentation.formulaPreviewText
-            == "之前：还有倒计时天数，妈妈眼里的宝宝就要出生了｜当时：妈妈眼里的宝宝今天来到这个世界啦！｜之后：今天妈妈眼里的宝宝年龄结果"
-        )
+        #expect(!presentation.formulaPreviewText.contains("年龄结果"))
+        #expect(!presentation.formulaPreviewText.contains("倒计时天数"))
+        #expect(presentation.formulaPreviewText.contains("妈妈眼里的宝宝"))
     }
 
     @Test("falls back to generic labels when subject or anchor title is empty")
@@ -108,10 +107,8 @@ struct TimeAnchorEntryPresenterTests {
             presentation.anchorPickerTitle
             == "时间锚点"
         )
-        #expect(
-            presentation.formulaPreviewText
-            == "之前：还有倒计时天数，记忆对象就要出生了｜当时：记忆对象今天来到这个世界啦！｜之后：今天记忆对象年龄结果"
-        )
+        #expect(!presentation.formulaPreviewText.contains("年龄结果"))
+        #expect(!presentation.formulaPreviewText.contains("倒计时天数"))
     }
 
     @Test("uses selected relationship formula preview when anchor style changes")
@@ -158,10 +155,9 @@ struct TimeAnchorEntryPresenterTests {
                 anchorTitle: "第一次见面"
             )
 
-        #expect(
-            presentation.formulaPreviewText
-            == "之前：期待第一次见面，还有倒计时结果｜当时：今天记住第一次见面｜之后：关于第一次见面的故事，已有时长结果"
-        )
+        #expect(!presentation.formulaPreviewText.contains("倒计时结果"))
+        #expect(!presentation.formulaPreviewText.contains("时长结果"))
+        #expect(presentation.formulaPreviewText.contains("第一次见面"))
         #expect(
             presentation.anchorPickerTitle
             == "第一次见面"

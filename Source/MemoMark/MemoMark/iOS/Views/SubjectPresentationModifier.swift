@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SubjectPresentationModifier: ViewModifier {
     @ObservedObject var session: ConfigurationSession
+    @ObservedObject var commerceStore: MemoMarkCommerceStore
     @Binding var flowState: EntryFlowState
     @Binding var switchPresentation:
         ConfigurationSwitchPresentationState
@@ -16,6 +17,9 @@ struct SubjectPresentationModifier: ViewModifier {
     let onApplySubjectFlowPatch: (SubjectFlowPatch) -> Void
     let onPersistSubjectChanges: () -> Void
     let onSaveThenSelectPendingSubject: () -> Void
+
+    @State
+    private var showsCommercePurchase = false
 
     func body(content: Content) -> some View {
         content
@@ -37,11 +41,18 @@ struct SubjectPresentationModifier: ViewModifier {
                     } message: {
                         Text("请先保存当前配置，再切换记忆对象，避免丢失刚刚的修改。")
                     }
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
+                    .memoMarkSheet(.browser, detents: [.large])
             }
             .sheet(item: binding(\.subjectConfigurationFlowState)) {
                 subjectConfiguration(flowState: $0)
+            }
+            .sheet(isPresented: $showsCommercePurchase) {
+                MemoMarkPlusPurchaseView(
+                    store: commerceStore,
+                    onDismiss: {
+                        showsCommercePurchase = false
+                    }
+                )
             }
     }
 }
@@ -55,11 +66,13 @@ private extension SubjectPresentationModifier {
             completedPhotoCount:
                 completedPhotoCount,
             session: session,
+            commerceStore: commerceStore,
             onSelectSubject: onRequestSubjectSelection,
-            onAddSubject: addDefaultSubject,
+            onAddSubject: requestAddSubject,
             onEditSubject: makeConfigurationFlowState,
             onDeleteCurrentSubject: deleteCurrentSubject,
-            onPersistSubjectChanges: onPersistSubjectChanges
+            onPersistSubjectChanges: onPersistSubjectChanges,
+            onRequestCommerce: requestCommerce
         )
     }
 
@@ -76,7 +89,9 @@ private extension SubjectPresentationModifier {
                 self.flowState = nextState
             },
             onCancel: reopenSubjectOverview,
-            onSave: reopenSubjectOverview
+            onSave: reopenSubjectOverview,
+            commerceStore: commerceStore,
+            onRequestCommerce: requestCommerce
         )
     }
 
@@ -90,6 +105,21 @@ private extension SubjectPresentationModifier {
                 onPersistedSubject: onApplySubjectFlowPatch
             )
         onApplySubjectFlowPatch(patch)
+    }
+
+    func requestAddSubject() {
+        guard commerceStore.isPlus
+                || session.state.subjects.count
+                < MemoMarkCommerceCapability.freeObjectLimit else {
+            requestCommerce()
+            return
+        }
+
+        addDefaultSubject()
+    }
+
+    func requestCommerce() {
+        showsCommercePurchase = true
     }
 
     func makeConfigurationFlowState()

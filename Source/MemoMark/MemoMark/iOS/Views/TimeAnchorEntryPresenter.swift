@@ -13,7 +13,8 @@ enum TimeAnchorEntryPresenter {
 
     static func presentation(
         subject: MemorySubject?,
-        anchorTitle: String
+        anchorTitle: String,
+        captureDate: Date = MemoryExpressionPreviewResolver.defaultCaptureDate
     ) -> TimeAnchorEntryPresentation {
         let resolvedAnchor =
             resolvedAnchor(
@@ -31,24 +32,20 @@ enum TimeAnchorEntryPresenter {
                 resolvedAnchor?.title
             )
             ?? "时间锚点"
-        let resolvedStyle =
-            resolvedAnchor?
-            .resolvedExpressionStyle
-            ?? MemoryAnchorExpressionStyle
-            .birthdayAgeToday
         let formulaPreviewText =
-            resolvedStyle
-            .formulaPreview(
-                subjectText: resolvedSubject,
-                anchorTitle: resolvedAnchorTitle
+            MemoryExpressionPreviewResolver
+            .previewText(
+                subject: subject,
+                captureDate: captureDate
             )
+            ?? "\(resolvedSubject) · \(resolvedAnchorTitle)"
 
         return TimeAnchorEntryPresentation(
-            rowSubtitle: "主体与当前生效锚点",
+            rowSubtitle: "主体与当前生效时间锚点",
             rowValue:
                 "\(resolvedSubject) · \(resolvedAnchorTitle)",
             anchorPickerTitle: resolvedAnchorTitle,
-            formulaTitle: "本锚点对应输出公式如下",
+            formulaTitle: "按照片时间生成的真实预览",
             formulaPreviewText:
                 formulaPreviewText
         )

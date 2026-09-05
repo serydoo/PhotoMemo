@@ -12,6 +12,8 @@ final class MemoMarkCommerceStore:
     ObservableObject {
 
     static let plusProductID =
+        "com.serydoo.PhotoMemo.iOS.memomarkplus.subscription.annual"
+    static let legacyLifetimeProductID =
         "com.serydoo.PhotoMemo.iOS.memomarkplus.lifetime"
 
     @Published private(set) var product: Product?
@@ -57,7 +59,15 @@ final class MemoMarkCommerceStore:
     }
 
     var hasVerifiedPlusEntitlement: Bool {
-        snapshot.accessSource == .verifiedPlus
+        snapshot.isPlus
+    }
+
+    var hasFounderLifetimeEntitlement: Bool {
+        snapshot.isFounderLifetime
+    }
+
+    var hasActiveSubscription: Bool {
+        snapshot.isSubscription && snapshot.isPlus
     }
 
     var hasFirstRecorderIdentity: Bool {
@@ -133,26 +143,29 @@ final class MemoMarkCommerceStore:
 
         product = await loadProduct()
 
-        var plusTransaction: Transaction?
+        var lifetimeTransaction: Transaction?
+        var subscriptionTransaction: Transaction?
 
         for await result in
             Transaction.currentEntitlements {
-            guard case .verified(let transaction) =
-                    result,
-                  transaction.productID
-                    == Self.plusProductID,
+            guard case .verified(let transaction) = result,
                   transaction.revocationDate == nil else {
                 continue
             }
-            plusTransaction = transaction
-            break
+            if transaction.productID == Self.legacyLifetimeProductID {
+                lifetimeTransaction = transaction
+            } else if transaction.productID == Self.plusProductID,
+                      transaction.expirationDate.map({ $0 > Date() }) ?? true {
+                subscriptionTransaction = transaction
+            }
         }
 
         publishSnapshot(
             environment: environment,
-            plusTransaction: plusTransaction
+            lifetimeTransaction: lifetimeTransaction,
+            subscriptionTransaction: subscriptionTransaction
         )
-        if plusTransaction != nil {
+        if lifetimeTransaction != nil || subscriptionTransaction != nil {
             purchaseState = .purchased
         } else if product != nil {
             purchaseState = .idle
@@ -246,7 +259,8 @@ final class MemoMarkCommerceStore:
 
         publishSnapshot(
             environment: .sandbox,
-            plusTransaction: nil
+            lifetimeTransaction: nil,
+            subscriptionTransaction: nil
         )
         return true
     }
@@ -301,7 +315,8 @@ final class MemoMarkCommerceStore:
 
         publishSnapshot(
             environment: snapshot.environment,
-            plusTransaction: nil
+            lifetimeTransaction: nil,
+            subscriptionTransaction: nil
         )
     }
 
@@ -320,7 +335,8 @@ final class MemoMarkCommerceStore:
 
         publishSnapshot(
             environment: snapshot.environment,
-            plusTransaction: nil
+            lifetimeTransaction: nil,
+            subscriptionTransaction: nil
         )
     }
 
@@ -354,9 +370,8 @@ final class MemoMarkCommerceStore:
             return
         }
 
-        guard transaction.productID
-                == Self.plusProductID else {
-            await transaction.finish()
+        guard transaction.productID == Self.plusProductID
+                || transaction.productID == Self.legacyLifetimeProductID else {
             return
         }
 
@@ -366,10 +381,15 @@ final class MemoMarkCommerceStore:
             )
         publishSnapshot(
             environment: environment,
-            plusTransaction:
-                transaction.revocationDate == nil
-                ? transaction
-                : nil
+            lifetimeTransaction:
+                transaction.productID == Self.legacyLifetimeProductID
+                && transaction.revocationDate == nil
+                ? transaction : nil,
+            subscriptionTransaction:
+                transaction.productID == Self.plusProductID
+                && transaction.revocationDate == nil
+                && (transaction.expirationDate.map { $0 > Date() } ?? true)
+                ? transaction : nil
         )
         purchaseState =
             transaction.revocationDate == nil
@@ -463,7 +483,8 @@ final class MemoMarkCommerceStore:
     private func publishSnapshot(
         environment:
             MemoMarkCommerceEnvironment,
-        plusTransaction: Transaction?
+        lifetimeTransaction: Transaction?,
+        subscriptionTransaction: Transaction?
     ) {
         if snapshot.environment == environment,
            let existingDate =
@@ -475,41 +496,45 @@ final class MemoMarkCommerceStore:
                 )
         }
 
-        if let plusTransaction,
+        if let lifetimeTransaction,
            MemoMarkCommercePolicy
             .shouldGrantFirstRecorderIdentity(
                 originalPurchaseDate:
-                    plusTransaction
+                    lifetimeTransaction
                     .originalPurchaseDate,
                 campaignEndDate:
                     MemoMarkCommercePolicy
                     .firstRecorderCampaignEndDate,
                 isFamilyShared:
-                    plusTransaction.ownershipType
+                    lifetimeTransaction.ownershipType
                     == .familyShared
             ) {
             persistence
                 .grantFirstRecorderIdentityIfNeeded(
                     date:
-                        plusTransaction
+                        lifetimeTransaction
                         .originalPurchaseDate,
                     environment: environment
                 )
         }
 
         let isTestFlightExperienceActive =
-            plusTransaction == nil
+            lifetimeTransaction == nil
+            && subscriptionTransaction == nil
             && persistence
                 .isTestFlightExperienceActive(
                     environment: environment
                 )
         let isPlus =
-            plusTransaction != nil
+            lifetimeTransaction != nil
+            || subscriptionTransaction != nil
             || isTestFlightExperienceActive
         let accessSource:
             MemoMarkCommerceAccessSource =
-            plusTransaction != nil
-            ? .verifiedPlus
+            lifetimeTransaction != nil
+            ? .founderLifetime
+            : subscriptionTransaction != nil
+            ? .plusSubscription
             : isTestFlightExperienceActive
                 ? .testFlightTemporary
                 : .free
@@ -542,6 +567,9 @@ final class MemoMarkCommerceStore:
                     .firstRecorderDate(
                         environment: environment
                     ),
+                validThrough:
+                    subscriptionTransaction?.expirationDate,
+                lastVerifiedAt: Date(),
                 updatedAt: Date()
             )
 

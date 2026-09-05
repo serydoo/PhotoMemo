@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3.0 (103) Commerce v1.1 Subscription Migration - 2026-09-05
+
+- Preserved verified historical lifetime access and historical First Recorder
+  identity while removing the historical lifetime purchase path for new users.
+- Added the MemoMark+ annual subscription product path with an expiry-aware
+  shared commerce snapshot; subscription access is never projected as lifetime
+  access after expiry.
+- Included every first-party expression style in MemoMark+ so a valid
+  subscription does not require a second purchase for each expression.
+- Narrowed the free expression surface to the natural style and documented the
+  future separate authorization boundary for collaborative designs.
+- Updated the purchase, Settings, localization, release, and App Store copy to
+  use `MemoMark` and `MemoMark+ 订阅会员` for new users.
+- Raised all target configurations to marketing version `2.3.0` and build `103`.
+
+This release is a source candidate with external evidence still open. Xcode
+Cloud archive identity, StoreKit Sandbox, App Store Connect metadata, physical
+device acceptance, and distribution status remain separate evidence classes.
+
 ## 2.2.4 (101) Core Architecture Maintenance - 2026-09-03
 
 - Reorganized the active implementation around explicit presentation,

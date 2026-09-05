@@ -71,6 +71,11 @@ nonisolated enum MemoMarkCommerceAccessSource:
 
     case free
     case testFlightTemporary
+    /// Historical non-consumable purchase or a historical activation grant.
+    case founderLifetime
+    /// Current MemoMark+ auto-renewable subscription.
+    case plusSubscription
+    /// Backward-compatible spelling used by Commerce v1 snapshots.
     case verifiedPlus
 }
 
@@ -233,6 +238,37 @@ nonisolated struct MemoMarkCommercePolicy:
     }
 }
 
+nonisolated enum MemoMarkCommerceCapability:
+    Equatable,
+    Sendable {
+
+    case free
+    case plus
+    case collaborativeDesign
+
+    static let freeObjectLimit = 1
+    static let freeTimeAnchorLimit = 1
+
+    static func allowsFirstPartyExpressionStyle(
+        _ style: MemoryAnchorExpressionStyle,
+        accessSource: MemoMarkCommerceAccessSource
+    ) -> Bool {
+        switch style {
+        case .birthdayNatural,
+             .relationshipNatural,
+             .marriageNatural,
+             .examNatural,
+             .customNatural:
+            return true
+        default:
+            return accessSource == .founderLifetime
+                || accessSource == .verifiedPlus
+                || accessSource == .plusSubscription
+                || accessSource == .testFlightTemporary
+        }
+    }
+}
+
 nonisolated struct MemoMarkCommerceSnapshot:
     Codable,
     Equatable,
@@ -246,6 +282,8 @@ nonisolated struct MemoMarkCommerceSnapshot:
     let totalAllowance: Int?
     let batchLimit: Int
     let firstRecorderDate: Date?
+    let validThrough: Date?
+    let lastVerifiedAt: Date?
     let updatedAt: Date
 
     init(
@@ -255,6 +293,8 @@ nonisolated struct MemoMarkCommerceSnapshot:
         totalAllowance: Int?,
         batchLimit: Int,
         firstRecorderDate: Date?,
+        validThrough: Date? = nil,
+        lastVerifiedAt: Date? = nil,
         updatedAt: Date
     ) {
         self.environment = environment
@@ -263,6 +303,8 @@ nonisolated struct MemoMarkCommerceSnapshot:
         self.totalAllowance = totalAllowance
         self.batchLimit = batchLimit
         self.firstRecorderDate = firstRecorderDate
+        self.validThrough = validThrough
+        self.lastVerifiedAt = lastVerifiedAt
         self.updatedAt = updatedAt
     }
 
@@ -274,6 +316,8 @@ nonisolated struct MemoMarkCommerceSnapshot:
         case totalAllowance
         case batchLimit
         case firstRecorderDate
+        case validThrough
+        case lastVerifiedAt
         case updatedAt
     }
 
@@ -301,6 +345,14 @@ nonisolated struct MemoMarkCommerceSnapshot:
             Date.self,
             forKey: .firstRecorderDate
         )
+        validThrough = try container.decodeIfPresent(
+            Date.self,
+            forKey: .validThrough
+        )
+        lastVerifiedAt = try container.decodeIfPresent(
+            Date.self,
+            forKey: .lastVerifiedAt
+        )
         updatedAt = try container.decode(
             Date.self,
             forKey: .updatedAt
@@ -318,7 +370,7 @@ nonisolated struct MemoMarkCommerceSnapshot:
             accessSource = firstRecorderDate == nil
                 && environment == .sandbox
                 ? .testFlightTemporary
-                : .verifiedPlus
+                : .founderLifetime
         } else {
             accessSource = .free
         }
@@ -344,11 +396,37 @@ nonisolated struct MemoMarkCommerceSnapshot:
             firstRecorderDate,
             forKey: .firstRecorderDate
         )
+        try container.encodeIfPresent(
+            validThrough,
+            forKey: .validThrough
+        )
+        try container.encodeIfPresent(
+            lastVerifiedAt,
+            forKey: .lastVerifiedAt
+        )
         try container.encode(updatedAt, forKey: .updatedAt)
     }
 
     var isPlus: Bool {
-        accessSource != .free
+        switch accessSource {
+        case .free:
+            return false
+        case .plusSubscription:
+            return validThrough.map { $0 > Date() } ?? false
+        case .testFlightTemporary,
+             .founderLifetime,
+             .verifiedPlus:
+            return true
+        }
+    }
+
+    var isFounderLifetime: Bool {
+        accessSource == .founderLifetime
+            || accessSource == .verifiedPlus
+    }
+
+    var isSubscription: Bool {
+        accessSource == .plusSubscription
     }
 
     var remainingRecords: Int? {
@@ -375,6 +453,8 @@ nonisolated struct MemoMarkCommerceSnapshot:
                 MemoMarkCommercePolicy
                 .freeBatchLimit,
             firstRecorderDate: nil,
+            validThrough: nil,
+            lastVerifiedAt: nil,
             updatedAt: .distantPast
         )
 }

@@ -103,7 +103,7 @@ extension AnchorType {
             return "距离高考"
 
         case .custom:
-            return "重要日子"
+            return "时间锚点"
         }
     }
 

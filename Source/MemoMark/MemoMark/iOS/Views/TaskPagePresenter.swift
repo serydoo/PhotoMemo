@@ -336,7 +336,7 @@ private extension TaskPagePresenter {
             subtitleText:
                 language.localized(
                     key: "task.waiting.share_subtitle",
-                    fallback: "Waiting for a photo shared from Apple Photos"
+                    fallback: "Waiting for new photos"
                 ),
             statusText:
                 headerStatusText(

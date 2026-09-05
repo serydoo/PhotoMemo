@@ -297,7 +297,7 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(editor.contains(".safeAreaInset(edge: .bottom, spacing: 0)"))
         #expect(!editor.contains(".overlay(alignment: .bottom)"))
-        #expect(anchors.contains(".presentationDetents([.large])"))
+        #expect(anchors.contains(".memoMarkSheet(.editor"))
         #expect(anchors.contains("ScrollView"))
     }
 
@@ -870,13 +870,13 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(editor.contains("日期"))
         #expect(editor.contains("这里先按今天预览；处理照片时，会按每张照片的拍摄时间计算。"))
         #expect(editor.contains("设置后会怎样？"))
-        #expect(editor.contains("在配置中心选择这个重要日子。"))
+        #expect(editor.contains("在配置中心选择这个时间锚点。"))
         #expect(editor.contains("最终怎样写在记忆卡上，仍然由你决定。"))
         #expect(editor.contains("Text(\"名称\")"))
         #expect(!editor.contains("private var categoryMenu"))
         #expect(!editor.contains("private var selectedDateText"))
         #expect(homeSupport.contains("key: \"home.subject.anchor_count_format\""))
-        #expect(homeSupport.contains("fallback: \"%lld 个重要日子\""))
+        #expect(homeSupport.contains("fallback: \"%lld 个时间锚点\""))
     }
 
     @Test("configuration preview is full width and restores the page guidance")

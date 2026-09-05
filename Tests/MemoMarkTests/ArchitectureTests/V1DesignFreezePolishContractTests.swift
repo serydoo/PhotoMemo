@@ -32,7 +32,7 @@ struct V1DesignFreezePolishContractTests {
         #expect(subject.contains("MemoMarkDesignTokens.Semantic.memoryStatistics"))
         #expect(backups.contains("最近保存的配置会留在这里"))
         #expect(backups.contains("恢复时会保留当前配置"))
-        #expect(anchors.contains(".buttonStyle(.borderedProminent)"))
+        #expect(anchors.contains(".memoMarkEditorSheetToolbar("))
         #expect(anchors.contains("LazyVGrid(columns: typeColumns"))
         #expect(anchors.contains("TimeAnchorTodayPresenter.presentation("))
     }
@@ -171,8 +171,8 @@ struct V1DesignFreezePolishContractTests {
         #expect(welcome.contains("Text(\"*\")"))
         #expect(welcome.contains(".foregroundStyle(.red)"))
         #expect(welcome.contains("showsNameRequiredAlert = true"))
-        #expect(welcome.contains("重要日期"))
-        #expect(welcome.contains("从一个人和一个重要时刻开始。"))
+        #expect(welcome.contains("时间锚点"))
+        #expect(welcome.contains("从一个人和一个时间锚点开始。"))
         #expect(welcome.contains("isFirstRunConfigurationReady"))
         #expect(welcome.contains("isSaving"))
     }

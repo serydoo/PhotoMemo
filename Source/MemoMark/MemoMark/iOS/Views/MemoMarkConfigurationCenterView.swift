@@ -633,8 +633,7 @@ struct MemoMarkConfigurationCenterView: View {
                         .flowState
                 }
             )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
+            .memoMarkSheet(.browser)
         }
         .modifier(
             MemoryCardEditorPresentationModifier(
@@ -656,6 +655,7 @@ struct MemoMarkConfigurationCenterView: View {
         .modifier(
             SubjectPresentationModifier(
                 session: session,
+                commerceStore: commerceStore,
                 flowState: $entryNavigationState.flowState,
                 switchPresentation:
                     $rootPresentationState.switchPresentation,

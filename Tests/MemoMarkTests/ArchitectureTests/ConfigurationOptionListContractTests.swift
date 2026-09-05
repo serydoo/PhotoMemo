@@ -817,9 +817,10 @@ struct ConfigurationOptionListContractTests {
 
         #expect(
             sheetSource.contains(
-                ".presentationDetents([\n            .height(ConfigurationUI.compactSheetHeight),\n            .large\n        ])"
+                ".memoMarkSheet("
             )
         )
+        #expect(sheetSource.contains(".height(ConfigurationUI.compactSheetHeight)"))
         #expect(
             !sheetSource.contains(
                 "} header: {\n                    Text(\"高级模块\")"
@@ -919,7 +920,7 @@ struct ConfigurationOptionListContractTests {
         #expect(anchorSource.contains(".safeAreaInset(edge: .top, spacing: 0)"))
         #expect(
             anchorSource.contains(
-                "选择一个时间起点，让照片拥有时间答案。"
+                "选择一个时间锚点，让照片拥有时间答案。"
             )
         )
         #expect(informationSource.contains("ConfigurationSheetSubtitle("))

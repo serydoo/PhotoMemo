@@ -88,11 +88,13 @@ struct AdvancedModulesSheet: View {
                 }
             }
         }
-        .presentationDetents([
-            .height(ConfigurationUI.compactSheetHeight),
-            .large
-        ])
-        .presentationDragIndicator(.visible)
+        .memoMarkSheet(
+            .browser,
+            detents: [
+                .height(ConfigurationUI.compactSheetHeight),
+                .large
+            ]
+        )
     }
 
     @ViewBuilder

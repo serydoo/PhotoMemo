@@ -39,9 +39,9 @@ struct SubjectTimeAnchorRow: View {
                 isPresented: $showsDeleteConfirmation
             ) {
                 Button("取消", role: .cancel) {}
-                Button("删除锚点", role: .destructive) { onDelete() }
+                Button("删除时间锚点", role: .destructive) { onDelete() }
             } message: {
-                Text("配置中心会切换到仍然保留的锚点。此操作无法撤销。")
+                Text("配置中心会切换到仍然保留的时间锚点。此操作无法撤销。")
             }
     }
 

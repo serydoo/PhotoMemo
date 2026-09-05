@@ -33,8 +33,7 @@ struct LocalConfigurationLibraryPresentationModifier: ViewModifier {
                     onRestoreAndMakeCurrent: { onRestore($0, true) },
                     onDelete: onDelete
                 )
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
+                .memoMarkSheet(.browser, detents: [.large])
             }
     }
 }

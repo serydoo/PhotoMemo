@@ -789,7 +789,7 @@ struct ConfigurationEditingState {
 
     var currentTimeAnchorDescription: String {
         guard let subject = state.selectedSubject else {
-            return "锚点说明"
+            return "时间锚点说明"
         }
 
         let anchor =

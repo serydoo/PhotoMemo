@@ -257,7 +257,8 @@ extension MemoMarkConfigurationCenterView {
             availableMemoryDisplayStyles:
                 ConfigurationCenterMemoryDisplaySupport
                 .availableStyles(
-                    subject: session.state.selectedSubject
+                    subject: session.state.selectedSubject,
+                    accessSource: commerceStore.snapshot.accessSource
                 ),
             selectedMemoryDisplayStyle:
                 selectedMemoryDisplayStyleBinding,

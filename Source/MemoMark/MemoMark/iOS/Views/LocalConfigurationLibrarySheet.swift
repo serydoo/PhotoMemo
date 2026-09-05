@@ -54,10 +54,11 @@ struct LocalConfigurationLibrarySheet: View {
             .navigationTitle("本地备份")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("完成") {
                         dismiss()
                     }
+                    .fontWeight(.semibold)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {

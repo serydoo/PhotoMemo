@@ -133,13 +133,29 @@ extension MemoMarkConfigurationCenterView {
         Binding<MemoryAnchorExpressionStyle> {
         Binding(
             get: {
-                ConfigurationCenterMemoryDisplaySupport
-                    .selectedStyle(
-                        subject: session.state.selectedSubject
-                    )
-                ?? .birthdayNatural
+                guard let subject = session.state.selectedSubject,
+                      let anchor = subject.primaryTimeAnchor else {
+                    return .birthdayNatural
+                }
+                let selected = anchor.resolvedExpressionStyle
+                guard MemoMarkCommerceCapability
+                    .allowsFirstPartyExpressionStyle(
+                        selected,
+                        accessSource:
+                            commerceStore.snapshot.accessSource
+                    ) else {
+                    return .birthdayNatural
+                }
+                return selected
             },
             set: { style in
+                guard MemoMarkCommerceCapability
+                    .allowsFirstPartyExpressionStyle(
+                        style,
+                        accessSource: commerceStore.snapshot.accessSource
+                    ) else {
+                    return
+                }
                 session
                     .selectCurrentTimeAnchorExpressionStyle(
                         style

@@ -1,5 +1,83 @@
 # MemoMark Current Status
 
+## 2026-09-05 2.3.0 (103) Commerce v1.1 Candidate
+
+- The 2.3.0 / build 103 source candidate introduces the accepted Commerce v1.1
+  boundary: historical lifetime entitlements remain restorable, while new
+  users use the MemoMark+ annual subscription product.
+- Historical permanent access and existing First Recorder identity are kept
+  separate from the new subscription state. The shared snapshot now carries
+  subscription validity and verification time so a Share Extension cannot treat
+  an expired subscription as lifetime access.
+- A valid MemoMark+ subscription includes all first-party expression styles.
+  The free path exposes one memory object, one Time Anchor, and natural
+  expression; collaborative designs remain a separate future authorization
+  boundary.
+- Purchase, Settings, four-language localization, release notes, App Store
+  copy, TestFlight notes, and the sync manifest were aligned to MemoMark 2.3.0
+  / 103. Historical price and new lifetime-buyout language are not used for new
+  users.
+- A macOS Debug `MemoMark` build passed after the first implementation slice.
+  Focused Commerce tests, iPhone/Apple Photos acceptance, Xcode Cloud archive,
+  App Store Connect product setup, and distribution remain open evidence items.
+
+## 2026-09-04 Native Sheet Presentation Consistency Pass
+
+- 根据外部界面审核中“编辑型 Sheet / 浏览型 Sheet”两种模式的决定，新增
+  `MemoMarkSheetPattern` 与共享 Sheet modifier。纳入范围的 iOS 原生 Sheet
+  统一使用系统背景、可见拖拽指示器和集中管理的默认 medium/large detent；
+  时间与地点、全高编辑和全高浏览等已有内容约束仍通过显式 detent 保留。
+- 编辑型 Subject 与 Time Anchor Sheet 统一为左侧“取消”、居中标题、右侧
+  “完成”；浏览型 Recent History、后台状态、说明、更新日志、本地备份与
+  MemoMark+ 统一为右侧完成动作。Time Anchor 编辑下拉关闭现在取消草稿，只有
+  “完成”才提交，避免未确认内容静默写回。
+- 卡片内容自定义 Overlay、系统 PhotosPicker、诊断分享 Sheet 和旧的跨平台
+  Anchor/Template 编辑路径没有套用 iOS 规范 modifier，因为它们分别拥有
+  专有编辑交互、系统控制器或 macOS 呈现边界。
+- Subject 编辑 Sheet 另补了可见导航栏背景，避免头像内容进入导航栏的透明/模糊
+  层；不改变身份资料、预览或保存所有权。签名 iPhone 17 Pro Max build、覆盖
+  安装、启动，以及主体与时间锚点编辑 UI harness 均通过（0 failures）。
+- MemoMark macOS Debug build passed；`git diff --check` passed。相关 macOS
+  契约测试已触发但 Xcode beta 在启动 xctest worker 前无结果返回，已停止，
+  因此本轮不宣称该测试 selection 通过。真机附件受设备既有界面状态影响，未作为
+  无干扰视觉签收；VoiceOver、Dynamic Type 全矩阵与完整 Apple Photos 流程仍需
+  独立证据。
+
+## 2026-09-04 Configuration Center Real Preview And Physical Device QA Follow-up
+
+- 本轮已按产品确认保留真实 Memory Engine 预览、Apple mini-logo 回退、Photos
+  Caption 现有行为、可自定义 QA Outputs，以及基于照片 EXIF/Photos 元数据的
+  时间处理边界；这些项目没有被重新设计。
+- 配置中心摘要和 Time Anchor 入口已改为复用现有真实预览链路，不再把公式占位
+  文案当作预览结果；Progress 页面回退文案也已改为不依赖 Apple Photos 的中性
+  进度描述。对应 focused presenter tests 已通过。
+- 物理 iPhone 17 Pro Max（iOS 27.0，设备 ID
+  `863C2747-6742-5E93-B715-6F89DBF90B31`）已完成 `MemoMarkiOS` Debug 构建、
+  原地安装和启动。`MemoMarkDeviceQA` 的配置中心可达性（含打开/关闭卡片内容
+  编辑页）和日语 Progress 用例均通过；一次初始失败定位为 QA harness 没有把
+  `exists`/`isHittable` 与固定底部操作区域结合判断，已修正为先滚到安全点击区，
+  未改变产品行为。
+- 真机截图发现日语/韩语配置中心有三处可见英文残留（默认表达方式、首页同步、
+  时间锚点数量），已补齐本地化资源并通过面向真实 iPhone 的重新构建。截图受
+  设备 AssistiveTouch 浮层影响，不作为无干扰视觉签收；完整 Apple Photos、
+  播放、VoiceOver 和生产认证仍需独立证据，不在本轮自动化结论内。
+- 本轮未卸载 App、清除 App Group/Photos 数据、提交 Git、推送、上传 TestFlight
+  或执行 App Store 操作。
+
+## 2026-09-03 TestFlight — 2.2.4 外部测试提交
+
+- Xcode Cloud 的最新归档已完成，App Store Connect 已完成该构建的处理；
+  出口合规声明已按当前代码事实保存为“不属于上述的任意一种算法”。本轮
+  `CryptoKit` 仅用于校验和、内容一致性与去重标识，不代表集成了自定义加密
+  算法。
+- 已将最新 `2.2.4` 构建加入外部测试群组
+  `MemoMark/时光记-初步测试，欢迎大家`，该群组当前有 287 名测试员并启用
+  公开链接；测试说明已按近期重构、Live Photo 识别修正、原图保护、队列恢复
+  和 Apple Photos 生命周期观察重点整理。
+- App Store Connect 当前状态为“正在等待审核”，并已保留自动通知测试员选项。
+  在 Apple 完成外部 Beta 审核前，不将本次提交描述为测试员已经可以下载；审核
+  通过后再以 TestFlight 页面实际可用状态为准。
+
 ## 2026-09-03 Build 101 — Refactor File Organization And Manual Acceptance Closeout
 
 - The `2.2.4 (101)` behavior-preserving refactor is now closed for continued
@@ -19,8 +97,8 @@
   Existing compatibility `V1` names remain only where they represent a real
   schema/migration bridge or a separately deferred naming slice.
 - The refactor is now committed and pushed to GitHub `main` as `ac95ab3`
-  (`refactor: close 2.2.4 architecture reorganization`). No TestFlight upload,
-  App Store Connect mutation, or App Store submission was performed. Full
+  (`refactor: close 2.2.4 architecture reorganization`). TestFlight submission
+  is recorded in the entry above; App Store submission was not performed. Full
   macOS test-run repeatability, TX-001, BP-001, and formal superseding
   production certification remain deferred observation follow-ups.
 
@@ -28310,3 +28388,37 @@ playback acceptance pass in the output album. No originals, App Group data,
 queue history, Git state, TestFlight, App Store Connect, or App Store state
 was mutated beyond the user-authorized in-place development-app installation
 and the resulting new output assets.
+
+## 2026-09-04 Configuration Surface Terminology And Subject Display Polish
+
+The accepted audit follow-up was implemented as a bounded Product Loop polish
+pass. The user-facing vocabulary now consistently presents `时间锚点` (Time
+Anchor) across the active Configuration Center, subject editor, first-run
+copy, guidance, summaries, accessibility labels, and the four supported
+language resources. The internal `TimeAnchor` type, persisted keys, and data
+model were not renamed or reshaped. Frozen IA, Renderer, PhotoKit, EXIF, and
+output behavior remain outside this pass.
+
+The subject editor now shows the resolved expression subject value together
+with its source label, for example `途途` followed by `昵称`, while retaining
+`对象名称` and its red required marker. Subject overview copy is resolved
+from the live expression subject instead of the static `TA` placeholder. The
+Time Anchor presentation path now receives the stored interface language and
+has deterministic tests for one simulated date across elapsed, same-day, and
+future contexts in Chinese, English, Japanese, and Korean.
+
+Governance validation passed. The focused macOS suite passed 130/130 tests,
+including localization parity, cross-target vocabulary, editor contracts,
+and the simulated temporal-language matrix. A signed `MemoMarkiOS` build was
+created for the paired iPhone 17 Pro Max and installed successfully as
+`com.serydoo.PhotoMemo.iOS`. Launch was not completed because the device was
+locked; physical visual, Dynamic Type, and VoiceOver acceptance therefore
+remain open and are not represented as automated-test passes. No Git, release,
+TestFlight, App Store Connect, or App Store mutation was performed.
+
+The paired iPhone 17 Pro Max was subsequently available and the same signed
+`MemoMarkiOS` build was rebuilt, installed, and launched successfully through
+the physical-device delivery path. This records deployment evidence only; it
+does not by itself close the separate manual visual, Dynamic Type, VoiceOver,
+or Apple Photos acceptance items. Existing unrelated working-tree changes were
+preserved, and no Git or external release mutation was performed.

@@ -270,11 +270,11 @@ struct ConfigurationCenterSidebarView: View {
                 .opacity(0.28)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(localized("configuration.sidebar.current_anchor", fallback: "当前生效锚点"))
+                Text(localized("configuration.sidebar.current_anchor", fallback: "当前生效时间锚点"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.primary)
 
-                Text(localized("configuration.sidebar.anchor_detail", fallback: "不同记忆对象拥有不同锚点，也拥有不同的回忆角度。"))
+                Text(localized("configuration.sidebar.anchor_detail", fallback: "不同记忆对象拥有不同时间锚点，也拥有不同的回忆角度。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -285,7 +285,7 @@ struct ConfigurationCenterSidebarView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.primary)
 
-                Text(localized("configuration.sidebar.subject_detail", fallback: "时光记用锚点帮助你阅读回忆，而不只是保存照片。"))
+                Text(localized("configuration.sidebar.subject_detail", fallback: "时光记用时间锚点帮助你阅读回忆，而不只是保存照片。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

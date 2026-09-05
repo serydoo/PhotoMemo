@@ -10,7 +10,8 @@ enum ConfigurationCenterMemoryDisplaySupport {
     }
 
     static func availableStyles(
-        subject: MemorySubject?
+        subject: MemorySubject?,
+        accessSource: MemoMarkCommerceAccessSource = .free
     ) -> [MemoryAnchorExpressionStyle] {
         guard let anchor = subject?.primaryTimeAnchor else {
             return []
@@ -20,6 +21,13 @@ enum ConfigurationCenterMemoryDisplaySupport {
             .availableStyles(
                 for: anchor.resolvedAnchorType
             )
+            .filter {
+                MemoMarkCommerceCapability
+                    .allowsFirstPartyExpressionStyle(
+                        $0,
+                        accessSource: accessSource
+                    )
+            }
     }
 
     static func summaryValue(
@@ -37,17 +45,12 @@ enum ConfigurationCenterMemoryDisplaySupport {
             let subject,
             let anchor = subject.primaryTimeAnchor
         else {
-            return "先选择记忆对象和当前生效锚点，再决定这张卡片要用哪一种表达方式。"
+            return "先选择记忆对象和当前生效时间锚点，再决定这张卡片要用哪一种表达方式。"
         }
 
-        return anchor
-            .resolvedExpressionStyle
-            .formulaPreview(
-                subjectText:
-                    subject
-                    .resolvedExpressionSubjectText,
-                anchorTitle: anchor.title
-            )
+        return MemoryExpressionPreviewResolver
+            .previewText(subject: subject)
+            ?? "\(subject.resolvedExpressionSubjectText) · \(anchor.title)"
     }
 }
 #endif

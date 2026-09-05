@@ -405,7 +405,7 @@ extension TemplateItem {
 
     static let anchorSecondary = TemplateItem(
         type: .variable,
-        name: "锚点日期",
+        name: "时间锚点日期",
         value: "{{anchor_secondary}}"
     )
 

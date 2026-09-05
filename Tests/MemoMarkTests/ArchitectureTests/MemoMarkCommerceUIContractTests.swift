@@ -27,10 +27,9 @@ struct MemoMarkCommerceUIContractTests {
             "commerce.purchase.testflight.sandbox_notice",
             "commerce.purchase.testflight.deactivate",
             "commerce.purchase.retry",
-            "commerce.purchase.price_note.launch",
-            "commerce.purchase.price_note.standard",
-            "commerce.purchase.primary_format.launch",
-            "commerce.purchase.primary_format.standard"
+            "commerce.purchase.price_note.subscription",
+            "commerce.purchase.primary_format.subscription",
+            "commerce.purchase.hero.subscription"
         ] {
             #expect(source.contains(key))
             #expect(simplifiedChinese.contains("\"\(key)\""))
@@ -39,7 +38,8 @@ struct MemoMarkCommerceUIContractTests {
 
         #expect(!source.contains("VIP"))
         #expect(!source.contains("crown"))
-        #expect(source.contains("isFirstRecorderCampaignOpen"))
+        #expect(source.contains("hasFounderLifetimeEntitlement"))
+        #expect(source.contains("hasActiveSubscription"))
         #expect(
             !source.contains(
                 "commerce.purchase.testflight.activate"
@@ -129,11 +129,8 @@ struct MemoMarkCommerceUIContractTests {
             "Source/MemoMark/MemoMark/Services/MemoMarkCommerceStore.swift"
         )
 
-        #expect(
-            source.contains(
-                "com.serydoo.PhotoMemo.iOS.memomarkplus.lifetime"
-            )
-        )
+        #expect(source.contains("memomarkplus.subscription.annual"))
+        #expect(source.contains("memomarkplus.lifetime"))
         #expect(source.contains("Transaction.updates"))
         #expect(source.contains("Transaction.currentEntitlements"))
         #expect(source.contains("case .verified"))

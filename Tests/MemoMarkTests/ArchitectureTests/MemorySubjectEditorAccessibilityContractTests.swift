@@ -25,4 +25,19 @@ struct MemorySubjectEditorAccessibilityContractTests {
             #expect(source.contains(identifier))
         }
     }
+
+    @Test("photo display selection exposes the resolved value and its source")
+    func photoDisplaySelectionExposesResolvedValueAndSource() throws {
+        let source = try String(
+            contentsOfFile: MemoMarkTestPaths.path(
+                "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/MemorySubjectEditorView.swift"
+            ),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("Text(expressionSubjectDisplayValue)"))
+        #expect(source.contains("Text(expressionSubjectDisplaySourceTitle)"))
+        #expect(source.contains("照片中的称呼"))
+        #expect(source.contains("对象名称"))
+    }
 }

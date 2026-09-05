@@ -14,16 +14,25 @@ enum TimeAnchorTodayPresenter {
         anchor: MemorySubject.TimeAnchor,
         subjectName: String,
         referenceDate: Date = .now,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        outputLanguage: MemoMarkLanguage = .simplifiedChinese
     ) -> TimeAnchorTodayPresentation {
-        let anchorTitle = normalized(anchor.title) ?? "重要日子"
-        let resolvedSubjectName = normalized(subjectName) ?? "记忆对象"
+        let anchorTitle = normalized(anchor.title)
+            ?? outputLanguage.localized(
+                key: "time_anchor.fallback_title",
+                fallback: "时间锚点"
+            )
+        let resolvedSubjectName = normalized(subjectName)
+            ?? outputLanguage.localized(
+                key: "memory_subject.fallback_title",
+                fallback: "记忆对象"
+            )
         let value: String
 
         if calendar.isDate(referenceDate, inSameDayAs: anchor.date) {
             value = anchor.resolvedAnchorType == .birthday
-                ? "今天 · 出生当天"
-                : "就是今天"
+                ? "\(todayLabel(for: outputLanguage)) · \(MemoryNarrativeFormatter.birthDayLabel(language: outputLanguage))"
+                : anchorDayLabel(for: outputLanguage)
         } else {
             let result = AnchorEngine(calendar: calendar).build(
                 from: Anchor(
@@ -34,20 +43,27 @@ enum TimeAnchorTodayPresenter {
                     isCountdown: anchor.resolvedAnchorType.defaultCountdown,
                     expressionStyle: anchor.resolvedExpressionStyle
                 ),
-                photoDate: referenceDate
+                photoDate: referenceDate,
+                outputLanguage: outputLanguage
             )
 
             if result.isFutureRelative {
                 value = result.countdownText.isEmpty
-                    ? "还有\(result.primaryText)"
+                    ? fallbackCountdown(
+                        result.primaryText,
+                        language: outputLanguage
+                    )
                     : result.countdownText
             } else {
                 let elapsed = anchor.resolvedAnchorType == .birthday
                     ? result.ageText
                     : result.durationText
                 value = elapsed.isEmpty
-                    ? "时间答案待更新"
-                    : "今天 · \(elapsed)"
+                    ? outputLanguage.localized(
+                        key: "time_anchor.pending_answer",
+                        fallback: "时间答案待更新"
+                    )
+                    : "\(todayLabel(for: outputLanguage)) · \(elapsed)"
             }
         }
 
@@ -62,6 +78,52 @@ enum TimeAnchorTodayPresenter {
     private static func normalized(_ value: String) -> String? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private static func todayLabel(
+        for language: MemoMarkLanguage
+    ) -> String {
+        switch language {
+        case .simplifiedChinese:
+            return "今天"
+        case .english:
+            return "Today"
+        case .japanese:
+            return "今日"
+        case .korean:
+            return "오늘"
+        }
+    }
+
+    private static func anchorDayLabel(
+        for language: MemoMarkLanguage
+    ) -> String {
+        switch language {
+        case .simplifiedChinese:
+            return "就是今天"
+        case .english:
+            return "Today"
+        case .japanese:
+            return "今日はこの日"
+        case .korean:
+            return "오늘이에요"
+        }
+    }
+
+    private static func fallbackCountdown(
+        _ value: String,
+        language: MemoMarkLanguage
+    ) -> String {
+        switch language {
+        case .simplifiedChinese:
+            return "还有\(value)"
+        case .english:
+            return "\(value) left"
+        case .japanese:
+            return "あと\(value)"
+        case .korean:
+            return "\(value) 남음"
+        }
     }
 }
 #endif

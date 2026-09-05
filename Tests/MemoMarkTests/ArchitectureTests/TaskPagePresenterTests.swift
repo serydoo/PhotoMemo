@@ -17,10 +17,10 @@ struct TaskPagePresenterTests {
         let expected: [
             (MemoMarkLanguage, String, String, String)
         ] = [
-            (.simplifiedChinese, "等待中", "等待从 Apple Photos 分享照片", "进行中"),
-            (.english, "Waiting", "Waiting for a photo shared from Apple Photos", "Processing"),
-            (.japanese, "待機中", "Apple Photosから共有された写真を待っています", "処理中"),
-            (.korean, "대기 중", "Apple Photos에서 공유한 사진을 기다리는 중", "처리 중")
+            (.simplifiedChinese, "等待中", "等待新的照片", "进行中"),
+            (.english, "Waiting", "Waiting for new photos", "Processing"),
+            (.japanese, "待機中", "新しい写真を待っています", "処理中"),
+            (.korean, "대기 중", "새 사진을 기다리는 중", "처리 중")
         ]
 
         for (language, status, subtitle, overviewTitle) in expected {

@@ -75,7 +75,7 @@ enum ConfigurationCenterMockSeed {
                         note: "示例出生日期"
                     ),
                     MemorySubject.TimeAnchor(
-                        title: "重要日子",
+                        title: "时间锚点",
                         date:
                             Calendar.current.date(
                                 from:
@@ -85,7 +85,7 @@ enum ConfigurationCenterMockSeed {
                                         day: 1
                             )
                     ) ?? Date(),
-                        note: "示例重要日期"
+                        note: "示例时间锚点"
                     ),
                     MemorySubject.TimeAnchor(
                         title: "入园",
@@ -153,7 +153,7 @@ enum ConfigurationCenterMockSeed {
 
         let preset2 =
             MemoryPreset(
-                title: "重要日子",
+                title: "时间锚点",
                 summary: "更强调日期、地点和纪念表达。",
                 regionTemplateIDs: [
                     .slotA: "recorder.configuration2",

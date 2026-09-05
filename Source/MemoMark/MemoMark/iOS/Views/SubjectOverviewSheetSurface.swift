@@ -12,11 +12,15 @@ struct SubjectOverviewSheet: View {
     @ObservedObject
     var session: ConfigurationSession
 
+    @ObservedObject
+    var commerceStore: MemoMarkCommerceStore
+
     let onSelectSubject: (MemorySubject.ID) -> Void
     let onAddSubject: () -> Void
     let onEditSubject: () -> SubjectConfigurationFlowState?
     let onDeleteCurrentSubject: () -> Void
     let onPersistSubjectChanges: () -> Void
+    let onRequestCommerce: () -> Void
 
     @State
     private var isSwitchingSubject = false
@@ -48,12 +52,13 @@ struct SubjectOverviewSheet: View {
 
                     ConfigurationTitledSectionSurface(
                         title: "时间锚点",
-                        subtitle: "选择重要日子，让照片拥有时间答案。"
+                        subtitle: "选择时间锚点，让照片拥有时间答案。"
                     ) {
                         SubjectAnchorDetailSection(
                             session: session,
-                            onPersistSubjectChanges:
-                                onPersistSubjectChanges
+                            onPersistSubjectChanges: onPersistSubjectChanges,
+                            isPlusAccess: commerceStore.isPlus,
+                            onRequestCommerce: onRequestCommerce
                         )
                     }
 
@@ -109,8 +114,11 @@ struct SubjectOverviewSheet: View {
                 },
                 onSave: {
                     configurationFlowState = nil
-                }
+                },
+                commerceStore: commerceStore,
+                onRequestCommerce: onRequestCommerce
             )
+            .memoMarkSheet(.editor, detents: [.large])
         }
     }
 
@@ -214,7 +222,7 @@ struct SubjectOverviewSheet: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
 
-                Text("照片中的回忆正围绕 TA 展开。")
+                Text(subjectExpressionSummary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -228,6 +236,25 @@ struct SubjectOverviewSheet: View {
     private var subjectDisplayName: String {
         normalized(session.state.selectedSubject?.identity.displayName)
         ?? "记忆对象"
+    }
+
+    private var subjectExpressionName: String {
+        normalized(
+            session.state.selectedSubject?.resolvedExpressionSubjectText
+        ) ?? subjectDisplayName
+    }
+
+    private var subjectExpressionSummary: String {
+        let language = MemoMarkLanguage.interfaceStored
+        let format = language.localized(
+            key: "subject.overview.expression_summary",
+            fallback: "照片中的记忆会围绕 %@ 展开。"
+        )
+        return String(
+            format: format,
+            locale: language.locale,
+            subjectExpressionName
+        )
     }
 
     private func normalized(_ value: String?) -> String? {

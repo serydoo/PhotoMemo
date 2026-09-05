@@ -54,23 +54,15 @@ struct MemoMarkiOSBackgroundStatusSheet:
             .navigationBarTitleDisplayMode(
                 .inline
             )
-            .toolbar {
-                ToolbarItem(
-                    placement: .topBarTrailing
-                ) {
-                    Button(MemoMarkLanguage.interfaceStored.localized(
-                        key: "processing.navigation.done",
-                        fallback: "完成"
-                    )) {
-                        dismiss()
-                    }
-                }
-            }
+            .memoMarkBrowserSheetToolbar(
+                doneTitle: MemoMarkLanguage.interfaceStored.localized(
+                    key: "processing.navigation.done",
+                    fallback: "完成"
+                ),
+                onDone: { dismiss() }
+            )
         }
-        .presentationDetents([
-            .medium,
-            .large
-        ])
+        .memoMarkSheet(.browser)
     }
 }
 

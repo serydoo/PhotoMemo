@@ -10,6 +10,8 @@ struct SubjectConfigurationFlow: View {
     private let onDeleteSubject: () -> Void
     private let onCancel: () -> Void
     private let onSave: () -> Void
+    private let commerceStore: MemoMarkCommerceStore
+    private let onRequestCommerce: () -> Void
 
     @State
     private var showsDeleteConfirmation = false
@@ -27,12 +29,16 @@ struct SubjectConfigurationFlow: View {
         flowState: SubjectConfigurationFlowState,
         onDeleteSubject: @escaping () -> Void,
         onCancel: @escaping () -> Void,
-        onSave: @escaping () -> Void
+        onSave: @escaping () -> Void,
+        commerceStore: MemoMarkCommerceStore,
+        onRequestCommerce: @escaping () -> Void
     ) {
         self.flowState = flowState
         self.onDeleteSubject = onDeleteSubject
         self.onCancel = onCancel
         self.onSave = onSave
+        self.commerceStore = commerceStore
+        self.onRequestCommerce = onRequestCommerce
     }
 
     var body: some View {
@@ -54,13 +60,15 @@ struct SubjectConfigurationFlow: View {
                     VStack(alignment: .leading, spacing: 8) {
                         subjectSectionHeader(
                             title: "时间锚点",
-                            subtitle: "选择重要日子，让照片拥有时间答案。"
+                            subtitle: "选择时间锚点，让照片拥有时间答案。"
                         )
 
                         SubjectAnchorDetailSection(
                             session: flowState.draftSession,
                             onPersistSubjectChanges: {},
-                            allowsSwipeDeletion: true
+                            allowsSwipeDeletion: true,
+                            isPlusAccess: commerceStore.isPlus,
+                            onRequestCommerce: onRequestCommerce
                         )
                     }
 
@@ -83,35 +91,37 @@ struct SubjectConfigurationFlow: View {
                 ConfigurationUI.appBackground
                     .ignoresSafeArea()
             )
+            .toolbarBackground(
+                ConfigurationUI.appBackground,
+                for: .navigationBar
+            )
+            .toolbarBackground(
+                .visible,
+                for: .navigationBar
+            )
             .navigationTitle("编辑记忆对象")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("取消") {
-                        onCancel()
-                    }
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成") {
-                        Task { @MainActor in
-                            isSaving = true
-                            defer { isSaving = false }
-                            guard await flowState.saveChanges() else {
-                                if let message = flowState.lastSaveFailureMessage {
-                                    saveFailureMessage = message
-                                } else {
-                                    showsNameRequiredAlert = true
-                                }
-                                return
+            .memoMarkEditorSheetToolbar(
+                cancelTitle: "取消",
+                doneTitle: "完成",
+                doneDisabled: isSaving,
+                onCancel: onCancel,
+                onDone: {
+                    Task { @MainActor in
+                        isSaving = true
+                        defer { isSaving = false }
+                        guard await flowState.saveChanges() else {
+                            if let message = flowState.lastSaveFailureMessage {
+                                saveFailureMessage = message
+                            } else {
+                                showsNameRequiredAlert = true
                             }
-                            onSave()
+                            return
                         }
+                        onSave()
                     }
-                    .fontWeight(.semibold)
-                    .disabled(isSaving)
                 }
-            }
+            )
             .alert(
                 "删除这个记忆对象？",
                 isPresented: $showsDeleteConfirmation

@@ -95,7 +95,7 @@ struct MemorySubjectEditingDraft: Equatable {
             anchors: &anchors
         )
         appendDefaultAnchorIfNeeded(
-            title: "重要日子",
+            title: "时间锚点",
             date:
                 calendar.date(
                     byAdding: .month,

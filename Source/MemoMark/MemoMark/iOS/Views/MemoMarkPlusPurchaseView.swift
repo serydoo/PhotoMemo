@@ -58,6 +58,7 @@ struct MemoMarkPlusPurchaseView: View {
                 }
             }
         }
+        .memoMarkSheet(.browser)
     }
 
     private var identitySection: some View {
@@ -116,7 +117,7 @@ struct MemoMarkPlusPurchaseView: View {
                 Text(
                     localized(
                         "commerce.purchase.hero.free_message",
-                        fallback: "一次购买，继续完整记录此后的每一张照片。"
+                    fallback: "订阅 MemoMark+，完整记录此后的每一张照片。"
                     )
                 )
                     .font(.subheadline)
@@ -172,7 +173,7 @@ struct MemoMarkPlusPurchaseView: View {
 
     private var actionSection: some View {
         VStack(spacing: 12) {
-            if !store.hasVerifiedPlusEntitlement {
+            if !store.isPlus {
                 VStack(spacing: 4) {
                     Text(purchasePrice)
                         .font(.largeTitle.weight(.bold))
@@ -246,7 +247,7 @@ struct MemoMarkPlusPurchaseView: View {
                     .foregroundStyle(.secondary)
             }
 
-            if !store.hasVerifiedPlusEntitlement {
+            if !store.isPlus {
                 Button(
                     localized(
                         "commerce.purchase.apple_code",
@@ -355,17 +356,9 @@ struct MemoMarkPlusPurchaseView: View {
             )
         }
 
-        if store.isFirstRecorderCampaignOpen {
-            return formatted(
-                "commerce.purchase.primary_format.launch",
-                fallback: "成为首批记录者 · %@",
-                store.displayPrice
-            )
-        }
-
         return formatted(
-            "commerce.purchase.primary_format.standard",
-            fallback: "永久解锁 · %@",
+            "commerce.purchase.primary_format.subscription",
+            fallback: "订阅 MemoMark+ · %@",
             store.displayPrice
         )
     }
@@ -380,16 +373,9 @@ struct MemoMarkPlusPurchaseView: View {
     }
 
     private var purchasePriceNote: String {
-        if store.isFirstRecorderCampaignOpen {
-            return localized(
-                "commerce.purchase.price_note.launch",
-                fallback: "首发优惠 · 一次购买，永久使用"
-            )
-        }
-
         return localized(
-            "commerce.purchase.price_note.standard",
-            fallback: "一次购买，永久使用"
+            "commerce.purchase.price_note.subscription",
+            fallback: "自动续订 · 周期与价格由 App Store 显示"
         )
     }
 
@@ -401,10 +387,17 @@ struct MemoMarkPlusPurchaseView: View {
             )
         }
 
-        if store.hasVerifiedPlusEntitlement {
+        if store.hasFounderLifetimeEntitlement {
             return localized(
                 "commerce.purchase.hero.plus",
                 fallback: "MemoMark+ 已永久解锁"
+            )
+        }
+
+        if store.hasActiveSubscription {
+            return localized(
+                "commerce.purchase.hero.subscription",
+                fallback: "MemoMark+ 订阅会员已生效"
             )
         }
 

@@ -15,7 +15,7 @@ struct SettingsExpressionGuideContractTests {
         #expect(source.contains("private func localized"))
         #expect(source.contains("formulaToken("))
         #expect(source.contains("private var exampleOverview"))
-        #expect(source.contains("同一个重要日子，在到来前、当天和之后，会有不同说法。"))
+        #expect(source.contains("同一个时间锚点，在到来前、当天和之后，会有不同说法。"))
         #expect(source.contains("它是怎样组成的"))
         #expect(source.contains("settings.expression.guide.subject"))
         #expect(source.contains("AnchorType.allCases"))
@@ -103,7 +103,7 @@ struct SettingsExpressionGuideContractTests {
         #expect(settingsSource.contains("private var expressionGuideSheet"))
         #expect(settingsSource.contains("SettingsExpressionGuide(language: interfaceLanguage)"))
         #expect(settingsSource.contains("key: \"common.done\""))
-        #expect(settingsSource.contains(".presentationDetents([.medium, .large])"))
+        #expect(settingsSource.contains(".memoMarkSheet(.browser)"))
     }
 
     @Test("settings keeps the concise local-first story after Home dismissal")

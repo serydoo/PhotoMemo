@@ -477,10 +477,9 @@ struct AppleNativeProductSurfaceContractTests {
         )
 
         #expect(!source.contains("overviewStrip"))
-        #expect(!source.contains("开始处理"))
         #expect(!source.contains("从首页选择照片开始"))
         #expect(source.contains("处理"))
-        #expect(source.contains("从 Apple Photos 分享照片"))
+        #expect(source.contains("task.waiting.detail"))
     }
 
     @Test("output persistence copy names output settings")
@@ -685,11 +684,11 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(source.contains("id: \\.element.id"))
         #expect(source.contains("SubjectAnchorDetailModule"))
         #expect(source.contains("contextMenu"))
-        #expect(source.contains("添加锚点"))
+        #expect(source.contains("添加时间锚点"))
         #expect(source.contains("最多保留 5 个时间锚点"))
         #expect(source.contains("至少保留一个时间锚点"))
-        #expect(source.contains("accessibilityAction(named: \"配置锚点\")"))
-        #expect(source.contains("accessibilityAction(named: \"删除锚点\")"))
+        #expect(source.contains("accessibilityAction(named: \"配置时间锚点\")"))
+        #expect(source.contains("accessibilityAction(named: \"删除时间锚点\")"))
         #expect(!source.contains("时间锚点配置"))
     }
 
@@ -852,7 +851,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(detail.contains("此操作无法撤销。"))
         #expect(editor.contains("此操作无法撤销。"))
         #expect(detail.contains("至少保留一个时间锚点"))
-        #expect(detail.contains("新增另一个锚点后，才能删除当前锚点。"))
+        #expect(detail.contains("新增另一个时间锚点后，才能删除当前时间锚点。"))
     }
 
     @Test("time anchor deletion validates the current session state")
@@ -880,7 +879,9 @@ struct AppleNativeProductSurfaceContractTests {
 
         #expect(editor.contains("onCancel:"))
         #expect(editor.contains("onSave:"))
-        #expect(editor.contains("Button(\"取消\") {\n                        onCancel()"))
+        #expect(editor.contains(".memoMarkEditorSheetToolbar("))
+        #expect(editor.contains("cancelTitle: \"取消\""))
+        #expect(editor.contains("onCancel: onCancel"))
         #expect(editor.contains("flowState.saveChanges()"))
         #expect(editor.contains("onSave()"))
         #expect(presentation.contains("nextState.showsSubjectOverview = true"))

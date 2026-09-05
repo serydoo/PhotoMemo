@@ -173,7 +173,7 @@ struct SubjectAnchorSection: View {
             tint: .blue
         ) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("展示当前记忆对象下可用于配置的全部时间锚点；具体使用哪个锚点，由配置中心的当前配置决定。")
+                Text("展示当前记忆对象下可用于配置的全部时间锚点；具体使用哪个时间锚点，由配置中心的当前配置决定。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

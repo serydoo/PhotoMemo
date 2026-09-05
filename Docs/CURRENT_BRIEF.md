@@ -1,6 +1,6 @@
 # MemoMark Current Brief
 
-Last updated: 2026-08-30
+Last updated: 2026-09-05
 
 This is a compact routing brief for a new Codex session. It is not a
 replacement for the project constitution, accepted specifications, contracts,
@@ -24,8 +24,11 @@ follow the linked source-of-truth document.
 ## Current Candidate
 
 - Project: `Source/MemoMark/MemoMark.xcodeproj`
-- Marketing version: `2.2.3`
-- Build: `100`
+- Marketing version: `2.3.0`
+- Build: `103`
+- Commerce: `MemoMark Commerce v1.1` — historical lifetime entitlement preserved;
+  new users use MemoMark+ annual subscription; first-party expression styles are
+  included in the subscription.
 - Latest current-state record: `Docs/CURRENT_STATUS.md`
 - Latest handoff record: `HANDOFF.md` (historical continuity; read on demand)
 - Queue architecture: runtime durable mutations are actor-owned by

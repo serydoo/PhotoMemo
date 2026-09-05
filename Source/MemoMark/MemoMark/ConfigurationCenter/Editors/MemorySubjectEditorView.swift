@@ -349,11 +349,18 @@ struct MemorySubjectEditorView: View {
 
     private var expressionSubjectSelectionLabel: some View {
         HStack(spacing: 6) {
-            Text(expressionSubjectSelectionTitle)
-                .font(.subheadline)
-                .foregroundStyle(Color.accentColor)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
-                .multilineTextAlignment(.trailing)
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(expressionSubjectDisplayValue)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.accentColor)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                    .multilineTextAlignment(.trailing)
+
+                Text(expressionSubjectDisplaySourceTitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
 
             Image(systemName: "chevron.up.chevron.down")
                 .font(.caption2.weight(.bold))
@@ -374,7 +381,7 @@ struct MemorySubjectEditorView: View {
             return "默认 · 对象名称"
         }
 
-        return source.displayTitle
+        return "\(expressionSubjectDisplayValue) · \(source.displayTitle)"
     }
 
     private var compactIdentityFieldsPanel: some View {
@@ -870,7 +877,7 @@ struct MemorySubjectEditorView: View {
         if let anchorBinding {
             NavigationStack {
                 Form {
-                    Section("锚点日期") {
+                    Section("时间锚点日期") {
                         CompactAnchorDatePicker(
                             selection: anchorBinding.date
                         )
@@ -878,7 +885,7 @@ struct MemorySubjectEditorView: View {
 
                     Section {
                         Picker(
-                            "锚点类型",
+                            "时间锚点类型",
                             selection: Binding(
                                 get: {
                                     anchorBinding.wrappedValue.resolvedAnchorType
@@ -904,7 +911,7 @@ struct MemorySubjectEditorView: View {
                         .focused($focusedField, equals: .timeTitle)
                         .submitLabel(.done)
                     } header: {
-                        Text("自定义锚点名称")
+                        Text("自定义时间锚点名称")
                     } footer: {
                         Text("修改会实时显示在预览中；完成后保留，取消则恢复原值。")
                     }
@@ -924,8 +931,12 @@ struct MemorySubjectEditorView: View {
                     }
                 }
             }
-            .presentationDetents([.fraction(0.70), .large])
-            .presentationDragIndicator(.visible)
+#if os(iOS)
+            .memoMarkSheet(
+                .editor,
+                detents: [.fraction(0.70), .large]
+            )
+#endif
             .presentationBackgroundInteraction(.disabled)
         } else {
             EmptyView()

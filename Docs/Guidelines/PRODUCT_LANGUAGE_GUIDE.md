@@ -59,7 +59,7 @@ safe or informed decision.
 The product should guide one coherent act of remembering:
 
 1. 你想围绕谁开展回忆。
-2. 选择一个时间起点，让照片拥有时间答案。
+2. 选择一个时间锚点，让照片拥有时间答案。
 3. 让回忆拥有属于自己的表达方式。
 4. 决定这段回忆最终如何呈现。
 5. 保存这段回忆。
@@ -80,7 +80,7 @@ the subtitle:
 
 | Title | Subtitle role |
 | --- | --- |
-| `时间锚点` editor | `选择一个时间起点，让照片拥有时间答案。` |
+| `时间锚点` editor | `选择一个时间锚点，让照片拥有时间答案。` |
 | `这一刻怎样表达` | `表达方式：自然（默认） · 随时间变化` |
 | `表达方式` | `围绕时间锚点，可选择 5 种表达方式。` The number comes from the current available styles. |
 | `卡片样式` | `选择照片卡片的整体视觉风格。` |
@@ -141,8 +141,8 @@ when the adjacent title and control make its meaning clear. This exception
 protects the control's stable trailing position and does not authorize
 implementation vocabulary or an incomplete page-level explanation.
 
-The accepted Time Anchor row uses `回忆对象重要时刻`; its editor provides the
-complete prompt `选择一个时间起点，让照片拥有时间答案。`. Sentence-ending
+The accepted Time Anchor row uses `回忆对象时间锚点`; its editor provides the
+complete prompt `选择一个时间锚点，让照片拥有时间答案。`. Sentence-ending
 punctuation is optional for the compact phrase and remains expected for the
 full prompt.
 
@@ -150,7 +150,7 @@ Configuration sheets may use one centered, secondary `footnote` subtitle below
 the native navigation title when the sheet needs context. The current accepted
 sheet context is:
 
-- `时间锚点`: `选择一个时间起点，让照片拥有时间答案。`
+- `时间锚点`: `选择一个时间锚点，让照片拥有时间答案。`
 - `时间与地点`: `决定照片中的时间和地点怎样呈现。`
 - `卡片内容`: use `组合自己的文字、照片信息与记忆表达。` below the title.
   The bottom explanation remains split by responsibility:
@@ -187,7 +187,7 @@ description of the implementation.
 
 ### 3. 永远围绕人和回忆
 
-Prefer `记忆对象`, `重要时刻`, `记忆表达`, `成长`, `呈现`, and
+Prefer `记忆对象`, `时间锚点`, `记忆表达`, `成长`, `呈现`, and
 `保存这段回忆` over labels that foreground state, modules, algorithms, or
 metadata. Use `记录` only where its context actually describes a record or the
 act of preserving one.
@@ -216,7 +216,7 @@ MemoMark's language should have `生活感`, not `文学腔` or advertising poli
 Good copy sounds like a thoughtful person nearby saying one useful sentence:
 
 - `你想围绕谁开展回忆。`
-- `选择一个时间起点，让照片拥有时间答案。`
+- `选择一个时间锚点，让照片拥有时间答案。`
 - `让回忆拥有属于自己的表达方式。`
 
 These lines have warmth and a visual idea without exaggerated imagery,
@@ -227,7 +227,7 @@ sentimentality, or decorative wording.
 | Program-centered | Memory-centered |
 | --- | --- |
 | `已生成智能内容。` | `让回忆拥有属于自己的表达方式。` |
-| `设置时间参考。` | `选择一个时间起点，让照片拥有时间答案。` |
+| `设置时间参考。` | `选择一个时间锚点，让照片拥有时间答案。` |
 | `选择对象。` | `你想围绕谁开展回忆。` |
 | `当前对象` | `记忆对象` |
 | `当前表达` | `记忆表达` |

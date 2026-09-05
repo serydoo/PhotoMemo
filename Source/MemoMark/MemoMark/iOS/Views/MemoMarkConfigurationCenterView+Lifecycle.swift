@@ -171,7 +171,7 @@ extension MemoMarkConfigurationCenterView {
             ),
             summary: MemoMarkLanguage.interfaceStored.localized(
                 key: "welcome.default_preset.summary",
-                fallback: "以生日为时间起点，自然回顾照片拍摄时的年龄。"
+                fallback: "以生日为时间锚点，自然回顾照片拍摄时的年龄。"
             ),
             regionTemplateIDs: existingPreset?.regionTemplateIDs ?? [:],
             selectedSubjectID: subject.id,

@@ -40,7 +40,7 @@ struct V1FirstRunConfigurationFactoryTests {
             value: 99,
             to: date
         ))
-        #expect(subject.timeAnchors[2].title == "重要日子")
+        #expect(subject.timeAnchors[2].title == "时间锚点")
         #expect(subject.timeAnchors[2].anchorType == .custom)
     }
 

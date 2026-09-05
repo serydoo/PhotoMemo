@@ -102,7 +102,7 @@ struct TaskPageSurface: View {
             ),
             subtitle: interfaceLanguage.localized(
                 key: "task.page.subtitle",
-                fallback: "从 Apple Photos 分享后，可以在这里看到是否已经完成。"
+                fallback: "这里会显示当前进展和已保存结果。"
             )
         )
     }
@@ -129,7 +129,7 @@ struct TaskPageSurface: View {
             ),
             subtitle: interfaceLanguage.localized(
                 key: "task.waiting.card.subtitle",
-                fallback: "从 Apple Photos 分享照片后，可以在这里看到是否已经完成。"
+                fallback: "准备好后，新的回忆会显示在这里。"
             )
         ) {
             HStack(spacing: 12) {
@@ -156,7 +156,7 @@ struct TaskPageSurface: View {
                     Text(
                         interfaceLanguage.localized(
                             key: "task.waiting.detail",
-                            fallback: "从 Apple Photos 分享照片，即可开始生成。"
+                            fallback: "选择照片后即可开始处理。"
                         )
                     )
                         .font(.caption)

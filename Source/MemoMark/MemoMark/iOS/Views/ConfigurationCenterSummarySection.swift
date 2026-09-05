@@ -86,13 +86,13 @@ struct ConfigurationCenterSummarySection: View {
             summaryDivider
 
             summaryRow(
-                title: localized("configuration.summary.current_anchor", fallback: "当前生效锚点"),
+                title: localized("configuration.summary.current_anchor", fallback: "当前生效时间锚点"),
                 systemImage: MemoMarkSymbol.timeAnchor.name,
                 detail: timeAnchorDetail
             ) {
                 Text(
                     subject?.primaryTimeAnchor?.title
-                    ?? localized("configuration.summary.unselected_anchor", fallback: "未选择锚点")
+                    ?? localized("configuration.summary.unselected_anchor", fallback: "未选择时间锚点")
                 )
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.primary)
@@ -256,7 +256,7 @@ struct ConfigurationCenterSummarySection: View {
             subject?.timeAnchors.count ?? 0
         return formatted(
             "configuration.summary.anchor_count_format",
-            fallback: "%lld 个锚点",
+            fallback: "%lld 个时间锚点",
             Int64(anchorCount)
         )
     }
@@ -265,7 +265,7 @@ struct ConfigurationCenterSummarySection: View {
         guard let subject else {
             return localized(
                 "configuration.summary.choose_subject_first",
-                fallback: "先选择一个记忆对象，再切换当前生效锚点。"
+                fallback: "先选择一个记忆对象，再切换当前生效时间锚点。"
             )
         }
 
@@ -279,7 +279,7 @@ struct ConfigurationCenterSummarySection: View {
         if let note, !note.isEmpty {
             return formatted(
                 "configuration.summary.anchor_note_format",
-                fallback: "当前记忆对象共有 %lld 个锚点，当前说明：%@",
+                fallback: "当前记忆对象共有 %lld 个时间锚点，当前说明：%@",
                 Int64(count),
                 note
             )
@@ -287,7 +287,7 @@ struct ConfigurationCenterSummarySection: View {
 
         return formatted(
             "configuration.summary.anchor_switch_detail_format",
-            fallback: "当前记忆对象共有 %lld 个锚点，可直接在这里切换当前生效锚点。",
+            fallback: "当前记忆对象共有 %lld 个时间锚点，可直接在这里切换当前生效时间锚点。",
             Int64(count)
         )
     }

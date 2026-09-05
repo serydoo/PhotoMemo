@@ -50,7 +50,7 @@ struct MemorySubjectListView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.primary)
 
-                    Text("不同记忆对象拥有不同锚点，也拥有不同的回忆角度。")
+                    Text("不同记忆对象拥有不同的锚点，也拥有不同的回忆角度。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

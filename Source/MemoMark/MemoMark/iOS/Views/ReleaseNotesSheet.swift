@@ -7,6 +7,9 @@ struct ReleaseNotesSheet: View {
     let language: MemoMarkLanguage
     let version: String
 
+    @Environment(\.dismiss)
+    private var dismiss
+
     private var sections: [ReleaseNoteSection] {
         [
             ReleaseNoteSection(
@@ -150,6 +153,13 @@ struct ReleaseNotesSheet: View {
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
+            .memoMarkBrowserSheetToolbar(
+                doneTitle: language.localized(
+                    key: "common.done",
+                    fallback: "完成"
+                ),
+                onDone: { dismiss() }
+            )
         }
     }
 

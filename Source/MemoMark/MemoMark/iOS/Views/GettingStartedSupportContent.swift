@@ -23,7 +23,7 @@ struct GettingStartedSupportContent: View {
                 action("settings.overview.title", "关于时光记", "settings.overview.action_detail", "看看时光记为什么从一段人生里的时间开始。", MemoMarkSymbol.information.name, .pink, true, onShowAbout)
                 action("settings.guide.welcome.title", "重看欢迎介绍", "settings.guide.welcome.detail", "回顾首次使用时的主要说明。", MemoMarkSymbol.welcome.name, .orange, true, onShowWelcome)
                 action("settings.guide.workflow.title", "查看日常使用流程", "settings.guide.workflow.detail", "从 Apple Photos 分享，再回到相册查看。", MemoMarkSymbol.workflow.name, .blue, true, onShowWorkflow)
-                action("settings.guide.expression.title", "照片怎样表达时间", "settings.guide.expression.detail", "看看重要日子如何改变照片中的时间说法。", MemoMarkSymbol.expressionFormula.name, .purple, false, onShowExpressionGuide)
+                action("settings.guide.expression.title", "照片怎样表达时间", "settings.guide.expression.detail", "看看时间锚点如何改变照片中的时间说法。", MemoMarkSymbol.expressionFormula.name, .purple, false, onShowExpressionGuide)
             }
             .background(Color.clear)
         }
