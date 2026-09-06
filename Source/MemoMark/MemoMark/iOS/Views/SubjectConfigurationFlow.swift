@@ -11,7 +11,6 @@ struct SubjectConfigurationFlow: View {
     private let onCancel: () -> Void
     private let onSave: () -> Void
     private let commerceStore: MemoMarkCommerceStore
-    private let onRequestCommerce: () -> Void
 
     @State
     private var showsDeleteConfirmation = false
@@ -25,20 +24,21 @@ struct SubjectConfigurationFlow: View {
     @State
     private var isSaving = false
 
+    @State
+    private var showsCommercePurchase = false
+
     init(
         flowState: SubjectConfigurationFlowState,
         onDeleteSubject: @escaping () -> Void,
         onCancel: @escaping () -> Void,
         onSave: @escaping () -> Void,
-        commerceStore: MemoMarkCommerceStore,
-        onRequestCommerce: @escaping () -> Void
+        commerceStore: MemoMarkCommerceStore
     ) {
         self.flowState = flowState
         self.onDeleteSubject = onDeleteSubject
         self.onCancel = onCancel
         self.onSave = onSave
         self.commerceStore = commerceStore
-        self.onRequestCommerce = onRequestCommerce
     }
 
     var body: some View {
@@ -68,7 +68,8 @@ struct SubjectConfigurationFlow: View {
                             onPersistSubjectChanges: {},
                             allowsSwipeDeletion: true,
                             isPlusAccess: commerceStore.isPlus,
-                            onRequestCommerce: onRequestCommerce
+                            onRequestCommerce: requestCommerce,
+                            onActivateSuggestion: activateSuggestedAnchor
                         )
                     }
 
@@ -154,6 +155,34 @@ struct SubjectConfigurationFlow: View {
             }
             .accessibilityIdentifier("subject-configuration-flow")
         }
+        .sheet(isPresented: $showsCommercePurchase) {
+            MemoMarkPlusPurchaseView(
+                store: commerceStore,
+                onDismiss: {
+                    showsCommercePurchase = false
+                }
+            )
+        }
+    }
+
+    private func requestCommerce() {
+        showsCommercePurchase = true
+    }
+
+    private func activateSuggestedAnchor(
+        _ suggestion: MemorySubject.TimeAnchor
+    ) {
+        guard let subject = flowState.draftSession.state.selectedSubject,
+              subject.timeAnchors.count < 5,
+              !subject.timeAnchors.contains(where: {
+                  $0.title == suggestion.title
+              }) else {
+            return
+        }
+
+        var updatedSubject = subject
+        updatedSubject.timeAnchors.append(suggestion)
+        flowState.draftSession.updateSelectedSubject(updatedSubject)
     }
 
     private func subjectSectionHeader(

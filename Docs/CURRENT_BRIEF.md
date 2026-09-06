@@ -1,6 +1,6 @@
 # MemoMark Current Brief
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 This is a compact routing brief for a new Codex session. It is not a
 replacement for the project constitution, accepted specifications, contracts,
@@ -25,10 +25,10 @@ follow the linked source-of-truth document.
 
 - Project: `Source/MemoMark/MemoMark.xcodeproj`
 - Marketing version: `2.3.0`
-- Build: `103`
-- Commerce: `MemoMark Commerce v1.1` — historical lifetime entitlement preserved;
-  new users use MemoMark+ annual subscription; first-party expression styles are
-  included in the subscription.
+- Build: `104`
+- Commerce: `MemoMark Commerce v1.1` — historical lifetime and activation-code
+  entitlements preserved; new users use MemoMark+ monthly or annual subscription;
+  first-party expression styles are included in the subscription.
 - Latest current-state record: `Docs/CURRENT_STATUS.md`
 - Latest handoff record: `HANDOFF.md` (historical continuity; read on demand)
 - Queue architecture: runtime durable mutations are actor-owned by
@@ -36,9 +36,10 @@ follow the linked source-of-truth document.
   and presentation facade. Startup-only receipt reconciliation remains an
   isolated pre-actor Bootstrap Adapter.
 
-The build and test evidence for build 100 does not imply physical-device visual
-acceptance or production certification. The 100 package still needs installation
-and review on the paired physical iPhone 17 Pro Max where the task requires it.
+The build and test evidence for build 104 does not imply physical-device visual
+acceptance, StoreKit sandbox acceptance, or production certification. The 104
+package still needs installation and review on the paired physical iPhone 17
+Pro Max where the task requires it.
 
 ## Frozen Boundaries
 

@@ -11,12 +11,24 @@ import UIKit
 final class MemoMarkCommerceStore:
     ObservableObject {
 
-    static let plusProductID =
-        "com.serydoo.PhotoMemo.iOS.memomarkplus.subscription.annual"
+    static let annualProductID =
+        MemoMarkSubscriptionPeriod.annual.productID
+    static let monthlyProductID =
+        MemoMarkSubscriptionPeriod.monthly.productID
+    static let subscriptionProductIDs =
+        MemoMarkSubscriptionPeriod.allCases.map(\.productID)
+    // The annual StoreKit identifier remains
+    // `memomarkplus.subscription.annual`; keep that contract explicit while
+    // the period model owns the actual string.
+    /// Compatibility name for callers that only knew the annual product.
+    static let plusProductID = annualProductID
     static let legacyLifetimeProductID =
         "com.serydoo.PhotoMemo.iOS.memomarkplus.lifetime"
 
-    @Published private(set) var product: Product?
+    @Published private(set) var products:
+        [String: Product] = [:]
+    @Published private(set) var selectedSubscriptionPeriod:
+        MemoMarkSubscriptionPeriod = .annual
     @Published private(set) var purchaseState:
         MemoMarkPurchaseState = .idle
     @Published private(set) var snapshot:
@@ -84,7 +96,36 @@ final class MemoMarkCommerceStore:
     }
 
     var displayPrice: String {
-        product?.displayPrice ?? "—"
+        selectedSubscriptionProduct?.displayPrice ?? "—"
+    }
+
+    func displayPrice(
+        for period: MemoMarkSubscriptionPeriod
+    ) -> String {
+        products[period.productID]?.displayPrice ?? "—"
+    }
+
+    var availableSubscriptionPeriods:
+        [MemoMarkSubscriptionPeriod] {
+        MemoMarkSubscriptionPeriod.allCases.filter {
+            products[$0.productID] != nil
+        }
+    }
+
+    var selectedSubscriptionProduct: Product? {
+        products[selectedSubscriptionPeriod.productID]
+    }
+
+    /// Compatibility projection for callers that previously exposed one
+    /// selected Plus product before annual/monthly subscriptions were split.
+    var product: Product? {
+        selectedSubscriptionProduct
+    }
+
+    func selectSubscriptionPeriod(
+        _ period: MemoMarkSubscriptionPeriod
+    ) {
+        selectedSubscriptionPeriod = period
     }
 
     var isPurchaseActionInProgress: Bool {
@@ -136,12 +177,19 @@ final class MemoMarkCommerceStore:
     }
 
     func refresh() async {
+        await refresh(preservingHistoricalActivationGrant: true)
+    }
+
+    private func refresh(
+        preservingHistoricalActivationGrant: Bool
+    ) async {
         purchaseState = .restoring
 
         let environment =
             await resolvedEnvironment()
 
-        product = await loadProduct()
+        products = await loadProducts()
+        selectAvailableSubscriptionPeriodIfNeeded()
 
         var lifetimeTransaction: Transaction?
         var subscriptionTransaction: Transaction?
@@ -154,20 +202,31 @@ final class MemoMarkCommerceStore:
             }
             if transaction.productID == Self.legacyLifetimeProductID {
                 lifetimeTransaction = transaction
-            } else if transaction.productID == Self.plusProductID,
+            } else if Self.subscriptionProductIDs.contains(
+                        transaction.productID
+                      ),
                       transaction.expirationDate.map({ $0 > Date() }) ?? true {
                 subscriptionTransaction = transaction
             }
         }
 
+        if let subscriptionTransaction,
+           let period = MemoMarkSubscriptionPeriod.allCases.first(
+               where: { $0.productID == subscriptionTransaction.productID }
+           ) {
+            selectedSubscriptionPeriod = period
+        }
+
         publishSnapshot(
             environment: environment,
             lifetimeTransaction: lifetimeTransaction,
-            subscriptionTransaction: subscriptionTransaction
+            subscriptionTransaction: subscriptionTransaction,
+            preservingHistoricalActivationGrant:
+                preservingHistoricalActivationGrant
         )
         if lifetimeTransaction != nil || subscriptionTransaction != nil {
             purchaseState = .purchased
-        } else if product != nil {
+        } else if !products.isEmpty {
             purchaseState = .idle
         } else {
             purchaseState = unavailableStoreState
@@ -180,17 +239,22 @@ final class MemoMarkCommerceStore:
 #endif
         let productToPurchase: Product
 
-        if let product {
-            productToPurchase = product
+        if let selectedSubscriptionProduct {
+            productToPurchase = selectedSubscriptionProduct
         } else {
             purchaseState = .loading
 
-            guard let loadedProduct = await loadProduct() else {
+            let loadedProducts = await loadProducts()
+            products = loadedProducts
+            selectAvailableSubscriptionPeriodIfNeeded()
+
+            guard let loadedProduct = loadedProducts[
+                selectedSubscriptionPeriod.productID
+            ] else {
                 purchaseState = unavailableStoreState
                 return
             }
 
-            product = loadedProduct
             productToPurchase = loadedProduct
         }
 
@@ -370,32 +434,23 @@ final class MemoMarkCommerceStore:
             return
         }
 
-        guard transaction.productID == Self.plusProductID
+        guard Self.subscriptionProductIDs.contains(transaction.productID)
                 || transaction.productID == Self.legacyLifetimeProductID else {
             return
         }
 
-        let environment =
-            commerceEnvironment(
-                transaction.environment
-            )
-        publishSnapshot(
-            environment: environment,
-            lifetimeTransaction:
-                transaction.productID == Self.legacyLifetimeProductID
-                && transaction.revocationDate == nil
-                ? transaction : nil,
-            subscriptionTransaction:
-                transaction.productID == Self.plusProductID
-                && transaction.revocationDate == nil
-                && (transaction.expirationDate.map { $0 > Date() } ?? true)
-                ? transaction : nil
+        await transaction.finish()
+
+        // A transaction update is only an invalidation signal. Resolve the
+        // complete current-entitlements set again so a monthly/annual event
+        // can never overwrite a historical lifetime or activation grant.
+        await refresh(
+            preservingHistoricalActivationGrant: true
         )
         purchaseState =
             transaction.revocationDate == nil
             ? .purchased
             : .idle
-        await transaction.finish()
     }
 
     private var unavailableStoreState:
@@ -408,29 +463,34 @@ final class MemoMarkCommerceStore:
         )
     }
 
-    private func loadProduct() async -> Product? {
+    private func loadProducts() async -> [String: Product] {
         do {
 #if DEBUG
             print("MemoMark.StoreKit: requesting product")
 #endif
-            let product = try await productLoader(
-                [Self.plusProductID]
-            ).first
+            let loadedProducts = try await productLoader(
+                Self.subscriptionProductIDs
+            )
+            let products = Dictionary(
+                uniqueKeysWithValues: loadedProducts.map {
+                    ($0.id, $0)
+                }
+            )
 
-            guard let product else {
+            guard !products.isEmpty else {
                 commerceLogger.error(
-                    "StoreKit returned no MemoMark+ product."
+                    "StoreKit returned no MemoMark+ subscription products."
                 )
 #if DEBUG
-                print("MemoMark.StoreKit: product request returned no product")
+                print("MemoMark.StoreKit: product request returned no products")
 #endif
-                return nil
+                return [:]
             }
 
 #if DEBUG
-            print("MemoMark.StoreKit: configured product loaded")
+            print("MemoMark.StoreKit: configured subscription products loaded")
 #endif
-            return product
+            return products
         } catch {
             commerceLogger.error(
                 "StoreKit product request failed: \(error.localizedDescription, privacy: .private(mask: .hash))"
@@ -438,7 +498,7 @@ final class MemoMarkCommerceStore:
 #if DEBUG
             print("MemoMark.StoreKit: product request failed")
 #endif
-            return nil
+            return [:]
         }
     }
 
@@ -484,7 +544,9 @@ final class MemoMarkCommerceStore:
         environment:
             MemoMarkCommerceEnvironment,
         lifetimeTransaction: Transaction?,
-        subscriptionTransaction: Transaction?
+        subscriptionTransaction: Transaction?,
+        preservingHistoricalActivationGrant:
+            Bool = false
     ) {
         if snapshot.environment == environment,
            let existingDate =
@@ -525,19 +587,28 @@ final class MemoMarkCommerceStore:
                 .isTestFlightExperienceActive(
                     environment: environment
                 )
+        let preservedFounderSource:
+            MemoMarkCommerceAccessSource? =
+            preservingHistoricalActivationGrant
+            && snapshot.hasDurableLegacyActivationGrant
+            ? snapshot.accessSource
+            : nil
         let isPlus =
             lifetimeTransaction != nil
             || subscriptionTransaction != nil
+            || preservedFounderSource != nil
             || isTestFlightExperienceActive
         let accessSource:
             MemoMarkCommerceAccessSource =
             lifetimeTransaction != nil
             ? .founderLifetime
-            : subscriptionTransaction != nil
+            : preservedFounderSource
+            ??
+            (subscriptionTransaction != nil
             ? .plusSubscription
             : isTestFlightExperienceActive
                 ? .testFlightTemporary
-                : .free
+                : .free)
         let bonus =
             persistence.bonusAllowance(
                 environment: environment
@@ -567,6 +638,8 @@ final class MemoMarkCommerceStore:
                     .firstRecorderDate(
                         environment: environment
                     ),
+                hasDurableLegacyActivationGrant:
+                    snapshot.hasDurableLegacyActivationGrant,
                 validThrough:
                     subscriptionTransaction?.expirationDate,
                 lastVerifiedAt: Date(),
@@ -580,6 +653,17 @@ final class MemoMarkCommerceStore:
             return
         }
         snapshot = nextSnapshot
+    }
+
+    private func selectAvailableSubscriptionPeriodIfNeeded() {
+        guard products[selectedSubscriptionPeriod.productID] == nil else {
+            return
+        }
+
+        if let firstAvailablePeriod = MemoMarkSubscriptionPeriod.allCases
+            .first(where: { products[$0.productID] != nil }) {
+            selectedSubscriptionPeriod = firstAvailablePeriod
+        }
     }
 
     private func localized(

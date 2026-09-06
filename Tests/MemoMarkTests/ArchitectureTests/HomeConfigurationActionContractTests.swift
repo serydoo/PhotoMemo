@@ -40,16 +40,13 @@ struct HomeConfigurationActionContractTests {
         #expect(!rootSource.contains("WorkflowGuideSurface("))
     }
 
-    @Test("in-app photo picker is shown only before the first real workflow")
-    func homePhotoPickerUsesFirstUseBoundary() throws {
+    @Test("in-app photo picker stays discoverable while guidance is bounded")
+    func homePhotoPickerKeepsDiscoverabilityAndBoundedGuidance() throws {
         let source = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
         let intakeSource = try sourceText(
             "Source/MemoMark/MemoMark/App/ExternalPhotoIntakeCenter.swift"
-        )
-        let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
         let pagesSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
@@ -58,14 +55,15 @@ struct HomeConfigurationActionContractTests {
             "Source/MemoMark/MemoMark/App/MemoMarkSharedContainer.swift"
         )
 
-        #expect(source.contains("hasProcessingRecord: Bool"))
-        #expect(source.contains("hasUsedApplePhotosShare"))
         #expect(source.contains("shouldShowInAppPhotoPicker"))
-        #expect(source.contains("!hasProcessingRecord && !hasUsedApplePhotosShare"))
-        #expect(source.contains("runtimeEnvironment.isUITestingHarness"))
-        #expect(pagesSource.contains("backgroundStatusService.hasProcessingRecord"))
+        #expect(source.contains("private var shouldShowInAppPhotoPicker: Bool"))
+        #expect(source.contains("shouldShowInAppPhotoPicker: Bool {\n        true"))
+        #expect(source.contains("HomePhotoPickerGuidancePolicy.useThreshold"))
+        #expect(source.contains("photoPickerGuidanceStartedAt"))
+        #expect(source.contains("onOpenPhotoPicker: () -> Bool"))
+        #expect(source.contains("guard onOpenPhotoPicker() else"))
+        #expect(pagesSource.contains("onOpenPhotoPicker: beginPhotoProcessingFlow"))
         #expect(intakeSource.contains("didUseApplePhotosShareKey"))
-        #expect(intakeSource.contains("source == .shareExtension"))
         #expect(containerSource.contains("didUseApplePhotosShareKey"))
     }
 

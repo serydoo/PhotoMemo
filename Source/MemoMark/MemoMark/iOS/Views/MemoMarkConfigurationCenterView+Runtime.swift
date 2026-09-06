@@ -35,6 +35,10 @@ extension MemoMarkConfigurationCenterView {
             return false
         }
 
+        guard requestCommerceForPendingExpressionStyle() else {
+            return false
+        }
+
         let presetPersistenceSnapshot =
             session
             .persistenceSnapshotForCurrentConfiguration(
@@ -138,12 +142,13 @@ extension MemoMarkConfigurationCenterView {
         )
     }
 
-    func beginPhotoProcessingFlow() {
+    @discardableResult
+    func beginPhotoProcessingFlow() -> Bool {
         guard hasSavedConfigurationForSelectedSubject else {
             rootPresentationState
                 .switchPresentation
                 .showsConfigurationRequiredAlert = true
-            return
+            return false
         }
 
         entryFlowState =
@@ -152,6 +157,7 @@ extension MemoMarkConfigurationCenterView {
                 from:
                     entryFlowState
             )
+        return true
     }
 
     func applySavedOutputConfiguration(

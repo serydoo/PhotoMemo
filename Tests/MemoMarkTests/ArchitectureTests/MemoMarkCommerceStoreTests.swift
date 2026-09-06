@@ -24,7 +24,7 @@ struct MemoMarkCommerceStoreTests {
 
         #expect(
             requestedProductIDs
-                == [[MemoMarkCommerceStore.plusProductID]]
+                == [MemoMarkCommerceStore.subscriptionProductIDs]
         )
         #expect(store.product == nil)
         guard case .failed = store.purchaseState else {

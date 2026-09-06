@@ -48,6 +48,8 @@ struct RootPresentationState {
     var showsWelcomeInformation = false
     var showsMemoMarkPlus = false
     var showsHomeMemoMarkPlus = false
+    var showsMemoMarkPlusForPendingExpression = false
+    var showsSettingsWorkflowGuide = false
     var switchPresentation =
         ConfigurationSwitchPresentationState()
     var localLibraryPresentation =

@@ -18,9 +18,6 @@ struct SubjectPresentationModifier: ViewModifier {
     let onPersistSubjectChanges: () -> Void
     let onSaveThenSelectPendingSubject: () -> Void
 
-    @State
-    private var showsCommercePurchase = false
-
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: binding(\.showsSubjectOverview)) {
@@ -46,14 +43,6 @@ struct SubjectPresentationModifier: ViewModifier {
             .sheet(item: binding(\.subjectConfigurationFlowState)) {
                 subjectConfiguration(flowState: $0)
             }
-            .sheet(isPresented: $showsCommercePurchase) {
-                MemoMarkPlusPurchaseView(
-                    store: commerceStore,
-                    onDismiss: {
-                        showsCommercePurchase = false
-                    }
-                )
-            }
     }
 }
 
@@ -68,11 +57,10 @@ private extension SubjectPresentationModifier {
             session: session,
             commerceStore: commerceStore,
             onSelectSubject: onRequestSubjectSelection,
-            onAddSubject: requestAddSubject,
+            onAddSubject: addDefaultSubject,
             onEditSubject: makeConfigurationFlowState,
             onDeleteCurrentSubject: deleteCurrentSubject,
-            onPersistSubjectChanges: onPersistSubjectChanges,
-            onRequestCommerce: requestCommerce
+            onPersistSubjectChanges: onPersistSubjectChanges
         )
     }
 
@@ -90,8 +78,7 @@ private extension SubjectPresentationModifier {
             },
             onCancel: reopenSubjectOverview,
             onSave: reopenSubjectOverview,
-            commerceStore: commerceStore,
-            onRequestCommerce: requestCommerce
+            commerceStore: commerceStore
         )
     }
 
@@ -105,21 +92,6 @@ private extension SubjectPresentationModifier {
                 onPersistedSubject: onApplySubjectFlowPatch
             )
         onApplySubjectFlowPatch(patch)
-    }
-
-    func requestAddSubject() {
-        guard commerceStore.isPlus
-                || session.state.subjects.count
-                < MemoMarkCommerceCapability.freeObjectLimit else {
-            requestCommerce()
-            return
-        }
-
-        addDefaultSubject()
-    }
-
-    func requestCommerce() {
-        showsCommercePurchase = true
     }
 
     func makeConfigurationFlowState()

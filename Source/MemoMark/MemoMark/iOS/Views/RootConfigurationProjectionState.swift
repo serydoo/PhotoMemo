@@ -6,6 +6,10 @@ struct RootConfigurationProjectionState {
     var presentationStyle: RecordCardPresentationStyle = .classicWhite
     var logoMode: ConfigurationLogoMode = .appleMini
     var customLogoBadge: Badge?
+    /// A paid expression can be explored in the live editor before it is
+    /// written to the durable subject. The save action owns the commerce
+    /// decision; this value is deliberately transient.
+    var pendingMemoryDisplayStyle: MemoryAnchorExpressionStyle?
 
     var birthdayDate =
         Calendar.current.date(

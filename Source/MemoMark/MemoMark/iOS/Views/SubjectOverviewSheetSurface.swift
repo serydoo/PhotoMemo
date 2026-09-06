@@ -20,7 +20,6 @@ struct SubjectOverviewSheet: View {
     let onEditSubject: () -> SubjectConfigurationFlowState?
     let onDeleteCurrentSubject: () -> Void
     let onPersistSubjectChanges: () -> Void
-    let onRequestCommerce: () -> Void
 
     @State
     private var isSwitchingSubject = false
@@ -31,6 +30,9 @@ struct SubjectOverviewSheet: View {
     @State
     private var configurationFlowState:
         SubjectConfigurationFlowState?
+
+    @State
+    private var showsCommercePurchase = false
 
     var body: some View {
         NavigationStack {
@@ -58,7 +60,8 @@ struct SubjectOverviewSheet: View {
                             session: session,
                             onPersistSubjectChanges: onPersistSubjectChanges,
                             isPlusAccess: commerceStore.isPlus,
-                            onRequestCommerce: onRequestCommerce
+                            onRequestCommerce: requestCommerce,
+                            onActivateSuggestion: activateSuggestedAnchor
                         )
                     }
 
@@ -116,9 +119,16 @@ struct SubjectOverviewSheet: View {
                     configurationFlowState = nil
                 },
                 commerceStore: commerceStore,
-                onRequestCommerce: onRequestCommerce
             )
             .memoMarkSheet(.editor, detents: [.large])
+        }
+        .sheet(isPresented: $showsCommercePurchase) {
+            MemoMarkPlusPurchaseView(
+                store: commerceStore,
+                onDismiss: {
+                    showsCommercePurchase = false
+                }
+            )
         }
     }
 
@@ -148,9 +158,41 @@ struct SubjectOverviewSheet: View {
                     onSelectSubject(subjectID)
                     isSwitchingSubject = false
                 },
-                onAddSubject: onAddSubject
+                onAddSubject: requestAddSubject
             )
         }
+    }
+
+    private func requestAddSubject() {
+        guard commerceStore.isPlus
+                || session.state.subjects.count
+                < MemoMarkCommerceCapability.freeObjectLimit else {
+            requestCommerce()
+            return
+        }
+
+        onAddSubject()
+    }
+
+    private func requestCommerce() {
+        showsCommercePurchase = true
+    }
+
+    private func activateSuggestedAnchor(
+        _ suggestion: MemorySubject.TimeAnchor
+    ) {
+        guard let subject = session.state.selectedSubject,
+              subject.timeAnchors.count < 5,
+              !subject.timeAnchors.contains(where: {
+                  $0.title == suggestion.title
+              }) else {
+            return
+        }
+
+        var updatedSubject = subject
+        updatedSubject.timeAnchors.append(suggestion)
+        session.updateSelectedSubject(updatedSubject)
+        onPersistSubjectChanges()
     }
 
     private var editSubjectButton: some View {

@@ -24,6 +24,8 @@ extension MemoMarkConfigurationCenterView {
 
     var settingsPage: some View {
         SettingsPageSurface(
+            showsWorkflowGuide:
+                $rootPresentationState.showsSettingsWorkflowGuide,
             commerceSnapshot: commerceStore.snapshot,
             onOpenMemoMarkPlus: {
                 rootPresentationState.showsMemoMarkPlus = true
@@ -89,7 +91,6 @@ extension MemoMarkConfigurationCenterView {
 
     var homePage: some View {
         HomePageSurface(
-            runtimeEnvironment: runtimeEnvironment,
             subjectSummary: homeSubjectSummaryProjection,
             subject: session.state.selectedSubject,
             activitySnapshot:
@@ -98,8 +99,6 @@ extension MemoMarkConfigurationCenterView {
                 backgroundStatusService
                 .taskOverview
                 .completedPhotoCount,
-            hasProcessingRecord:
-                backgroundStatusService.hasProcessingRecord,
             borderStyleName: currentBorderStyleName,
             borderStyleDescription: currentBorderStyleDescription,
             memoryPresets: homeAvailablePresets,
@@ -138,8 +137,15 @@ extension MemoMarkConfigurationCenterView {
             onOpenWorkflowGuide: {
                 entryFlowState.showsWorkflowGuide = true
             },
-            onOpenPhotoPicker:
-                beginPhotoProcessingFlow,
+            onOpenSettingsWorkflowGuide: {
+                entryNavigationState.openSettings(
+                    presentation: entryPresentation
+                )
+                DispatchQueue.main.async {
+                    rootPresentationState.showsSettingsWorkflowGuide = true
+                }
+            },
+            onOpenPhotoPicker: beginPhotoProcessingFlow,
             onOpenSettings: {
                 entryNavigationState.openSettings(
                     presentation: entryPresentation
@@ -191,6 +197,23 @@ extension MemoMarkConfigurationCenterView {
                 .background(offsetReader(for: .preview))
         } editorContent: {
             configurationOptionList
+        }
+        .sheet(
+            isPresented:
+                $rootPresentationState
+                .showsMemoMarkPlusForPendingExpression
+        ) {
+            MemoMarkPlusPurchaseView(
+                store: commerceStore,
+                onDismiss: {
+                    rootPresentationState
+                        .showsMemoMarkPlusForPendingExpression = false
+                    if commerceStore.isPlus {
+                        commitPendingExpressionStyleAfterCommerce()
+                        startCurrentConfigurationSaveWithFeedback()
+                    }
+                }
+            )
         }
     }
 
@@ -245,14 +268,17 @@ extension MemoMarkConfigurationCenterView {
             selectedTimeSupplement:
                 timeDisplaySupplementBinding,
             memoryDisplayValue:
-                ConfigurationCenterMemoryDisplaySupport
-                .summaryValue(
-                    subject: session.state.selectedSubject
-                ),
+                pendingMemoryDisplayStyle
+                    .map(\.displayTitle)
+                    ?? ConfigurationCenterMemoryDisplaySupport
+                    .summaryValue(
+                        subject: session.state.selectedSubject
+                    ),
             memoryDisplayDetail:
                 ConfigurationCenterMemoryDisplaySupport
                 .summaryDetail(
-                    subject: session.state.selectedSubject
+                    subject: session.state.selectedSubject,
+                    style: pendingMemoryDisplayStyle
                 ),
             availableMemoryDisplayStyles:
                 ConfigurationCenterMemoryDisplaySupport
@@ -262,6 +288,17 @@ extension MemoMarkConfigurationCenterView {
                 ),
             selectedMemoryDisplayStyle:
                 selectedMemoryDisplayStyleBinding,
+            pendingMemoryDisplayStyle:
+                pendingMemoryDisplayStyleBinding,
+            commerceStore: commerceStore,
+            isMemoryDisplayStyleLocked: { style in
+                !MemoMarkCommerceCapability
+                    .allowsFirstPartyExpressionStyle(
+                        style,
+                        snapshot: commerceStore.snapshot
+                    )
+            },
+            onRequestMemoryDisplayCommerce: { _ in },
             output: ConfigurationOutputBindings(
                 outputTarget:
                     $outputDraftState.outputTarget,

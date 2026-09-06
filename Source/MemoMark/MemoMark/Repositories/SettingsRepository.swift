@@ -309,17 +309,20 @@ final class SettingsRepository {
                     return nil
                 }
 
-                let defaults =
-                    ConfigurationCenterMockSeed
-                    .makeState()
+                // This is a production migration fallback, not a preview or
+                // test fixture. The old demo seed created the visible “小宝”
+                // record (and several example anchors) for real users who had
+                // no persisted library yet. Keep fixtures available to tests,
+                // but never import them into the production library.
+                let defaultSubject =
+                    SubjectLibraryFactory
+                    .makeDefaultSubject(referenceDate: Date())
                 return SubjectLibrarySchemaV1Record(
-                    subjects: defaults.subjects,
+                    subjects: [defaultSubject],
                     selectedSubjectID:
-                        defaults.selectedSubjectID,
-                    memoryPresets:
-                        defaults.memoryPresets,
-                    selectedMemoryPresetID:
-                        defaults.selectedMemoryPresetID
+                        defaultSubject.id,
+                    memoryPresets: [],
+                    selectedMemoryPresetID: nil
                 )
             }()
 

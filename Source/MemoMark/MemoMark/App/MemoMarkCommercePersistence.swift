@@ -489,30 +489,45 @@ nonisolated final class MemoMarkCommercePersistence:
 
         guard snapshot.environment
                 == environment else {
-            let policy =
-                MemoMarkCommercePolicy.resolved(
-                    for: environment,
-                    bonusAllowance:
-                        bonusAllowance(
-                            environment: environment
-                        )
-                )
-            return MemoMarkCommerceSnapshot(
-                environment: environment,
-                accessSource: .free,
-                successfulRecordCount:
-                    successfulRecordCount(
-                        environment: environment
-                    ),
-                totalAllowance:
-                    policy.totalAllowance,
-                batchLimit: policy.batchLimit,
-                firstRecorderDate: nil,
-                updatedAt: .distantPast
+            return freeSnapshot(for: environment, updatedAt: .distantPast)
+        }
+
+        // A subscription snapshot is shared with the Share Extension, so it
+        // can outlive the StoreKit refresh that established it. Never let an
+        // expired or malformed subscription snapshot retain Plus-only batch
+        // capacity while the app is launching or the extension is offline.
+        if snapshot.accessSource == .plusSubscription,
+           !snapshot.isPlus {
+            let normalized = freeSnapshot(
+                for: environment,
+                updatedAt: snapshot.updatedAt
             )
+            _ = saveSharedSnapshot(normalized)
+            return normalized
         }
 
         return snapshot
+    }
+
+    private func freeSnapshot(
+        for environment: MemoMarkCommerceEnvironment,
+        updatedAt: Date
+    ) -> MemoMarkCommerceSnapshot {
+        let policy = MemoMarkCommercePolicy.resolved(
+            for: environment,
+            bonusAllowance: bonusAllowance(environment: environment)
+        )
+        return MemoMarkCommerceSnapshot(
+            environment: environment,
+            accessSource: .free,
+            successfulRecordCount: successfulRecordCount(
+                environment: environment
+            ),
+            totalAllowance: policy.totalAllowance,
+            batchLimit: policy.batchLimit,
+            firstRecorderDate: nil,
+            updatedAt: updatedAt
+        )
     }
 
     private func recordMajorVersion(

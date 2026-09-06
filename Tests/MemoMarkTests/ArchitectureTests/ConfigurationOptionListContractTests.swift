@@ -459,7 +459,7 @@ struct ConfigurationOptionListContractTests {
         )
         #expect(
             optionListSource.contains(
-                "CompactSelectionLabel(\n                        title: localized(memoryDisplayValue)"
+                "CompactSelectionLabel(\n                        title: localized(displayedMemoryDisplayValue)"
             )
         )
         #expect(!optionListSource.contains("horizontalTrailingWidth: 112"))

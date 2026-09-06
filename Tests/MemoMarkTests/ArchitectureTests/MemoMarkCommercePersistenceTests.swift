@@ -300,6 +300,22 @@ struct MemoMarkCommercePersistenceTests {
         persistence.saveSharedSnapshot(snapshot)
 
         #expect(persistence.loadSharedSnapshot() == snapshot)
+        #expect(snapshot.hasDurableLegacyActivationGrant)
+    }
+
+    @Test("StoreKit lifetime snapshots do not become durable activation grants")
+    func storeKitLifetimeSnapshotHasNoLegacyActivationMarker() {
+        let snapshot = MemoMarkCommerceSnapshot(
+            environment: .production,
+            accessSource: .founderLifetime,
+            successfulRecordCount: 0,
+            totalAllowance: nil,
+            batchLimit: 40,
+            firstRecorderDate: nil,
+            updatedAt: Date()
+        )
+
+        #expect(!snapshot.hasDurableLegacyActivationGrant)
     }
 
     @Test("Production ignores a persisted TestFlight temporary snapshot")
@@ -329,6 +345,36 @@ struct MemoMarkCommercePersistenceTests {
         #expect(snapshot.accessSource == .free)
         #expect(snapshot.batchLimit == 20)
         #expect(snapshot.totalAllowance == 200)
+    }
+
+    @Test("Expired subscription snapshot is normalized before Share Extension read")
+    func expiredSubscriptionSnapshotNormalizesToFreePolicy() throws {
+        let defaults = try makeDefaults()
+        let persistence = MemoMarkCommercePersistence(defaults: defaults)
+        persistence.saveSharedSnapshot(
+            MemoMarkCommerceSnapshot(
+                environment: .production,
+                accessSource: .plusSubscription,
+                successfulRecordCount: 12,
+                totalAllowance: nil,
+                batchLimit: 40,
+                firstRecorderDate: nil,
+                validThrough: Date(timeIntervalSince1970: 1),
+                updatedAt: Date(timeIntervalSince1970: 2)
+            )
+        )
+
+        let snapshot = persistence.loadSharedSnapshot(
+            compatibleWith: .production
+        )
+
+        #expect(snapshot.accessSource == .free)
+        #expect(snapshot.batchLimit == 20)
+        #expect(snapshot.totalAllowance == 200)
+        #expect(snapshot.successfulRecordCount == 0)
+        #expect(
+            persistence.loadSharedSnapshot().accessSource == .free
+        )
     }
 
     @Test("Xcode QA snapshot stays isolated when its ledger exceeds free allowance")

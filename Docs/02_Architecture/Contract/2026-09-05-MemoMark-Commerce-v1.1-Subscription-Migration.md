@@ -1,6 +1,8 @@
 # MemoMark Commerce v1.1 — Subscription Migration
 
-Status: Accepted for the 2.3.0 / build 103 release slice
+Status: Historical baseline for the 2.3.0 / build 103 release slice.
+The build-104 subscription amendment is recorded in
+`2026-09-06-MemoMark-Commerce-v1.1-Build104-Amendment.md`.
 
 ## Decision
 

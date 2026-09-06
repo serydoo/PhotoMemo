@@ -90,8 +90,8 @@ struct SettingsPageSurface: View {
     @State
     private var showsExpressionGuide = false
 
-    @State
-    private var showsWorkflowGuide = false
+    @Binding
+    var showsWorkflowGuide: Bool
 
     @State
     private var showsAboutMemoMark = false

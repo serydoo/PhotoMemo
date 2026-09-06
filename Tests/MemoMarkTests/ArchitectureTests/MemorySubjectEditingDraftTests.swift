@@ -112,8 +112,8 @@ struct MemorySubjectEditingDraftTests {
         #expect(loadedDraft.selectedTimeAnchorID == secondAnchor.id)
     }
 
-    @Test("draft supplies the stable default time anchors for a subject without anchors")
-    func draftSuppliesDefaultTimeAnchors() throws {
+    @Test("draft supplies one durable default and two preview suggestions")
+    func draftSuppliesOneDurableDefaultAndTwoSuggestions() throws {
         let referenceDate = Date(timeIntervalSince1970: 10_000)
         var subject = makeSubject(anchors: [])
         subject.referenceDate = referenceDate
@@ -139,10 +139,17 @@ struct MemorySubjectEditingDraftTests {
             )
         )
 
-        #expect(anchors.map(\.title) == ["生日", "百天", "时间锚点"])
+        #expect(anchors.map(\.title) == ["生日"])
         #expect(anchors[0].date == referenceDate)
-        #expect(anchors[1].date == hundredthDay)
-        #expect(anchors[2].date == halfYear)
+
+        let suggestions = MemorySubjectEditingDraft.suggestedTimeAnchors(
+            for: subject,
+            calendar: calendar
+        )
+        #expect(suggestions.count == 2)
+        #expect(suggestions.map(\.anchorType) == [.birthday, .custom])
+        #expect(suggestions[0].date == hundredthDay)
+        #expect(suggestions[1].date == halfYear)
     }
 
     @Test("draft enforces time anchor cardinality and keeps selection valid")

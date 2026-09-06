@@ -39,7 +39,7 @@ struct V1SubjectLibrarySupportTests {
         #expect(session.state.subjects.count == 2)
         #expect(session.state.selectedSubjectID == insertedSubject.id)
         #expect(session.state.selectedSubject?.id == insertedSubject.id)
-        #expect(insertedSubject.timeAnchors.count == 3)
+        #expect(insertedSubject.timeAnchors.count == 1)
         #expect(insertedSubject.primaryTimeAnchor?.title == "生日")
     }
 

@@ -71,11 +71,15 @@ struct BatchQueueCommerceAccounting {
         let reservedRecordCount = jobs.reduce(into: 0) { count, job in
             count += job.tasks.count { !$0.phase.isTerminal }
         }
-        return MemoMarkCommercePolicy(
-            isPlus: snapshot.isPlus,
-            totalAllowance: snapshot.totalAllowance,
-            batchLimit: snapshot.batchLimit
-        )
+        let policy = snapshot.isPlus
+            ? MemoMarkCommercePolicy.plus
+            : MemoMarkCommercePolicy.resolved(
+                for: snapshot.environment,
+                bonusAllowance: persistence.bonusAllowance(
+                    environment: snapshot.environment
+                )
+            )
+        return policy
         .maximumAdmissionCount(
             after: snapshot.successfulRecordCount,
             reservedRecordCount: reservedRecordCount

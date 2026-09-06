@@ -39,7 +39,7 @@ struct RootConfigurationProjectionStateContractTests {
 
         #expect(
             rootSource.contains(
-                "private var rootConfigurationProjectionState"
+                "var rootConfigurationProjectionState"
             )
         )
         #expect(

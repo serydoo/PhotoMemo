@@ -6,9 +6,6 @@ import UIKit
 
 struct HomePageSurface<ProfileTrackingBackground: View>: View {
 
-    let runtimeEnvironment:
-        MemoMarkRuntimeEnvironment
-
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
     }
@@ -17,16 +14,21 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     private var hasDismissedApplePhotosGuide = false
 
     @AppStorage(
-        MemoMarkSharedContainer.didUseApplePhotosShareKey,
+        "memomark.home.photoPickerUseCount",
         store: MemoMarkSharedContainer.sharedUserDefaults
     )
-    private var hasUsedApplePhotosShare = false
+    private var photoPickerUseCount = 0
+
+    @AppStorage(
+        "memomark.home.photoPickerGuidanceStartedAt",
+        store: MemoMarkSharedContainer.sharedUserDefaults
+    )
+    private var photoPickerGuidanceStartedAt = 0.0
 
     let subjectSummary: HomeSubjectSummaryProjection
     let subject: MemorySubject?
     let activitySnapshot: MemoMarkBackgroundJobSnapshot?
     let completedPhotoCount: Int
-    let hasProcessingRecord: Bool
     let borderStyleName: String
     let borderStyleDescription: String
     let memoryPresets: [MemoryPreset]
@@ -42,7 +44,8 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     let onOpenProcessing: () -> Void
     let onCommitMemoryPresetTitle: () -> Void
     let onOpenWorkflowGuide: () -> Void
-    let onOpenPhotoPicker: () -> Void
+    let onOpenSettingsWorkflowGuide: () -> Void
+    let onOpenPhotoPicker: () -> Bool
     let onOpenSettings: () -> Void
     let onOpenMemoMarkPlus: () -> Void
     let onSelectMemoryPreset: (MemoryPreset) -> Void
@@ -55,6 +58,9 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
 
     @State
     private var showsCurrentPresetDeleteConfirmation = false
+
+    @State
+    private var photoPickerGuidanceRefreshToken = 0
 
     var body: some View {
         ScrollView {
@@ -115,11 +121,109 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
             currentPresetSection
 
             workflowReminderCard
+
+            photoPickerWorkflowHintTimeline
         }
     }
 
     private var workflowReminderCard: some View {
         HomeWorkflowReminderCard()
+    }
+
+    private func showsPhotoPickerWorkflowHint(at now: Date) -> Bool {
+        HomePhotoPickerGuidancePolicy.shouldShow(
+            useCount: photoPickerUseCount,
+            guidanceStartedAt: photoPickerGuidanceStartedAt > 0
+                ? Date(timeIntervalSince1970: photoPickerGuidanceStartedAt)
+                : nil,
+            now: now
+        )
+    }
+
+    private var photoPickerWorkflowHintTimeline: some View {
+        Group {
+            if showsPhotoPickerWorkflowHint(at: Date()) {
+                photoPickerWorkflowHint
+            }
+        }
+        .id(photoPickerGuidanceRefreshToken)
+        .task(id: photoPickerGuidanceExpirationDate) {
+            guard let expiration = photoPickerGuidanceExpirationDate else {
+                return
+            }
+
+            let interval = expiration.timeIntervalSinceNow
+            guard interval > 0 else {
+                return
+            }
+
+            let nanoseconds = UInt64(
+                min(interval, 24 * 60 * 60)
+                * 1_000_000_000
+            )
+            try? await Task.sleep(nanoseconds: nanoseconds)
+            guard !Task.isCancelled else {
+                return
+            }
+            photoPickerGuidanceRefreshToken &+= 1
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIApplication.didBecomeActiveNotification
+            )
+        ) { _ in
+            photoPickerGuidanceRefreshToken &+= 1
+        }
+    }
+
+    private var photoPickerGuidanceExpirationDate: Date? {
+        guard photoPickerGuidanceStartedAt > 0 else {
+            return nil
+        }
+
+        return Date(
+            timeIntervalSince1970: photoPickerGuidanceStartedAt
+        )
+        .addingTimeInterval(
+            HomePhotoPickerGuidancePolicy.guidanceDuration
+        )
+    }
+
+    private var photoPickerWorkflowHint: some View {
+        ConfigurationTitledSectionCard(
+            title: localized(
+                "home.photo_picker_hint.title",
+                fallback: "想了解更顺手的记录方式？"
+            ),
+            subtitle: localized(
+                "home.photo_picker_hint.detail",
+                fallback: "这条提示会保留 24 小时，之后会从主页收起。"
+            ),
+            trailingAccessory: {
+                Image(systemName: "questionmark.circle")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+            }
+        ) {
+            Button(action: onOpenSettingsWorkflowGuide) {
+                Label(
+                    localized(
+                        "home.photo_picker_hint.action",
+                        fallback: "调整使用引导"
+                    ),
+                    systemImage: MemoMarkSymbol.workflow.name
+                )
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(
+                localized(
+                    "home.photo_picker_hint.action_hint",
+                    fallback: "打开设置中的日常使用流程。"
+                )
+            )
+        }
     }
 
     private var applePhotosEntrySection: some View {
@@ -209,6 +313,21 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         hasDismissedApplePhotosGuide = true
     }
 
+    private func openPhotoPickerFromHome() {
+        guard onOpenPhotoPicker() else {
+            return
+        }
+
+        photoPickerUseCount = min(
+            photoPickerUseCount + 1,
+            HomePhotoPickerGuidancePolicy.useThreshold
+        )
+        if photoPickerUseCount >= HomePhotoPickerGuidancePolicy.useThreshold,
+           photoPickerGuidanceStartedAt == 0 {
+            photoPickerGuidanceStartedAt = Date().timeIntervalSince1970
+        }
+    }
+
     private var nextShareConfigurationText: String {
         let language = interfaceLanguage
 
@@ -230,8 +349,14 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         return String(format: format, locale: language.locale, preset.title)
     }
 
-    private func localized(_ key: String) -> String {
-        interfaceLanguage.localized(key: key, fallback: key)
+    private func localized(
+        _ key: String,
+        fallback: String? = nil
+    ) -> String {
+        interfaceLanguage.localized(
+            key: key,
+            fallback: fallback ?? key
+        )
     }
 
     @ViewBuilder
@@ -626,7 +751,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     private var processPhotoFooter: some View {
         if shouldShowInAppPhotoPicker {
             VStack(spacing: 0) {
-                Button(action: onOpenPhotoPicker) {
+                Button(action: openPhotoPickerFromHome) {
                     Label(
                         isConfigurationReady
                         ? localized("home.process.choose_photo")
@@ -658,8 +783,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var shouldShowInAppPhotoPicker: Bool {
-        runtimeEnvironment.isUITestingHarness
-            || (!hasProcessingRecord && !hasUsedApplePhotosShare)
+        true
     }
 }
 

@@ -176,6 +176,39 @@ struct MemoMarkCommerceUIContractTests {
         )
     }
 
+    @Test("Home keeps the photo picker discoverable and guides first use")
+    func homePhotoPickerGuidanceIsTimeBound() throws {
+        let homeSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+        )
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+
+        #expect(homeSource.contains("memomark.home.photoPickerUseCount"))
+        #expect(homeSource.contains("photoPickerGuidanceStartedAt"))
+        #expect(homeSource.contains("onOpenSettingsWorkflowGuide"))
+        #expect(homeSource.contains("HomePhotoPickerGuidancePolicy"))
+        #expect(homeSource.contains("private var shouldShowInAppPhotoPicker"))
+        #expect(homeSource.contains("        true"))
+        #expect(pagesSource.contains("showsSettingsWorkflowGuide"))
+    }
+
+    @Test("Home photo guidance uses a ten-use and one-day window")
+    func homePhotoPickerGuidancePolicyUsesTenUseWindow() throws {
+        let policySource = try sourceText(
+            "Source/MemoMark/MemoMark/Models/MemoMarkCommerceModels.swift"
+        )
+
+        #expect(policySource.contains("static let useThreshold = 10"))
+        #expect(
+            policySource.contains(
+                "static let guidanceDuration: TimeInterval = 24 * 60 * 60"
+            )
+        )
+        #expect(policySource.contains("elapsed < guidanceDuration"))
+    }
+
     @Test("Settings Hero makes the current membership state visible")
     func settingsHeroShowsCurrentMembershipState() throws {
         let source = try sourceText(
@@ -328,6 +361,91 @@ struct MemoMarkCommerceUIContractTests {
             localizationKeys(in: simplifiedChinese)
             == localizationKeys(in: english)
         )
+    }
+
+    @Test("subject commerce stays on the active editing surface")
+    func subjectCommercePresentationOwnershipStaysLocal() throws {
+        let modifierSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectPresentationModifier.swift"
+        )
+        let overviewSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift"
+        )
+        let configurationSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift"
+        )
+        let anchorSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
+        )
+
+        #expect(!modifierSource.contains("showsCommercePurchase"))
+        #expect(overviewSource.contains("@State\n    private var showsCommercePurchase"))
+        #expect(configurationSource.contains("@State\n    private var showsCommercePurchase"))
+        #expect(anchorSource.contains("onActivateSuggestion"))
+        #expect(anchorSource.contains("time_anchor.suggestions.add"))
+        #expect(anchorSource.contains("time_anchor.suggestions.customize"))
+    }
+
+    @Test("preview suggestions remain visible until explicitly materialized")
+    func previewSuggestionMaterializationIsExplicit() throws {
+        let source = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
+        )
+
+        #expect(source.contains("if !suggestedTimeAnchors(for: subject).isEmpty"))
+        #expect(source.contains("onActivateSuggestion(suggestion)"))
+        #expect(source.contains("onRequestCommerce()"))
+        #expect(source.contains("private func suggestedTimeAnchors("))
+        #expect(source.contains("for subject: MemorySubject"))
+    }
+
+    @Test("production bootstrap never imports the mock 小宝 seed")
+    func productionBootstrapUsesTheRealFirstRunFactory() throws {
+        let repositorySource = try sourceText(
+            "Source/MemoMark/MemoMark/Repositories/SettingsRepository.swift"
+        )
+
+        #expect(!repositorySource.contains("ConfigurationCenterMockSeed"))
+        #expect(!repositorySource.contains("ConfigurationCenterState.mock"))
+        #expect(repositorySource.contains("SubjectLibraryFactory"))
+        #expect(repositorySource.contains("makeDefaultSubject"))
+    }
+
+    @Test("expression styles are previewable and gated at save")
+    func expressionStyleSaveGateStaysOnTheConfigurationSurface() throws {
+        let optionSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
+        )
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+        let actionsSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Actions.swift"
+        )
+        let resource = try sourceText(
+            "Source/MemoMark/MemoMark/zh-Hans.lproj/Localizable.strings"
+        )
+
+        #expect(optionSource.contains("pendingMemoryDisplayStyle"))
+        #expect(optionSource.contains("commerce.expression.preview_note"))
+        #expect(!optionSource.contains("showsCommercePurchase = true"))
+        #expect(pagesSource.contains("pendingMemoryDisplayStyleBinding"))
+        #expect(actionsSource.contains("requestCommerceForPendingExpressionStyle"))
+        #expect(resource.contains("\"commerce.expression.preview_note\""))
+    }
+
+    @Test("purchase plans are compact and hidden after entitlement")
+    func purchasePagePrioritizesPlansAndEntitlementState() throws {
+        let source = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkPlusPurchaseView.swift"
+        )
+
+        let planPosition = try #require(source.range(of: "planSection")?.lowerBound)
+        let benefitPosition = try #require(source.range(of: "benefitSection")?.lowerBound)
+        #expect(planPosition < benefitPosition)
+        #expect(source.contains("if !store.isPlus"))
+        #expect(source.contains("frame(width: 56, height: 56)"))
+        #expect(source.contains("commerce.purchase.entitled"))
     }
 
     private func sourceText(

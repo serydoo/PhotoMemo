@@ -235,6 +235,8 @@ extension MemoMarkConfigurationCenterView {
     }
 
     func bootstrapDrafts() {
+        rootConfigurationProjectionState
+            .pendingMemoryDisplayStyle = nil
         draftRuntimeCoordinator.bootstrapDrafts(
             using: ConfigurationDraftBootstrapCoordinator(
                 session: session,

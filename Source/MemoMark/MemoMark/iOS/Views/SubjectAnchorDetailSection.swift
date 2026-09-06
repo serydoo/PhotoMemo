@@ -3,6 +3,10 @@ import SwiftUI
 
 struct SubjectAnchorDetailSection: View {
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     @ObservedObject
     var session: ConfigurationSession
 
@@ -10,19 +14,22 @@ struct SubjectAnchorDetailSection: View {
     let allowsSwipeDeletion: Bool
     let isPlusAccess: Bool
     let onRequestCommerce: () -> Void
+    let onActivateSuggestion: (MemorySubject.TimeAnchor) -> Void
 
     init(
         session: ConfigurationSession,
         onPersistSubjectChanges: @escaping () -> Void,
         allowsSwipeDeletion: Bool = false,
         isPlusAccess: Bool = true,
-        onRequestCommerce: @escaping () -> Void = {}
+        onRequestCommerce: @escaping () -> Void = {},
+        onActivateSuggestion: @escaping (MemorySubject.TimeAnchor) -> Void = { _ in }
     ) {
         self.session = session
         self.onPersistSubjectChanges = onPersistSubjectChanges
         self.allowsSwipeDeletion = allowsSwipeDeletion
         self.isPlusAccess = isPlusAccess
         self.onRequestCommerce = onRequestCommerce
+        self.onActivateSuggestion = onActivateSuggestion
     }
 
     @State
@@ -110,6 +117,10 @@ struct SubjectAnchorDetailSection: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                if !suggestedTimeAnchors(for: subject).isEmpty {
+                    previewSuggestionModules(for: subject)
                 }
             }
             .v1ConfigurationSheetPanelChrome()
@@ -214,6 +225,75 @@ struct SubjectAnchorDetailSection: View {
             < MemoMarkCommerceCapability.freeTimeAnchorLimit
     }
 
+    @ViewBuilder
+    private func previewSuggestionModules(
+        for subject: MemorySubject
+    ) -> some View {
+        let suggestions = MemorySubjectEditingDraft
+            .suggestedTimeAnchors(for: subject)
+
+        if !suggestions.isEmpty {
+            HorizontalDivider(horizontalInset: 16)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(
+                    localized(
+                        "time_anchor.suggestions.title",
+                        fallback: "更多时间锚点示例"
+                    )
+                )
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .padding(.bottom, 4)
+
+                ForEach(
+                    Array(suggestions.enumerated()),
+                    id: \.offset
+                ) { _, suggestion in
+                    SubjectAnchorSuggestionModule(
+                        anchor: suggestion,
+                        subjectName: subject.identity.shortName,
+                        isPlusAccess: isPlusAccess,
+                        onConfigure: {
+                            if isPlusAccess {
+                                onActivateSuggestion(suggestion)
+                            } else {
+                                onRequestCommerce()
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private func suggestedTimeAnchors(
+        for subject: MemorySubject
+    ) -> [MemorySubject.TimeAnchor] {
+        return MemorySubjectEditingDraft
+            .suggestedTimeAnchors(for: subject)
+            .filter { suggestion in
+                !subject.timeAnchors.contains { existingAnchor in
+                    existingAnchor.anchorType == suggestion.anchorType
+                    && Calendar.current.isDate(
+                        existingAnchor.date,
+                        inSameDayAs: suggestion.date
+                    )
+                }
+            }
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage.localized(
+            key: key,
+            fallback: fallback
+        )
+    }
+
     private func requestDeletion(
         _ anchor: MemorySubject.TimeAnchor
     ) {
@@ -271,6 +351,112 @@ struct SubjectAnchorDetailSection: View {
 
     private func cancelEditingDraft() {
         editingDraft = nil
+    }
+}
+
+private struct SubjectAnchorSuggestionModule: View {
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
+    let anchor: MemorySubject.TimeAnchor
+    let subjectName: String
+    let isPlusAccess: Bool
+    let onConfigure: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(anchor.title)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text(
+                        localized(
+                            "time_anchor.suggestions.example",
+                            fallback: "示例"
+                        )
+                    )
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(Color.secondary.opacity(0.12))
+                        )
+                }
+
+                Text(anchor.date.formatted(date: .abbreviated, time: .omitted))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Text(
+                    TimeAnchorTodayPresenter.presentation(
+                        anchor: anchor,
+                        subjectName: subjectName,
+                        referenceDate: .now,
+                        outputLanguage: .interfaceStored
+                    ).value
+                )
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            Button(
+                isPlusAccess
+                ? localized(
+                    "time_anchor.suggestions.add",
+                    fallback: "添加"
+                )
+                : localized(
+                    "time_anchor.suggestions.customize",
+                    fallback: "自定义"
+                )
+            ) {
+                onConfigure()
+            }
+            .font(.subheadline.weight(.semibold))
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        .accessibilityLabel(
+            isPlusAccess
+                ? String(
+                    format: localized(
+                        "time_anchor.suggestions.add_accessibility",
+                        fallback: "添加%@时间锚点"
+                    ),
+                    locale: interfaceLanguage.locale,
+                    anchor.title
+                )
+                : String(
+                    format: localized(
+                        "time_anchor.suggestions.customize_accessibility",
+                        fallback: "订阅 MemoMark+ 后自定义%@"
+                    ),
+                    locale: interfaceLanguage.locale,
+                    anchor.title
+                )
+        )
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage.localized(
+            key: key,
+            fallback: fallback
+        )
     }
 }
 

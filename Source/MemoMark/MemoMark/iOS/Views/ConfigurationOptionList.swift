@@ -69,6 +69,14 @@ struct ConfigurationOptionList: View {
         [MemoryAnchorExpressionStyle]
     let selectedMemoryDisplayStyle:
         Binding<MemoryAnchorExpressionStyle>
+    @Binding
+    var pendingMemoryDisplayStyle: MemoryAnchorExpressionStyle?
+    @ObservedObject
+    var commerceStore: MemoMarkCommerceStore
+    let isMemoryDisplayStyleLocked:
+        (MemoryAnchorExpressionStyle) -> Bool
+    let onRequestMemoryDisplayCommerce:
+        (MemoryAnchorExpressionStyle) -> Void
     let output: ConfigurationOutputBindings
     let configurationStatus: ConfigurationPersistenceStatus
     let onOpenRegionContent: () -> Void
@@ -373,7 +381,7 @@ struct ConfigurationOptionList: View {
         configurationSectionHeader(
             title: "configuration.expression.title",
             subtitle: "configuration.expression.subtitle",
-            resultTitle: memoryDisplayValue,
+            resultTitle: displayedMemoryDisplayValue,
             isExpanded: disclosureBinding(for: .memoryExpression),
             expandedAccessibilityLabel: "configuration.expression.accessibility.collapse",
             collapsedAccessibilityLabel: "configuration.expression.accessibility.expand"
@@ -514,7 +522,7 @@ struct ConfigurationOptionList: View {
         configurationTextRow(
             title: "表达方式",
             subtitle: memoryDisplaySubtitle,
-            value: memoryDisplayValue,
+            value: displayedMemoryDisplayValue,
             detail: "",
             showsTrailingChevron: false
         ) {
@@ -530,27 +538,63 @@ struct ConfigurationOptionList: View {
                         id: \.self
                     ) { style in
                         Button {
-                            selectedMemoryDisplayStyle.wrappedValue =
-                                style
+                            if isMemoryDisplayStyleLocked(style) {
+                                // Keep the choice in the editor only. The
+                                // live preview is useful before purchase, but
+                                // the durable save action owns the paywall.
+                                pendingMemoryDisplayStyle = style
+                            } else {
+                                pendingMemoryDisplayStyle = nil
+                                selectedMemoryDisplayStyle.wrappedValue = style
+                            }
                         } label: {
-                            menuOptionLabel(
-                                localized(style.displayTitle),
-                                isSelected:
-                                    style
-                                    == selectedMemoryDisplayStyle
-                                    .wrappedValue
-                            )
+                            HStack(spacing: 8) {
+                                menuOptionLabel(
+                                    localized(style.displayTitle),
+                                    isSelected:
+                                        style
+                                        == displayedMemoryDisplayStyle
+                                )
+
+                                if isMemoryDisplayStyleLocked(style) {
+                                    Image(systemName: "lock.fill")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                         }
                     }
                 } label: {
                     CompactSelectionLabel(
-                        title: localized(memoryDisplayValue)
+                        title: localized(displayedMemoryDisplayValue)
                     )
                 }
                 .accessibilityLabel(localized("表达方式"))
-                .accessibilityValue(localized(memoryDisplayValue))
+                .accessibilityValue(localized(displayedMemoryDisplayValue))
+            }
+
+            if availableMemoryDisplayStyles.contains(where: isMemoryDisplayStyleLocked) {
+                Text(
+                    MemoMarkLanguage.interfaceStored.localized(
+                        key: "commerce.expression.preview_note",
+                        fallback: "其他表达方式可先预览；保存此选择需 MemoMark+ 权益。"
+                    )
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, CompactInformationRowMetrics.horizontalPadding)
+                .padding(.bottom, 10)
             }
         }
+    }
+
+    private var displayedMemoryDisplayStyle: MemoryAnchorExpressionStyle {
+        pendingMemoryDisplayStyle ?? selectedMemoryDisplayStyle.wrappedValue
+    }
+
+    private var displayedMemoryDisplayValue: String {
+        pendingMemoryDisplayStyle?.displayTitle ?? memoryDisplayValue
     }
 
     private var memoryDisplaySubtitle: String {

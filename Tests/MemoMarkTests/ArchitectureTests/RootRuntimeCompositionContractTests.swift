@@ -41,7 +41,7 @@ struct RootRuntimeCompositionContractTests {
         #expect(rootSource.contains("private var rootLifecycleState"))
         #expect(
             rootSource.contains(
-                "private var rootConfigurationProjectionState"
+                "var rootConfigurationProjectionState"
             )
         )
         #expect(rootSource.contains("var rootPresentationState"))

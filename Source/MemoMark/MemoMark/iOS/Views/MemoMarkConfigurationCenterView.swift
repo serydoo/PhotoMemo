@@ -90,7 +90,7 @@ struct MemoMarkConfigurationCenterView: View {
         RootPresentationState()
 
     @State
-    private var rootConfigurationProjectionState =
+    var rootConfigurationProjectionState =
         RootConfigurationProjectionState()
 
     var logoMode: ConfigurationLogoMode {
@@ -112,6 +112,28 @@ struct MemoMarkConfigurationCenterView: View {
         Binding(
             get: { presentationStyle },
             set: { switchPresentationStyle(to: $0) }
+        )
+    }
+
+    var pendingMemoryDisplayStyle:
+        MemoryAnchorExpressionStyle? {
+        rootConfigurationProjectionState
+            .pendingMemoryDisplayStyle
+    }
+
+    var pendingMemoryDisplayStyleBinding:
+        Binding<MemoryAnchorExpressionStyle?> {
+        Binding(
+            get: {
+                rootConfigurationProjectionState
+                    .pendingMemoryDisplayStyle
+            },
+            set: { style in
+                rootConfigurationProjectionState
+                    .pendingMemoryDisplayStyle = style
+                activeConfigurationStatus = .dirty
+                refreshDynamicPreview()
+            }
         )
     }
 

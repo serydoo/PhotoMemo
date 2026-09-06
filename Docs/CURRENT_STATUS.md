@@ -1,5 +1,62 @@
 # MemoMark Current Status
 
+## 2026-09-06 2.3.0 (104) Home guidance and commerce stability slice
+
+- Clarified the product contract: the Home photo-selection entry never disappears;
+  after ten successful entries, a 24-hour guide points to Settings → daily
+  workflow and then collapses from Home. This is a discoverability guide, not a
+  change to the free processing/commerce allowance.
+- The guide uses an expiration-driven one-shot refresh plus foreground
+  re-evaluation, backed by a shared policy with exact 10-use and 24-hour boundary
+  coverage. At expiry only the guide is removed; the Home photo-picker entry
+  remains available. A blocked photo-picker flow does not increment the counter.
+- StoreKit transaction updates now re-resolve the complete current entitlement
+  set and preserve historical lifetime/activation-code access when a later
+  subscription event arrives. Monthly and annual products are both supported.
+- Historical `verifiedPlus` snapshots now carry an explicit durable activation
+  provenance marker; current StoreKit `founderLifetime` snapshots do not inherit
+  that marker, so a missing or revoked current entitlement cannot become a new
+  permanent grant through stale snapshot inference.
+- Time Anchor preview suggestions remain non-durable until explicit activation;
+  their titles, notes, buttons, and accessibility labels are localized in Chinese,
+  English, Japanese, and Korean. Duplicate suppression is semantic/date-based.
+- The current source candidate is 2.3.0 / 104. Focused Commerce, Home guidance,
+  Time Anchor draft, and UI contract tests pass; the MemoMarkTests target,
+  generic iOS build, signed iPhone build, uninstall/reinstall, and launch have
+  been rerun after the provenance fix. The full MemoMarkTests suite also
+  completed successfully against an explicit macOS arm64 destination. StoreKit
+  Sandbox, Xcode Cloud, App Store Connect, and distribution evidence remain
+  open.
+
+## 2026-09-06 2.3.0 (103) Commerce interaction slice
+
+- The new-user Time Anchor experience now has one durable default anchor and two
+  non-durable preview suggestions. Suggestions do not enter the persisted
+  subject until a MemoMark+ user explicitly chooses “添加”; a free user’s
+  “自定义” action keeps the purchase surface in the current interaction.
+- Commerce presentation ownership is local to the overview/configuration
+  surfaces and the expression-style option list. The flow no longer closes an
+  editing surface just to present a generic purchase sheet.
+- The effective entitlement snapshot continues to distinguish historical
+  lifetime access, activation-code access, active annual/monthly subscriptions,
+  and expired subscriptions. A valid MemoMark+ subscription opens all
+  first-party expression styles; collaborative designs remain outside this
+  entitlement.
+- Focused Commerce, first-run, anchor, and UI contract tests passed. The signed
+  iPhone build was verified as MemoMark 2.3.0 (103), then the existing app was
+  explicitly uninstalled, reinstalled, and launched on the paired iPhone 17 Pro
+  Max. Uninstalling cleared the app sandbox only; Apple Photos originals were
+  not targeted.
+- The Codex with ChatGPT iteration-2 read-only review concluded `PASS` with no
+  new code-level P0/P1 blockers. Its connector still exposed no execution
+  records, so local `xcodebuild` and `devicectl` output remain the authoritative
+  command evidence for this slice.
+- User visual acceptance remains open for the freshly installed app: inspect
+  the one formal anchor plus two examples, the current-surface purchase flow,
+  explicit suggestion activation after Plus access, and the locked/unlocked
+  expression-style list. Dynamic Type, VoiceOver, full Apple Photos flow, and
+  production distribution remain separate evidence gates.
+
 ## 2026-09-05 2.3.0 (103) Commerce v1.1 Candidate
 
 - The 2.3.0 / build 103 source candidate introduces the accepted Commerce v1.1
@@ -28422,3 +28479,40 @@ the physical-device delivery path. This records deployment evidence only; it
 does not by itself close the separate manual visual, Dynamic Type, VoiceOver,
 or Apple Photos acceptance items. Existing unrelated working-tree changes were
 preserved, and no Git or external release mutation was performed.
+
+## 2026-09-06 MemoMark+ Commerce Interaction And First-Run Seed Correction
+
+The bounded commerce pass now keeps the active Configuration Center surface in
+control of purchase intent. A non-entitled user can select and preview a
+first-party expression style, but the style remains transient until the user
+chooses to save; the save path then presents MemoMark+ and, after verified
+access is available, commits the pending style and continues the save. Natural
+expression remains the free default. Existing founder-lifetime, activation
+grant, and active subscription snapshots continue through the same commerce
+capability policy.
+
+The first-run migration fallback no longer imports the old demonstration seed
+that created the visible `小宝` object and three example anchors in a production
+library. It now creates one ordinary default subject with one birthday anchor.
+Persisted user libraries are not matched or deleted by display name; the
+existing legacy-library sanitization boundary remains limited to its known
+provenance rule.
+
+The MemoMark+ sheet now places the annual/monthly plan cards before the benefit
+list, reduces the hero footprint, and shows a concise entitlement state while
+hiding purchase-plan controls for already-entitled users. The standard benefits
+still include unlimited local processing, additional subjects/anchors, all
+first-party expression styles, batch capacity, Family Sharing, and ongoing core
+updates. Localized preview-note and entitlement copy was added for all four
+supported interface languages.
+
+Verification: `MemoMarkiOS` generic iOS-device build passed; focused macOS
+tests passed for commerce policy, commerce UI contracts, and first-run factory
+contracts. Build `2.3.0 (103)` was signed, the previous
+`com.serydoo.PhotoMemo.iOS` installation was explicitly removed, and the new
+build was installed on the paired iPhone 17 Pro Max
+(`863C2747-6742-5E93-B715-6F89DBF90B31`). Installation read-back reports
+version `2.3.0`, build `103`. Launch was attempted but iOS denied it because
+the device was locked; physical visual, Dynamic Type, VoiceOver, and manual
+purchase-flow acceptance remain open until the device is unlocked. No GitHub,
+TestFlight, App Store Connect, or App Store mutation was performed.

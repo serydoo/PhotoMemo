@@ -20,29 +20,6 @@ enum SubjectLibraryFactory {
             anchorType: .birthday,
             expressionStyle: .birthdayNatural
         )
-        let hundredDaysAnchor = MemorySubject.TimeAnchor(
-            title: "百天",
-            date: Calendar.current.date(
-                byAdding: .day,
-                value: 99,
-                to: birthday
-            ) ?? birthday,
-            note: "对象出生后的第 100 天。",
-            anchorType: .birthday,
-            expressionStyle: .birthdayNatural
-        )
-        let customAnchor = MemorySubject.TimeAnchor(
-            title: "时间锚点",
-            date: Calendar.current.date(
-                byAdding: .month,
-                value: 6,
-                to: birthday
-            ) ?? birthday,
-            note: "自定义纪念日或重要时间点。",
-            anchorType: .custom,
-            expressionStyle: .customNatural
-        )
-
         return MemorySubject(
             identity: .init(
                 displayName: resolvedName,
@@ -54,11 +31,7 @@ enum SubjectLibraryFactory {
             ),
             definition: "围绕这个主角回顾照片中的时间。",
             referenceDate: birthday,
-            timeAnchors: [
-                birthdayAnchor,
-                hundredDaysAnchor,
-                customAnchor
-            ],
+            timeAnchors: [birthdayAnchor],
             activeTimeAnchorID: birthdayAnchor.id,
             expressionSubjectSource: .shortName,
             behavior: .init(
@@ -86,35 +59,6 @@ enum SubjectLibraryFactory {
                 expressionStyle:
                     .defaultStyle(for: .birthday)
             )
-        let hundredDaysAnchor =
-            MemorySubject.TimeAnchor(
-                title: "百天",
-                date:
-                    Calendar.current.date(
-                        byAdding: .day,
-                        value: 99,
-                        to: referenceDate
-                    ) ?? referenceDate,
-                note: "对象出生后的第 100 天。",
-                anchorType: .birthday,
-                expressionStyle:
-                    .defaultStyle(for: .birthday)
-            )
-        let customAnchor =
-            MemorySubject.TimeAnchor(
-                title: "时间锚点",
-                date:
-                    Calendar.current.date(
-                        byAdding: .month,
-                        value: 6,
-                        to: referenceDate
-                    ) ?? referenceDate,
-                note: "自定义纪念日或重要时间点。",
-                anchorType: .custom,
-                expressionStyle:
-                    .defaultStyle(for: .custom)
-            )
-
         return MemorySubject(
             identity: .init(
                 displayName: "新的记忆对象",
@@ -126,11 +70,7 @@ enum SubjectLibraryFactory {
             ),
             definition: "在这里补充对象身份、头像与时间锚点。",
             referenceDate: referenceDate,
-            timeAnchors: [
-                birthdayAnchor,
-                hundredDaysAnchor,
-                customAnchor
-            ],
+            timeAnchors: [birthdayAnchor],
             activeTimeAnchorID: birthdayAnchor.id,
             expressionSubjectSource: .displayName,
             behavior: .init(

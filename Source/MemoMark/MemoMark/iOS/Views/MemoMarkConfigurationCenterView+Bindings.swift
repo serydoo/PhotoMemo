@@ -137,22 +137,13 @@ extension MemoMarkConfigurationCenterView {
                       let anchor = subject.primaryTimeAnchor else {
                     return .birthdayNatural
                 }
-                let selected = anchor.resolvedExpressionStyle
-                guard MemoMarkCommerceCapability
-                    .allowsFirstPartyExpressionStyle(
-                        selected,
-                        accessSource:
-                            commerceStore.snapshot.accessSource
-                    ) else {
-                    return .birthdayNatural
-                }
-                return selected
+                return anchor.resolvedExpressionStyle
             },
             set: { style in
                 guard MemoMarkCommerceCapability
                     .allowsFirstPartyExpressionStyle(
                         style,
-                        accessSource: commerceStore.snapshot.accessSource
+                        snapshot: commerceStore.snapshot
                     ) else {
                     return
                 }
@@ -193,7 +184,7 @@ extension MemoMarkConfigurationCenterView {
                     shareDiagnosticEvents,
                 language: .interfaceStored
             )
+        }
     }
-}
 
 #endif

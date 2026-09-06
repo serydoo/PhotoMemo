@@ -94,6 +94,7 @@ struct MemoMarkCommercePolicyTests {
 
     @Test("free and Plus policies keep distinct allowance and batch limits")
     func freeAndPlusPoliciesStayDistinct() {
+        #expect(MemoMarkCommercePolicy.baseFreeAllowance == 200)
         #expect(MemoMarkCommercePolicy.free.batchLimit == 20)
         #expect(MemoMarkCommercePolicy.plus.batchLimit == 40)
         #expect(
@@ -210,6 +211,51 @@ struct MemoMarkCommercePolicyTests {
         )
     }
 
+    @Test("Home guidance starts at the tenth successful picker use")
+    func homeGuidanceUsesSuccessfulPickerThreshold() {
+        let start = Date(timeIntervalSince1970: 1_000)
+
+        #expect(
+            !HomePhotoPickerGuidancePolicy.shouldShow(
+                useCount: 9,
+                guidanceStartedAt: start,
+                now: start.addingTimeInterval(1)
+            )
+        )
+        #expect(
+            !HomePhotoPickerGuidancePolicy.shouldShow(
+                useCount: 10,
+                guidanceStartedAt: nil,
+                now: start.addingTimeInterval(1)
+            )
+        )
+        #expect(
+            HomePhotoPickerGuidancePolicy.shouldShow(
+                useCount: 10,
+                guidanceStartedAt: start,
+                now: start.addingTimeInterval(
+                    HomePhotoPickerGuidancePolicy.guidanceDuration - 1
+                )
+            )
+        )
+        #expect(
+            !HomePhotoPickerGuidancePolicy.shouldShow(
+                useCount: 10,
+                guidanceStartedAt: start,
+                now: start.addingTimeInterval(
+                    HomePhotoPickerGuidancePolicy.guidanceDuration
+                )
+            )
+        )
+        #expect(
+            !HomePhotoPickerGuidancePolicy.shouldShow(
+                useCount: 10,
+                guidanceStartedAt: start,
+                now: start.addingTimeInterval(-1)
+            )
+        )
+    }
+
     @Test("subscription and founder access include every first-party style")
     func paidAccessIncludesFirstPartyStyles() {
         let paidStyles = MemoryAnchorExpressionStyle.availableStyles(
@@ -257,6 +303,60 @@ struct MemoMarkCommercePolicyTests {
         #expect(!snapshot.isPlus)
         #expect(snapshot.isSubscription)
         #expect(!snapshot.isFounderLifetime)
+    }
+
+    @Test("expression access follows the snapshot's effective entitlement")
+    func expressionAccessUsesEffectiveSnapshotEntitlement() {
+        let expired = MemoMarkCommerceSnapshot(
+            environment: .production,
+            accessSource: .plusSubscription,
+            successfulRecordCount: 0,
+            totalAllowance: nil,
+            batchLimit: 40,
+            firstRecorderDate: nil,
+            validThrough: Date(timeIntervalSince1970: 100),
+            updatedAt: Date(timeIntervalSince1970: 100)
+        )
+        let active = MemoMarkCommerceSnapshot(
+            environment: .production,
+            accessSource: .plusSubscription,
+            successfulRecordCount: 0,
+            totalAllowance: nil,
+            batchLimit: 40,
+            firstRecorderDate: nil,
+            validThrough: Date().addingTimeInterval(3_600),
+            updatedAt: Date()
+        )
+
+        #expect(
+            !MemoMarkCommerceCapability
+                .allowsFirstPartyExpressionStyle(
+                    .birthdayWarm,
+                    snapshot: expired
+                )
+        )
+        #expect(
+            MemoMarkCommerceCapability
+                .allowsFirstPartyExpressionStyle(
+                    .birthdayWarm,
+                    snapshot: active
+                )
+        )
+        #expect(
+            MemoMarkCommerceCapability
+                .allowsFirstPartyExpressionStyle(
+                    .birthdayWarm,
+                    snapshot: MemoMarkCommerceSnapshot(
+                        environment: .production,
+                        accessSource: .founderLifetime,
+                        successfulRecordCount: 0,
+                        totalAllowance: nil,
+                        batchLimit: 40,
+                        firstRecorderDate: Date(),
+                        updatedAt: Date()
+                    )
+                )
+        )
     }
 
     @Test("free access keeps one object and one time anchor")

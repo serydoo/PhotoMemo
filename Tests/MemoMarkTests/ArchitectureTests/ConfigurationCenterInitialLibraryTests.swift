@@ -43,8 +43,8 @@ struct ConfigurationCenterInitialLibraryTests {
         )
     }
 
-    @Test("Fresh installation defaults can enter the durable deletion flow")
-    func freshInstallationDefaultsCanEnterDurableDeletionFlow() throws {
+    @Test("Fresh installation defaults keep the required configuration")
+    func freshInstallationDefaultsKeepRequiredConfiguration() throws {
         let suiteName =
             "MemoMark.ConfigurationCenterInitialLibraryTests.delete.\(UUID().uuidString)"
         let defaults = try #require(
@@ -80,19 +80,12 @@ struct ConfigurationCenterInitialLibraryTests {
             )
         )
 
-        guard case .persistDeletion(let result) = decision else {
+        guard case .unavailable = decision else {
             Issue.record(
-                "Expected a fresh default configuration to enter durable deletion"
+                "Expected the only fresh default configuration to remain protected"
             )
             return
         }
-        #expect(result.deletedPreset.id == preset.id)
-        #expect(
-            result.candidate.subjects
-                .flatMap(\.configurations)
-                .contains(where: { $0.id == preset.id })
-            == false
-        )
     }
 
     @Test("Legacy installation defaults migrate to a canonical configuration library")

@@ -338,7 +338,7 @@ struct SettingsDisclosureContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/WelcomePresentation.swift"
         )
 
-        #expect(settingsSource.contains("private var showsWorkflowGuide = false"))
+        #expect(settingsSource.contains("var showsWorkflowGuide: Bool"))
         #expect(settingsSource.contains("isPresented: $showsWorkflowGuide"))
         #expect(settingsSource.contains("showsWorkflowGuide = true"))
         #expect(settingsSource.contains("showsWorkflowGuide = false"))

@@ -23,6 +23,10 @@ extension MemoMarkConfigurationCenterView {
     }
 
     func startCurrentConfigurationSaveWithFeedback() {
+        guard requestCommerceForPendingExpressionStyle() else {
+            return
+        }
+
         Task { @MainActor in
             let didSave =
                 await applyCurrentConfiguration()
@@ -35,6 +39,43 @@ extension MemoMarkConfigurationCenterView {
             UINotificationFeedbackGenerator()
                 .notificationOccurred(.success)
         }
+    }
+
+    /// Paid styles are preview state until the user explicitly saves the
+    /// configuration. Existing founder, activation-code, and subscription
+    /// access all pass through the same verified commerce snapshot.
+    @discardableResult
+    @MainActor
+    func requestCommerceForPendingExpressionStyle() -> Bool {
+        guard let pendingStyle = pendingMemoryDisplayStyle else {
+            return true
+        }
+
+        guard MemoMarkCommerceCapability
+            .allowsFirstPartyExpressionStyle(
+                pendingStyle,
+                snapshot: commerceStore.snapshot
+            ) else {
+            rootPresentationState
+                .showsMemoMarkPlusForPendingExpression = true
+            return false
+        }
+
+        commitPendingExpressionStyleAfterCommerce()
+        return true
+    }
+
+    @MainActor
+    func commitPendingExpressionStyleAfterCommerce() {
+        guard let pendingStyle = pendingMemoryDisplayStyle else {
+            return
+        }
+
+        selectedMemoryDisplayStyleBinding.wrappedValue = pendingStyle
+        rootConfigurationProjectionState
+            .pendingMemoryDisplayStyle = nil
+        activeConfigurationStatus = .dirty
+        refreshDynamicPreview()
     }
 
     func activateHomePreset(

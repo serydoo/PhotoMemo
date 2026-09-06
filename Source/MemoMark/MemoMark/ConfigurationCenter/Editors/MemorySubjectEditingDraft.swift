@@ -64,7 +64,7 @@ struct MemorySubjectEditingDraft: Equatable {
     /// projects them to `MemorySubject` through its existing session boundary.
     static func defaultedTimeAnchors(
         for subject: MemorySubject,
-        calendar: Calendar = .current
+        calendar _: Calendar = .current
     ) -> [MemorySubject.TimeAnchor] {
         var anchors = subject.timeAnchors
         guard anchors.isEmpty else {
@@ -82,27 +82,58 @@ struct MemorySubjectEditingDraft: Equatable {
             type: .birthday,
             anchors: &anchors
         )
+
+        // New users receive one real anchor. The additional ideas are
+        // exposed by the presentation layer as preview-only suggestions and
+        // must never enter this durable draft implicitly.
+        return anchors
+    }
+
+    /// Suggestions shown to a free user as examples, not as durable anchors.
+    /// Callers must not assign the returned values to `timeAnchors` unless the
+    /// user has Plus access and has explicitly chosen to create one.
+    static func suggestedTimeAnchors(
+        for subject: MemorySubject,
+        calendar: Calendar = .current
+    ) -> [MemorySubject.TimeAnchor] {
+        var anchors: [MemorySubject.TimeAnchor] = []
+        let referenceDate =
+            subject.primaryTimeAnchor?.date
+            ?? subject.referenceDate
+
         appendDefaultAnchorIfNeeded(
-            title: "百天",
+            title: localized(
+                "time_anchor.suggestion.hundred_days.title",
+                fallback: "百天"
+            ),
             date:
                 calendar.date(
                     byAdding: .day,
                     value: 99,
                     to: referenceDate
                 ) ?? referenceDate,
-            note: "对象出生后的第 100 天。",
+            note: localized(
+                "time_anchor.suggestion.hundred_days.note",
+                fallback: "对象出生后的第 100 天。"
+            ),
             type: .birthday,
             anchors: &anchors
         )
         appendDefaultAnchorIfNeeded(
-            title: "时间锚点",
+            title: localized(
+                "time_anchor.suggestion.custom_milestone.title",
+                fallback: "时间锚点"
+            ),
             date:
                 calendar.date(
                     byAdding: .month,
                     value: 6,
                     to: referenceDate
                 ) ?? referenceDate,
-            note: "自定义纪念日或重要时间点。",
+            note: localized(
+                "time_anchor.suggestion.custom_milestone.note",
+                fallback: "自定义纪念日或重要时间点。"
+            ),
             type: .custom,
             anchors: &anchors
         )
@@ -194,6 +225,16 @@ struct MemorySubjectEditingDraft: Equatable {
                 anchorType: type,
                 expressionStyle: .defaultStyle(for: type)
             )
+        )
+    }
+
+    private static func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: key,
+            fallback: fallback
         )
     }
 }

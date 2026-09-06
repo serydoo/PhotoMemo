@@ -20,6 +20,7 @@ struct MemoMarkPlusPurchaseView: View {
             ScrollView {
                 VStack(spacing: 18) {
                     identitySection
+                    planSection
                     benefitSection
                     actionSection
                     trustSection
@@ -62,7 +63,7 @@ struct MemoMarkPlusPurchaseView: View {
     }
 
     private var identitySection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             ZStack {
                 Circle()
                     .fill(
@@ -81,17 +82,17 @@ struct MemoMarkPlusPurchaseView: View {
                 .font(.title.weight(.semibold))
                 .foregroundStyle(warmGold)
             }
-            .frame(width: 68, height: 68)
+            .frame(width: 56, height: 56)
 
             Text(
                 heroTitle
             )
-            .font(.title2.weight(.bold))
+            .font(.title3.weight(.bold))
             .multilineTextAlignment(.center)
 
             if store.hasFirstRecorderIdentity {
                 Text(firstRecorderDateText)
-                    .font(.headline.monospacedDigit())
+                    .font(.caption.weight(.semibold).monospacedDigit())
                     .foregroundStyle(warmGold)
 
                 Text(
@@ -100,7 +101,7 @@ struct MemoMarkPlusPurchaseView: View {
                         fallback: "愿今天认真留下的时光，\n在未来仍然清晰而温暖。"
                     )
                 )
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             } else if store.isTestFlightExperienceActive {
@@ -110,7 +111,7 @@ struct MemoMarkPlusPurchaseView: View {
                         fallback: "当前 TestFlight 版本可无限创建成长记录。\n正式版权益仍由 Apple 购买或兑换决定。"
                     )
                 )
-                .font(.subheadline)
+                .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             } else {
@@ -120,13 +121,13 @@ struct MemoMarkPlusPurchaseView: View {
                     fallback: "订阅 MemoMark+，完整记录此后的每一张照片。"
                     )
                 )
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 8)
     }
 
     private var benefitSection: some View {
@@ -138,13 +139,27 @@ struct MemoMarkPlusPurchaseView: View {
             systemImage: "heart.text.square.fill",
             tint: .pink
         ) {
-            VStack(spacing: 13) {
+            VStack(spacing: 9) {
                 benefit(
                     localized(
                         "commerce.purchase.benefit.unlimited_records",
-                        fallback: "无限创建成长记录"
+                        fallback: "本地不限量处理照片"
                     ),
                     "infinity"
+                )
+                benefit(
+                    localized(
+                        "commerce.purchase.benefit.objects_anchors",
+                        fallback: "解锁更多记忆对象与时间锚点"
+                    ),
+                    "point.3.connected.trianglepath.dotted"
+                )
+                benefit(
+                    localized(
+                        "commerce.purchase.benefit.expressions",
+                        fallback: "全部第一方表达方式一次开放"
+                    ),
+                    "text.badge.star"
                 )
                 benefit(
                     localized(
@@ -168,6 +183,156 @@ struct MemoMarkPlusPurchaseView: View {
                     "sparkles.rectangle.stack"
                 )
             }
+        }
+    }
+
+    @ViewBuilder
+    private var planSection: some View {
+        let periods = store.availableSubscriptionPeriods
+        if !store.isPlus && periods.count > 1 {
+            VStack(alignment: .leading, spacing: 10) {
+                Label(
+                    localized(
+                        "commerce.purchase.plan.title",
+                        fallback: "选择订阅周期"
+                    ),
+                    systemImage: "calendar.badge.clock"
+                )
+                .font(.headline.weight(.semibold))
+
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(periods) { period in
+                        subscriptionPlanCard(for: period)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.primary.opacity(0.045))
+            )
+        }
+    }
+
+    private func subscriptionPlanCard(
+        for period: MemoMarkSubscriptionPeriod
+    ) -> some View {
+        let isSelected =
+            store.selectedSubscriptionPeriod == period
+        let accent =
+            period == .annual ? warmGold : Color.accentColor
+
+        return Button {
+            store.selectSubscriptionPeriod(period)
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top, spacing: 6) {
+                    Text(planTitle(for: period))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Spacer(minLength: 0)
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(accent)
+                    }
+                }
+
+                if period == .annual {
+                    Text(
+                        localized(
+                            "commerce.purchase.plan.annual_badge",
+                            fallback: "年度更优惠"
+                        )
+                    )
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(accent)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(accent.opacity(0.14))
+                    )
+                } else {
+                    Text(
+                        localized(
+                            "commerce.purchase.plan.monthly_badge",
+                            fallback: "灵活订阅"
+                        )
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                }
+
+                Text(store.displayPrice(for: period))
+                    .font(.title3.weight(.bold))
+                    .monospacedDigit()
+                    .foregroundStyle(.primary)
+
+                Text(planSubtitle(for: period))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        isSelected
+                        ? accent.opacity(0.12)
+                        : Color.primary.opacity(0.035)
+                    )
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(
+                        isSelected
+                        ? accent.opacity(0.72)
+                        : Color.primary.opacity(0.10),
+                        lineWidth: isSelected ? 1.5 : 1
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityLabel(
+            "\(planTitle(for: period))，\(store.displayPrice(for: period))"
+        )
+    }
+
+    private func planTitle(
+        for period: MemoMarkSubscriptionPeriod
+    ) -> String {
+        switch period {
+        case .annual:
+            return localized(
+                "commerce.purchase.plan.annual",
+                fallback: "年度 · 更优惠"
+            )
+        case .monthly:
+            return localized(
+                "commerce.purchase.plan.monthly",
+                fallback: "月度"
+            )
+        }
+    }
+
+    private func planSubtitle(
+        for period: MemoMarkSubscriptionPeriod
+    ) -> String {
+        switch period {
+        case .annual:
+            return localized(
+                "commerce.purchase.plan.annual_subtitle",
+                fallback: "长期记录更合适"
+            )
+        case .monthly:
+            return localized(
+                "commerce.purchase.plan.monthly_subtitle",
+                fallback: "按月灵活管理"
+            )
         }
     }
 
@@ -214,6 +379,17 @@ struct MemoMarkPlusPurchaseView: View {
                     }
                     .font(.subheadline)
                 }
+            } else {
+                Label(
+                    localized(
+                        "commerce.purchase.entitled",
+                        fallback: "MemoMark+ 权益已全部开放"
+                    ),
+                    systemImage: "checkmark.seal.fill"
+                )
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.green)
+                .frame(maxWidth: .infinity)
             }
 
             if case .failed(let message) =
@@ -319,6 +495,25 @@ struct MemoMarkPlusPurchaseView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 4)
             }
+
+            HStack(spacing: 16) {
+                Link(
+                    localized(
+                        "commerce.purchase.privacy_policy",
+                        fallback: "隐私政策"
+                    ),
+                    destination: Self.privacyPolicyURL
+                )
+                Link(
+                    localized(
+                        "commerce.purchase.terms_of_use",
+                        fallback: "使用条款"
+                    ),
+                    destination: Self.termsOfUseURL
+                )
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 4)
@@ -448,6 +643,13 @@ struct MemoMarkPlusPurchaseView: View {
             blue: 0.13
         )
     }
+
+    private static let privacyPolicyURL = URL(
+        string: "https://github.com/serydoo/PhotoMemo/blob/main/PRIVACY.md"
+    )!
+    private static let termsOfUseURL = URL(
+        string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+    )!
 
     private func localized(
         _ key: String,

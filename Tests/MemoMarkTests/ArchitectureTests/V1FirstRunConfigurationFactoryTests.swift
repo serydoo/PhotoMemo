@@ -24,7 +24,7 @@ struct V1FirstRunConfigurationFactoryTests {
         #expect(subject.identity.displayName == "示例昵称")
         #expect(subject.identity.shortName == "示例昵称")
         #expect(subject.referenceDate == date)
-        #expect(subject.timeAnchors.count == 3)
+        #expect(subject.timeAnchors.count == 1)
 
         let anchor = try #require(subject.timeAnchors.first)
         #expect(anchor.title == "生日")
@@ -33,15 +33,6 @@ struct V1FirstRunConfigurationFactoryTests {
         #expect(anchor.expressionStyle == .birthdayNatural)
         #expect(subject.activeTimeAnchorID == anchor.id)
         #expect(subject.behavior.primaryAnchor == anchor.title)
-        #expect(subject.timeAnchors[1].title == "百天")
-        #expect(subject.timeAnchors[1].anchorType == .birthday)
-        #expect(subject.timeAnchors[1].date == Calendar.current.date(
-            byAdding: .day,
-            value: 99,
-            to: date
-        ))
-        #expect(subject.timeAnchors[2].title == "时间锚点")
-        #expect(subject.timeAnchors[2].anchorType == .custom)
     }
 
     @Test

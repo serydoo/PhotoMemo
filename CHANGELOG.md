@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.3.0 (104) Home Guidance And Commerce Stability - 2026-09-06
+
+- Kept the Home photo-selection entry discoverable and added a bounded usage guide:
+  after ten successful entries, the guide points to the Settings daily workflow
+  section for 24 hours and then disappears from Home. This threshold is not a
+  change to the free commerce allowance.
+- Added monthly and annual MemoMark+ subscription handling and retained historical
+  lifetime/activation-code access when later StoreKit entitlement events arrive.
+- Kept all first-party expression styles inside the subscription and made Time
+  Anchor suggestions previewable until the user explicitly adds or customizes them.
+- Completed the new Time Anchor suggestion path and Home guidance copy for
+  Simplified Chinese, English, Japanese, and Korean.
+- Raised all target configurations to marketing version `2.3.0` and build `104`.
+
+This is the current source candidate. Xcode Cloud archive identity, StoreKit
+Sandbox, physical-device acceptance, App Store Connect metadata, and distribution
+status remain separate evidence classes.
+
 ## 2.3.0 (103) Commerce v1.1 Subscription Migration - 2026-09-05
 
 - Preserved verified historical lifetime access and historical First Recorder

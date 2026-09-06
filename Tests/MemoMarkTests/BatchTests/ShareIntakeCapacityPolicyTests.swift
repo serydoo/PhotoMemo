@@ -44,4 +44,23 @@ struct ShareIntakeCapacityPolicyTests {
                 ) == 40
         )
     }
+
+    @Test("Expired subscription snapshots are defensively clamped to free capacity")
+    func expiredSubscriptionDoesNotRetainPlusCapacity() {
+        let snapshot = MemoMarkCommerceSnapshot(
+            environment: .production,
+            accessSource: .plusSubscription,
+            successfulRecordCount: 12,
+            totalAllowance: nil,
+            batchLimit: 40,
+            firstRecorderDate: nil,
+            validThrough: Date(timeIntervalSince1970: 1),
+            updatedAt: .distantPast
+        )
+
+        #expect(
+            ShareIntakeCapacityPolicy()
+                .maximumSupportedPhotoCount(for: snapshot) == 20
+        )
+    }
 }

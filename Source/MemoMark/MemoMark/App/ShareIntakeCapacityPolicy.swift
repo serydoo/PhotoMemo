@@ -10,10 +10,27 @@ nonisolated struct ShareIntakeCapacityPolicy:
     func maximumSupportedPhotoCount(
         for snapshot: MemoMarkCommerceSnapshot
     ) -> Int {
-        min(
-            snapshot.batchLimit,
-            snapshot.remainingRecords
-                ?? snapshot.batchLimit
+        guard !snapshot.isPlus else {
+            return min(
+                snapshot.batchLimit,
+                snapshot.remainingRecords ?? snapshot.batchLimit
+            )
+        }
+
+        // Defensive boundary for a stale shared snapshot. Production and
+        // sandbox free users must never inherit the Plus batch limit; Xcode
+        // QA remains intentionally unlimited within its own environment.
+        let batchLimit = snapshot.environment == .xcode
+            ? snapshot.batchLimit
+            : MemoMarkCommercePolicy.freeBatchLimit
+        let totalAllowance = snapshot.totalAllowance
+            ?? MemoMarkCommercePolicy.baseFreeAllowance
+        return min(
+            batchLimit,
+            max(
+                totalAllowance - max(snapshot.successfulRecordCount, 0),
+                0
+            )
         )
     }
 }

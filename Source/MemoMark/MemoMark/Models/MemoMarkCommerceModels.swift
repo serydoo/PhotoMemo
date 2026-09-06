@@ -64,6 +64,29 @@ nonisolated enum MemoMarkCommerceMilestone:
     case allowanceCompleted
 }
 
+/// Presentation-only guidance for the Home photo picker entry. The count is
+/// deliberately separate from commerce allowances: it describes how often a
+/// user has successfully entered the picker, not how many records remain.
+nonisolated enum HomePhotoPickerGuidancePolicy {
+
+    static let useThreshold = 10
+    static let guidanceDuration: TimeInterval = 24 * 60 * 60
+
+    static func shouldShow(
+        useCount: Int,
+        guidanceStartedAt: Date?,
+        now: Date
+    ) -> Bool {
+        guard useCount >= useThreshold,
+              let guidanceStartedAt else {
+            return false
+        }
+
+        let elapsed = now.timeIntervalSince(guidanceStartedAt)
+        return elapsed >= 0 && elapsed < guidanceDuration
+    }
+}
+
 nonisolated enum MemoMarkCommerceAccessSource:
     String,
     Codable,
@@ -77,6 +100,28 @@ nonisolated enum MemoMarkCommerceAccessSource:
     case plusSubscription
     /// Backward-compatible spelling used by Commerce v1 snapshots.
     case verifiedPlus
+}
+
+nonisolated enum MemoMarkSubscriptionPeriod:
+    String,
+    CaseIterable,
+    Hashable,
+    Identifiable,
+    Sendable {
+
+    case annual
+    case monthly
+
+    var id: String { rawValue }
+
+    var productID: String {
+        switch self {
+        case .annual:
+            return "com.serydoo.PhotoMemo.iOS.memomarkplus.subscription.annual"
+        case .monthly:
+            return "com.serydoo.PhotoMemo.iOS.memomarkplus.subscription.monthly"
+        }
+    }
 }
 
 nonisolated enum MemoMarkPurchaseState:
@@ -267,6 +312,26 @@ nonisolated enum MemoMarkCommerceCapability:
                 || accessSource == .testFlightTemporary
         }
     }
+
+    /// Resolves expression access from the verified commerce snapshot rather
+    /// than from the product source label alone. An expired auto-renewable
+    /// subscription must not retain Plus-only expression access, while
+    /// founder and historical activation grants remain permanent.
+    static func allowsFirstPartyExpressionStyle(
+        _ style: MemoryAnchorExpressionStyle,
+        snapshot: MemoMarkCommerceSnapshot
+    ) -> Bool {
+        switch style {
+        case .birthdayNatural,
+             .relationshipNatural,
+             .marriageNatural,
+             .examNatural,
+             .customNatural:
+            return true
+        default:
+            return snapshot.isPlus
+        }
+    }
 }
 
 nonisolated struct MemoMarkCommerceSnapshot:
@@ -282,6 +347,10 @@ nonisolated struct MemoMarkCommerceSnapshot:
     let totalAllowance: Int?
     let batchLimit: Int
     let firstRecorderDate: Date?
+    /// Explicit provenance for a historical activation grant. This is kept
+    /// separate from `accessSource == .verifiedPlus` so a StoreKit lifetime
+    /// snapshot cannot accidentally become a permanent grant after revocation.
+    let hasDurableLegacyActivationGrant: Bool
     let validThrough: Date?
     let lastVerifiedAt: Date?
     let updatedAt: Date
@@ -293,6 +362,7 @@ nonisolated struct MemoMarkCommerceSnapshot:
         totalAllowance: Int?,
         batchLimit: Int,
         firstRecorderDate: Date?,
+        hasDurableLegacyActivationGrant: Bool? = nil,
         validThrough: Date? = nil,
         lastVerifiedAt: Date? = nil,
         updatedAt: Date
@@ -303,6 +373,9 @@ nonisolated struct MemoMarkCommerceSnapshot:
         self.totalAllowance = totalAllowance
         self.batchLimit = batchLimit
         self.firstRecorderDate = firstRecorderDate
+        self.hasDurableLegacyActivationGrant =
+            hasDurableLegacyActivationGrant
+            ?? (accessSource == .verifiedPlus)
         self.validThrough = validThrough
         self.lastVerifiedAt = lastVerifiedAt
         self.updatedAt = updatedAt
@@ -316,6 +389,7 @@ nonisolated struct MemoMarkCommerceSnapshot:
         case totalAllowance
         case batchLimit
         case firstRecorderDate
+        case hasDurableLegacyActivationGrant
         case validThrough
         case lastVerifiedAt
         case updatedAt
@@ -374,6 +448,11 @@ nonisolated struct MemoMarkCommerceSnapshot:
         } else {
             accessSource = .free
         }
+
+        hasDurableLegacyActivationGrant = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .hasDurableLegacyActivationGrant
+        ) ?? (accessSource == .verifiedPlus)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -395,6 +474,10 @@ nonisolated struct MemoMarkCommerceSnapshot:
         try container.encodeIfPresent(
             firstRecorderDate,
             forKey: .firstRecorderDate
+        )
+        try container.encode(
+            hasDurableLegacyActivationGrant,
+            forKey: .hasDurableLegacyActivationGrant
         )
         try container.encodeIfPresent(
             validThrough,

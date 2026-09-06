@@ -136,6 +136,37 @@ struct BatchQueueCommerceAccountingTests {
         #expect(updatedSnapshot.batchLimit == 20)
     }
 
+    @Test("Expired subscription admission uses free policy instead of stale Plus fields")
+    func expiredSubscriptionUsesFreeAdmission() {
+        let suiteName =
+            "MemoMark.BatchQueueCommerceAccountingTests.Expired.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let accounting = BatchQueueCommerceAccounting(
+            persistence: MemoMarkCommercePersistence(defaults: defaults)
+        )
+        let snapshot = MemoMarkCommerceSnapshot(
+            environment: .production,
+            accessSource: .plusSubscription,
+            successfulRecordCount: 199,
+            totalAllowance: nil,
+            batchLimit: 40,
+            firstRecorderDate: nil,
+            validThrough: Date(timeIntervalSince1970: 1),
+            updatedAt: .distantPast
+        )
+
+        #expect(
+            accounting.admissionCapacity(
+                among: [],
+                current: snapshot
+            ) == 1
+        )
+    }
+
     private func completedTask() -> BatchTask {
         var task = BatchTask(
             sourceURL: URL(fileURLWithPath: "/tmp/completed-source.jpg"),

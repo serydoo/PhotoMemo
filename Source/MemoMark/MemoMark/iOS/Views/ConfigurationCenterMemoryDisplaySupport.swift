@@ -11,23 +11,18 @@ enum ConfigurationCenterMemoryDisplaySupport {
 
     static func availableStyles(
         subject: MemorySubject?,
-        accessSource: MemoMarkCommerceAccessSource = .free
+        accessSource _: MemoMarkCommerceAccessSource = .free
     ) -> [MemoryAnchorExpressionStyle] {
         guard let anchor = subject?.primaryTimeAnchor else {
             return []
         }
 
-        return MemoryAnchorExpressionStyle
-            .availableStyles(
-                for: anchor.resolvedAnchorType
-            )
-            .filter {
-                MemoMarkCommerceCapability
-                    .allowsFirstPartyExpressionStyle(
-                        $0,
-                        accessSource: accessSource
-                    )
-            }
+        // Keep the full first-party catalog visible. The caller marks paid
+        // styles as locked and owns the current-surface purchase flow; free
+        // users should be able to understand what MemoMark+ unlocks.
+        return MemoryAnchorExpressionStyle.availableStyles(
+            for: anchor.resolvedAnchorType
+        )
     }
 
     static func summaryValue(
@@ -39,13 +34,27 @@ enum ConfigurationCenterMemoryDisplaySupport {
     }
 
     static func summaryDetail(
-        subject: MemorySubject?
+        subject: MemorySubject?,
+        style: MemoryAnchorExpressionStyle? = nil
     ) -> String {
         guard
             let subject,
             let anchor = subject.primaryTimeAnchor
         else {
             return "先选择记忆对象和当前生效时间锚点，再决定这张卡片要用哪一种表达方式。"
+        }
+
+        if let style,
+           style != anchor.resolvedExpressionStyle {
+            var previewSubject = subject
+            if let anchorIndex = previewSubject.timeAnchors.firstIndex(
+                where: { $0.id == anchor.id }
+            ) {
+                previewSubject.timeAnchors[anchorIndex].expressionStyle = style
+                return MemoryExpressionPreviewResolver
+                    .previewText(subject: previewSubject)
+                    ?? "\(previewSubject.resolvedExpressionSubjectText) · \(anchor.title)"
+            }
         }
 
         return MemoryExpressionPreviewResolver
