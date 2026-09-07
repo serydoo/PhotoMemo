@@ -5,12 +5,26 @@ import UIKit
 struct ModuleLibrarySurface: View {
 
     static let fixedHeight: CGFloat = 84
+    static let accessibilityHeight: CGFloat = 108
+
+    static func height(for dynamicTypeSize: DynamicTypeSize) -> CGFloat {
+        dynamicTypeSize.isAccessibilitySize
+            ? accessibilityHeight
+            : fixedHeight
+    }
 
     let region: CardRegion
     let modules: [IOSInsertableModule]
     let categoryTitle: (IOSInsertableModule) -> String
     let valueText: (IOSInsertableModule) -> String
     let onSelectModule: (IOSInsertableModule) -> Void
+
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
 
     private var groupedModules: [ModuleGroup] {
         let categoryTitles = modules.reduce(into: [String]()) {
@@ -36,7 +50,7 @@ struct ModuleLibrarySurface: View {
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(groupedModules) { group in
                     HStack(alignment: .center, spacing: 8) {
-                        Text(LocalizedStringKey(displayCategoryTitle(group.title)))
+                        Text(displayCategoryTitle(group.title))
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .frame(width: 48, alignment: .leading)
@@ -81,7 +95,7 @@ struct ModuleLibrarySurface: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .frame(height: Self.fixedHeight)
+        .frame(height: Self.height(for: dynamicTypeSize))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(uiColor: .secondarySystemGroupedBackground))
         .clipShape(
@@ -140,16 +154,30 @@ struct ModuleLibrarySurface: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(
-            "插入\(module.title)，当前值\(valueText(module))"
+            String(
+                format: interfaceLanguage.localized(
+                    key: "configuration.modules.insert.accessibility",
+                    fallback: "插入%@，当前值%@"
+                ),
+                locale: interfaceLanguage.locale,
+                module.title,
+                valueText(module)
+            )
         )
     }
 
     private func displayCategoryTitle(_ title: String) -> String {
         switch title {
         case "EXIF":
-            return "照片信息"
+            return interfaceLanguage.localized(
+                key: "configuration.modules.category.photo_information",
+                fallback: "照片信息"
+            )
         case "智能表达":
-            return "记忆表达"
+            return interfaceLanguage.localized(
+                key: "configuration.modules.category.memory_expression",
+                fallback: "记忆表达"
+            )
         default:
             return title
         }

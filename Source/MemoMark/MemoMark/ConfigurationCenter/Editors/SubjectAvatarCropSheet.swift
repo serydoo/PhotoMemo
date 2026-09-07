@@ -16,20 +16,10 @@ struct SubjectAvatarCropSheet: View {
     let onConfirm: (SubjectAvatarCropConfiguration) -> Void
 
     @State
-    private var committedZoomScale: CGFloat = 1
+    private var cropConfiguration = SubjectAvatarCropConfiguration()
 
     @State
-    private var interactiveZoomScale: CGFloat = 1
-
-    @State
-    private var committedTranslation: CGSize = .zero
-
-    @State
-    private var interactiveTranslation: CGSize = .zero
-
-    @State
-    private var latestCanvasSize =
-        CGSize(width: 320, height: 320)
+    private var latestCanvasSize = CGSize(width: 320, height: 320)
 
     var body: some View {
         ZStack {
@@ -58,10 +48,7 @@ struct SubjectAvatarCropSheet: View {
                             fallback: "恢复默认位置"
                         )
                     ) {
-                        committedZoomScale = 1
-                        interactiveZoomScale = 1
-                        committedTranslation = .zero
-                        interactiveTranslation = .zero
+                        cropConfiguration = .init()
                     }
                     .buttonStyle(.borderless)
                     .font(.subheadline.weight(.semibold))
@@ -102,13 +89,7 @@ struct SubjectAvatarCropSheet: View {
                                 fallback: "完成"
                             )
                         ) {
-                            onConfirm(
-                                SubjectAvatarCropConfiguration(
-                                    zoomScale: effectiveZoomScale,
-                                    normalizedOffset:
-                                        currentNormalizedOffset
-                                )
-                            )
+                            onConfirm(cropConfiguration)
                         }
                         .fontWeight(.semibold)
                     }
@@ -121,108 +102,81 @@ struct SubjectAvatarCropSheet: View {
     }
 
     private var cropCanvas: some View {
-        // Establish the square canvas before GeometryReader measures its
-        // contents. A bare GeometryReader inside the vertical editor can
-        // otherwise consume the remaining height, making a portrait image
-        // and the circular crop guide appear vertically misaligned.
         Color.clear
             .aspectRatio(1, contentMode: .fit)
             .overlay {
                 GeometryReader { proxy in
                     let canvasSize = proxy.size
-                    let drawRect =
-                        SubjectAvatarCropSupport
-                        .resolvedDrawRect(
-                            sourceSize: image.size,
-                            canvasSize: canvasSize,
-                            safeInsetRatio:
-                                SubjectAvatarAssetOptimizationService
-                                .safeInsetRatio,
-                            configuration:
-                                SubjectAvatarCropConfiguration(
-                                    zoomScale: effectiveZoomScale,
-                                    normalizedOffset:
-                                        normalizedOffset(
-                                            in: canvasSize
-                                        )
-                                )
+
+                    SubjectAvatarCropViewport(
+                        image: image,
+                        configuration: $cropConfiguration,
+                        safeInsetRatio:
+                            SubjectAvatarAssetOptimizationService.safeInsetRatio,
+                        onCanvasSizeChange: { newSize in
+                            latestCanvasSize = newSize
+                        }
+                    )
+                    .overlay { avatarCropMask }
+                    .frame(width: canvasSize.width, height: canvasSize.height)
+                    .accessibilityIdentifier("subject-avatar-crop-canvas")
+                    .accessibilityLabel(Text(
+                        MemoMarkLanguage.interfaceStored.localized(
+                            key: "accessibility.avatar_crop",
+                            fallback: "头像裁切区域"
                         )
-
-                    ZStack {
-                        Color.black
-
-                        Image(uiImage: image)
-                            .resizable()
-                            .interpolation(.high)
-                            .frame(
-                                width: drawRect.width,
-                                height: drawRect.height
+                    ))
+                    .accessibilityValue(avatarCropAccessibilityValue)
+                    .accessibilityAction(
+                        named: Text(
+                            MemoMarkLanguage.interfaceStored.localized(
+                                key: "accessibility.avatar_move_left",
+                                fallback: "向左移动照片"
                             )
-                            .position(
-                                x: drawRect.midX,
-                                y: drawRect.midY
+                        )
+                    ) {
+                        adjustCropOffset(width: -0.1)
+                    }
+                    .accessibilityAction(
+                        named: Text(
+                            MemoMarkLanguage.interfaceStored.localized(
+                                key: "accessibility.avatar_move_right",
+                                fallback: "向右移动照片"
                             )
-
-                        avatarCropMask
+                        )
+                    ) {
+                        adjustCropOffset(width: 0.1)
                     }
-                    .frame(
-                        width: canvasSize.width,
-                        height: canvasSize.height
-                    )
-                    .clipped()
-                    .onAppear {
-                        latestCanvasSize = canvasSize
+                    .accessibilityAction(
+                        named: Text(
+                            MemoMarkLanguage.interfaceStored.localized(
+                                key: "accessibility.avatar_move_up",
+                                fallback: "向上移动照片"
+                            )
+                        )
+                    ) {
+                        adjustCropOffset(height: -0.1)
                     }
-                    .onChange(of: canvasSize) { _, newSize in
-                        latestCanvasSize = newSize
+                    .accessibilityAction(
+                        named: Text(
+                            MemoMarkLanguage.interfaceStored.localized(
+                                key: "accessibility.avatar_move_down",
+                                fallback: "向下移动照片"
+                            )
+                        )
+                    ) {
+                        adjustCropOffset(height: 0.1)
                     }
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                interactiveTranslation = value.translation
-                            }
-                            .onEnded { value in
-                                committedTranslation =
-                                    clampedTranslation(
-                                        proposed:
-                                            CGSize(
-                                                width:
-                                                    committedTranslation.width
-                                                    + value.translation.width,
-                                                height:
-                                                    committedTranslation.height
-                                                    + value.translation.height
-                                            ),
-                                        canvasSize: canvasSize,
-                                        zoomScale: effectiveZoomScale
-                                    )
-                                interactiveTranslation = .zero
-                            }
-                    )
-                    .simultaneousGesture(
-                        MagnificationGesture()
-                            .onChanged { value in
-                                interactiveZoomScale = value
-                            }
-                            .onEnded { value in
-                                committedZoomScale =
-                                    SubjectAvatarCropConfiguration
-                                    .clampedZoomScale(
-                                        committedZoomScale * value
-                                    )
-                                interactiveZoomScale = 1
-                                committedTranslation =
-                                    clampedTranslation(
-                                        proposed: currentTranslation,
-                                        canvasSize: canvasSize,
-                                        zoomScale: committedZoomScale
-                                    )
-                            }
-                    )
-                    .accessibilityIdentifier(
-                        "subject-avatar-crop-canvas"
-                    )
+                    .accessibilityAction(
+                        named: Text(
+                            MemoMarkLanguage.interfaceStored.localized(
+                                key: "accessibility.avatar_center",
+                                fallback: "居中照片"
+                            )
+                        )
+                    ) {
+                        cropConfiguration.normalizedOffset = .zero
+                    }
                 }
             }
             .clipped()
@@ -230,24 +184,15 @@ struct SubjectAvatarCropSheet: View {
 
     private var avatarCropMask: some View {
         GeometryReader { proxy in
-            let rect =
-                CGRect(
-                    origin: .zero,
-                    size: proxy.size
-                )
-            let circleInset =
-                proxy.size.width
-                * SubjectAvatarAssetOptimizationService
-                    .safeInsetRatio
+            let rect = CGRect(origin: .zero, size: proxy.size)
+            let circleInset = proxy.size.width
+                * SubjectAvatarAssetOptimizationService.safeInsetRatio
 
             ZStack {
                 Path { path in
                     path.addRect(rect)
                     path.addEllipse(
-                        in: rect.insetBy(
-                            dx: circleInset,
-                            dy: circleInset
-                        )
+                        in: rect.insetBy(dx: circleInset, dy: circleInset)
                     )
                 }
                 .fill(
@@ -257,20 +202,10 @@ struct SubjectAvatarCropSheet: View {
 
                 Circle()
                     .inset(by: circleInset)
-                    .strokeBorder(
-                        Color.white.opacity(0.92),
-                        lineWidth: 2
-                    )
+                    .strokeBorder(Color.white.opacity(0.92), lineWidth: 2)
             }
         }
         .allowsHitTesting(false)
-    }
-
-    private var effectiveZoomScale: CGFloat {
-        SubjectAvatarCropConfiguration
-            .clampedZoomScale(
-                committedZoomScale * interactiveZoomScale
-            )
     }
 
     private var zoomControl: some View {
@@ -280,22 +215,20 @@ struct SubjectAvatarCropSheet: View {
                 .foregroundStyle(.secondary)
 
             Slider(
-                value:
-                    Binding(
-                        get: { committedZoomScale },
-                        set: { value in
-                            committedZoomScale =
-                                SubjectAvatarCropConfiguration
-                                .clampedZoomScale(value)
-                            interactiveZoomScale = 1
-                            committedTranslation =
-                                clampedTranslation(
-                                    proposed: committedTranslation,
-                                    canvasSize: latestCanvasSize,
-                                    zoomScale: committedZoomScale
-                                )
-                        }
-                    ),
+                value: Binding(
+                    get: { cropConfiguration.zoomScale },
+                    set: { value in
+                        cropConfiguration = SubjectAvatarCropSupport
+                            .configurationPreservingCropCenter(
+                                cropConfiguration,
+                                newZoomScale: value,
+                                sourceSize: image.size,
+                                canvasSize: latestCanvasSize,
+                                safeInsetRatio:
+                                    SubjectAvatarAssetOptimizationService.safeInsetRatio
+                            )
+                    }
+                ),
                 in: avatarZoomRange
             )
             .accessibilityLabel(Text(
@@ -304,7 +237,7 @@ struct SubjectAvatarCropSheet: View {
                     fallback: "Avatar zoom"
                 )
             ))
-            .accessibilityValue("\(Int(committedZoomScale * 100))%")
+            .accessibilityValue("\(Int(cropConfiguration.zoomScale * 100))%")
 
             Image(systemName: "photo.fill")
                 .font(.body)
@@ -313,65 +246,367 @@ struct SubjectAvatarCropSheet: View {
     }
 
     private var avatarZoomRange: ClosedRange<CGFloat> {
-        return (
-            SubjectAvatarCropConfiguration.minimumZoomScale
+        SubjectAvatarCropConfiguration.minimumZoomScale
             ... SubjectAvatarCropConfiguration.maximumZoomScale
-        )
     }
 
-    private var currentTranslation: CGSize {
-        CGSize(
-            width:
-                committedTranslation.width
-                + interactiveTranslation.width,
-            height:
-                committedTranslation.height
-                + interactiveTranslation.height
-        )
+    private var avatarCropAccessibilityValue: String {
+        let zoom = Int(cropConfiguration.zoomScale * 100)
+        let x = Int(cropConfiguration.normalizedOffset.width * 100)
+        let y = Int(cropConfiguration.normalizedOffset.height * 100)
+        return "\(zoom)%, x \(x)%, y \(y)%"
     }
 
-    private var currentNormalizedOffset: CGSize {
-        normalizedOffset(
-            in: latestCanvasSize
-        )
-    }
-
-    private func normalizedOffset(
-        in canvasSize: CGSize
-    ) -> CGSize {
-        SubjectAvatarCropSupport
-            .normalizedOffset(
-                for:
-                    clampedTranslation(
-                        proposed: currentTranslation,
-                        canvasSize: canvasSize,
-                        zoomScale: effectiveZoomScale
-                    ),
-                sourceSize: image.size,
-                canvasSize: canvasSize,
-                safeInsetRatio:
-                    SubjectAvatarAssetOptimizationService
-                    .safeInsetRatio,
-                zoomScale: effectiveZoomScale
+    private func adjustCropOffset(
+        width: CGFloat = 0,
+        height: CGFloat = 0
+    ) {
+        cropConfiguration.normalizedOffset =
+            SubjectAvatarCropConfiguration.clampedNormalizedOffset(
+                CGSize(
+                    width: cropConfiguration.normalizedOffset.width + width,
+                    height: cropConfiguration.normalizedOffset.height + height
+                )
             )
     }
+}
 
-    private func clampedTranslation(
-        proposed: CGSize,
-        canvasSize: CGSize,
-        zoomScale: CGFloat
-    ) -> CGSize {
-        SubjectAvatarCropSupport
-            .clampedTranslation(
-                proposed,
-                sourceSize: image.size,
-                canvasSize: canvasSize,
-                safeInsetRatio:
-                    SubjectAvatarAssetOptimizationService
-                    .safeInsetRatio,
-                zoomScale: zoomScale
-            )
+private struct SubjectAvatarCropViewport: UIViewRepresentable {
+
+    let image: UIImage
+    @Binding var configuration: SubjectAvatarCropConfiguration
+    let safeInsetRatio: CGFloat
+    let onCanvasSizeChange: (CGSize) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
     }
 
+    func makeUIView(context: Context) -> SubjectAvatarCropScrollView {
+        let scrollView = SubjectAvatarCropScrollView()
+        scrollView.backgroundColor = .black
+        scrollView.delegate = context.coordinator
+        scrollView.minimumZoomScale = SubjectAvatarCropConfiguration.minimumZoomScale
+        scrollView.maximumZoomScale = SubjectAvatarCropConfiguration.maximumZoomScale
+        scrollView.bounces = true
+        scrollView.bouncesZoom = true
+        scrollView.alwaysBounceHorizontal = true
+        scrollView.alwaysBounceVertical = true
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.decelerationRate = .normal
+        scrollView.delaysContentTouches = false
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.onLayout = { [weak coordinator = context.coordinator] view in
+            coordinator?.layout(view)
+        }
+
+        let imageView = UIImageView(image: image)
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.isUserInteractionEnabled = false
+        imageView.frame = .zero
+        scrollView.imageView = imageView
+        scrollView.addSubview(imageView)
+        return scrollView
+    }
+
+    func updateUIView(
+        _ scrollView: SubjectAvatarCropScrollView,
+        context: Context
+    ) {
+        context.coordinator.parent = self
+        if scrollView.imageView?.image !== image {
+            scrollView.imageView?.image = image
+            context.coordinator.invalidateBaseLayout()
+        }
+        context.coordinator.apply(configuration, to: scrollView, animated: false)
+    }
+
+    final class Coordinator: NSObject, UIScrollViewDelegate {
+
+        var parent: SubjectAvatarCropViewport
+        private var isApplying = false
+        private var lastApplied: SubjectAvatarCropConfiguration?
+        private var lastBaseCanvasSize: CGSize?
+        private var lastBaseSourceSize: CGSize?
+
+        init(_ parent: SubjectAvatarCropViewport) {
+            self.parent = parent
+        }
+
+        func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+            (scrollView as? SubjectAvatarCropScrollView)?.imageView
+        }
+
+        func invalidateBaseLayout() {
+            lastBaseCanvasSize = nil
+            lastBaseSourceSize = nil
+            lastApplied = nil
+        }
+
+        func layout(_ scrollView: SubjectAvatarCropScrollView) {
+            guard scrollView.bounds.width > 0,
+                  scrollView.bounds.height > 0,
+                  let imageView = scrollView.imageView
+            else { return }
+
+            let canvasSize = scrollView.bounds.size
+            let needsBaseLayout = lastBaseCanvasSize != canvasSize
+                || lastBaseSourceSize != parent.image.size
+            guard !scrollView.isZooming || !needsBaseLayout else { return }
+            let baseRect = SubjectAvatarCropSupport.aspectFillRect(
+                sourceSize: parent.image.size,
+                canvasSize: canvasSize,
+                safeInsetRatio: parent.safeInsetRatio
+            )
+            if needsBaseLayout {
+                let configurationToRestore = parent.configuration
+                isApplying = true
+                lastApplied = nil
+                if scrollView.isDecelerating {
+                    scrollView.setContentOffset(
+                        scrollView.contentOffset,
+                        animated: false
+                    )
+                }
+                if scrollView.zoomScale != 1 {
+                    scrollView.setZoomScale(1, animated: false)
+                }
+                setBaseImageViewFrame(imageView, size: baseRect.size)
+                lastBaseCanvasSize = canvasSize
+                lastBaseSourceSize = parent.image.size
+                updateInsets(
+                    scrollView,
+                    preservingTranslation: .zero
+                )
+                isApplying = false
+                parent.onCanvasSizeChange(canvasSize)
+                apply(
+                    configurationToRestore,
+                    to: scrollView,
+                    animated: false
+                )
+                return
+            }
+            updateInsets(
+                scrollView,
+                preservingTranslation: currentTranslation(in: scrollView)
+            )
+            parent.onCanvasSizeChange(canvasSize)
+            apply(parent.configuration, to: scrollView, animated: false)
+        }
+
+        func apply(
+            _ configuration: SubjectAvatarCropConfiguration,
+            to scrollView: SubjectAvatarCropScrollView,
+            animated: Bool
+        ) {
+            guard scrollView.bounds.width > 0,
+                  scrollView.bounds.height > 0,
+                  scrollView.imageView != nil,
+                  !scrollView.isDragging,
+                  !scrollView.isZooming
+            else { return }
+
+            let normalizedConfiguration = SubjectAvatarCropConfiguration(
+                zoomScale: configuration.zoomScale,
+                normalizedOffset: configuration.normalizedOffset
+            )
+            guard !isEquivalent(normalizedConfiguration, to: lastApplied)
+            else { return }
+
+            isApplying = true
+            let canvasSize = scrollView.bounds.size
+            // Explicit crop commands must take ownership from existing
+            // scroll-view momentum before applying their new state.
+            if scrollView.isDecelerating {
+                scrollView.setContentOffset(
+                    scrollView.contentOffset,
+                    animated: false
+                )
+            }
+            scrollView.setZoomScale(
+                normalizedConfiguration.zoomScale,
+                animated: animated
+            )
+            scrollView.layoutIfNeeded()
+            updateInsets(
+                scrollView,
+                preservingTranslation: SubjectAvatarCropSupport.translation(
+                    for: normalizedConfiguration,
+                    sourceSize: parent.image.size,
+                    canvasSize: canvasSize,
+                    safeInsetRatio: parent.safeInsetRatio
+                )
+            )
+            setContentOffset(for: normalizedConfiguration, in: scrollView)
+            lastApplied = normalizedConfiguration
+            isApplying = false
+        }
+
+        private func setBaseImageViewFrame(
+            _ imageView: UIImageView,
+            size: CGSize
+        ) {
+            imageView.frame = CGRect(
+                origin: .zero,
+                size: size
+            )
+        }
+
+        func scrollViewDidZoom(_ scrollView: UIScrollView) {
+            guard !isApplying else { return }
+            updateInsets(
+                scrollView,
+                preservingTranslation: currentTranslation(in: scrollView)
+            )
+            report(scrollView)
+        }
+
+        func scrollViewDidScroll(_ scrollView: UIScrollView) {
+            guard !isApplying else { return }
+            report(scrollView)
+        }
+
+        func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+            report(scrollView)
+        }
+
+        func scrollViewDidEndZooming(
+            _ scrollView: UIScrollView,
+            with view: UIView?,
+            atScale scale: CGFloat
+        ) {
+            report(scrollView)
+        }
+
+        private func report(_ scrollView: UIScrollView) {
+            guard !isApplying,
+                  scrollView.bounds.width > 0,
+                  scrollView.bounds.height > 0
+            else { return }
+            let canvasSize = scrollView.bounds.size
+            let zoomScale = SubjectAvatarCropConfiguration.clampedZoomScale(
+                scrollView.zoomScale
+            )
+            let configuration = SubjectAvatarCropConfiguration(
+                zoomScale: zoomScale,
+                normalizedOffset: SubjectAvatarCropSupport.normalizedOffset(
+                    for: currentTranslation(in: scrollView),
+                    sourceSize: parent.image.size,
+                    canvasSize: canvasSize,
+                    safeInsetRatio: parent.safeInsetRatio,
+                    zoomScale: zoomScale
+                )
+            )
+            lastApplied = configuration
+            parent.configuration = configuration
+        }
+
+        private func currentTranslation(
+            in scrollView: UIScrollView
+        ) -> CGSize {
+            guard let subjectScrollView = scrollView as?
+                    SubjectAvatarCropScrollView,
+                  let imageView = subjectScrollView.imageView
+            else { return .zero }
+            let imageCenter = imageView.superview?.convert(
+                imageView.center,
+                to: subjectScrollView
+            ) ?? imageView.center
+            return CGSize(
+                width: imageCenter.x - subjectScrollView.bounds.midX,
+                height: imageCenter.y - subjectScrollView.bounds.midY
+            )
+        }
+
+        private func updateInsets(
+            _ scrollView: UIScrollView,
+            preservingTranslation translation: CGSize
+        ) {
+            guard let subjectScrollView = scrollView as?
+                    SubjectAvatarCropScrollView,
+                  let imageView = subjectScrollView.imageView
+            else { return }
+            let scaledSize = CGSize(
+                width: imageView.bounds.width * scrollView.zoomScale,
+                height: imageView.bounds.height * scrollView.zoomScale
+            )
+            let cropInset = min(
+                scrollView.bounds.width,
+                scrollView.bounds.height
+            ) * parent.safeInsetRatio
+            scrollView.contentInset = UIEdgeInsets(
+                top: cropInset,
+                left: cropInset,
+                bottom: cropInset,
+                right: cropInset
+            )
+            scrollView.scrollIndicatorInsets = scrollView.contentInset
+            // Keep the scroll content extent explicit. This makes the
+            // contentOffset domain match the same circular crop aperture used
+            // by SubjectAvatarCropSupport.maximumTranslation.
+            scrollView.contentSize = scaledSize
+            guard !scrollView.isDragging, !scrollView.isZooming else { return }
+            let canvasSize = scrollView.bounds.size
+            let scaledMidX = scaledSize.width / 2
+            let scaledMidY = scaledSize.height / 2
+            let canvasMidX = canvasSize.width / 2
+            let canvasMidY = canvasSize.height / 2
+            let offset = CGPoint(
+                x: scaledMidX - canvasMidX - translation.width,
+                y: scaledMidY - canvasMidY - translation.height
+            )
+            scrollView.setContentOffset(offset, animated: false)
+        }
+
+        private func setContentOffset(
+            for configuration: SubjectAvatarCropConfiguration,
+            in scrollView: SubjectAvatarCropScrollView
+        ) {
+            let translation = SubjectAvatarCropSupport.translation(
+                for: configuration,
+                sourceSize: parent.image.size,
+                canvasSize: scrollView.bounds.size,
+                safeInsetRatio: parent.safeInsetRatio
+            )
+            guard let imageView = scrollView.imageView else { return }
+            let scaledSize = CGSize(
+                width: imageView.bounds.width * scrollView.zoomScale,
+                height: imageView.bounds.height * scrollView.zoomScale
+            )
+            scrollView.setContentOffset(
+                CGPoint(
+                    x: scaledSize.width / 2
+                        - scrollView.bounds.width / 2 - translation.width,
+                    y: scaledSize.height / 2
+                        - scrollView.bounds.height / 2 - translation.height
+                ),
+                animated: false
+            )
+        }
+
+        private func isEquivalent(
+            _ lhs: SubjectAvatarCropConfiguration,
+            to rhs: SubjectAvatarCropConfiguration?
+        ) -> Bool {
+            guard let rhs else { return false }
+            return abs(lhs.zoomScale - rhs.zoomScale) < 0.0001
+                && abs(lhs.normalizedOffset.width - rhs.normalizedOffset.width) < 0.0001
+                && abs(lhs.normalizedOffset.height - rhs.normalizedOffset.height) < 0.0001
+        }
+    }
+}
+
+private final class SubjectAvatarCropScrollView: UIScrollView {
+
+    var imageView: UIImageView?
+    var onLayout: ((SubjectAvatarCropScrollView) -> Void)?
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        onLayout?(self)
+    }
 }
 #endif

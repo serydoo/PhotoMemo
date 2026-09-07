@@ -2,6 +2,16 @@
 import SwiftUI
 import UIKit
 
+struct MemoryCardEditorPreviewFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        let next = nextValue()
+        guard !next.isEmpty else { return }
+        value = next
+    }
+}
+
 struct MemoryCardEditorPageSurface<
     PreviewContent: View,
     EditorContent: View,
@@ -18,6 +28,7 @@ struct MemoryCardEditorPageSurface<
     let editorRevealProgress: CGFloat
     let pageTitle: String
     let pageSubtitle: String
+    let previewWidthPolicy: ConfigurationPreviewWidthPolicy
     let onDismissKeyboard: () -> Void
     @ViewBuilder var previewContent: PreviewContent
     @ViewBuilder var editorContent: EditorContent
@@ -28,6 +39,7 @@ struct MemoryCardEditorPageSurface<
         editorRevealProgress: CGFloat,
         pageTitle: String,
         pageSubtitle: String,
+        previewWidthPolicy: ConfigurationPreviewWidthPolicy = .readable,
         onDismissKeyboard: @escaping () -> Void,
         @ViewBuilder previewContent: () -> PreviewContent,
         @ViewBuilder editorContent: () -> EditorContent,
@@ -37,6 +49,7 @@ struct MemoryCardEditorPageSurface<
         self.editorRevealProgress = editorRevealProgress
         self.pageTitle = pageTitle
         self.pageSubtitle = pageSubtitle
+        self.previewWidthPolicy = previewWidthPolicy
         self.onDismissKeyboard = onDismissKeyboard
         self.previewContent = previewContent()
         self.editorContent = editorContent()
@@ -70,6 +83,38 @@ struct MemoryCardEditorPageSurface<
     }
 
     private var previewPane: some View {
+        previewPaneContent
+            .background(
+                ConfigurationUI.appBackground
+            )
+            .overlay {
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: MemoryCardEditorPreviewFramePreferenceKey.self,
+                        value: proxy.frame(in: .global)
+                    )
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var previewPaneContent: some View {
+        if usesCompactLandscapeFullWidthPreview {
+            previewPaneCore
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(
+                    .horizontal,
+                    ConfigurationUI.contentColumnPadding
+                )
+        } else {
+            previewPaneCore
+                .adaptivePageContent(
+                    horizontalPadding: ConfigurationUI.contentColumnPadding
+                )
+        }
+    }
+
+    private var previewPaneCore: some View {
         VStack(alignment: .leading, spacing: 12) {
             ConfigurationPageHeader(
                 pageTitle,
@@ -84,12 +129,13 @@ struct MemoryCardEditorPageSurface<
         }
         .padding(.top, 10)
         .padding(.bottom, 10)
-        .adaptivePageContent(
-            horizontalPadding: ConfigurationUI.contentColumnPadding
-        )
-        .background(
-            ConfigurationUI.appBackground
-        )
+    }
+
+    private var usesCompactLandscapeFullWidthPreview: Bool {
+        previewWidthPolicy == .fullWidthInCompactLandscape
+            && UIDevice.current.userInterfaceIdiom == .phone
+            && horizontalSizeClass == .regular
+            && verticalSizeClass == .compact
     }
 
     private var editorScrollView: some View {

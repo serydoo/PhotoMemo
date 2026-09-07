@@ -19,9 +19,12 @@ struct HomeMemoryPresetRow: View {
     let onSelect: () -> Void
 
     var body: some View {
-        rowContent
-            .contentShape(Rectangle())
-            .onTapGesture(perform: onSelect)
+        Button(action: onSelect) {
+            rowContent
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var rowContent: some View {

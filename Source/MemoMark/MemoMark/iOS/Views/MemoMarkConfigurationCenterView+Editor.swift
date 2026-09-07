@@ -34,6 +34,7 @@ extension MemoMarkConfigurationCenterView {
 
     var editorCluster: some View {
         MemoryCardRegionEditorCluster(
+            presentationStyle: presentationStyle,
             visibleRegions:
                 CardRegion.editableRegions(
                     for: presentationStyle
@@ -195,16 +196,9 @@ extension MemoMarkConfigurationCenterView {
         applyModulePanelState(ModulePanelCoordinator.focusEditor(state: modulePanelState))
     }
 
-    private var resolvedSubjectAvatarLogoImagePath: String? {
+    var resolvedSubjectAvatarLogoImagePath: String? {
         session.state.selectedSubject?
             .identity.avatarBadgeImagePath
-        ?? session.state.selectedSubject?
-            .identity.avatarImagePath
-    }
-
-    var resolvedSubjectAvatarPreviewImagePath: String? {
-        session.state.selectedSubject?
-            .identity.avatarPreviewImagePath
         ?? session.state.selectedSubject?
             .identity.avatarImagePath
     }

@@ -26,22 +26,30 @@ enum ConfigurationCenterMemoryDisplaySupport {
     }
 
     static func summaryValue(
-        subject: MemorySubject?
+        subject: MemorySubject?,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> String {
         selectedStyle(subject: subject)?
             .displayTitle
-            ?? "未设置"
+            ?? language.localized(
+                key: "configuration.memory_display.unset",
+                fallback: "未设置"
+            )
     }
 
     static func summaryDetail(
         subject: MemorySubject?,
-        style: MemoryAnchorExpressionStyle? = nil
+        style: MemoryAnchorExpressionStyle? = nil,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> String {
         guard
             let subject,
             let anchor = subject.primaryTimeAnchor
         else {
-            return "先选择记忆对象和当前生效时间锚点，再决定这张卡片要用哪一种表达方式。"
+            return language.localized(
+                key: "configuration.memory_display.no_anchor_detail",
+                fallback: "未选择时间锚点。添加重要时刻后，才能选择这一刻的表达方式。"
+            )
         }
 
         if let style,

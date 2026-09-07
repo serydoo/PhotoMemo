@@ -33,11 +33,11 @@ enum ConfigurationUI {
         MemoMarkDesignTokens.Layout.configurationSheetCompactHeight
     static let contentSheetFraction =
         MemoMarkDesignTokens.Layout.configurationSheetContentFraction
-    /// The Card Editor may use the space below the memory-source preview, but
-    /// never moves its own top edge through that preview when the keyboard is
-    /// presented.
+    /// Conservative startup fallback used before the real preview reports its
+    /// frame. Once measured, the card editor is bounded by that preview.
     static let contentEditorTopBoundaryFraction: CGFloat = 0.16
     static let contentEditorMinimumTopBoundary: CGFloat = 136
+    static let contentEditorPreviewGap: CGFloat = 12
     static let cardEditorDismissThreshold: CGFloat = 96
     #else
     static let cornerRadius: CGFloat = 12

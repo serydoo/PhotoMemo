@@ -290,11 +290,32 @@ struct MemoryCardContentItem: Identifiable, Hashable, Codable {
     }
 
     var editorModuleAccessibilityLabel: String {
+        editorModuleAccessibilityLabel(language: .interfaceStored)
+    }
+
+    func editorModuleAccessibilityLabel(
+        language: MemoMarkLanguage
+    ) -> String {
         if isUnresolvedModule {
             let expression = canonicalModuleExpression ?? "未知表达式"
-            return "模块不可用，\(expression)"
+            return String(
+                format: language.localized(
+                    key: "configuration.modules.accessibility.unavailable",
+                    fallback: "模块不可用，%@"
+                ),
+                locale: language.locale,
+                expression
+            )
         }
-        return "\(editorModuleTitle)，\(value)"
+        return String(
+            format: language.localized(
+                key: "configuration.modules.accessibility.value",
+                fallback: "%@，%@"
+            ),
+            locale: language.locale,
+            editorModuleTitle,
+            value
+        )
     }
 
     /// Pasted modules receive new local identities so a paste never aliases

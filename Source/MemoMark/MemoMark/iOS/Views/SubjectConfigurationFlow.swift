@@ -4,6 +4,10 @@ import UIKit
 
 struct SubjectConfigurationFlow: View {
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     private let flowState:
         SubjectConfigurationFlowState
 
@@ -47,8 +51,14 @@ struct SubjectConfigurationFlow: View {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {
                         subjectSectionHeader(
-                            title: "基础资料",
-                            subtitle: "名字、关系和你熟悉的称呼。"
+                            title: localized(
+                                "subject.configuration.identity.title",
+                                fallback: "基础资料"
+                            ),
+                            subtitle: localized(
+                                "subject.configuration.identity.subtitle",
+                                fallback: "名字、关系和你熟悉的称呼。"
+                            )
                         )
 
                         MemorySubjectEditorView(
@@ -59,8 +69,14 @@ struct SubjectConfigurationFlow: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         subjectSectionHeader(
-                            title: "时间锚点",
-                            subtitle: "选择时间锚点，让照片拥有时间答案。"
+                            title: localized(
+                                "subject.configuration.anchor.title",
+                                fallback: "时间锚点"
+                            ),
+                            subtitle: localized(
+                                "subject.configuration.anchor.subtitle",
+                                fallback: "选择时间锚点，让照片拥有时间答案。"
+                            )
                         )
 
                         SubjectAnchorDetailSection(
@@ -100,11 +116,14 @@ struct SubjectConfigurationFlow: View {
                 .visible,
                 for: .navigationBar
             )
-            .navigationTitle("编辑记忆对象")
+            .navigationTitle(localized(
+                "subject.configuration.navigation.title",
+                fallback: "编辑记忆对象"
+            ))
             .navigationBarTitleDisplayMode(.inline)
             .memoMarkEditorSheetToolbar(
-                cancelTitle: "取消",
-                doneTitle: "完成",
+                cancelTitle: localized("common.cancel", fallback: "取消"),
+                doneTitle: localized("common.done", fallback: "完成"),
                 doneDisabled: isSaving,
                 onCancel: onCancel,
                 onDone: {
@@ -124,34 +143,61 @@ struct SubjectConfigurationFlow: View {
                 }
             )
             .alert(
-                "删除这个记忆对象？",
+                localized(
+                    "subject.configuration.delete.title",
+                    fallback: "删除这个记忆对象？"
+                ),
                 isPresented: $showsDeleteConfirmation
             ) {
-                Button("取消", role: .cancel) {}
-                Button("删除记忆对象", role: .destructive) {
+                Button(localized("common.cancel", fallback: "取消"), role: .cancel) {}
+                Button(
+                    localized(
+                        "subject.configuration.delete.button",
+                        fallback: "删除记忆对象"
+                    ),
+                    role: .destructive
+                ) {
                     onDeleteSubject()
                 }
             } message: {
-                Text("对象的基础资料和时间锚点都会被删除。此操作无法撤销。")
+                Text(localized(
+                    "subject.configuration.delete.message",
+                    fallback: "对象的基础资料和时间锚点都会被删除。此操作无法撤销。"
+                ))
             }
             .alert(
-                "填写对象名称",
+                localized(
+                    "subject.configuration.name_required.title",
+                    fallback: "填写对象名称"
+                ),
                 isPresented: $showsNameRequiredAlert
             ) {
-                Button("好", role: .cancel) {}
+                Button(localized("common.ok", fallback: "好"), role: .cancel) {}
             } message: {
-                Text("对象名称是保存记忆对象的必填信息。")
+                Text(localized(
+                    "subject.configuration.name_required.message",
+                    fallback: "对象名称是保存记忆对象的必填信息。"
+                ))
             }
             .alert(
-                "无法保存",
+                localized(
+                    "subject.configuration.save_failed.title",
+                    fallback: "无法保存"
+                ),
                 isPresented: Binding(
                     get: { saveFailureMessage != nil },
                     set: { if !$0 { saveFailureMessage = nil } }
                 )
             ) {
-                Button("好", role: .cancel) {}
+                Button(localized("common.ok", fallback: "好"), role: .cancel) {}
             } message: {
-                Text(saveFailureMessage ?? "请稍后再试。")
+                Text(
+                    saveFailureMessage
+                    ?? localized(
+                        "subject.configuration.save_failed.message",
+                        fallback: "请稍后再试。"
+                    )
+                )
             }
             .accessibilityIdentifier("subject-configuration-flow")
         }
@@ -208,7 +254,10 @@ struct SubjectConfigurationFlow: View {
             showsDeleteConfirmation = true
         } label: {
             HStack {
-                Text("删除记忆对象")
+                Text(localized(
+                    "subject.configuration.delete.button",
+                    fallback: "删除记忆对象"
+                ))
                     .font(.body)
                     .foregroundStyle(.red)
 
@@ -223,7 +272,10 @@ struct SubjectConfigurationFlow: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .accessibilityHint("删除对象的基础资料和时间锚点")
+        .accessibilityHint(localized(
+            "subject.configuration.delete.hint",
+            fallback: "删除对象的基础资料和时间锚点"
+        ))
     }
 
     private func dismissKeyboard() {
@@ -233,6 +285,13 @@ struct SubjectConfigurationFlow: View {
             from: nil,
             for: nil
         )
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage.localized(key: key, fallback: fallback)
     }
 }
 #endif

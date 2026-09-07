@@ -144,15 +144,15 @@ struct ConfigurationResultLabel: View {
     let title: String
     let accessibilityLabel: String
     let accessibilityValue: String
+    let isProminent: Bool
 
     var body: some View {
         Text(localized(title))
             .font(.caption.weight(.medium))
-            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
-            .minimumScaleFactor(0.76)
-            .allowsTightening(true)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
+            .allowsTightening(!dynamicTypeSize.isAccessibilitySize)
             .fixedSize(horizontal: false, vertical: true)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(isProminent ? .primary : .secondary)
             .frame(
                 minHeight: ConfigurationUI.minimumInteractiveHeight,
                 alignment: .trailing
@@ -261,7 +261,8 @@ struct ConfigurationCompactSectionRow: View {
         ConfigurationResultLabel(
             title: resultTitle,
             accessibilityLabel: resultAccessibilityLabel,
-            accessibilityValue: resultAccessibilityValue
+            accessibilityValue: resultAccessibilityValue,
+            isProminent: !isExpanded
         )
         .layoutPriority(0)
     }

@@ -54,6 +54,11 @@ struct MemoryCardPreviewSurface: View {
                         .compactPreview.imageSliceHeightToWidth,
                     contentMode: .fit
                 )
+                // The Minimal explanatory slice has a much wider aspect
+                // ratio than the Classic information bar. Keep its measured
+                // height, but let it consume the complete preview column in
+                // landscape instead of collapsing to its intrinsic width.
+                .frame(maxWidth: .infinity)
                 .overlay {
                     GeometryReader { proxy in
                         minimalPreviewCard(size: proxy.size)
@@ -235,7 +240,7 @@ struct MemoryCardPreviewSurface: View {
                let image = UIImage(contentsOfFile: customLogoImagePath) {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()
                     .frame(width: size, height: size)
                     .clipShape(Circle())
             } else {
@@ -492,7 +497,7 @@ struct MemoryCardPreviewSurface: View {
                    let image = UIImage(contentsOfFile: customLogoImagePath) {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                         .frame(
                             width:
                                 logoSize

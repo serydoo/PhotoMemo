@@ -1,20 +1,28 @@
 # MemoMark Localization Foundation
 
-Status: V3 bilingual delivery slice completed. The app now carries the
-Simplified Chinese and English language context through configuration, preview,
-memory generation, export transport, and Share Extension handoff. The active
-language can follow the system or use an App-level override.
+Status: V4 interface-language delivery foundation completed. The app carries
+Simplified Chinese, English, Japanese, and Korean language context through the
+active configuration, preview, memory generation, export transport, and Share
+Extension handoff. The active interface language can follow the system or use
+an App-level override.
 
 ## Launch Scope
 
-The initial supported languages are:
+The active supported interface languages are:
 
 - `zh-Hans`: Simplified Chinese
 - `en`: English
+- `ja`: Japanese
+- `ko`: Korean
 
 Unsupported locales fall back to English when selected by locale resolution.
 Existing configurations and legacy task payloads without a language field
 remain Simplified Chinese for compatibility.
+
+Interface language and output language remain separate decisions. The former
+controls the app's visible UI and accessibility strings; the latter remains in
+the Configuration Snapshot so a saved output and Share Extension use the same
+language context as the originating configuration.
 
 ## Resource Boundaries
 

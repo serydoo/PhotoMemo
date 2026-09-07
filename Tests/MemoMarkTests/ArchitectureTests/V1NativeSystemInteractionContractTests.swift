@@ -28,6 +28,18 @@ struct V1NativeSystemInteractionContractTests {
         #expect(source.contains("common.done"))
     }
 
+    @Test("recent history only shows navigation affordance for a real Photos destination")
+    func recentHistoryOnlyShowsNavigationAffordanceForRealDestination() throws {
+        let source = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/TaskRecentHistorySurface.swift"
+        )
+
+        #expect(source.contains("showsNavigationAccessory: true"))
+        #expect(source.contains("showsNavigationAccessory: false"))
+        #expect(source.contains("if showsNavigationAccessory"))
+        #expect(source.contains(".foregroundStyle(.secondary)"))
+    }
+
     @Test("backup swipe confirmation avoids destructive precommit")
     func backupSwipeAvoidsDestructivePrecommit() throws {
         let source = try sourceText(

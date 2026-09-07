@@ -58,6 +58,27 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(source.contains("alignment: .center"))
     }
 
+    @Test("Minimal editor preview can use a compact landscape width policy")
+    func minimalPreviewUsesDedicatedCompactLandscapePolicy() throws {
+        let layout = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/AdaptivePageLayout.swift"
+        )
+        let editor = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
+        )
+        let pages = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+
+        #expect(layout.contains("enum ConfigurationPreviewWidthPolicy"))
+        #expect(layout.contains("fullWidthInCompactLandscape"))
+        #expect(editor.contains("previewWidthPolicy"))
+        #expect(editor.contains("horizontalSizeClass == .regular"))
+        #expect(editor.contains("verticalSizeClass == .compact"))
+        #expect(pages.contains(".fullWidthInCompactLandscape"))
+        #expect(pages.contains("presentationStyle == .minimal"))
+    }
+
     @Test("section cards share one compact accessible header rhythm")
     func sectionCardsShareCompactHeaderRhythm() throws {
         let support = try sourceText(
@@ -420,15 +441,15 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!cluster.contains("IOSCompactEntryListGroup("))
         #expect(!cluster.contains("点“完成”返回配置中心；收起键盘不会离开编辑页。"))
         #expect(textKit.contains("let title: String?"))
-        #expect(textKit.contains("Text(title ?? region.displayTitle)"))
+        #expect(textKit.contains("Text(title ?? region.localizedEditorDisplayTitle)"))
         #expect(textKit.contains("let isFocused: Bool"))
         #expect(textKit.contains("isFocused ? Color.accentColor.opacity(0.42)"))
         #expect(library.contains("displayCategoryTitle"))
-        #expect(library.contains("return \"照片信息\""))
-        #expect(library.contains("return \"记忆表达\""))
+        #expect(library.contains("configuration.modules.category.photo_information"))
+        #expect(library.contains("configuration.modules.category.memory_expression"))
 
         // Frozen behavior boundaries for this visual-only pass.
-        #expect(cluster.contains("ModuleLibrarySurface.fixedHeight"))
+        #expect(cluster.contains("ModuleLibrarySurface.height(for: dynamicTypeSize)"))
         #expect(cluster.contains(".scrollDismissesKeyboard(.never)"))
         #expect(cluster.contains("ForEach(visibleRegions"))
         #expect(!cluster.contains("previewContent"))
@@ -494,7 +515,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(textKit.contains("let editorCenterY = bounds.midY"))
         #expect(!textKit.contains("max(systemRect.height, 1)"))
         #expect(!textKit.contains("textStorage.length > 0"))
-        #expect(textKit.contains(".frame(height: MemoryCardEditorInputMetrics.controlHeight)"))
+        #expect(textKit.contains("MemoryCardEditorInputMetrics.controlHeight(\n                    for: dynamicTypeSize"))
         #expect(textKit.contains(".frame(maxWidth: .infinity, alignment: .leading)"))
         #expect(!textKit.contains("containsAttachment"))
     }
@@ -553,7 +574,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(textKit.contains("alignment: .center"))
         #expect(textKit.contains("spacing: MemoryCardEditorInputMetrics.titleInputSpacing"))
         #expect(textKit.contains("width: titleColumnWidth"))
-        #expect(textKit.contains("Text(title ?? region.displayTitle)"))
+        #expect(textKit.contains("Text(title ?? region.localizedEditorDisplayTitle)"))
         #expect(!textKit.contains("if let subtitle = region.editorSubtitle"))
 
         let cluster = try sourceText(
@@ -811,7 +832,61 @@ struct IPhoneResponsiveLayoutContractTests {
         )
         #expect(cluster.contains(".scrollDismissesKeyboard(.never)"))
         #expect(cluster.contains("ScrollView(.vertical, showsIndicators: false)"))
-        #expect(cluster.contains("ModuleLibrarySurface.fixedHeight"))
+        #expect(cluster.contains("ModuleLibrarySurface.height(for: dynamicTypeSize)"))
+    }
+
+    @Test("card editor top boundary follows the measured real preview")
+    func cardEditorTopBoundaryFollowsMeasuredPreview() throws {
+        let page = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
+        )
+        let modifier = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+        )
+
+        #expect(page.contains("MemoryCardEditorPreviewFramePreferenceKey"))
+        #expect(page.contains("frame(in: .global)"))
+        #expect(modifier.contains("onPreferenceChange(MemoryCardEditorPreviewFramePreferenceKey.self)"))
+        #expect(modifier.contains("measuredPreviewFrame"))
+        #expect(modifier.contains("measuredPreviewBottom"))
+        #expect(modifier.contains("contentEditorPreviewGap"))
+        #expect(modifier.contains("previewFrame?.maxY"))
+        #expect(modifier.contains("editorTopBoundary"))
+        #expect(modifier.contains("fallbackTopBoundary"))
+    }
+
+    @Test("card editor input surfaces protect IME and accessibility geometry")
+    func cardEditorInputSurfacesProtectIMEAndAccessibilityGeometry() throws {
+        let textKit = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
+        )
+        let library = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ModuleLibrarySurface.swift"
+        )
+        let cluster = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
+        )
+        let recordCard = try sourceText(
+            "Source/MemoMark/MemoMark/Models/RecordCard.swift"
+        )
+        let output = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift"
+        )
+
+        #expect(textKit.contains("textView.markedTextRange == nil"))
+        #expect(textKit.contains("textView.unmarkText()"))
+        #expect(textKit.contains("controlHeight(for dynamicTypeSize: DynamicTypeSize)"))
+        #expect(textKit.contains("accessibilityLabel:"))
+        #expect(textKit.contains("region.localizedEditorAccessibilityLabel"))
+        #expect(library.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(library.contains("static let accessibilityHeight: CGFloat = 108"))
+        #expect(cluster.contains("presentationStyle.contentContract"))
+        #expect(cluster.contains(".editorTitle("))
+        #expect(recordCard.contains("configuration.card_editor.output_content"))
+        #expect(output.contains("@FocusState"))
+        #expect(output.contains(".focused($isCustomTextFocused)"))
+        #expect(output.contains(".configurationFieldChrome(isActive: isCustomTextFocused)"))
+        #expect(output.contains("output-photo-description-input"))
     }
 
     @Test("output and processing preserve controls and copy at accessibility sizes")
@@ -887,10 +962,16 @@ struct IPhoneResponsiveLayoutContractTests {
         let supportSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoryCardPreviewSurface.swift"
         )
+        let editorClusterSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
+        )
+        let textKitSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
+        )
 
         #expect(configurationPageSource.contains("pageSubtitle: interfaceLanguage.localized("))
         #expect(configurationPageSource.contains("key: \"configuration.page.subtitle\""))
-        #expect(configurationPageSource.contains("fallback: \"决定记忆围绕谁、如何呈现，以及保存到哪里。\""))
+        #expect(configurationPageSource.contains("fallback: \"决定这段记忆围绕哪个重要时刻、如何呈现，以及保存到哪里。\""))
 
         let previewStart = try #require(
             supportSource.range(of: "struct MemoryCardPreviewSurface")?.lowerBound
@@ -907,6 +988,7 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(previewBody.contains(".aspectRatio(compactPreviewAspectRatio"))
         #expect(previewBody.contains(".compactPreview.imageSliceHeightToWidth"))
+        #expect(previewBody.contains(".frame(maxWidth: .infinity)"))
         #expect(!previewBody.contains(".compactPreview.totalHeightToWidth"))
         #expect(previewBody.contains("height: size.height"))
         #expect(previewBody.contains("layout.capsuleVerticalPaddingToBarHeight"))
@@ -916,6 +998,11 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(previewBody.contains("color: ConfigurationUI.cardShadow"))
         #expect(!previewBody.contains(".padding(12)"))
         #expect(!previewBody.contains(".v1CardChrome()"))
+        #expect(editorClusterSource.contains("let presentationStyle: RecordCardPresentationStyle"))
+        #expect(editorClusterSource.contains(".editorTitle("))
+        #expect(editorClusterSource.contains(".editorAccessibilityHint("))
+        #expect(textKitSource.contains("let accessibilityLabel: String?"))
+        #expect(textKitSource.contains("let accessibilityHint: String?"))
     }
 
     @Test("subject editor uses a vertical Contacts hierarchy without a duplicated identity header")
@@ -1294,7 +1381,8 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(recordCard.contains("var contentContract:"))
         #expect(recordCard.contains("photoDescriptionTextAreas"))
-        #expect(recordCard.contains("renderedTextAreas: [.leftTop]"))
+        #expect(recordCard.contains("renderedContentRoles: [.primaryOutput]"))
+        #expect(recordCard.contains("photoDescriptionRoles: [.primaryOutput]"))
         #expect(region.contains("static func editableRegions("))
         #expect(buildService.contains("photoDescriptionTextAreas"))
         #expect(!buildService.contains("first(where: { $0.area == .rightBottom })"))

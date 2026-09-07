@@ -148,5 +148,60 @@ struct SubjectAvatarCropSupportTests {
         #expect(zoomedRect.height > baseRect.height)
         #expect(zoomedRect.midX > baseRect.midX)
     }
+
+    @Test("changing zoom preserves the source point under the crop center")
+    func changingZoomPreservesCropCenterSourcePoint() {
+        let sourceSize = CGSize(width: 1600, height: 900)
+        let canvasSize = CGSize(width: 320, height: 320)
+        let current = SubjectAvatarCropConfiguration(
+            zoomScale: 1.8,
+            normalizedOffset: CGSize(width: 0.42, height: -0.18)
+        )
+
+        let updated = SubjectAvatarCropSupport
+            .configurationPreservingCropCenter(
+                current,
+                newZoomScale: 3,
+                sourceSize: sourceSize,
+                canvasSize: canvasSize,
+                safeInsetRatio: 0.04
+            )
+
+        let currentRect = SubjectAvatarCropSupport.resolvedDrawRect(
+            sourceSize: sourceSize,
+            canvasSize: canvasSize,
+            safeInsetRatio: 0.04,
+            configuration: current
+        )
+        let updatedRect = SubjectAvatarCropSupport.resolvedDrawRect(
+            sourceSize: sourceSize,
+            canvasSize: canvasSize,
+            safeInsetRatio: 0.04,
+            configuration: updated
+        )
+        let currentBaseRect = SubjectAvatarCropSupport.aspectFillRect(
+            sourceSize: sourceSize,
+            canvasSize: canvasSize,
+            safeInsetRatio: 0.04
+        )
+        let updatedBaseRect = currentBaseRect
+
+        let currentSourcePoint = CGPoint(
+            x: (canvasSize.width / 2 - currentRect.minX)
+                / (currentBaseRect.width * current.zoomScale),
+            y: (canvasSize.height / 2 - currentRect.minY)
+                / (currentBaseRect.height * current.zoomScale)
+        )
+        let updatedSourcePoint = CGPoint(
+            x: (canvasSize.width / 2 - updatedRect.minX)
+                / (updatedBaseRect.width * updated.zoomScale),
+            y: (canvasSize.height / 2 - updatedRect.minY)
+                / (updatedBaseRect.height * updated.zoomScale)
+        )
+
+        #expect(updated.zoomScale == 3)
+        #expect(abs(updatedSourcePoint.x - currentSourcePoint.x) < 0.001)
+        #expect(abs(updatedSourcePoint.y - currentSourcePoint.y) < 0.001)
+    }
 }
 #endif

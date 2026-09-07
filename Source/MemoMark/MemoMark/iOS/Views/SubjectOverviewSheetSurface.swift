@@ -3,6 +3,10 @@ import SwiftUI
 
 struct SubjectOverviewSheet: View {
 
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
     @Environment(\.dismiss)
     private var dismiss
 
@@ -43,8 +47,14 @@ struct SubjectOverviewSheet: View {
                     }
 
                     ConfigurationTitledSectionSurface(
-                        title: "基础资料",
-                        subtitle: "名字、关系和你熟悉的称呼。",
+                        title: localized(
+                            "subject.overview.identity.title",
+                            fallback: "基础资料"
+                        ),
+                        subtitle: localized(
+                            "subject.overview.identity.subtitle",
+                            fallback: "名字、关系和你熟悉的称呼。"
+                        ),
                         trailingAccessory: {
                             editSubjectButton
                         }
@@ -53,8 +63,14 @@ struct SubjectOverviewSheet: View {
                     }
 
                     ConfigurationTitledSectionSurface(
-                        title: "时间锚点",
-                        subtitle: "选择时间锚点，让照片拥有时间答案。"
+                        title: localized(
+                            "subject.overview.anchor.title",
+                            fallback: "时间锚点"
+                        ),
+                        subtitle: localized(
+                            "subject.overview.anchor.subtitle",
+                            fallback: "选择时间锚点，让照片拥有时间答案。"
+                        )
                     ) {
                         SubjectAnchorDetailSection(
                             session: session,
@@ -77,20 +93,29 @@ struct SubjectOverviewSheet: View {
                 ConfigurationUI.appBackground
                     .ignoresSafeArea()
             )
-            .navigationTitle("记忆对象")
+            .navigationTitle(localized(
+                "subject.overview.navigation.title",
+                fallback: "记忆对象"
+            ))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         beginSwitchingSubject()
                     } label: {
-                        Label("切换", systemImage: "person.2")
+                        Label(
+                            localized("subject.overview.switch.title", fallback: "切换"),
+                            systemImage: "person.2"
+                        )
                     }
-                    .accessibilityLabel("切换记忆对象")
+                    .accessibilityLabel(localized(
+                        "subject.overview.switch.accessibility",
+                        fallback: "切换记忆对象"
+                    ))
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
+                    Button(localized("common.done", fallback: "完成")) {
                         dismiss()
                     }
                     .fontWeight(.semibold)
@@ -135,12 +160,15 @@ struct SubjectOverviewSheet: View {
     private var subjectSwitcher: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("切换记忆对象")
+                Text(localized(
+                    "subject.overview.switch.title",
+                    fallback: "切换记忆对象"
+                ))
                     .font(.subheadline.weight(.semibold))
 
                 Spacer(minLength: 12)
 
-                Button("取消") {
+                Button(localized("common.cancel", fallback: "取消")) {
                     isSwitchingSubject = false
                     switchCandidateSubjectID = nil
                 }
@@ -198,12 +226,18 @@ struct SubjectOverviewSheet: View {
     private var editSubjectButton: some View {
         ConfigurationCardHeaderIconButton(
             systemImage: "pencil",
-            accessibilityLabel: "编辑记忆对象"
+            accessibilityLabel: localized(
+                "subject.overview.edit.accessibility",
+                fallback: "编辑记忆对象"
+            )
         ) {
             configurationFlowState = onEditSubject()
         }
         .accessibilityIdentifier("subject-edit")
-        .accessibilityHint("编辑对象身份、关系与时间锚点")
+        .accessibilityHint(localized(
+            "subject.overview.edit.hint",
+            fallback: "编辑对象身份、关系与时间锚点"
+        ))
     }
 
     @ViewBuilder
@@ -217,7 +251,10 @@ struct SubjectOverviewSheet: View {
                 ) {
                     HorizontalDivider(horizontalInset: 14)
                     SubjectOverviewFactRow(
-                        title: "昵称",
+                        title: localized(
+                            "subject.overview.fact.nickname",
+                            fallback: "昵称"
+                        ),
                         value: shortName
                     )
                 }
@@ -227,7 +264,10 @@ struct SubjectOverviewSheet: View {
                 ) {
                     HorizontalDivider(horizontalInset: 14)
                     SubjectOverviewFactRow(
-                        title: "与我的关系",
+                        title: localized(
+                            "subject.overview.fact.relationship",
+                            fallback: "与我的关系"
+                        ),
                         value: relationship
                     )
                 }
@@ -237,7 +277,10 @@ struct SubjectOverviewSheet: View {
                 ) {
                     HorizontalDivider(horizontalInset: 14)
                     SubjectOverviewFactRow(
-                        title: "专属称呼",
+                        title: localized(
+                            "subject.overview.fact.label",
+                            fallback: "专属称呼"
+                        ),
                         value: relationshipLabel
                     )
                 }
@@ -277,7 +320,10 @@ struct SubjectOverviewSheet: View {
 
     private var subjectDisplayName: String {
         normalized(session.state.selectedSubject?.identity.displayName)
-        ?? "记忆对象"
+        ?? localized(
+            "subject.overview.subject.fallback",
+            fallback: "记忆对象"
+        )
     }
 
     private var subjectExpressionName: String {
@@ -315,6 +361,13 @@ struct SubjectOverviewSheet: View {
             session.state.selectedSubjectID
             ?? session.state.subjects.first?.id
         isSwitchingSubject = true
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage.localized(key: key, fallback: fallback)
     }
 }
 

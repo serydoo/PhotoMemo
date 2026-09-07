@@ -247,7 +247,7 @@ private struct SettingsContentRow: View {
                 if let accessory {
                     Image(systemName: accessory)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

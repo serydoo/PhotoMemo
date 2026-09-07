@@ -209,15 +209,18 @@ struct TaskRecentHistorySurface: View {
             Button {
                 onOpenPhotoLibrary(link)
             } label: {
-                historyRowContent(row)
+                historyRowContent(row, showsNavigationAccessory: true)
             }
             .buttonStyle(.plain)
         } else {
-            historyRowContent(row)
+            historyRowContent(row, showsNavigationAccessory: false)
         }
     }
 
-    private func historyRowContent(_ row: TaskHistoryRowPresentation) -> some View {
+    private func historyRowContent(
+        _ row: TaskHistoryRowPresentation,
+        showsNavigationAccessory: Bool
+    ) -> some View {
         HStack(spacing: 10) {
             TaskLocalThumbnail(
                 sourceURL: row.previewSourceURL,
@@ -252,9 +255,11 @@ struct TaskRecentHistorySurface: View {
 
             Spacer(minLength: 0)
 
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
+            if showsNavigationAccessory {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 12)
         .frame(minHeight: 70)

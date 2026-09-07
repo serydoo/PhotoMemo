@@ -15,11 +15,18 @@ struct MemoMarkCommerceUIContractTests {
         let english = try sourceText(
             "Source/MemoMark/MemoMark/en.lproj/Localizable.strings"
         )
+        let japanese = try sourceText(
+            "Source/MemoMark/MemoMark/ja.lproj/Localizable.strings"
+        )
+        let korean = try sourceText(
+            "Source/MemoMark/MemoMark/ko.lproj/Localizable.strings"
+        )
 
         for key in [
             "commerce.purchase.benefit.unlimited_records",
             "commerce.purchase.benefit.batch_40",
             "commerce.purchase.benefit.family_sharing",
+            "commerce.purchase.benefit.expressions",
             "commerce.purchase.apple_code",
             "commerce.purchase.restore",
             "commerce.purchase.trust.local_processing",
@@ -34,7 +41,36 @@ struct MemoMarkCommerceUIContractTests {
             #expect(source.contains(key))
             #expect(simplifiedChinese.contains("\"\(key)\""))
             #expect(english.contains("\"\(key)\""))
+            #expect(japanese.contains("\"\(key)\""))
+            #expect(korean.contains("\"\(key)\""))
         }
+
+        #expect(
+            source.contains(
+                "fallback: \"一次解锁全部内置的记忆表达方式\""
+            )
+        )
+        #expect(
+            simplifiedChinese.contains(
+                "一次解锁全部内置的记忆表达方式"
+            )
+        )
+        #expect(
+            english.contains(
+                "Unlock every built-in way to express memories"
+            )
+        )
+        #expect(
+            japanese.contains(
+                "内蔵されたすべてのメモリー表現を利用可能に"
+            )
+        )
+        #expect(
+            korean.contains(
+                "모든 기본 메모리 표현 방식을 이용"
+            )
+        )
+        #expect(!source.contains("全部第一方表达方式一次开放"))
 
         #expect(!source.contains("VIP"))
         #expect(!source.contains("crown"))

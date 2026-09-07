@@ -18,6 +18,226 @@ Status: Scoped Product Loop UI pass
   row hit target, `Picker`, `Toggle`, `Form`-style grouped rows, semantic system
   colors, Dynamic Type text styles, and system accessibility traits.
 
+## Current Cross-Surface Presentation Grammar — 2026-09-06
+
+Status: Accepted V4 presentation contract; implementation proceeds in bounded
+P1/P2 slices.
+
+This section is the current authority for the presentation relationship between
+MemoMark's active iOS surfaces. It refines the earlier UI polish observations;
+it does not reopen IA-002, change the ConfigurationSession, or authorize a
+repository-wide visual rewrite.
+
+### Visual hierarchy
+
+MemoMark's hierarchy is semantic rather than decorative:
+
+1. `Level 1` — the real Memory Card Preview in Configuration Center.
+2. `Level 2` — the active product object or section title.
+3. `Level 3` — the effective current value when a section is collapsed.
+4. `Level 4` — subtitle, helper text, disclosure chrome, and footnotes.
+
+No badge, status pill, button treatment, or secondary card may compete with the
+real Memory Card Preview. The Preview-first Card Content Editor overlay remains
+an intentional exception because it keeps that real Preview visible while the
+user edits the four regions.
+
+### Semantic display rules
+
+Every visible value must answer one of these questions before a visual style is
+chosen:
+
+| Meaning | User question | Accepted visual language |
+| --- | --- | --- |
+| Current value | What is effective now? | Plain text; primary in a collapsed summary, secondary when the real control is visible |
+| Selection | Which item did I choose from a group? | Native selection state: tint, selected background, checkmark, or selected trait |
+| Navigation | Where will this row take me? | Full-row Button, primary title, secondary detail, neutral chevron; no destination means no chevron |
+| Status | What state is the workflow in? | Semantic text/icon/tint or a status pill when the state genuinely benefits from it |
+| Control | What changes a value here? | Menu, Picker, Toggle, segmented control, bordered Button, or full-row Button |
+| Summary | What is the compact result of a group? | Text-first summary; it must not imitate a control |
+
+`Current Value` is never a blue capsule, checkmark, accent bar, or button-style
+background merely to make it easier to scan. These treatments imply selection,
+navigation, or persistence and are reserved for those meanings. Existing
+selection controls, processing status, MemoMark+ entitlement badges, and
+structured Card Content module tokens remain valid exceptions.
+
+### Current-value contract
+
+Configuration and Settings use the same effective-value grammar:
+
+- collapsed: plain `caption` text with primary foreground and medium or
+  semibold weight;
+- expanded: secondary foreground, or omission when the actual control already
+  presents the same value immediately below;
+- ordinary text: allow up to two lines when the value is a user-defined Time
+  Anchor, Preset, or album name; accessibility sizes may grow to three lines;
+- trailing values remain trailing-aligned and may grow vertically rather than
+  being hidden by aggressive scaling or truncation;
+- no new “当前/已选择/Selected” label is required for a value that is already
+  exposed through the row's accessibility value.
+
+The section title remains primary, the subtitle remains explanatory, and the
+effective value is the compact answer. A disclosure row continues to be one
+full-row action; the value itself is not a second nested control.
+
+### Navigation, selection, and status
+
+- Navigation chevrons are neutral secondary/tertiary affordances. Blue is for
+  the primary action, a true selected state, or a genuinely emphasized action;
+  it is not the default color of every destination arrow.
+- A row with a destination is a whole-row Button with a minimum practical hit
+  target. A static row without a destination must not retain a chevron.
+- Checkmarks and selected tint are correct for true choices such as the active
+  Home Preset, Subject rail selection, Anchor Type, Menu options, and segmented
+  controls. They must not be copied onto ordinary current-value summaries.
+- Processing, warning, failure, completion, MemoMark+ entitlement, and other
+  durable workflow states may retain semantic tint or badge treatment.
+- Dirty, saving, saved, warning, and failure remain persistence-state
+  projections owned by the existing explicit-save flow. A selection checkmark
+  never replaces a saved-state indicator.
+
+### Titles, subtitles, and buttons
+
+- A title names the stable object or action.
+- A subtitle explains its decision or visible effect; it does not repeat the
+  title or enumerate every child row.
+- A current value states the effective result, not an invitation to operate.
+- A page or decision surface has one primary action. Supporting actions use
+  native secondary/text/destructive roles according to consequence.
+- Destructive actions remain separate and explicit; they do not inherit the
+  visual treatment of ordinary navigation rows.
+
+### Sheets and editor exceptions
+
+- Browser sheets use the native title and a single completion action when
+  browsing is finished.
+- Editor sheets use the existing draft transaction with explicit Cancel and
+  Done semantics; dismissal must not silently commit a draft.
+- `MemoMarkSheetPresentation` remains the owner for shared native Sheet
+  presentation. Card Content's Preview-preserving custom overlay remains an
+  approved exception and must not be converted to a generic half-height Sheet
+  for visual consistency alone.
+- Configuration, Subject, Settings, Progress, and support sheets may share
+  the same toolbar grammar without sharing the same content surface.
+
+### Surface responsibilities
+
+- Home answers which Memory Subject and Preset are active and exposes the
+  photo-selection entry. Its selected Preset is a real selection and may use a
+  checkmark, but the row must expose that state to accessibility as well.
+- Configuration begins after the Subject has already been selected. It starts
+  from the selected Subject's available Time Anchors and presents:
+  `Time Anchor → Card Style → Expression → Layout & Content → Save Location →
+  Photo Description → configuration status`, below the real Preview.
+- Subject owns identity and Time Anchor editing; it is memory truth, not a
+  Renderer settings page.
+- Settings is a grouped preference/support surface. Its collapsed summaries
+  follow the same current-value and VoiceOver contract as Configuration.
+- Progress shows the user-facing current result and history. Background Status
+  is a separate permission/recovery utility surface; neither replaces the
+  other.
+- Card Content editing keeps the real Preview visible and preserves atomic
+  module tokens, keyboard behavior, and the existing completion transaction.
+
+### Accepted execution priorities
+
+The next implementation slices are deliberately bounded:
+
+1. Shared effective current-value presentation, collapsed prominence, Settings
+   VoiceOver value/state, neutral navigation accessory, and long-value growth.
+2. True selection semantics for Home Preset and destination-aware History
+   rows, without changing callbacks or state ownership.
+3. Active-surface localization/a11y closure for Subject headings/facts and
+   Module Library dynamic announcements, plus current active-surface audit
+   coverage.
+
+Settings' unused emphasis parameter, repeated browser-sheet toolbar code,
+Progress/Background Status wording, and documentation drift are P2 follow-ups.
+They must not be “fixed” by inventing new visual variants without device
+evidence.
+
+### Verification contract
+
+The presentation contract is not closed by compilation alone. The minimum
+evidence set is:
+
+- focused current-value, Settings, navigation, Home Preset, localization, and
+  responsive contracts;
+- full `MemoMarkTests`, a generic iOS build, and `git diff --check`;
+- physical iPhone 17 Pro Max observation of Configuration collapsed/expanded,
+  Settings collapsed, ja/ko, long Time Anchor/album values, Home Preset
+  selection, History with and without a Photos destination, Card Content
+  keyboard/module insertion, Dark Mode, and Accessibility Large;
+- separate manual status for VoiceOver, Dynamic Type, Reduce Transparency,
+  Apple Photos, and production/release evidence.
+
+The evidence classes must remain separate: a build or signed install is not
+manual visual, accessibility, Apple Photos, or production certification.
+
+## Avatar And Logo Asset Interaction Contract — 2026-09-06
+
+Status: Accepted design direction; implementation requires a bounded P1 slice.
+
+This contract records the current review of the two image-entry paths. It does
+not reopen IA-002, add a durable original-image workspace, or authorize a
+Renderer, PhotoKit, Share, or schema change.
+
+### Subject avatar
+
+- The subject avatar is photo-like content: `Fill → Crop → subject framing`.
+- The crop surface should use an Apple-native pan/zoom primitive with one
+  transaction owner, a fixed circular viewport, pinch focal-point preservation,
+  one-finger pan, native deceleration/bounce, and a bounded zoom range.
+- The zoom slider and pinch gesture must share the same zoom state and preserve
+  the source point currently under the crop center when zoom changes.
+- The existing `SubjectAvatarCropConfiguration`,
+  `SubjectAvatarCropSupport`, `SubjectAvatarAssetOptimizationService`, and
+  three derived local PNG outputs remain the source and ownership boundaries.
+  The crop editor must continue to hand a normalized configuration to the
+  existing optimizer; it must not move asset generation into the viewport.
+- Cancel produces no new asset. Done commits the current crop through the
+  existing draft/optimizer transaction. Reset returns to centered minimum zoom.
+- The current product does not persist the original selected photo or crop
+  configuration. Until a separate durable-asset decision is approved, an
+  existing avatar action must be understood as choosing/replacing a photo, not
+  reopening a previous crop. The implementation must not silently add that
+  persistence contract.
+- The crop surface needs an accessibility value and custom actions for moving
+  the photo in four directions and resetting it; VoiceOver must not depend on
+  a two-finger crop gesture. Accessibility-size layout must keep the crop
+  stage visible while allowing instructions and controls to grow.
+
+### Custom Logo
+
+- A custom Logo is a graphic identity mark: `Fit → preserve the complete mark
+  → controlled transparent padding`. It is not a second subject-avatar crop.
+- Logo normalization must preserve alpha, detect visible artwork bounds for
+  transparent uploads, fit the complete artwork into the existing square
+  transparent PNG contract, and avoid silently cropping non-square marks.
+  The exact final occupancy/safe-padding value remains a physical-device
+  tuning question; it must not be guessed from a screenshot.
+- The existing local `LogoAssetOptimizationService` ownership, 2048 PNG
+  master, atomic/stale-result handling, Badge/portable reference chain, and
+  current dirty/save semantics remain unchanged.
+- Preview and final output must continue to consume the same optimized Logo
+  asset. A presentation-only `scaledToFit` change cannot recover artwork that
+  was already cropped during optimization, so the geometry fix belongs in the
+  Logo optimization contract first.
+- Subject-avatar-as-Logo remains circular and may use the avatar badge asset;
+  Apple Logo fallback remains available when no custom Logo is selected. Do not
+  add a Fit/Fill switch or Logo Crop Sheet in the first implementation slice.
+
+### Verification boundary
+
+The first implementation slice is limited to the crop viewport conversion and
+Logo-specific visible-bounds/fit geometry plus focused pure tests and paired
+physical-iPhone observation. It must prove wide, tall, transparent, and
+already-padded Logo inputs; avatar pinch/slider focal preservation; pan bounds;
+Cancel/Done/Reset; VoiceOver actions; and preview/output parity. A build,
+install, or launch is deployment evidence only and does not close visual,
+accessibility, Apple Photos, or release acceptance.
+
 ## Audit Summary
 
 The current UI uses the following presentation patterns:

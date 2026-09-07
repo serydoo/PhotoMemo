@@ -310,12 +310,12 @@ struct ConfigurationCenterSummarySection: View {
 
     private var memoryDisplayValue: String {
         ConfigurationCenterMemoryDisplaySupport
-            .summaryValue(subject: subject)
+            .summaryValue(subject: subject, language: language)
     }
 
     private var memoryDisplayDetail: String {
         ConfigurationCenterMemoryDisplaySupport
-            .summaryDetail(subject: subject)
+            .summaryDetail(subject: subject, language: language)
     }
 
     private func regionChipTitle(
@@ -418,7 +418,7 @@ struct ConfigurationCenterSummarySection: View {
 
                 Image(systemName: "chevron.right")
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(.secondary)
             }
             .padding(.leading, 6)
         }

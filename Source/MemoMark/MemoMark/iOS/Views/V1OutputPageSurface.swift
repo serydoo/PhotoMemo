@@ -276,6 +276,9 @@ struct OutputPhotoDescriptionContent: View {
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
 
+    @FocusState
+    private var isCustomTextFocused: Bool
+
     @Binding
     var usesCustomMemoryWriteText: Bool
 
@@ -329,7 +332,12 @@ struct OutputPhotoDescriptionContent: View {
                 .font(.subheadline)
                 .lineLimit(1...3)
                 .submitLabel(.done)
-                .configurationFieldChrome(isActive: true)
+                .focused($isCustomTextFocused)
+                .onSubmit {
+                    isCustomTextFocused = false
+                }
+                .configurationFieldChrome(isActive: isCustomTextFocused)
+                .accessibilityIdentifier("output-photo-description-input")
                 .transition(
                     reduceMotion ? .opacity : .opacity.combined(
                         with: .move(edge: .top)
@@ -351,6 +359,11 @@ struct OutputPhotoDescriptionContent: View {
             ),
             value: usesCustomMemoryWriteText
         )
+        .onChange(of: usesCustomMemoryWriteText) { _, isEnabled in
+            if !isEnabled {
+                isCustomTextFocused = false
+            }
+        }
     }
 
     private func localized(_ key: String) -> String {

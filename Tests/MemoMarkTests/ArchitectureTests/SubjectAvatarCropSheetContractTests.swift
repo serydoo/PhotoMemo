@@ -19,8 +19,8 @@ struct SubjectAvatarCropSheetContractTests {
         #expect(source.contains(".toolbarBackground(.visible, for: .navigationBar)"))
     }
 
-    @Test("crop stage clips portrait and landscape image overflow")
-    func cropStageClipsImageOverflow() throws {
+    @Test("crop stage uses the native scroll view crop interaction")
+    func cropStageUsesNativeScrollViewCropInteraction() throws {
         let source = try String(
             contentsOfFile: MemoMarkTestPaths.path(
                 "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectAvatarCropSheet.swift"
@@ -28,9 +28,43 @@ struct SubjectAvatarCropSheetContractTests {
             encoding: .utf8
         )
 
+        #expect(source.contains("SubjectAvatarCropViewport"))
+        #expect(source.contains("UIScrollViewDelegate"))
+        #expect(source.contains("scrollView.bouncesZoom = true"))
+        #expect(source.contains("scrollView.contentSize = scaledSize"))
+        #expect(source.contains("let cropInset = min("))
+        #expect(source.contains("imageView.superview?.convert"))
+        #expect(source.contains("scrollView.isDecelerating"))
+        #expect(source.contains("setBaseImageViewFrame"))
         #expect(
             source.contains(
-                ".frame(\n                        width: canvasSize.width,\n                        height: canvasSize.height\n                    )\n                    .clipped()"
+                "x: scaledMidX - canvasMidX - translation.width"
+            )
+        )
+        #expect(
+            source.contains(
+                "x: scaledSize.width / 2"
+            )
+        )
+        #expect(!source.contains("MagnificationGesture"))
+        #expect(source.contains("configurationPreservingCropCenter"))
+    }
+
+    @Test("crop stage replays the configuration after canvas geometry changes")
+    func cropStageReplaysConfigurationAfterCanvasGeometryChanges() throws {
+        let source = try String(
+            contentsOfFile: MemoMarkTestPaths.path(
+                "Source/MemoMark/MemoMark/ConfigurationCenter/Editors/SubjectAvatarCropSheet.swift"
+            ),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("let configurationToRestore = parent.configuration"))
+        #expect(source.contains("isApplying = true\n                lastApplied = nil"))
+        #expect(source.contains("preservingTranslation: .zero"))
+        #expect(
+            source.contains(
+                "apply(\n                    configurationToRestore,\n                    to: scrollView,\n                    animated: false\n                )"
             )
         )
     }

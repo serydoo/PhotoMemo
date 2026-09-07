@@ -131,7 +131,7 @@ private struct SubjectPrimaryCard<StatisticsStrip: View>: View {
     private var disclosureIndicator: some View {
         Image(systemName: "chevron.right")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(.secondary)
             .frame(width: 12)
     }
 
@@ -383,7 +383,7 @@ private struct HomeLinkRow: View {
 
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(.secondary)
                 }
                 .contentShape(Rectangle())
                 .padding(.horizontal, 14)

@@ -17,6 +17,7 @@ struct ConfigurationPageSurface<
     let editorRevealProgress: CGFloat
     let configurationStatus: ConfigurationPersistenceStatus
     let isSavingConfiguration: Bool
+    let previewWidthPolicy: ConfigurationPreviewWidthPolicy
     let onDismissKeyboard: () -> Void
     let onSaveCurrentConfiguration: () -> Void
     let onCreateConfiguration: () -> Void
@@ -31,6 +32,7 @@ struct ConfigurationPageSurface<
         editorRevealProgress: CGFloat,
         configurationStatus: ConfigurationPersistenceStatus,
         isSavingConfiguration: Bool,
+        previewWidthPolicy: ConfigurationPreviewWidthPolicy = .readable,
         onDismissKeyboard: @escaping () -> Void,
         onSaveCurrentConfiguration: @escaping () -> Void,
         onCreateConfiguration: @escaping () -> Void,
@@ -43,6 +45,7 @@ struct ConfigurationPageSurface<
         self.editorRevealProgress = editorRevealProgress
         self.configurationStatus = configurationStatus
         self.isSavingConfiguration = isSavingConfiguration
+        self.previewWidthPolicy = previewWidthPolicy
         self.onDismissKeyboard = onDismissKeyboard
         self.onSaveCurrentConfiguration = onSaveCurrentConfiguration
         self.onCreateConfiguration = onCreateConfiguration
@@ -62,8 +65,9 @@ struct ConfigurationPageSurface<
             ),
             pageSubtitle: interfaceLanguage.localized(
                 key: "configuration.page.subtitle",
-                fallback: "决定记忆围绕谁、如何呈现，以及保存到哪里。"
+                fallback: "决定这段记忆围绕哪个重要时刻、如何呈现，以及保存到哪里。"
             ),
+            previewWidthPolicy: previewWidthPolicy,
             onDismissKeyboard: onDismissKeyboard
         ) {
             previewContent

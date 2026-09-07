@@ -7,6 +7,11 @@ struct MemoryCardRegionEditorCluster: View {
 
     @State private var pendingRevealRegion: CardRegion?
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
+    let presentationStyle: RecordCardPresentationStyle
+
     let visibleRegions: [CardRegion]
 
     let photoDescriptionRegions: [CardRegion]
@@ -49,7 +54,7 @@ struct MemoryCardRegionEditorCluster: View {
                     }
                 )
                 .transition(.opacity.combined(with: .move(edge: .top)))
-                .frame(height: ModuleLibrarySurface.fixedHeight)
+                .frame(height: ModuleLibrarySurface.height(for: dynamicTypeSize))
                 .padding(.horizontal, ConfigurationUI.contentColumnPadding)
                 .padding(.top, 8)
                 .zIndex(1)
@@ -64,24 +69,41 @@ struct MemoryCardRegionEditorCluster: View {
                                 let isSingleRegion = visibleRegions.count == 1
 
                                 if region == .slotA || region == .slotB || region == .slotC || region == .slotD {
+                                    let editorTitle: String? = isSingleRegion
+                                        ? presentationStyle.contentContract
+                                            .editorTitle(
+                                                using: .interfaceStored
+                                            )
+                                        : nil
+                                    let editorAccessibilityLabel: String? =
+                                        isSingleRegion
+                                        ? presentationStyle.contentContract
+                                            .editorAccessibilityLabel(
+                                                using: .interfaceStored
+                                            )
+                                        : nil
+                                    let editorAccessibilityHint: String? =
+                                        isSingleRegion
+                                        ? presentationStyle.contentContract
+                                            .editorAccessibilityHint(
+                                                using: .interfaceStored
+                                            )
+                                        : nil
+                                    let editorTitleColumnWidth = isSingleRegion
+                                        ? MemoryCardEditorInputMetrics.titleColumnWidth
+                                        : MemoryCardEditorInputMetrics.multiRegionTitleColumnWidth
+                                    let editorCommandBus = commandBus(for: region)
+
                                     MemoryCardTextKitSessionEditor(
                                         region: region,
-                                        title:
-                                            isSingleRegion
-                                            ? localized("输出内容")
-                                            : nil,
-                                        titleColumnWidth:
-                                            isSingleRegion
-                                            ? MemoryCardEditorInputMetrics.titleColumnWidth
-                                            : MemoryCardEditorInputMetrics.multiRegionTitleColumnWidth,
+                                        title: editorTitle,
+                                        accessibilityLabel:
+                                            editorAccessibilityLabel,
+                                        accessibilityHint:
+                                            editorAccessibilityHint,
+                                        titleColumnWidth: editorTitleColumnWidth,
                                         draft: regionDraft,
-                                        commandBus: region == .slotA
-                                            ? slotATextKitCommandBus
-                                            : region == .slotB
-                                                ? slotBTextKitCommandBus
-                                                : region == .slotC
-                                                    ? slotCTextKitCommandBus
-                                                    : slotDTextKitCommandBus,
+                                        commandBus: editorCommandBus,
                                         isFocused: focusedRegion == region,
                                         onFocus: {
                                             pendingRevealRegion = region
@@ -195,11 +217,24 @@ struct MemoryCardRegionEditorCluster: View {
         }
     }
 
-    private func localized(_ value: String) -> String {
-        MemoMarkLanguage.interfaceStored.localized(
-            key: value,
-            fallback: value
-        )
+    private func commandBus(
+        for region: CardRegion
+    ) -> MemoryCardTextKitCommandBus {
+        switch region {
+        case .slotA:
+            return slotATextKitCommandBus
+        case .slotB:
+            return slotBTextKitCommandBus
+        case .slotC:
+            return slotCTextKitCommandBus
+        case .slotD:
+            return slotDTextKitCommandBus
+        case .subject,
+             .icon,
+             .badge:
+            assertionFailure("Unexpected TextKit region \(region)")
+            return slotATextKitCommandBus
+        }
     }
 
     private var editorFooterNote: some View {

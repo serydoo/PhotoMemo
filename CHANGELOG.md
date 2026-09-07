@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3.0 (105) Release Candidate Health And Expression Clarity - 2026-09-07
+
+- Rebased the formal release summary on MemoMark 2.2.2 (95), the formal version
+  around 2026-08-28; 2.2.3, 2.2.4, and later candidates remain TestFlight-only
+  validation history.
+- Separated Classic White and Minimal card content through style-owned semantic
+  roles while preserving the persisted slot-compatible shape. Minimal now owns
+  its single output for both preview and Apple Photos description.
+- Gave the Minimal configuration preview a dedicated full-width compact-landscape
+  policy while keeping the final Renderer and export contracts unchanged.
+- Reworded the MemoMark+ expression benefit as “一次解锁全部内置的记忆表达方式”
+  and aligned English, Japanese, and Korean purchase copy; annual/monthly
+  subscriptions and the historical 48-yuan lifetime activation-code path remain.
+- Raised all target configurations to marketing version `2.3.0` and build `105`.
+
+This is the current source candidate. Xcode Cloud archive identity, StoreKit
+Sandbox, physical-device acceptance, App Store Connect metadata, and distribution
+status remain separate evidence classes.
+
 ## 2.3.0 (104) Home Guidance And Commerce Stability - 2026-09-06
 
 - Kept the Home photo-selection entry discoverable and added a bounded usage guide:
@@ -8,7 +27,7 @@
   change to the free commerce allowance.
 - Added monthly and annual MemoMark+ subscription handling and retained historical
   lifetime/activation-code access when later StoreKit entitlement events arrive.
-- Kept all first-party expression styles inside the subscription and made Time
+- Kept all built-in memory expression styles inside the subscription and made Time
   Anchor suggestions previewable until the user explicitly adds or customizes them.
 - Completed the new Time Anchor suggestion path and Home guidance copy for
   Simplified Chinese, English, Japanese, and Korean.

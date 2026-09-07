@@ -68,6 +68,19 @@ This is a narrative sequence, not a new workflow or feature model. It should
 remain compatible with the frozen `Library -> Interactive Memory Card ->
 Object Inspector` architecture.
 
+The sequence spans the Home/Memory Subject flow and the Configuration Center;
+it does not mean that every step must be repeated on every page. After the
+user has selected a Memory Subject on Home, Configuration Center starts from
+that subject's available Time Anchors and continues with the current
+presentation decisions:
+
+`真实记忆卡片预览 → 时间锚点 → 卡片样式 → 表达方式 → 布局与内容 →
+保存位置 → 照片说明（可选）`
+
+The real Memory Card Preview remains the visual answer above this sequence.
+`照片说明` is an optional Apple Photos search aid and should remain a quiet,
+low-frequency detail after the more important output decision `保存位置`.
+
 ## Title And Subtitle Roles
 
 A title names the stable object, destination, or action that the user can
@@ -88,6 +101,13 @@ the subtitle:
 
 When the title and controls already make the result clear, omit the subtitle.
 Do not add helper copy only to make a section look complete.
+
+An expandable section may show four distinct roles in one header: title,
+subtitle, effective current value, and disclosure indicator. The current value
+answers “what is effective now?”; it is not itself a selection control. Keep it
+plain and let its hierarchy follow the surface state: more prominent in a
+collapsed summary, quieter once the real control is visible. Do not add
+`当前`, `已选择`, or a checkmark merely to make a summary look selected.
 
 ### Configuration Center Expression And Style Terms
 

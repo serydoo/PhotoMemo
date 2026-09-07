@@ -33,18 +33,14 @@ struct ConfigurationOutputBindings {
 
 struct ConfigurationOptionList: View {
 
-    @Environment(\.dynamicTypeSize)
-    private var dynamicTypeSize
-
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
 
     @State
     private var showsAdvancedModulesSheet = false
 
-    let subject: MemorySubject?
     @Binding var disclosureState: ConfigurationDisclosureState
-    let subjectAvatarPreviewImagePath: String?
+    let subjectAvatarLogoImagePath: String?
     @Binding var presentationStyle: RecordCardPresentationStyle
     @Binding var logoMode: ConfigurationLogoMode
     @Binding var selectedLogoItem: PhotosPickerItem?
@@ -89,10 +85,10 @@ struct ConfigurationOptionList: View {
             memorySourceSection
             configurationSectionDivider
 
-            memoryExpressionSection
+            expressionStyleSection
             configurationSectionDivider
 
-            expressionStyleSection
+            memoryExpressionSection
             configurationSectionDivider
 
             groupedSection(
@@ -103,11 +99,6 @@ struct ConfigurationOptionList: View {
                 expandedAccessibilityLabel: "configuration.layout.accessibility.collapse",
                 collapsedAccessibilityLabel: "configuration.layout.accessibility.expand"
             ) {
-                logoRow
-                HorizontalDivider(
-                    horizontalInset:
-                        CompactInformationRowMetrics.horizontalPadding
-                )
                 regionContentRow
                 HorizontalDivider(
                     horizontalInset:
@@ -118,14 +109,17 @@ struct ConfigurationOptionList: View {
                     horizontalInset:
                         CompactInformationRowMetrics.horizontalPadding
                 )
-                configurationStatusCard
+                logoRow
             }
+            configurationSectionDivider
+
+            outputDestinationSection
             configurationSectionDivider
 
             photoDescriptionSection
             configurationSectionDivider
 
-            outputDestinationSection
+            configurationStatusCard
 
         }
         .animation(
@@ -297,11 +291,6 @@ struct ConfigurationOptionList: View {
 
             if disclosureState.isExpanded(for: .memorySource) {
                 VStack(spacing: 0) {
-                    subjectRow
-                    HorizontalDivider(
-                        horizontalInset:
-                            CompactInformationRowMetrics.horizontalPadding
-                    )
                     timeAnchorRow
                 }
                 .background(
@@ -336,13 +325,9 @@ struct ConfigurationOptionList: View {
     }
 
     private var memorySourceSummary: String {
-        [
-            subjectDisplayName,
-            availableTimeAnchors.isEmpty
-                ? localized("暂无时间锚点")
-                : timeAnchorTitle
-        ]
-        .joined(separator: " · ")
+        availableTimeAnchors.isEmpty
+            ? localized("暂无时间锚点")
+            : timeAnchorTitle
     }
 
     private var memoryExpressionSection: some View {
@@ -386,24 +371,6 @@ struct ConfigurationOptionList: View {
             expandedAccessibilityLabel: "configuration.expression.accessibility.collapse",
             collapsedAccessibilityLabel: "configuration.expression.accessibility.expand"
         )
-    }
-
-    private var subjectRow: some View {
-        configurationRow(
-            icon: subjectIcon,
-            title: "记忆对象",
-            subtitle: "回忆正围绕谁展开。",
-            value: subjectDisplayName,
-            detail: "随首页同步",
-            showsTrailingChevron: false
-        ) {
-            Text(subjectDisplayName)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
-                .minimumScaleFactor(0.82)
-                .fixedSize(horizontal: false, vertical: true)
-        }
     }
 
     private var logoRow: some View {
@@ -885,50 +852,6 @@ struct ConfigurationOptionList: View {
         localized("让卡片留下你的标识。")
     }
 
-    private var subjectDisplayName: String {
-        let name =
-            subject?
-            .identity
-            .displayName
-            .trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-
-        guard let name,
-              !name.isEmpty else {
-            return localized("记忆对象")
-        }
-
-        return name
-    }
-
-    private var subjectIcon: some View {
-        ZStack {
-            Circle()
-                .fill(Color.purple.opacity(0.11))
-
-            if let subjectAvatarPreviewImagePath,
-               let image = UIImage(
-                contentsOfFile:
-                    subjectAvatarPreviewImagePath
-               ) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .clipShape(Circle())
-            } else {
-                Image(systemName: "person.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.purple)
-            }
-        }
-        .frame(
-            width: CompactInformationRowMetrics.iconSize,
-            height: CompactInformationRowMetrics.iconSize
-        )
-    }
-
-
     private var logoIcon: some View {
         ZStack {
             RoundedRectangle(
@@ -939,10 +862,10 @@ struct ConfigurationOptionList: View {
             .fill(Color.blue.opacity(0.10))
 
             if logoMode == .subjectAvatar,
-               let subjectAvatarPreviewImagePath,
+               let subjectAvatarLogoImagePath,
                let image = UIImage(
                 contentsOfFile:
-                    subjectAvatarPreviewImagePath
+                    subjectAvatarLogoImagePath
                ) {
                 Image(uiImage: image)
                     .resizable()
@@ -956,7 +879,7 @@ struct ConfigurationOptionList: View {
                       ) {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()
                     .clipShape(Circle())
                     .overlay(
                         Circle().stroke(

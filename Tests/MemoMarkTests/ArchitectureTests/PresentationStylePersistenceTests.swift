@@ -31,6 +31,72 @@ struct PresentationStylePersistenceTests {
         #expect(minimal.photoDescriptionTextAreas == [.leftTop])
     }
 
+    @Test("Semantic content roles are owned by each presentation style")
+    func semanticRolesDoNotReuseClassicMeaningAccidentally() {
+        let classic = RecordCardPresentationStyle
+            .classicWhite
+            .contentContract
+        let minimal = RecordCardPresentationStyle
+            .minimal
+            .contentContract
+
+        #expect(
+            classic.textArea(for: .recorder) == .leftTop
+        )
+        #expect(
+            classic.textArea(for: .memory) == .rightBottom
+        )
+        #expect(
+            classic.photoDescriptionRoles == [.memory]
+        )
+        #expect(
+            minimal.textArea(for: .primaryOutput) == .leftTop
+        )
+        #expect(
+            minimal.role(for: .leftTop) == .primaryOutput
+        )
+        #expect(
+            minimal.photoDescriptionRoles == [.primaryOutput]
+        )
+        #expect(
+            minimal.role(for: .rightBottom) == nil
+        )
+    }
+
+    @Test("Editor semantics follow the selected presentation style")
+    func editorSemanticsFollowPresentationStyle() {
+        let classic = RecordCardPresentationStyle
+            .classicWhite
+            .contentContract
+        let minimal = RecordCardPresentationStyle
+            .minimal
+            .contentContract
+
+        #expect(
+            classic.editorTitle(using: .simplifiedChinese)
+                == "输出内容"
+        )
+        #expect(
+            minimal.editorTitle(using: .simplifiedChinese)
+                == "极简内容"
+        )
+        #expect(
+            minimal.editorAccessibilityLabel(
+                using: .simplifiedChinese
+            ) == "极简卡片内容"
+        )
+        #expect(
+            minimal.editorAccessibilityHint(
+                using: .simplifiedChinese
+            )?.contains("Apple Photos") == true
+        )
+        #expect(
+            classic.editorAccessibilityHint(
+                using: .simplifiedChinese
+            ) == nil
+        )
+    }
+
     @Test("Card regions are derived from the selected style contract")
     func cardRegionsFollowStyleContract() {
         #expect(

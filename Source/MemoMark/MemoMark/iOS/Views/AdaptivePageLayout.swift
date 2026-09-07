@@ -6,6 +6,11 @@ enum EntryNavigationStyle {
     case regularSidebar
 }
 
+enum ConfigurationPreviewWidthPolicy: Equatable {
+    case readable
+    case fullWidthInCompactLandscape
+}
+
 enum AdaptivePageLayout {
 
     static let maximumReadableContentWidth:

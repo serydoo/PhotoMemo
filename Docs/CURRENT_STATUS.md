@@ -1,5 +1,176 @@
 # MemoMark Current Status
 
+## 2026-09-07 2.3.0 (105) formal release audit and content-boundary closure
+
+- The formal release summary is now explicitly rebased on MemoMark 2.2.2
+  (build 95), the formal version around 2026-08-28, with source checkpoint
+  `67bdd01`. MemoMark 2.2.3, 2.2.4, and later candidates are recorded as
+  TestFlight/validation history only; they are not described as formal App
+  Store releases.
+- The active worktree candidate is 2.3.0 / build 105. The fallback 2.3.1 /
+  build 106 path is not activated; it is conditional on App Store Connect
+  proving that the 2.3.0 version train is unusable after a prior cancellation.
+- Classic White and Minimal now use style-owned semantic roles for editing,
+  preview, and Apple Photos description projection. The persisted slot carrier
+  remains compatible, while Minimal's single output is no longer accidentally
+  explained as Classic White slot A or slot D. The change is covered by
+  `PresentationStylePersistenceTests` and the iPhone responsive contracts.
+- Minimal configuration preview now requests a dedicated full-width policy in
+  phone compact landscape. The final Renderer, export dimensions, PhotoKit
+  ownership, and original-photo protection are unchanged.
+- The purchase benefit “全部第一方表达方式一次开放” was replaced with the
+  clearer user-facing wording “一次解锁全部内置的记忆表达方式”. English,
+  Japanese, and Korean purchase resources were updated at the same time, and
+  the commerce UI contract verifies all four resource keys and rejects the old
+  source fallback. This is copy-only; annual/monthly subscriptions and the
+  historical 48-yuan lifetime activation-code entitlement remain intact.
+- New release materials are recorded in
+  `Docs/07_Releases/2026-09-07-2.3.0-*`, including release notes, four-language
+  App Store copy, TestFlight validation notes, App Review notes, and a sync
+  manifest. The materials distinguish source, device, StoreKit, Xcode Cloud,
+  and App Store Connect evidence rather than claiming external completion.
+- Local focused contracts passed after the content projection and copy changes.
+  The full `MemoMarkTests` host command completed with exit code 0 using an
+  isolated DerivedData path and disabled test parallelism. Xcode emitted
+  repeated existing “SwiftCompile exit code 0 but produced no further output”
+  diagnostics while still running the test cases; this is recorded as tooling
+  noise, not silently presented as a perfect compiler log. The signed
+  `MemoMarkiOS` Debug iphoneos build also completed for 2.3.0 / 105.
+- Physical iPhone 17 Pro Max read-back is not yet recorded because live
+  `devicectl` reports the device as unavailable; no simulator was substituted.
+  App Store Connect was checked read-only: 2.3.0 is “被开发者拒绝”, its version
+  page still offers “添加以供审核”, and build 104 is attached. The train is
+  therefore still usable on current evidence; 2.3.0 / 105 remains locked and
+  2.3.1 / 106 is not activated.
+- The user has now authorized the next external sync slice: preserve the local
+  project files, commit and push to GitHub, follow the resulting Xcode Cloud
+  build, choose no encryption methods if prompted, and enter the distribution
+  page to prepare the formal release. Final App Store review submission and
+  publication remain separate final actions. No Git push or App Store Connect
+  mutation is recorded yet in this status entry.
+
+## 2026-09-06 Avatar crop and custom Logo interaction audit
+
+- Codex with ChatGPT completed the bounded `c2c_9a62` review against the
+  current avatar and custom Logo source paths. No P0 or ownership/persistence/
+  Renderer/PhotoKit regression was found. The review confirms that existing
+  local asset ownership, stale-result protection, and avatar crop math should
+  remain in place.
+- The avatar interaction fix is now implemented as a UIKit `UIScrollView`
+  crop viewport. The existing normalized crop configuration and optimizer
+  remain the durable source of truth; the viewport now uses the circular
+  aperture for its content inset, an explicit content extent, visual-center
+  conversion, focal-point-preserving slider changes, and external-command
+  takeover from scroll deceleration.
+- The custom Logo optimization now uses an ImageIO orientation-normalized
+  analysis image capped at 4096 pixels, trims visible alpha padding, rejects
+  empty artwork, and fits the complete mark inside the circular aperture using
+  a diagonal constraint. The local 2048 transparent PNG and reference chain
+  remain unchanged. Active configuration and Memory Card custom Logo previews
+  use aspect-fit presentation.
+- This audit deliberately does not add original-photo/crop persistence, a Logo
+  Crop Sheet, a Fit/Fill setting, or changes to Renderer, PhotoKit, Share, or
+  schema. Those require separate product/data decisions. The accepted contract
+  is recorded in `Docs/01_Product/V4_UI_System_Polish_2026-08-25.md`.
+- The avatar/Logo implementation slice is complete in the existing dirty
+  worktree. Focused `SubjectAvatarCropSupportTests`,
+  `SubjectAvatarCropSheetContractTests`, and
+  `LogoAssetOptimizationServiceTests` passed; the generic `MemoMarkiOS`
+  iphoneos build passed; the post-fix test target compiled with
+  `build-for-testing`; and `git diff --check` passed. The XCTest runner was
+  not used as the final acceptance surface because its execution channel
+  stalled; signed-device and physical visual acceptance remain the decisive
+  evidence gate.
+- The final review also found and closed one narrow rotation/resize lifecycle
+  issue: a canvas-geometry rebuild now suppresses delegate feedback, clears
+  the previous `lastApplied` marker, rebuilds the base geometry, and replays
+  the current durable crop configuration. This prevents rotation from leaving
+  the native crop viewport at 1x while SwiftUI believes the prior framing is
+  still applied.
+- The signed `MemoMarkiOS` Debug build completed and installed successfully
+  on the paired iPhone 17 Pro Max as `com.serydoo.PhotoMemo.iOS`. Launch was
+  initially denied by SpringBoard because the phone was locked; after the
+  device was unlocked, the same installed build launched successfully through
+  `devicectl`. The user then completed a physical-device visual smoke check
+  for the avatar and custom Logo surfaces and reported no visible issues.
+  VoiceOver traversal, EXIF 6/8 direction fixtures, high-pixel performance,
+  and full Apple Photos output acceptance remain separate evidence items. No
+  uninstall or Apple Photos data mutation was performed.
+- Physical XCTest UI automation remains blocked before business-test
+  execution by the Xcode/iOS runner DTX channel handshake (`Early unexpected
+  exit`, code 74; `passedTests=0`). This is not reported as an app-test pass or
+  failure. No Git commit/push, TestFlight, App Store Connect, or App Store
+  mutation was performed.
+
+## 2026-09-06 Cross-surface Presentation Grammar audit and specification
+
+- Codex with ChatGPT completed the bounded `c2c_4c7a` PLAN against the active
+  iOS presentation surfaces and current worktree. The review confirms that
+  overall style consistency is desirable when it means consistent semantic
+  roles, not identical cards, colors, or controls.
+- The accepted contract is now recorded in
+  `Docs/01_Product/V4_UI_System_Polish_2026-08-25.md` and summarized in
+  `Docs/DesignSystem.md`: the real Memory Card Preview remains highest;
+  collapsed effective values are plain but prominent; true selection owns
+  tint/checkmark; navigation owns a neutral chevron and a full-row action;
+  status and actual controls retain their own semantics; browser/editor Sheets
+  and the Preview-preserving Card Content overlay remain distinct.
+- `Docs/Guidelines/PRODUCT_LANGUAGE_GUIDE.md` now records the current
+  Home/Subject-to-Configuration relationship and the accepted order from Time
+  Anchor through optional Photo Description. `Docs/Localization/README.md`
+  now reflects the active zh-Hans/en/ja/ko interface-language foundation and
+  its separation from output language.
+- The C2C plan identifies bounded P1 implementation slices for current-value
+  prominence, Settings VoiceOver summaries, destination-aware navigation,
+  Home Preset selection semantics, active-surface localization coverage, and
+  long-value resilience. No code, persistence, Renderer, PhotoKit, Share, or
+  media ownership change is authorized by this documentation pass alone.
+- The bounded implementation is now complete in the existing dirty worktree.
+  `ConfigurationResultLabel`, settings collapsed summaries, Home preset rows,
+  Recent History destinations, and navigation accessories now follow the
+  accepted semantic grammar. The active Subject Configuration, Subject
+  Overview, and Module Library surfaces now resolve interface copy through the
+  four-language resource contract, including dynamic accessibility labels.
+- Codex with ChatGPT's `REVIEW_FINAL` found no P0 and identified two code-level
+  P1 findings: the Settings navigation accent and the active-surface
+  localization/accessibility closure. Both findings were then closed locally
+  and covered by the focused/full verification below; the session is recorded
+  as `DONE` for `c2c_4c7a`, iteration 1. This is local closure evidence, not a
+  claim that ChatGPT reran the connector review after the final patch.
+- Verification completed: focused Presentation Grammar, Settings, Home
+  Preset, Recent History, navigation, and localization contracts passed;
+  full `MemoMarkTests` passed with 1,790 tests passed, 0 failed, and 1
+  skipped; generic `MemoMarkiOS` Debug build passed; and `git diff --check`
+  passed. Xcode beta emitted existing non-blocking deprecation/QoS warnings.
+- The paired physical iPhone 17 Pro Max is connected and routable as
+  `863C2747-6742-5E93-B715-6F89DBF90B31`, but this pass did not overwrite or
+  launch the installed app. Physical visual, Dynamic Type, VoiceOver, Reduce
+  Transparency/Dark Mode, and Apple Photos manual evidence remain separate
+  acceptance gates. No Git commit, push, TestFlight, App Store Connect, or
+  App Store mutation was performed.
+
+## 2026-09-06 Configuration Center information architecture polish
+
+- Configuration Center remains a true Memory Card preview followed by the
+  Object Inspector; subject selection and subject editing stay owned by the
+  Home/Subject flow. The configuration page no longer duplicates a Subject
+  row and begins with the selected subject's available Time Anchors.
+- The bounded order is now Time Anchor → Card Style → Expression → Layout &
+  Content → Save Location → Photo Description → configuration status. Save
+  Location is treated as the main output decision, while Photo Description is
+  retained as a low-frequency, optional Apple Photos search aid at the bottom.
+- The adjustment keeps legacy disclosure storage keys and configuration state
+  ownership intact. The Logo row now uses the same subject-avatar Logo
+  projection as the real preview and saved Badge path. Empty-anchor copy and
+  active Configuration Center strings are localized in Chinese, English,
+  Japanese, and Korean.
+- Codex with ChatGPT independently reviewed the dirty workspace and found no
+  P0 issue or ownership/persistence/Renderer/media regression. Focused option
+  list, memory-display support, and localization parity tests pass. Full
+  MemoMarkTests, generic MemoMarkiOS build, and git diff --check also pass;
+  physical-device visual acceptance and the Apple Photos flow remain separate
+  manual evidence gates for this UI pass.
+
 ## 2026-09-06 2.3.0 (104) Home guidance and commerce stability slice
 
 - Clarified the product contract: the Home photo-selection entry never disappears;

@@ -181,6 +181,10 @@ extension MemoMarkConfigurationCenterView {
             editorRevealProgress: editorRevealProgress,
             configurationStatus: activeConfigurationStatus,
             isSavingConfiguration: isSavingConfiguration,
+            previewWidthPolicy:
+                presentationStyle == .minimal
+                ? .fullWidthInCompactLandscape
+                : .readable,
             onDismissKeyboard: dismissKeyboard,
             onSaveCurrentConfiguration: {
                 performConfigurationLibraryAction(.saveCurrent)
@@ -230,12 +234,10 @@ extension MemoMarkConfigurationCenterView {
             LocationDisplayInspectorPresenter.presentation
 
         return ConfigurationOptionList(
-            subject:
-                session.state.selectedSubject,
             disclosureState:
                 $rootPresentationState.configurationDisclosureState,
-            subjectAvatarPreviewImagePath:
-                resolvedSubjectAvatarPreviewImagePath,
+            subjectAvatarLogoImagePath:
+                resolvedSubjectAvatarLogoImagePath,
             presentationStyle:
                 presentationStyleBinding,
             logoMode: logoModeSelectionBinding,
@@ -272,13 +274,15 @@ extension MemoMarkConfigurationCenterView {
                     .map(\.displayTitle)
                     ?? ConfigurationCenterMemoryDisplaySupport
                     .summaryValue(
-                        subject: session.state.selectedSubject
+                        subject: session.state.selectedSubject,
+                        language: .interfaceStored
                     ),
             memoryDisplayDetail:
                 ConfigurationCenterMemoryDisplaySupport
                 .summaryDetail(
                     subject: session.state.selectedSubject,
-                    style: pendingMemoryDisplayStyle
+                    style: pendingMemoryDisplayStyle,
+                    language: .interfaceStored
                 ),
             availableMemoryDisplayStyles:
                 ConfigurationCenterMemoryDisplaySupport

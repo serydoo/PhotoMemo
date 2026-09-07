@@ -107,13 +107,19 @@ struct ConfigurationCenterMemoryDisplaySupportTests {
     func summaryFallsBackWithoutActiveAnchor() {
         #expect(
             ConfigurationCenterMemoryDisplaySupport
-                .summaryValue(subject: nil)
+                .summaryValue(
+                    subject: nil,
+                    language: .simplifiedChinese
+                )
             == "未设置"
         )
         #expect(
             ConfigurationCenterMemoryDisplaySupport
-                .summaryDetail(subject: nil)
-            == "先选择记忆对象和当前生效时间锚点，再决定这张卡片要用哪一种表达方式。"
+                .summaryDetail(
+                    subject: nil,
+                    language: .simplifiedChinese
+                )
+            == "未选择时间锚点。添加重要时刻后，才能选择这一刻的表达方式。"
         )
         #expect(
             ConfigurationCenterMemoryDisplaySupport

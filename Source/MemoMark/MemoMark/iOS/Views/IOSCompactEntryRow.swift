@@ -275,7 +275,7 @@ struct IOSCompactEntryDisclosureRow<Content: View>: View {
     private var disclosureChevron: some View {
         Image(systemName: "chevron.right")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(.secondary)
             .rotationEffect(.degrees(isExpanded ? 90 : 0))
     }
 

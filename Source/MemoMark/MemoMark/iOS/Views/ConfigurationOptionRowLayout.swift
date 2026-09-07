@@ -115,7 +115,7 @@ struct ConfigurationOptionRowLayout<Icon: View, Trailing: View>: View {
             if showsTrailingChevron {
                 Image(systemName: "chevron.right")
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(.secondary)
             }
         }
     }

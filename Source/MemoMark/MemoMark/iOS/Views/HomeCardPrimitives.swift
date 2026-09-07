@@ -201,7 +201,7 @@ struct HomeNavigationRowButton: View {
 
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(.secondary)
                 }
                 .contentShape(Rectangle())
                 .padding(.horizontal, 14)

@@ -126,6 +126,34 @@ with the current task state.
 
 ## Information Hierarchy
 
+## Cross-Surface Presentation Grammar
+
+The V4 cross-surface contract in
+`Docs/01_Product/V4_UI_System_Polish_2026-08-25.md` is the current detailed
+expression of this design system. Its semantic distinction is mandatory across
+Home, Configuration, Subject, Settings, Progress, Sheets, and the Card Content
+Editor:
+
+| Meaning | Visual rule |
+| --- | --- |
+| Effective current value | Plain text; primary when a summary is collapsed, secondary when the real control is visible |
+| True selection | Native tint, selected background, checkmark, or selected accessibility trait |
+| Navigation | Whole-row Button with a neutral chevron; no destination means no chevron |
+| Workflow status | Semantic icon/text/tint or a status pill when state, not value, is being communicated |
+| Actual control | Menu, Picker, Toggle, segmented control, or Button owns the selection chrome |
+
+Do not turn an effective value into a blue capsule, checkmark, accent bar, or
+button-style background. This keeps the real Memory Card Preview above the
+Configuration Inspector and prevents summaries from pretending to be controls.
+The rule does not ban genuine selection controls, processing status, entitlement
+badges, or structured editable module tokens.
+
+For collapsed summaries, current values use plain caption text with primary
+foreground and medium/semibold weight. They may grow to two lines at regular
+sizes and three lines at accessibility sizes. VoiceOver must announce the value
+and the relevant state through the owning row; visual emphasis alone must not
+introduce a second accessibility element.
+
 ### Level 1: Section
 
 A major section may use one SF Symbol when it improves scanning. The icon is

@@ -57,6 +57,7 @@ private struct MemoryCardTextKitUndoSnapshot {
 /// shell from drifting apart as new presentation styles add their own regions.
 enum MemoryCardEditorInputMetrics {
     static let controlHeight: CGFloat = 40
+    static let accessibilityControlHeight: CGFloat = 52
     static let rowVerticalPadding: CGFloat = 4
     static let titleColumnWidth: CGFloat = 60
     static let multiRegionTitleColumnWidth: CGFloat = 36
@@ -69,6 +70,12 @@ enum MemoryCardEditorInputMetrics {
     static let caretHeight: CGFloat = 16
     static let fallbackLineHeight: CGFloat = 22
     static let moduleAttachmentHeight: CGFloat = 28
+
+    static func controlHeight(for dynamicTypeSize: DynamicTypeSize) -> CGFloat {
+        dynamicTypeSize.isAccessibilitySize
+            ? accessibilityControlHeight
+            : controlHeight
+    }
 
     /// TextKit's shared line box is the vertical source of truth for both
     /// ordinary glyphs and module attachments whenever the editor rebuilds its
@@ -210,6 +217,14 @@ final class MemoryCardTextKitEditorSession: NSObject, UITextViewDelegate {
     }
 
     func insert(_ item: MemoryCardContentItem, in textView: UITextView) {
+        if textView.markedTextRange != nil {
+            textView.unmarkText()
+            DispatchQueue.main.async { [weak self, weak textView] in
+                guard let self, let textView else { return }
+                self.insert(item, in: textView)
+            }
+            return
+        }
         ensureTrailingSentinel(in: textView)
         // UITextView is the selection source of truth while it is active. After
         // the module surface dismisses the keyboard, UIKit can expose a reset
@@ -297,6 +312,9 @@ final class MemoryCardTextKitEditorSession: NSObject, UITextViewDelegate {
     }
 
     func pasteStructuredContent(in textView: UITextView) -> Bool {
+        guard textView.markedTextRange == nil else {
+            return false
+        }
         guard let data = structuredPasteboardData(),
         let payload = MemoryCardEditorClipboardCodec.decode(data),
         !payload.items.isEmpty else {
@@ -357,6 +375,9 @@ final class MemoryCardTextKitEditorSession: NSObject, UITextViewDelegate {
     }
 
     func deleteBackwardIfTrailingAttachment(in textView: UITextView) -> Bool {
+        guard textView.markedTextRange == nil else {
+            return false
+        }
         ensureTrailingSentinel(in: textView)
         let documentLength = max(textView.textStorage.length - 1, 0)
         let selection = textView.selectedRange
@@ -817,6 +838,8 @@ final class MemoryCardTextKitEditorSession: NSObject, UITextViewDelegate {
 struct MemoryCardTextKitSessionEditor: View {
     let region: CardRegion
     let title: String?
+    let accessibilityLabel: String?
+    let accessibilityHint: String?
     let titleColumnWidth: CGFloat
     let draft: MemoryCardEditorDraft
     let commandBus: MemoryCardTextKitCommandBus
@@ -826,9 +849,14 @@ struct MemoryCardTextKitSessionEditor: View {
 
     @State private var session: MemoryCardTextKitEditorSession
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     init(
         region: CardRegion,
         title: String? = nil,
+        accessibilityLabel: String? = nil,
+        accessibilityHint: String? = nil,
         titleColumnWidth: CGFloat = MemoryCardEditorInputMetrics.titleColumnWidth,
         draft: MemoryCardEditorDraft,
         commandBus: MemoryCardTextKitCommandBus,
@@ -838,6 +866,8 @@ struct MemoryCardTextKitSessionEditor: View {
     ) {
         self.region = region
         self.title = title
+        self.accessibilityLabel = accessibilityLabel
+        self.accessibilityHint = accessibilityHint
         self.titleColumnWidth = titleColumnWidth
         self.draft = draft
         self.commandBus = commandBus
@@ -859,7 +889,7 @@ struct MemoryCardTextKitSessionEditor: View {
             alignment: .center,
             spacing: MemoryCardEditorInputMetrics.titleInputSpacing
         ) {
-            Text(title ?? region.displayTitle)
+            Text(title ?? region.localizedEditorDisplayTitle)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -869,16 +899,28 @@ struct MemoryCardTextKitSessionEditor: View {
                     alignment: .leading
                 )
                 .accessibilityAddTraits(.isHeader)
+                .accessibilityHidden(true)
 
             MemoryCardTextKitSessionRepresentable(
                 session: session,
                 region: region,
                 draft: draft,
                 commandBus: commandBus,
-                onFocus: onFocus
+                onFocus: onFocus,
+                accessibilityLabel:
+                    accessibilityLabel
+                    ?? title
+                    ?? region.localizedEditorAccessibilityLabel,
+                accessibilityHint:
+                    accessibilityHint
+                    ?? region.localizedEditorAccessibilityHint
             )
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: MemoryCardEditorInputMetrics.controlHeight)
+            .frame(
+                height: MemoryCardEditorInputMetrics.controlHeight(
+                    for: dynamicTypeSize
+                )
+            )
             .background(Color(uiColor: .secondarySystemGroupedBackground))
             .clipShape(
                 RoundedRectangle(
@@ -908,6 +950,8 @@ private struct MemoryCardTextKitSessionRepresentable: UIViewRepresentable {
     let draft: MemoryCardEditorDraft
     let commandBus: MemoryCardTextKitCommandBus
     let onFocus: () -> Void
+    let accessibilityLabel: String
+    let accessibilityHint: String?
 
     func makeUIView(context: Context) -> UITextView {
         let view = MemoryCardTextKitTextView()
@@ -930,6 +974,8 @@ private struct MemoryCardTextKitSessionRepresentable: UIViewRepresentable {
             return false
         }
         session.attach(to: view)
+        view.accessibilityLabel = accessibilityLabel
+        view.accessibilityHint = accessibilityHint
         view.onCopy = { [weak session] textView in
             session?.copySelection(in: textView) ?? false
         }
@@ -955,6 +1001,8 @@ private struct MemoryCardTextKitSessionRepresentable: UIViewRepresentable {
     }
 
     func updateUIView(_ view: UITextView, context: Context) {
+        view.accessibilityLabel = accessibilityLabel
+        view.accessibilityHint = accessibilityHint
         MemoryCardTextKitTrace.log("updateUIView", extra: "session=\(ObjectIdentifier(session)) textView=\(ObjectIdentifier(view)) range=\(NSStringFromRange(view.selectedRange))")
         let bus = commandBus
         bus.insertHandler = { [weak bus, weak session, weak view] item in

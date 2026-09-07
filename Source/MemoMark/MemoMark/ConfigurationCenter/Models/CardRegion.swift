@@ -104,6 +104,13 @@ extension CardRegion {
         )
     }
 
+    var localizedEditorDisplayTitle: String {
+        MemoMarkLanguage.interfaceStored.localized(
+            key: "configuration.card_editor.\(rawValue).title",
+            fallback: displayTitle
+        )
+    }
+
     var localizedEditorAccessibilityHint: String? {
         guard self == .slotD else { return nil }
         return MemoMarkLanguage.interfaceStored.localized(

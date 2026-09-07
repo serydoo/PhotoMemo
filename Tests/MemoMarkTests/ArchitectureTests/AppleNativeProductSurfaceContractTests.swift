@@ -283,7 +283,9 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(recentHistory.contains("ConfigurationCardHeaderIconButton("))
         #expect(recentHistory.contains("systemImage: \"ellipsis\""))
         #expect(recentHistory.contains(".frame(minHeight: 70)"))
-        #expect(recentHistory.contains(".foregroundStyle(Color.accentColor)"))
+        #expect(recentHistory.contains("showsNavigationAccessory: true"))
+        #expect(recentHistory.contains("showsNavigationAccessory: false"))
+        #expect(recentHistory.contains(".foregroundStyle(.secondary)"))
         #expect(!recentHistory.contains("Text(\"…\")"))
         #expect(!recentHistory.contains("ConfigurationSectionHeading(\n                    \"最近任务\""))
         #expect(!recentHistory.contains("systemImage: MemoMarkSymbol.processing.name,\n                    tint: .blue"))
@@ -319,8 +321,8 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(presetRow.contains(".frame(width: 26, height: 30)"))
     }
 
-    @Test("actions use accent while reading destinations stay neutral")
-    func actionsUseAccentWhileReadingDestinationsStayNeutral() throws {
+    @Test("navigation accessories stay neutral while explicit actions keep accent")
+    func navigationAccessoriesStayNeutralWhileExplicitActionsKeepAccent() throws {
         let sourcePaths = [
             "Source/MemoMark/MemoMark/iOS/Views/HomeCardPrimitives.swift",
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterSummarySection.swift",
@@ -338,9 +340,9 @@ struct AppleNativeProductSurfaceContractTests {
             for segment in chevronSegments {
                 #expect(
                     segment.prefix(240).contains(
-                        ".foregroundStyle(Color.accentColor)"
+                        ".foregroundStyle(.secondary)"
                     ),
-                    "Expected accent chevron in \(sourcePath)"
+                    "Expected neutral navigation chevron in \(sourcePath)"
                 )
             }
         }
@@ -374,8 +376,34 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/FeedbackSupportContent.swift"
         )
         #expect(feedback.contains("SettingsLinkRow("))
-        #expect(supportRows.contains(".foregroundStyle(Color.accentColor)"))
+        #expect(supportRows.contains(".foregroundStyle(.secondary)"))
+        #expect(!supportRows.contains(".foregroundStyle(Color.accentColor)"))
         #expect(disclosureSource.contains(".foregroundStyle(.tertiary)"))
+    }
+
+    @Test("subject and module surfaces resolve active interface copy")
+    func subjectAndModuleSurfacesResolveActiveInterfaceCopy() throws {
+        let subjectConfiguration = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift"
+        )
+        let subjectOverview = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift"
+        )
+        let moduleLibrary = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ModuleLibrarySurface.swift"
+        )
+
+        #expect(subjectConfiguration.contains("subject.configuration.identity.title"))
+        #expect(subjectConfiguration.contains("subject.configuration.delete.message"))
+        #expect(!subjectConfiguration.contains("title: \"基础资料\""))
+        #expect(!subjectConfiguration.contains(".navigationTitle(\"编辑记忆对象\")"))
+        #expect(subjectOverview.contains("subject.overview.fact.nickname"))
+        #expect(subjectOverview.contains("subject.overview.edit.hint"))
+        #expect(!subjectOverview.contains("title: \"昵称\""))
+        #expect(!subjectOverview.contains(".navigationTitle(\"记忆对象\")"))
+        #expect(moduleLibrary.contains("configuration.modules.insert.accessibility"))
+        #expect(moduleLibrary.contains("configuration.modules.category.photo_information"))
+        #expect(!moduleLibrary.contains("插入\\(module.title)"))
     }
 
     @Test("memory subject sections and interface preferences use restrained hierarchy")
@@ -396,16 +424,16 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
         )
 
-        #expect(overview.contains("title: \"基础资料\""))
-        #expect(overview.contains("title: \"时间锚点\""))
+        #expect(overview.contains("subject.overview.identity.title"))
+        #expect(overview.contains("subject.overview.anchor.title"))
         #expect(overview.contains("ConfigurationTitledSectionSurface("))
         #expect(!overview.contains("ConfigurationTitledSectionCard("))
         #expect(overview.contains("subjectBasicInformation"))
         #expect(overview.contains(".v1CardChrome()"))
         #expect(overview.contains(".frame(maxWidth: .infinity, alignment: .center)"))
         #expect(overview.contains(".padding(.vertical, 7)"))
-        #expect(editorFlow.contains("title: \"基础资料\""))
-        #expect(editorFlow.contains("title: \"时间锚点\""))
+        #expect(editorFlow.contains("subject.configuration.identity.title"))
+        #expect(editorFlow.contains("subject.configuration.anchor.title"))
         #expect(editorFlow.contains("private func subjectSectionHeader("))
         #expect(!editorFlow.contains("ConfigurationTitledSectionCard("))
         #expect(editor.contains("contactAvatarEditor"))
@@ -658,7 +686,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(detail.contains("private var editSubjectButton"))
         #expect(detail.contains("ConfigurationCardHeaderIconButton("))
         #expect(detail.contains("systemImage: \"pencil\""))
-        #expect(detail.contains("accessibilityLabel: \"编辑记忆对象\""))
+        #expect(detail.contains("subject.overview.edit.accessibility"))
         #expect(detail.contains("ConfigurationTitledSectionSurface("))
         #expect(!detail.contains("ConfigurationTitledSectionCard("))
         #expect(!detail.contains("onSaveSubject"))
@@ -880,7 +908,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(editor.contains("onCancel:"))
         #expect(editor.contains("onSave:"))
         #expect(editor.contains(".memoMarkEditorSheetToolbar("))
-        #expect(editor.contains("cancelTitle: \"取消\""))
+        #expect(editor.contains("localized(\"common.cancel\", fallback: \"取消\")"))
         #expect(editor.contains("onCancel: onCancel"))
         #expect(editor.contains("flowState.saveChanges()"))
         #expect(editor.contains("onSave()"))

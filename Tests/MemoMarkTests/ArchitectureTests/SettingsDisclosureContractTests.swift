@@ -47,6 +47,22 @@ struct SettingsDisclosureContractTests {
         #expect(disclosureSource.contains("isExpanded.toggle()"))
     }
 
+    @Test("collapsed settings summaries are readable and included in VoiceOver")
+    func collapsedSettingsSummariesAreReadableAndIncludedInVoiceOver() throws {
+        let disclosureSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
+        )
+
+        #expect(disclosureSource.contains(".foregroundStyle(.primary)"))
+        #expect(
+            disclosureSource.contains(
+                "dynamicTypeSize.isAccessibilitySize ? 3 : 2"
+            )
+        )
+        #expect(disclosureSource.contains("trailingValue + \", \" + state"))
+        #expect(disclosureSource.contains("accessibilityValue(disclosureAccessibilityValue)"))
+    }
+
     @Test("settings presents installed version in user-facing fields")
     func settingsPresentsInstalledVersionFields() throws {
         let source = try sourceText(
@@ -488,7 +504,8 @@ struct SettingsDisclosureContractTests {
         #expect(actionRowSource.contains(".foregroundStyle(.tertiary)"))
         #expect(linkRowSource.contains("accessory: \"chevron.right\""))
         #expect(disclosureSource.contains(".foregroundStyle(.tertiary)"))
-        #expect(supportRows.contains(".foregroundStyle(Color.accentColor)"))
+        #expect(contentRowSource.contains(".foregroundStyle(.secondary)"))
+        #expect(!contentRowSource.contains(".foregroundStyle(Color.accentColor)"))
         #expect(source.contains("private var memoMarkPlusStatus"))
         #expect(source.contains("commerceSnapshot.remainingRecords"))
         #expect(contentRowSource.contains(".fixedSize(horizontal: false, vertical: true)"))

@@ -51,17 +51,7 @@ struct SettingsDisclosureSection<Content: View>: View {
                 alignment: .leading
             )
             .accessibilityLabel(title)
-            .accessibilityValue(
-                isExpanded
-                ? localized(
-                    "settings.accessibility.expanded",
-                    fallback: "已展开"
-                )
-                : localized(
-                    "settings.accessibility.collapsed",
-                    fallback: "已收起"
-                )
-            )
+            .accessibilityValue(disclosureAccessibilityValue)
             .accessibilityHint(
                 localized(
                     "settings.accessibility.toggle_hint",
@@ -125,9 +115,27 @@ struct SettingsDisclosureSection<Content: View>: View {
            !isExpanded {
             Text(trailingValue)
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                .foregroundStyle(.primary)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
+                .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var disclosureAccessibilityValue: String {
+        let state = localized(
+            isExpanded
+                ? "settings.accessibility.expanded"
+                : "settings.accessibility.collapsed",
+            fallback: isExpanded ? "已展开" : "已收起"
+        )
+
+        guard let trailingValue,
+              !trailingValue.isEmpty,
+              !isExpanded else {
+            return state
+        }
+
+        return trailingValue + ", " + state
     }
 
     private var disclosureChevron: some View {

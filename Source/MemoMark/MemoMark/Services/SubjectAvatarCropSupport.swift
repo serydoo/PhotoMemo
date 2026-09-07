@@ -228,6 +228,78 @@ enum SubjectAvatarCropSupport {
         )
     }
 
+    nonisolated static func configurationPreservingCropCenter(
+        _ currentConfiguration: SubjectAvatarCropConfiguration,
+        newZoomScale: CGFloat,
+        sourceSize: CGSize,
+        canvasSize: CGSize,
+        safeInsetRatio: CGFloat
+    ) -> SubjectAvatarCropConfiguration {
+        let current = SubjectAvatarCropConfiguration(
+            zoomScale: currentConfiguration.zoomScale,
+            normalizedOffset: currentConfiguration.normalizedOffset
+        )
+        let newZoomScale = SubjectAvatarCropConfiguration
+            .clampedZoomScale(newZoomScale)
+        let baseRect = aspectFillRect(
+            sourceSize: sourceSize,
+            canvasSize: canvasSize,
+            safeInsetRatio: safeInsetRatio
+        )
+        let currentRect = resolvedDrawRect(
+            sourceSize: sourceSize,
+            canvasSize: canvasSize,
+            safeInsetRatio: safeInsetRatio,
+            configuration: current
+        )
+        let currentScaledSize = CGSize(
+            width: max(baseRect.width * current.zoomScale, 1),
+            height: max(baseRect.height * current.zoomScale, 1)
+        )
+        let canvasMidX = canvasSize.width / 2
+        let canvasMidY = canvasSize.height / 2
+        let currentSourcePoint = CGPoint(
+            x: (canvasMidX - currentRect.minX)
+                / currentScaledSize.width,
+            y: (canvasMidY - currentRect.minY)
+                / currentScaledSize.height
+        )
+        let newScaledSize = CGSize(
+            width: max(baseRect.width * newZoomScale, 1),
+            height: max(baseRect.height * newZoomScale, 1)
+        )
+        let centeredOrigin = CGPoint(
+            x: (canvasSize.width - newScaledSize.width) / 2,
+            y: (canvasSize.height - newScaledSize.height) / 2
+        )
+        let proposedTranslation = CGSize(
+            width: canvasMidX
+                - currentSourcePoint.x * newScaledSize.width
+                - centeredOrigin.x,
+            height: canvasMidY
+                - currentSourcePoint.y * newScaledSize.height
+                - centeredOrigin.y
+        )
+        let clamped = clampedTranslation(
+            proposedTranslation,
+            sourceSize: sourceSize,
+            canvasSize: canvasSize,
+            safeInsetRatio: safeInsetRatio,
+            zoomScale: newZoomScale
+        )
+
+        return SubjectAvatarCropConfiguration(
+            zoomScale: newZoomScale,
+            normalizedOffset: normalizedOffset(
+                for: clamped,
+                sourceSize: sourceSize,
+                canvasSize: canvasSize,
+                safeInsetRatio: safeInsetRatio,
+                zoomScale: newZoomScale
+            )
+        )
+    }
+
     nonisolated static func resolvedDrawRect(
         sourceSize: CGSize,
         canvasSize: CGSize,

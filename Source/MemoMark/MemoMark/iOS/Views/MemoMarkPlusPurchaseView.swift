@@ -157,7 +157,7 @@ struct MemoMarkPlusPurchaseView: View {
                 benefit(
                     localized(
                         "commerce.purchase.benefit.expressions",
-                        fallback: "全部第一方表达方式一次开放"
+                        fallback: "一次解锁全部内置的记忆表达方式"
                     ),
                     "text.badge.star"
                 )

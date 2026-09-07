@@ -30,11 +30,11 @@ struct ConfigurationOptionListContractTests {
         let footerSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
         )
-        let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
-        )
         let pagesSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+        let rootSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
         let runtimeSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Runtime.swift"
@@ -58,11 +58,11 @@ struct ConfigurationOptionListContractTests {
         let footerSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
         )
-        let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
-        )
         let pagesSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+        let rootSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
 
         #expect(optionListSource.contains("struct ConfigurationOptionList: View"))
@@ -82,9 +82,6 @@ struct ConfigurationOptionListContractTests {
         )
         let outputSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/V1OutputPageSurface.swift"
-        )
-        let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
         let pagesSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
@@ -186,7 +183,7 @@ struct ConfigurationOptionListContractTests {
         #expect(pageSource.contains("fallback: \"记忆配置\""))
         #expect(
             pageSource.contains(
-                "fallback: \"决定记忆围绕谁、如何呈现，以及保存到哪里。\""
+                "fallback: \"决定这段记忆围绕哪个重要时刻、如何呈现，以及保存到哪里。\""
             )
         )
         #expect(optionListSource.contains("configuration.memory_start.title"))
@@ -207,13 +204,135 @@ struct ConfigurationOptionListContractTests {
         #expect(!optionListSource.contains("title: \"卡片布局与内容\""))
     }
 
+    @Test("collapsed configuration values are prominent without becoming control chrome")
+    func collapsedConfigurationValuesAreProminentWithoutBecomingControlChrome() throws {
+        let supportSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
+        )
+
+        #expect(supportSource.contains("let isProminent: Bool"))
+        #expect(supportSource.contains("isProminent: !isExpanded"))
+        #expect(
+            supportSource.contains(
+                ".foregroundStyle(isProminent ? .primary : .secondary)"
+            )
+        )
+        #expect(
+            supportSource.contains(
+                "dynamicTypeSize.isAccessibilitySize ? 3 : 2"
+            )
+        )
+        let resultLabelStart = try #require(
+            supportSource.range(of: "struct ConfigurationResultLabel")?.lowerBound
+        )
+        let resultLabelEnd = try #require(
+            supportSource.range(
+                of: "struct ConfigurationCompactSectionRow",
+                range: resultLabelStart..<supportSource.endIndex
+            )?.lowerBound
+        )
+        let resultLabelSource = supportSource[resultLabelStart..<resultLabelEnd]
+        #expect(!resultLabelSource.contains("RoundedRectangle"))
+    }
+
+    @Test("configuration prioritizes anchor, card style, and editable card content")
+    func configurationPrioritizesAnchorCardStyleAndEditableCardContent() throws {
+        let optionListSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
+        )
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+
+        let bodyStart = try #require(optionListSource.range(of: "var body: some View"))
+        let sourceStart = try #require(
+            optionListSource.range(
+                of: "memorySourceSection",
+                range: bodyStart.upperBound..<optionListSource.endIndex
+            )
+        )
+        let styleStart = try #require(
+            optionListSource.range(
+                of: "expressionStyleSection",
+                range: sourceStart.upperBound..<optionListSource.endIndex
+            )
+        )
+        let expressionStart = try #require(
+            optionListSource.range(
+                of: "memoryExpressionSection",
+                range: styleStart.upperBound..<optionListSource.endIndex
+            )
+        )
+        let layoutStart = try #require(
+            optionListSource.range(
+                of: "groupedSection(\n                title: \"configuration.layout.title\"",
+                range: expressionStart.upperBound..<optionListSource.endIndex
+            )
+        )
+
+        #expect(sourceStart.lowerBound < styleStart.lowerBound)
+        #expect(styleStart.lowerBound < expressionStart.lowerBound)
+        #expect(expressionStart.lowerBound < layoutStart.lowerBound)
+        #expect(!pagesSource.contains("ConfigurationOptionList(\n            subject:"))
+        #expect(
+            pagesSource.contains(
+                "subjectAvatarLogoImagePath:\n                resolvedSubjectAvatarLogoImagePath"
+            )
+        )
+        #expect(!pagesSource.contains("subjectAvatarPreviewImagePath:"))
+        #expect(!pagesSource.contains("resolvedSubjectAvatarPreviewImagePath"))
+        #expect(optionListSource.contains("let subjectAvatarLogoImagePath: String?"))
+
+        let sourceSectionEnd = try #require(
+            optionListSource.range(
+                of: "private var memoryExpressionSection: some View",
+                range: sourceStart.upperBound..<optionListSource.endIndex
+            )
+        )
+        let sourceSection = optionListSource[
+            sourceStart.lowerBound..<sourceSectionEnd.lowerBound
+        ]
+        #expect(sourceSection.contains("timeAnchorRow"))
+        #expect(!sourceSection.contains("subjectRow"))
+        #expect(!sourceSection.contains("subjectDisplayName"))
+
+        let layoutEnd = try #require(
+            optionListSource.range(
+                of: "            outputDestinationSection",
+                range: layoutStart.upperBound..<optionListSource.endIndex
+            )
+        )
+        let layoutSource = optionListSource[
+            layoutStart.lowerBound..<layoutEnd.lowerBound
+        ]
+        let contentRange = try #require(layoutSource.range(of: "regionContentRow"))
+        let advancedRange = try #require(layoutSource.range(of: "advancedModulesRow"))
+        let logoRange = try #require(layoutSource.range(of: "logoRow"))
+        #expect(contentRange.lowerBound < advancedRange.lowerBound)
+        #expect(advancedRange.lowerBound < logoRange.lowerBound)
+        #expect(!layoutSource.contains("configurationStatusCard"))
+
+        let saveRange = layoutEnd
+        let photoRange = try #require(
+            optionListSource.range(
+                of: "            photoDescriptionSection",
+                range: saveRange.upperBound..<optionListSource.endIndex
+            )
+        )
+        let statusRange = try #require(
+            optionListSource.range(
+                of: "            configurationStatusCard",
+                range: photoRange.upperBound..<optionListSource.endIndex
+            )
+        )
+        #expect(saveRange.lowerBound < photoRange.lowerBound)
+        #expect(photoRange.lowerBound < statusRange.lowerBound)
+    }
+
     @Test("configuration output state stays grouped at the configuration boundary")
     func configurationOutputStateStaysGrouped() throws {
         let source = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
-        )
-        let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
         let pagesSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
@@ -297,9 +416,6 @@ struct ConfigurationOptionListContractTests {
         )
         let configurationPageSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationPageSurface.swift"
-        )
-        let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
         let pagesSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
@@ -532,7 +648,7 @@ struct ConfigurationOptionListContractTests {
         )
         let nextProperty = try #require(
             source.range(
-                of: "private var subjectDisplayName",
+                of: "private var logoIcon",
                 range: logoSubtitle.upperBound..<source.endIndex
             )
         )
@@ -547,9 +663,6 @@ struct ConfigurationOptionListContractTests {
     func cardStylePrecedesCardLayoutAndDrivesEditing() throws {
         let optionListSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
-        )
-        let rootSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
         let regionSource = try sourceText(
             "Source/MemoMark/MemoMark/ConfigurationCenter/Models/CardRegion.swift"

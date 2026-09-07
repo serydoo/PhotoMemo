@@ -139,4 +139,55 @@ struct LogoAssetOptimizationServiceTests {
         #expect((optimized.colorAt(x: 0, y: 0)?.alphaComponent ?? 1) == 0)
         #expect((optimized.colorAt(x: 64, y: 64)?.alphaComponent ?? 0) > 0.95)
     }
+
+    @Test("visible artwork bounds remove transparent upload padding")
+    func visibleArtworkBoundsRemoveTransparentUploadPadding() throws {
+        let colorSpace = try #require(
+            CGColorSpace(name: CGColorSpace.sRGB)
+        )
+        let context = try #require(
+            CGContext(
+                data: nil,
+                width: 100,
+                height: 100,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        )
+        context.clear(CGRect(x: 0, y: 0, width: 100, height: 100))
+        let fillColor = try #require(
+            CGColor(
+                colorSpace: colorSpace,
+                components: [1, 0.2, 0.1, 1]
+            )
+        )
+        context.setFillColor(fillColor)
+        context.fill(CGRect(x: 35, y: 42, width: 30, height: 16))
+
+        let image = try #require(context.makeImage())
+        let bounds = try #require(
+            LogoAssetPresentation.visibleArtworkBounds(for: image)
+        )
+
+        #expect(bounds.width >= 29)
+        #expect(bounds.width <= 31)
+        #expect(bounds.height >= 15)
+        #expect(bounds.height <= 17)
+    }
+
+    @Test("logo fit preserves a complete wide mark inside the circular canvas")
+    func logoFitPreservesCompleteWideMark() {
+        let rect = LogoAssetPresentation.aspectFitRect(
+            contentSize: CGSize(width: 400, height: 100),
+            canvasSize: CGSize(width: 2048, height: 2048),
+            safeInsetRatio: 0.04
+        )
+
+        #expect(rect.width > 1800)
+        #expect(rect.height < 500)
+        #expect(rect.minX > 0)
+        #expect(rect.maxX < 2048)
+    }
 }

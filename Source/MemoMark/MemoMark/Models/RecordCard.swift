@@ -18,27 +18,80 @@ enum RecordCardPresentationStyle:
         switch self {
         case .classicWhite:
             return PresentationStyleContentContract(
-                editableTextAreas: [
-                    .leftTop,
-                    .leftBottom,
-                    .rightTop,
-                    .rightBottom
+                semanticProjections: [
+                    .init(role: .recorder, textArea: .leftTop),
+                    .init(role: .timeline, textArea: .leftBottom),
+                    .init(role: .captureSummary, textArea: .rightTop),
+                    .init(role: .memory, textArea: .rightBottom)
                 ],
-                renderedTextAreas: [
-                    .leftTop,
-                    .leftBottom,
-                    .rightTop,
-                    .rightBottom
+                editableContentRoles: [
+                    .recorder,
+                    .timeline,
+                    .captureSummary,
+                    .memory
                 ],
-                photoDescriptionTextAreas: [.rightBottom]
+                renderedContentRoles: [
+                    .recorder,
+                    .timeline,
+                    .captureSummary,
+                    .memory
+                ],
+                photoDescriptionRoles: [.memory],
+                editorTitleKey: "configuration.card_editor.output_content",
+                editorTitleFallback: "输出内容",
+                editorAccessibilityLabelKey:
+                    "configuration.card_editor.accessibility_label",
+                editorAccessibilityLabelFallback: "卡片内容编辑",
+                editorAccessibilityHintKey: nil,
+                editorAccessibilityHintFallback: nil
             )
         case .minimal:
             return PresentationStyleContentContract(
-                editableTextAreas: [.leftTop],
-                renderedTextAreas: [.leftTop],
-                photoDescriptionTextAreas: [.leftTop]
+                semanticProjections: [
+                    .init(role: .primaryOutput, textArea: .leftTop)
+                ],
+                editableContentRoles: [.primaryOutput],
+                renderedContentRoles: [.primaryOutput],
+                photoDescriptionRoles: [.primaryOutput],
+                editorTitleKey:
+                    "configuration.card_editor.minimal_content",
+                editorTitleFallback: "极简内容",
+                editorAccessibilityLabelKey:
+                    "accessibility.editor.minimal.label",
+                editorAccessibilityLabelFallback: "极简卡片内容",
+                editorAccessibilityHintKey:
+                    "accessibility.editor.minimal.hint",
+                editorAccessibilityHintFallback:
+                    "这部分内容会显示在极简卡片上，也会写入 Apple Photos 的照片说明，方便之后查找。"
             )
         }
+    }
+}
+
+/// Describes the user-facing meaning carried by a style-owned text area.
+///
+/// CardRegion remains the persistence-compatible slot carrier. These roles
+/// keep editor, preview, and photo-description decisions from treating slot A
+/// as a universal semantic owner when a style intentionally has a different
+/// content surface.
+enum PresentationContentRole: String, CaseIterable, Hashable {
+    case recorder
+    case timeline
+    case captureSummary
+    case memory
+    case primaryOutput
+}
+
+struct PresentationContentProjection: Hashable {
+    let role: PresentationContentRole
+    let textArea: CardTextArea
+
+    nonisolated init(
+        role: PresentationContentRole,
+        textArea: CardTextArea
+    ) {
+        self.role = role
+        self.textArea = textArea
     }
 }
 
@@ -49,20 +102,104 @@ enum RecordCardPresentationStyle:
 /// assuming that slot A-D are globally shared between styles.
 struct PresentationStyleContentContract: Hashable {
 
-    let editableTextAreas: [CardTextArea]
+    let semanticProjections: [PresentationContentProjection]
 
-    let renderedTextAreas: [CardTextArea]
+    let editableContentRoles: [PresentationContentRole]
 
-    let photoDescriptionTextAreas: [CardTextArea]
+    let renderedContentRoles: [PresentationContentRole]
+
+    let photoDescriptionRoles: [PresentationContentRole]
+
+    let editorTitleKey: String
+
+    let editorTitleFallback: String
+
+    let editorAccessibilityLabelKey: String
+
+    let editorAccessibilityLabelFallback: String
+
+    let editorAccessibilityHintKey: String?
+
+    let editorAccessibilityHintFallback: String?
 
     nonisolated init(
-        editableTextAreas: [CardTextArea],
-        renderedTextAreas: [CardTextArea],
-        photoDescriptionTextAreas: [CardTextArea]
+        semanticProjections: [PresentationContentProjection],
+        editableContentRoles: [PresentationContentRole],
+        renderedContentRoles: [PresentationContentRole],
+        photoDescriptionRoles: [PresentationContentRole],
+        editorTitleKey: String,
+        editorTitleFallback: String,
+        editorAccessibilityLabelKey: String,
+        editorAccessibilityLabelFallback: String,
+        editorAccessibilityHintKey: String?,
+        editorAccessibilityHintFallback: String?
     ) {
-        self.editableTextAreas = editableTextAreas
-        self.renderedTextAreas = renderedTextAreas
-        self.photoDescriptionTextAreas = photoDescriptionTextAreas
+        self.semanticProjections = semanticProjections
+        self.editableContentRoles = editableContentRoles
+        self.renderedContentRoles = renderedContentRoles
+        self.photoDescriptionRoles = photoDescriptionRoles
+        self.editorTitleKey = editorTitleKey
+        self.editorTitleFallback = editorTitleFallback
+        self.editorAccessibilityLabelKey = editorAccessibilityLabelKey
+        self.editorAccessibilityLabelFallback =
+            editorAccessibilityLabelFallback
+        self.editorAccessibilityHintKey = editorAccessibilityHintKey
+        self.editorAccessibilityHintFallback = editorAccessibilityHintFallback
+    }
+
+    nonisolated var editableTextAreas: [CardTextArea] {
+        editableContentRoles.compactMap { textArea(for: $0) }
+    }
+
+    nonisolated var renderedTextAreas: [CardTextArea] {
+        renderedContentRoles.compactMap { textArea(for: $0) }
+    }
+
+    nonisolated var photoDescriptionTextAreas: [CardTextArea] {
+        photoDescriptionRoles.compactMap { textArea(for: $0) }
+    }
+
+    nonisolated func textArea(
+        for role: PresentationContentRole
+    ) -> CardTextArea? {
+        semanticProjections.first(where: { $0.role == role })?.textArea
+    }
+
+    nonisolated func role(
+        for textArea: CardTextArea
+    ) -> PresentationContentRole? {
+        semanticProjections.first(where: { $0.textArea == textArea })?.role
+    }
+
+    nonisolated func editorTitle(
+        using language: MemoMarkLanguage
+    ) -> String {
+        language.localized(
+            key: editorTitleKey,
+            fallback: editorTitleFallback
+        )
+    }
+
+    nonisolated func editorAccessibilityLabel(
+        using language: MemoMarkLanguage
+    ) -> String {
+        language.localized(
+            key: editorAccessibilityLabelKey,
+            fallback: editorAccessibilityLabelFallback
+        )
+    }
+
+    nonisolated func editorAccessibilityHint(
+        using language: MemoMarkLanguage
+    ) -> String? {
+        guard let key = editorAccessibilityHintKey,
+              let fallback = editorAccessibilityHintFallback else {
+            return nil
+        }
+        return language.localized(
+            key: key,
+            fallback: fallback
+        )
     }
 }
 
