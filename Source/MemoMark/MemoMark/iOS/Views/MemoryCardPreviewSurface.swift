@@ -1,6 +1,5 @@
-#if os(iOS) && !MEMOMARK_SHARE_EXTENSION
+#if !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
-import UIKit
 
 struct MemoryCardPreviewSurface: View {
 
@@ -237,8 +236,10 @@ struct MemoryCardPreviewSurface: View {
                 .font(.system(size: size, weight: .semibold))
         case .customUpload:
             if let customLogoImagePath,
-               let image = UIImage(contentsOfFile: customLogoImagePath) {
-                Image(uiImage: image)
+               let image = PlatformImage.loadMemoMarkImage(
+                contentsOfFile: customLogoImagePath
+               ) {
+                image.swiftUIImage
                     .resizable()
                     .scaledToFit()
                     .frame(width: size, height: size)
@@ -249,8 +250,10 @@ struct MemoryCardPreviewSurface: View {
             }
         case .subjectAvatar:
             if let subjectAvatarLogoImagePath,
-               let image = UIImage(contentsOfFile: subjectAvatarLogoImagePath) {
-                Image(uiImage: image)
+               let image = PlatformImage.loadMemoMarkImage(
+                contentsOfFile: subjectAvatarLogoImagePath
+               ) {
+                image.swiftUIImage
                     .resizable()
                     .scaledToFill()
                     .frame(width: size, height: size)
@@ -494,8 +497,10 @@ struct MemoryCardPreviewSurface: View {
                     .font(.system(size: logoSize, weight: .semibold))
             case .customUpload:
                 if let customLogoImagePath,
-                   let image = UIImage(contentsOfFile: customLogoImagePath) {
-                    Image(uiImage: image)
+                   let image = PlatformImage.loadMemoMarkImage(
+                    contentsOfFile: customLogoImagePath
+                   ) {
+                    image.swiftUIImage
                         .resizable()
                         .scaledToFit()
                         .frame(
@@ -513,8 +518,10 @@ struct MemoryCardPreviewSurface: View {
                 }
             case .subjectAvatar:
                 if let subjectAvatarLogoImagePath,
-                   let image = UIImage(contentsOfFile: subjectAvatarLogoImagePath) {
-                    Image(uiImage: image)
+                   let image = PlatformImage.loadMemoMarkImage(
+                    contentsOfFile: subjectAvatarLogoImagePath
+                   ) {
+                    image.swiftUIImage
                         .resizable()
                         .scaledToFill()
                         .frame(

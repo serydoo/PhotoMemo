@@ -1,7 +1,9 @@
-#if os(iOS) && !MEMOMARK_SHARE_EXTENSION
+#if !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 import PhotosUI
+#if os(iOS)
 import UIKit
+#endif
 
 struct ConfigurationOutputBindings {
 
@@ -76,6 +78,7 @@ struct ConfigurationOptionList: View {
     let output: ConfigurationOutputBindings
     let configurationStatus: ConfigurationPersistenceStatus
     let onOpenRegionContent: () -> Void
+    let onOpenAdvancedModules: (() -> Void)?
 
     var body: some View {
         VStack(
@@ -126,6 +129,7 @@ struct ConfigurationOptionList: View {
             reduceMotion ? nil : .easeInOut(duration: 0.2),
             value: disclosureState
         )
+#if os(iOS)
         .sheet(isPresented: $showsAdvancedModulesSheet) {
             AdvancedModulesSheet(
                 locationPresentation: locationPresentation,
@@ -135,6 +139,7 @@ struct ConfigurationOptionList: View {
                 selectedTimeSupplement: selectedTimeSupplement
             )
         }
+#endif
         .photosPicker(
             isPresented: $isLogoPickerPresented,
             selection: $selectedLogoItem,
@@ -640,7 +645,11 @@ struct ConfigurationOptionList: View {
 
     private var advancedModulesRow: some View {
         Button {
+#if os(iOS)
             showsAdvancedModulesSheet = true
+#else
+            onOpenAdvancedModules?()
+#endif
         } label: {
             configurationTextRow(
                 title: "时间与地点",
@@ -863,21 +872,19 @@ struct ConfigurationOptionList: View {
 
             if logoMode == .subjectAvatar,
                let subjectAvatarLogoImagePath,
-               let image = UIImage(
-                contentsOfFile:
-                    subjectAvatarLogoImagePath
+               let image = PlatformImage.loadMemoMarkImage(
+                contentsOfFile: subjectAvatarLogoImagePath
                ) {
-                Image(uiImage: image)
+                image.swiftUIImage
                     .resizable()
                     .scaledToFill()
                     .clipShape(Circle())
             } else if logoMode == .customUpload,
                       let customLogoImagePath,
-                      let image = UIImage(
-                        contentsOfFile:
-                            customLogoImagePath
+                      let image = PlatformImage.loadMemoMarkImage(
+                        contentsOfFile: customLogoImagePath
                       ) {
-                Image(uiImage: image)
+                image.swiftUIImage
                     .resizable()
                     .scaledToFit()
                     .clipShape(Circle())

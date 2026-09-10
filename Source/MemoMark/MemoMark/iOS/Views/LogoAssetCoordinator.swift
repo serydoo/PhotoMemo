@@ -1,7 +1,7 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
-#if os(iOS)
+#if os(iOS) || os(macOS)
 import PhotosUI
 import SwiftUI
 #endif
@@ -117,7 +117,7 @@ struct LogoAssetCoordinator {
         )
     }
 
-    #if os(iOS)
+    #if os(iOS) || os(macOS)
     func optimize(
         _ item: PhotosPickerItem
     ) async -> LogoAssetUpdate {

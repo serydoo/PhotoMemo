@@ -1,11 +1,34 @@
-#if !MEMOMARK_SHARE_EXTENSION
+#if os(macOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 
 struct ConfigurationCenterView: View {
 
+    @ObservedObject
+    private var runtime: MemoMarkAppRuntime
+
     @StateObject
     private var session =
         ConfigurationSession()
+
+    @ObservedObject
+    private var commerceStore:
+        MemoMarkCommerceStore
+
+    @ObservedObject
+    private var backgroundStatusService:
+        MemoMarkBackgroundStatusService
+
+    init(
+        runtime: MemoMarkAppRuntime
+    ) {
+        _runtime = ObservedObject(wrappedValue: runtime)
+        _commerceStore = ObservedObject(
+            wrappedValue: runtime.commerceStore
+        )
+        _backgroundStatusService = ObservedObject(
+            wrappedValue: runtime.backgroundStatusService
+        )
+    }
 
     @AppStorage(
         MemoMarkLanguage.interfacePreferenceStorageKey,
@@ -15,37 +38,22 @@ struct ConfigurationCenterView: View {
         MemoMarkInterfaceLanguagePreference.system.rawValue
 
     var body: some View {
-        NavigationSplitView {
-            MemorySubjectListView(
-                session: session
-            )
-            .navigationTitle("记忆对象")
-            .navigationSplitViewColumnWidth(
-                min: 240,
-                ideal: 280
-            )
-        } content: {
-            ZStack {
-                ConfigurationUI.appBackground
-                    .ignoresSafeArea()
-
-                InteractiveMemoryCard(
-                    session: session
-                )
-            }
-            .navigationTitle("记忆卡片")
-            .navigationSplitViewColumnWidth(
-                min: 560,
-                ideal: 640
-            )
-        } detail: {
-            InspectorView(
-                session: session
-            )
-            .navigationTitle("编辑")
-            .navigationSplitViewColumnWidth(
-                min: 300,
-                ideal: 360
+        NavigationStack {
+            MacConfigurationCenterPage(
+                session: session,
+                commerceStore: commerceStore,
+                backgroundStatusService: backgroundStatusService,
+                loadConfigurationBootstrap:
+                    runtime.environment.transactions
+                    .loadConfigurationBootstrap,
+                loadPhotoLibraryAlbums:
+                    runtime.environment.transactions
+                    .loadPhotoLibraryAlbums,
+                saveConfiguration:
+                    runtime.environment.transactions
+                    .saveConfiguration,
+                configurationCoordinator:
+                    runtime.environment.coordinators.configuration
             )
         }
         .background(ConfigurationUI.appBackground)
@@ -81,10 +89,11 @@ struct ConfigurationCenterView: View {
             }
         )
     }
+
 }
 
 #Preview {
-    ConfigurationCenterView()
+    ConfigurationCenterView(runtime: MemoMarkAppRuntime())
         .frame(width: 1180, height: 760)
 }
 #endif

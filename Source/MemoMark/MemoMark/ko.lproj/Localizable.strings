@@ -298,7 +298,7 @@
 "settings.guide.welcome.title" = "시작 안내 다시 보기";
 "settings.guide.welcome.detail" = "처음 소개에서 안내한 기본 내용을 확인합니다.";
 "settings.guide.workflow.title" = "일상의 흐름 보기";
-"settings.guide.workflow.detail" = "Apple Photos에서 공유하고 기기에서 처리한 다음 사진 보관함으로 돌아갑니다.";
+"settings.guide.workflow.detail" = "Apple Photos에서 공유하고 기기에서 처리한 다음 사진 보관함으로 돌아갑니다. 공유 시트에서 MemoMark를 앞으로 옮기면 다음부터 더 빠르게 찾을 수 있습니다.";
 "settings.guide.expression.title" = "사진이 시간을 표현하는 방법";
 "settings.guide.expression.detail" = "타임 앵커에 따라 사진의 시간 표현이 어떻게 달라지는지 확인합니다.";
 "settings.expression_guide.title" = "이 사진이 순간을 표현하는 방법";
@@ -489,7 +489,7 @@
 "welcome.workflow.photos.title" = "Apple Photos에서 사진 선택";
 "welcome.workflow.photos.detail" = "보관함에서 기록하고 싶은 사진을 찾습니다.";
 "welcome.workflow.share.title" = "MemoMark로 공유";
-"welcome.workflow.share.detail" = "Apple Photos에서 공유를 누르고 MemoMark를 선택합니다.";
+"welcome.workflow.share.detail" = "Apple Photos에서 공유를 누릅니다. MemoMark가 앞에 보이지 않으면 앱 행을 왼쪽으로 쓸어 넘겨 ‘더 보기’ 또는 ‘편집’을 누르고, MemoMark를 길게 눌러 앞으로 옮기세요. 다음에 사진을 공유할 때 더 쉽게 찾을 수 있습니다.";
 "welcome.workflow.processing.title" = "기기에서 로컬 처리";
 "welcome.workflow.processing.detail" = "저장된 프리셋에 따라 기기에서 기록을 완성합니다.";
 "welcome.workflow.return.title" = "Apple Photos로 돌아가기";

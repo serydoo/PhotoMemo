@@ -156,7 +156,9 @@ struct MemoMarkRootSceneView: View {
         )
         .preferredColorScheme(preferredColorScheme)
         #else
-        ConfigurationCenterView()
+        ConfigurationCenterView(
+            runtime: runtime
+        )
         #endif
     }
 }

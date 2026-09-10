@@ -44,6 +44,9 @@ struct MemoMarkApp: App {
                 }
             }
         }
+        .commands {
+            InspectorCommands()
+        }
     }
 }
 #endif

@@ -143,15 +143,27 @@ enum MemoMarkSharedContainer {
 
     nonisolated static var baseDirectoryURL: URL {
 
-        if let containerURL =
-            FileManager.default.containerURL(
+        resolvedBaseDirectoryURL(
+            containerURL: FileManager.default.containerURL(
                 forSecurityApplicationGroupIdentifier:
                     appGroupIdentifier
-            ) {
-            return containerURL
-        }
+            ),
+            containerProbe: probeContainer,
+            fallbackURL: fallbackBaseDirectoryURL()
+        )
+    }
 
-        return fallbackBaseDirectoryURL()
+    nonisolated static func resolvedBaseDirectoryURL(
+        containerURL: URL?,
+        containerProbe: (URL) -> Bool,
+        fallbackURL: URL
+    ) -> URL {
+        guard let containerURL,
+              containerProbe(containerURL)
+        else {
+            return fallbackURL
+        }
+        return containerURL
     }
 
     nonisolated static func handoffReadiness(

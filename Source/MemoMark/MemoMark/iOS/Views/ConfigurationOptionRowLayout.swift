@@ -1,4 +1,4 @@
-#if os(iOS) && !MEMOMARK_SHARE_EXTENSION
+#if !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 
 /// Owns the adaptive layout grammar shared by Configuration Center inspector rows.
@@ -87,6 +87,24 @@ struct ConfigurationOptionRowLayout<Icon: View, Trailing: View>: View {
                 icon
             }
 
+#if os(macOS)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(localized(title))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .allowsTightening(true)
+
+                Text(localized(subtitle))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                    .minimumScaleFactor(0.82)
+                    .allowsTightening(!dynamicTypeSize.isAccessibilitySize)
+            }
+            .layoutPriority(1)
+#else
             VStack(alignment: .leading, spacing: 4) {
                 Text(localized(title))
                     .font(.subheadline.weight(.semibold))
@@ -99,6 +117,7 @@ struct ConfigurationOptionRowLayout<Icon: View, Trailing: View>: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .layoutPriority(1)
+#endif
         }
     }
 

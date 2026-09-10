@@ -6,6 +6,22 @@ struct MemorySubjectListView: View {
     @ObservedObject
     var session: ConfigurationSession
 
+    let onSelectSubject: ((MemorySubject) -> Void)?
+    let onEditSubject: (() -> Void)?
+    let onCreateSubject: (() -> Void)?
+
+    init(
+        session: ConfigurationSession,
+        onSelectSubject: ((MemorySubject) -> Void)? = nil,
+        onEditSubject: (() -> Void)? = nil,
+        onCreateSubject: (() -> Void)? = nil
+    ) {
+        self.session = session
+        self.onSelectSubject = onSelectSubject
+        self.onEditSubject = onEditSubject
+        self.onCreateSubject = onCreateSubject
+    }
+
     var body: some View {
         List {
             Section {
@@ -16,7 +32,11 @@ struct MemorySubjectListView: View {
                 Section(group.title) {
                     ForEach(group.subjects) { subject in
                         Button {
-                            session.selectSubject(subject)
+                            if let onSelectSubject {
+                                onSelectSubject(subject)
+                            } else {
+                                session.selectSubject(subject)
+                            }
                         } label: {
                             MemorySubjectRow(
                                 subject: subject,
@@ -31,7 +51,19 @@ struct MemorySubjectListView: View {
             }
 
             Section {
+                if let onEditSubject {
+                    Button(action: onEditSubject) {
+                        Label("编辑当前对象", systemImage: "pencil")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.accentColor)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 7)
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Button {
+                    onCreateSubject?()
                 } label: {
                     Label("新建记忆对象", systemImage: "plus")
                         .font(.subheadline.weight(.medium))

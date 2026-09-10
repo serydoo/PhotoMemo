@@ -1,4 +1,4 @@
-#if os(iOS) && !MEMOMARK_SHARE_EXTENSION
+#if (os(iOS) || os(macOS)) && !MEMOMARK_SHARE_EXTENSION
 import Foundation
 import PhotosUI
 import SwiftUI

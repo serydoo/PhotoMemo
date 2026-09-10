@@ -182,6 +182,18 @@ struct MemoMarkSharedContainerTests {
         #expect(readiness.appGroupContainerAvailable)
     }
 
+    @Test("Base directory falls back when an App Group URL is not writable")
+    func baseDirectoryFallsBackWhenAppGroupIsNotWritable() {
+        let fallbackURL = URL(fileURLWithPath: "/tmp/MemoMarkFallback")
+        let resolved = MemoMarkSharedContainer.resolvedBaseDirectoryURL(
+            containerURL: URL(fileURLWithPath: "/tmp/MemoMarkAppGroup"),
+            containerProbe: { _ in false },
+            fallbackURL: fallbackURL
+        )
+
+        #expect(resolved == fallbackURL)
+    }
+
     @Test("ensureDirectory surfaces creation failures")
     func ensureDirectorySurfacesCreationFailures() throws {
         let rootURL =

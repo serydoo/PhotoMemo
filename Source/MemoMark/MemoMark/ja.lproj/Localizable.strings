@@ -298,7 +298,7 @@
 "settings.guide.welcome.title" = "ようこそをもう一度見る";
 "settings.guide.welcome.detail" = "最初の案内で紹介した基本を確認します。";
 "settings.guide.workflow.title" = "日々の流れを見る";
-"settings.guide.workflow.detail" = "Apple Photosから共有し、このデバイスで処理したあと、ライブラリに戻ります。";
+"settings.guide.workflow.detail" = "Apple Photosから共有し、このデバイスで処理したあと、ライブラリに戻ります。共有シートでMemoMarkを前に移動すると、次回からすぐに見つけられます。";
 "settings.guide.expression.title" = "写真が時間を表現する方法";
 "settings.guide.expression.detail" = "タイムアンカーによって写真の時間表現がどう変わるかを確認します。";
 "settings.expression_guide.title" = "写真がこの瞬間を語る方法";
@@ -489,7 +489,7 @@
 "welcome.workflow.photos.title" = "Apple Photosで写真を選ぶ";
 "welcome.workflow.photos.detail" = "ライブラリから記録したい写真を見つけます。";
 "welcome.workflow.share.title" = "MemoMarkに共有";
-"welcome.workflow.share.detail" = "Apple Photosの共有ボタンをタップしてMemoMarkを選びます。";
+"welcome.workflow.share.detail" = "Apple Photosで共有をタップします。MemoMarkが前にない場合は、アプリの列を左にスワイプして「その他」または「編集」をタップし、MemoMarkを長押しして前に移動します。次回から写真を共有するときに見つけやすくなります。";
 "welcome.workflow.processing.title" = "デバイス上でローカル処理";
 "welcome.workflow.processing.detail" = "保存したプリセットを使い、このデバイスで記録を仕上げます。";
 "welcome.workflow.return.title" = "Apple Photosに戻る";

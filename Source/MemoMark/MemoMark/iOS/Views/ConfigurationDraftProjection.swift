@@ -58,6 +58,19 @@ struct ConfigurationDraftProjection: Hashable {
             )
     }
 
+    /// Exposes the canonical template-to-editor projection to platform
+    /// shells that need an initial draft without creating a configuration
+    /// projection instance first.
+    static func makeRegionDrafts(
+        from template: Template,
+        interfaceLanguage: MemoMarkLanguage
+    ) -> [CardRegion: MemoryCardEditorDraft] {
+        regionDrafts(
+            from: template,
+            interfaceLanguage: interfaceLanguage
+        )
+    }
+
     init(
         configuration: MemoryConfigurationRecord,
         interfaceLanguage: MemoMarkLanguage = .interfaceStored

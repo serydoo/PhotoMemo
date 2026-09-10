@@ -59,6 +59,23 @@ struct WelcomeCurrentContentContractTests {
         }
     }
 
+    @Test("share guidance explains how to move MemoMark forward")
+    func shareGuidanceExplainsShareSheetPlacement() throws {
+        let expectedFragments: [String: String] = [
+            "zh-Hans": "长按时光记并拖到前面",
+            "en": "press and drag MemoMark forward",
+            "ja": "MemoMarkを長押しして前に移動",
+            "ko": "MemoMark를 길게 눌러 앞으로 옮기세요"
+        ]
+
+        for (language, fragment) in expectedFragments {
+            let source = try sourceText(
+                "Source/MemoMark/MemoMark/\(language).lproj/Localizable.strings"
+            )
+            #expect(source.contains(fragment))
+        }
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         let testsDirectory = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

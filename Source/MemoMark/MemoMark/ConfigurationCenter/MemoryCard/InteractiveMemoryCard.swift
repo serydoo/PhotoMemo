@@ -9,6 +9,16 @@ struct InteractiveMemoryCard: View {
     @ObservedObject
     var session: ConfigurationSession
 
+    @ObservedObject
+    var commerceStore: MemoMarkCommerceStore
+
+    /// Platform shells can provide durable-save and context-switch handlers.
+    /// The iOS-facing shared card keeps its existing session behavior when
+    /// these hooks are absent.
+    var onSelectMemoryPreset: ((MemoryPreset) -> Void)? = nil
+    var onSaveMemoryPreset: (() -> Void)? = nil
+    var onInsertModule: ((CenterInsertableModule) -> Void)? = nil
+
     @State
     private var isRenamingMemoryPreset = false
 
@@ -17,17 +27,33 @@ struct InteractiveMemoryCard: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: ConfigurationUI.sectionSpacing) {
-                configurationContext
-                cardSurface
-                regionStrip
-                configurationComponentDock
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 48)
-            .padding(.vertical, 36)
+            configurationContent
         }
         .background(ConfigurationUI.appBackground)
+    }
+
+    /// The configuration surface can be hosted by a platform shell. macOS
+    /// uses this inline form so its product header and recent activity can
+    /// share one scroll context without nesting ScrollViews.
+    @ViewBuilder
+    var configurationContent: some View {
+        VStack(spacing: ConfigurationUI.sectionSpacing) {
+            configurationContext
+            cardSurface
+            regionStrip
+            configurationComponentDock
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 48)
+        .padding(.vertical, 36)
+    }
+
+    /// The card preview is also used by the macOS Configuration Center shell.
+    /// Keeping the preview here preserves one source of truth for the live
+    /// Memory Card while the platform shell owns the surrounding hierarchy.
+    @ViewBuilder
+    var previewContent: some View {
+        cardSurface
     }
 
     private var configurationContext: some View {
@@ -47,7 +73,11 @@ struct InteractiveMemoryCard: View {
             },
             onSave: {
                 withAnimation(configurationAnimation) {
-                    session.saveCurrentMemoryPreset()
+                    if let onSaveMemoryPreset {
+                        onSaveMemoryPreset()
+                    } else {
+                        session.saveCurrentMemoryPreset()
+                    }
                 }
             },
             onCreate: {
@@ -282,12 +312,16 @@ struct InteractiveMemoryCard: View {
             memoryWriteToggleBinding: memoryWriteToggleBinding,
             memoryWriteTextBinding: memoryWriteTextBinding,
             onInsertModule: { module in
-                session.appendPreviewModule(
-                    title: module.title,
-                    value: module.previewValue,
-                    systemImage: module.systemImage,
-                    token: module.centerToken
-                )
+                if let onInsertModule {
+                    onInsertModule(module)
+                } else {
+                    session.appendPreviewModule(
+                        title: module.title,
+                        value: module.previewValue,
+                        systemImage: module.systemImage,
+                        token: module.centerToken
+                    )
+                }
             }
         )
     }
@@ -398,7 +432,11 @@ struct InteractiveMemoryCard: View {
                     return
                 }
 
-                session.selectMemoryPreset(preset)
+                if let onSelectMemoryPreset {
+                    onSelectMemoryPreset(preset)
+                } else {
+                    session.selectMemoryPreset(preset)
+                }
             }
         )
     }

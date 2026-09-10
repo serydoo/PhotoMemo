@@ -1,5 +1,25 @@
 # MemoMark Current Status
 
+## 2026-09-07 macOS Configuration Center first controlled design slice
+
+- The local main and freshly fetched origin/main both resolve to
+  56f6a17 (Prepare MemoMark 2.3.0 build 105 release); neither side is
+  ahead. The worktree still contains five pre-existing uncommitted
+  localization/contract changes, which were preserved.
+- A macOS-only Configuration Center presentation slice now adds one product
+  identity row with local-first, Apple Photos, and live MemoMark+ entitlement
+  status, followed by separate Memory Subject and current Preset summary
+  cards. The existing real Memory Card preview, Object Inspector, and
+  configuration/output surfaces remain in place.
+- The slice reads commerce state from the existing app runtime and keeps
+  configuration state, persistence, Renderer, PhotoKit, Share, and queue
+  ownership unchanged. The iOS configuration entry and presentation surface
+  were not redesigned.
+- macOS MemoMark and iOS MemoMarkiOS Debug builds completed with isolated
+  DerivedData paths. The focused WelcomeCurrentContentContractTests passed.
+  Mac visual acceptance, Dynamic Type/VoiceOver review, and physical iOS
+  acceptance remain separate evidence items. No commit or push was performed.
+
 ## 2026-09-07 2.3.0 (105) formal release audit and content-boundary closure
 
 - The formal release summary is now explicitly rebased on MemoMark 2.2.2
@@ -42,12 +62,11 @@
   page still offers “添加以供审核”, and build 104 is attached. The train is
   therefore still usable on current evidence; 2.3.0 / 105 remains locked and
   2.3.1 / 106 is not activated.
-- The user has now authorized the next external sync slice: preserve the local
-  project files, commit and push to GitHub, follow the resulting Xcode Cloud
-  build, choose no encryption methods if prompted, and enter the distribution
-  page to prepare the formal release. Final App Store review submission and
-  publication remain separate final actions. No Git push or App Store Connect
-  mutation is recorded yet in this status entry.
+- The user has authorized the current external sync slice: preserve the local
+  project files, commit and push the source checkpoint to GitHub, and treat any
+  resulting Xcode Cloud build as a separate read-back evidence item. No
+  encryption-method choice, TestFlight upload, App Store Connect mutation,
+  review submission, or publication is included in this source sync.
 
 ## 2026-09-06 Avatar crop and custom Logo interaction audit
 
@@ -28687,3 +28706,268 @@ version `2.3.0`, build `103`. Launch was attempted but iOS denied it because
 the device was locked; physical visual, Dynamic Type, VoiceOver, and manual
 purchase-flow acceptance remain open until the device is unlocked. No GitHub,
 TestFlight, App Store Connect, or App Store mutation was performed.
+
+## 2026-09-07 macOS Configuration Center iOS-aligned configuration surface
+
+- The macOS Configuration Center no longer presents the retired three-column
+  `NavigationSplitView` as its primary surface. It now uses one centered
+  `NavigationStack` page with the existing MemoMark identity/entitlement row,
+  memory-object summary, and current-preset summary at the top. The permanent
+  left subject browser and right inspector were removed from the page; subject
+  selection remains available from the object summary popover, and the object
+  inspector remains available as a sheet.
+- The macOS configuration section now mounts the active iOS
+  `ConfigurationOptionList` directly. Its option order, disclosure state,
+  menus, segmented choices, output destination controls, and photo-description
+  controls therefore come from the same source rather than a second macOS-only
+  six-row implementation.
+- The real `MemoryCardPreviewSurface` is also shared with the macOS page and is
+  kept above the configuration rows. `布局与内容` and the advanced
+  `时间与地点` controls open inline panels in the same page; the old
+  `配置详情` sheet and its dead implementation have been removed from this
+  configuration path. The Object Inspector remains a separate semantic sheet,
+  and the system photo picker remains a system-owned selection surface.
+- This is a bounded presentation/host-adapter change. The macOS host supplies
+  bindings for the existing `ConfigurationSession` and commerce snapshot; it
+  does not change Memory Engine calculations, PhotoKit/Share processing,
+  Renderer/Layout contracts, durable output persistence, or iOS navigation.
+  The macOS-specific page remains excluded from the iOS target. The host's
+  full macOS save transaction and Apple Photos manual acceptance are not
+  claimed by this UI slice yet.
+- Verification completed on isolated DerivedData paths: unsigned macOS
+  `MemoMark` Debug build passed, generic iOS `MemoMarkiOS` Debug build passed,
+  and `git diff --check` passed. The latest macOS app is ready to launch from
+  `/tmp/MemoMarkMacIOSSharedPreviewFinal/Build/Products/Debug/MemoMark.app`.
+  Keyboard navigation, VoiceOver, and full manual interaction remain open.
+  No Git commit/push, TestFlight, App Store Connect, or App Store mutation was
+  performed.
+- A follow-up large-screen pass widened the single-page content container to a
+  controlled Mac width and aligned the preview width with the same container,
+  removing the excessive left/right empty space visible in the first direct
+  review. This remains a presentation-only geometry adjustment.
+
+## 2026-09-08 macOS Configuration Center reading-order correction
+
+The first wide-screen experiment exposed a product-fit issue: placing the
+preview and configuration side by side made the preview feel like a separate
+left rail instead of the calibration surface above the configuration. The
+macOS page now keeps the iOS reading order in one full-width column:
+product identity, object/preset summaries, full preview, shared configuration
+rows, and progress/recent results.
+
+The macOS configuration rows now present the title and supporting subtitle on
+one horizontal baseline at regular text sizes, while accessibility sizes keep
+the vertical fallback to avoid clipping. The iOS row layout remains unchanged
+outside the macOS compilation branch. The shared iOS `ConfigurationOptionList`,
+its disclosure grammar, and its selection controls remain the source of truth;
+this pass changes only the macOS host geometry and presentation of its rows.
+
+The first follow-up screenshot showed that removing the width constraint
+entirely made the preview card and the page too wide. The final bounded pass
+keeps the single-column iOS reading order, restores a controlled Mac page
+width, and caps the preview card at the existing iOS compact-card calibration
+width (`590pt`). The macOS host no longer adds a second full-width preview
+panel around the shared card surface, so the card's own rounded border and
+shadow remain the visible preview boundary.
+
+Verification: isolated unsigned macOS `MemoMark` and generic iOS `MemoMarkiOS`
+Debug builds passed, with only the existing macOS `CLGeocoder` deprecation
+warnings, and `git diff --check` passed. The visual result was checked against
+the supplied macOS screenshots; physical macOS interaction, keyboard/focus,
+VoiceOver, and full save-flow acceptance remain open. No Git, GitHub,
+TestFlight, App Store Connect, or App Store mutation was performed.
+
+## 2026-09-08 macOS Configuration Center adaptive large-screen composition
+
+The bounded macOS follow-up now separates the page into three explicit width
+layers while preserving the single-column iOS reading order: an adaptive
+workspace for identity and the two summary cards, a narrower preview card
+inside that workspace, and a separately capped readable configuration form.
+The workspace resolves from available content width at `0.80`, with an
+`840pt` floor and `1360pt` ceiling; the preview derives from the workspace at
+`0.84` and caps at `1120pt`; configuration rows cap at `1020pt` and remain
+centered. This removes the previous fixed `920pt` reading column without
+allowing the form or preview to become an unbounded full-window strip.
+
+The memory-object and current-preset summaries remain a 1:1 two-column pair
+when the resolved workspace can support it, retain their expanded vertical
+breathing room, and fall back to a stacked layout in narrow windows. The
+shared `MemoryCardPreviewSurface`, `ConfigurationOptionList`, iOS layout
+behavior, Renderer/Layout contracts, PhotoKit flow, and persistence are not
+changed by this macOS composition pass.
+
+Verification: isolated unsigned macOS `MemoMark` and generic iOS `MemoMarkiOS`
+Debug builds passed, and `git diff --check` passed. The latest macOS app was
+opened from `/tmp/MemoMarkMacAdaptiveWideRetry/Build/Products/Debug/MemoMark.app`
+and a large-screen screenshot was captured at `/tmp/MemoMarkMacAdaptiveWide.png`.
+The visual result now uses the large-screen width hierarchy described above;
+physical resize-matrix acceptance, keyboard/focus, VoiceOver, and complete
+macOS save-flow acceptance remain open. Codex with ChatGPT returned a bounded
+review hold because its workspace reader was unavailable, so the current
+source, build, and screenshot are the local evidence of this pass. No Git,
+GitHub, TestFlight, App Store Connect, or App Store mutation was performed.
+
+## 2026-09-09 macOS compact large-screen hierarchy follow-up
+
+The macOS Configuration Center keeps the wide single-page composition while
+tightening its vertical rhythm. Primary section spacing is reduced from
+`20pt` to `16pt`, section headings sit `8pt` above their content, and the
+outer vertical inset is reduced to `20pt`. The section heading typography is
+also quieter so the interface reads as one compact Mac surface rather than a
+stack of separate document sections.
+
+The memory-object and current-preset cards remain the first-screen visual
+focus. Their minimum equal-column width increases from `360pt` to `420pt`,
+their minimum height increases from `132pt` to `156pt`, and their subject,
+preset, relationship, and summary typography receives a clearer hierarchy.
+The workspace may still expand to `1500pt`; preview content caps at `1280pt`
+and configuration rows cap separately at `1120pt`, preventing controls from
+spreading too far apart on a large display.
+
+Verification: unsigned macOS `MemoMark` Debug and generic iOS `MemoMarkiOS`
+Debug builds produced application bundles, and `git diff --check` passed.
+Mac resize-matrix, keyboard/focus, VoiceOver, and final visual acceptance remain
+open. No Renderer, Layout Engine, PhotoKit, Share, EXIF, persistence, Git, or
+external release behavior was changed.
+
+## 2026-09-09 macOS runtime bridge implementation slice
+
+The first implementation slice closes the previously observed macOS runtime
+gap without creating a second configuration business path. The macOS root now
+injects the live `MemoMarkAppRuntime`; the Configuration Center restores its
+state through the existing Bootstrap transaction and applies edits through the
+existing `SaveConfigurationTransaction`, `ConfigurationSaveRuntimeCoordinator`,
+and configuration-library reconciliation. The page exposes an explicit Save
+button and Command-S shortcut, and failed or incomplete bootstrap state is not
+reported as a successful save.
+
+The existing Photo Library album transaction is now used by macOS album refresh,
+with the shared stale-request guard preserved. Custom Logo selection on macOS
+now uses the existing cross-platform Logo optimization service; its optimized
+asset remains a draft until the user explicitly saves the configuration. No
+Memory Engine, Renderer, Layout Engine, Share Extension, EXIF, original-photo,
+or iOS presentation behavior was changed. The Logo coordinator's platform
+condition was widened only to make the already-existing optimization path
+available to macOS. The macOS location-display selector now projects back to
+the saved configuration draft; the time-display advanced selector remains
+explicitly outside this slice until its style-specific editor draft mapping is
+completed.
+
+Verification: macOS `MemoMarkTests/MacConfigurationRuntimeContractTests` passed
+(Bootstrap/runtime injection, save and album transaction wiring, and shared
+Logo optimization wiring); unsigned macOS `MemoMark` Debug build passed; the
+generic iOS `MemoMarkiOS` Debug build passed after the cross-platform Logo
+condition change. The test/build runs used isolated DerivedData. Existing
+macOS `CLGeocoder` deprecation warnings remain. Physical macOS interaction,
+Photo Library permission and album readback, resize matrix, keyboard/focus,
+VoiceOver, and physical iPhone 17 Pro Max visual acceptance remain open. No
+Git, GitHub, TestFlight, App Store Connect, or App Store mutation was performed.
+
+## 2026-09-10 macOS editor integrity correction and C2C closure
+
+The follow-up integrity slice closes the two state gaps found by the
+independent Codex with ChatGPT review. The macOS advanced time editor now uses
+the shared `selectedTimeSupplementBinding`, so supplement changes mark the
+configuration dirty and round-trip through `ConfigurationCoordinator`. The
+incomplete discard-on-preset-switch action was removed because this flow does
+not own a rollback transaction; the supported path is now save-and-switch or
+cancel. When a subject or preset context is re-projected, the editor status is
+normalized from durable state so an earlier dirty context cannot contaminate a
+new context.
+
+The new behavioral regression covers the complete card-region path:
+`MemoryCardEditorDraft -> ConfigurationAggregateCandidateBuilder ->
+ConfigurationLibraryRepository.save -> ConfigurationPersistenceReconciler ->
+repository reload -> ConfigurationDraftProjection`. The canonical renderer
+token remains present after reconciliation and reload. No Renderer, Layout
+Engine, PhotoKit, Share Extension, EXIF, Live Photo, original-photo, or iOS
+navigation behavior was changed.
+
+Verification: the isolated serial macOS focused run passed all 8 tests across
+`MacConfigurationEditingContextTests` and
+`MacConfigurationRuntimeContractTests`; unsigned macOS `MemoMark` Debug build
+passed; generic `MemoMarkiOS` Debug build passed; and `git diff --check`
+passed. C2C task `c2c_8f21` iteration 3 returned `DONE` and found no new
+blocking issue. Physical Mac interaction, Photos permission/album readback,
+resize matrix, keyboard/focus, VoiceOver, and paired iPhone 17 Pro Max manual
+acceptance remain open. No Git, GitHub, TestFlight, App Store Connect, or App
+Store mutation was performed.
+
+## 2026-09-10 macOS configuration routes and card-content editor slice
+
+The next macOS Configuration Center slice now treats the large-screen summary
+cards and lower configuration rows as explicit routes. Memory Object and
+Preset remain equal-width cards at the wide breakpoint, while their actions
+open platform-native popovers and inspectors. Card Content and Time & Place
+are no longer appended below the long configuration list; each opens a focused
+secondary editor, keeping the always-visible preview outside the editor's
+scroll context. Popover-to-sheet transitions are deferred until dismissal so
+the object editor does not silently disappear on macOS.
+
+The Card Content inspector now has a macOS editing surface for the four real
+card regions. It edits text items through the existing
+`MemoryCardEditorDraft`, inserts production-backed modules into the selected
+region, projects text changes into the live session preview, and saves through
+the existing aggregate configuration transaction. A parent-level inspector
+without the child draft binding remains a read-only preview; the configuration
+row is the editing owner, preserving one draft and one save path. Preset
+selection from the header is guarded when the current configuration is dirty.
+
+Verification: `MacConfigurationRuntimeContractTests` passed all 6 tests in an
+isolated run; `MemoMarkSharedContainerTests` passed, including the unsigned
+local-container fallback; unsigned macOS `MemoMark` Debug build passed; the
+explicit `generic/platform=iOS` `MemoMarkiOS` Debug build produced an
+iPhoneOS app; `validate_codex_governance.py` passed; and `git diff --check`
+passed. The latest app was built at and opened from
+`/tmp/MemoMarkMacP0Slice6/Build/Products/Debug/`.
+
+The follow-up state correction makes text-field edits publish the new draft
+value to the live session before preview reconciliation and marks the
+configuration dirty for text, extra-text, and module-insertion edits. Prior
+CUA checks opened Card Content and Time & Place, changed a real text field,
+saved successfully, closed the inspector, and re-opened the field with the
+saved value intact. The final Slice6 post-rebuild click pass could not run
+because macOS entered the lock screen and CUA automatic unlock failed; no
+system security boundary was bypassed. Physical iPhone 17 Pro Max
+acceptance, physical macOS resize/focus/VoiceOver checks, and Photos
+permission/album readback remain open. No delete/reinstall, Git, GitHub,
+TestFlight, App Store Connect, or App Store mutation was performed.
+
+## 2026-09-10 macOS native interaction review and trailing Inspector slice
+
+The macOS parity review compared the current Configuration Center against
+Apple's macOS interaction guidance, Photos keyboard/context-menu behavior, and
+Things' Mac/iPad adaptation patterns. The selected MemoMark direction is a
+large-canvas Configuration Center with explicit routes: short selection stays
+in a Popover, complete Memory Object editing stays in a Sheet, and repeated
+Card Content or Time & Place editing uses a resizable trailing Inspector while
+the real Memory Card preview remains available. This preserves the frozen
+Configuration Center IA and does not recreate the retired Workspace or add a
+new batch root.
+
+Implementation now uses SwiftUI's macOS Inspector for the configuration editor,
+with a system-adjustable 320/380/520-point width range. Module chips expose a
+native destructive context-menu removal action. The action continues through
+`MemoryCardEditorDraft` normalization, live preview projection, dirty-state
+tracking, and the existing aggregate Save transaction. A focused contract test
+was intentionally made to fail before implementation and now passes.
+
+Verification: isolated `MacConfigurationRuntimeContractTests` passed all 9
+tests, including the native removal, trailing Inspector, and Inspector command
+contracts; the
+unsigned macOS `MemoMark` Debug build passed with only the existing macOS 26
+`CLGeocoder` deprecation warnings; the generic `MemoMarkiOS` Debug build
+produced an iPhoneOS app; and the C2C PhotoMemo workspace was rechecked. C2C
+reports the correct PhotoMemo workspace and connector URL, but the Cloudflare
+Quick Tunnel detail still reports a control-stream error, so public ChatGPT
+connectivity is not fully proven. CUA could not re-run the unlocked Mac click
+pass because the Mac is locked and automatic unlock is unavailable.
+
+The detailed comparison, responsibility matrix, implementation order, Mac
+commerce decision gate, and acceptance definition are recorded in
+`Docs/03_Engineering/2026-09-10-macos-native-parity-plan.md`. Undo/redo for
+structural draft operations, full keyboard/VoiceOver/resize checks, physical
+Mac verification, paired iPhone 17 Pro Max acceptance, and Photos
+permission/album/original read-back remain open. No delete/reinstall, Git,
+GitHub, sync, TestFlight, App Store Connect, or App Store mutation was
+performed.

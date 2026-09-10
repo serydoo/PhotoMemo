@@ -13,6 +13,14 @@
 - Reworded the MemoMark+ expression benefit as “一次解锁全部内置的记忆表达方式”
   and aligned English, Japanese, and Korean purchase copy; annual/monthly
   subscriptions and the historical 48-yuan lifetime activation-code path remain.
+- Refined the macOS Configuration Center around native Mac interaction: equal-width
+  Memory Subject and Preset cards, a persistent real Memory Card preview, a
+  trailing Inspector for Card Content and Time & Place, and editable text/module
+  content with insertion and removal actions.
+- Added macOS parity contracts and a bounded implementation note while keeping
+  iOS routing, shared persistence, Renderer/Layout ownership, PhotoKit, Share,
+  and queue behavior unchanged. The generic iOS target was rebuilt after the
+  shared-source changes.
 - Raised all target configurations to marketing version `2.3.0` and build `105`.
 
 This is the current source candidate. Xcode Cloud archive identity, StoreKit

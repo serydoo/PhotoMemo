@@ -335,7 +335,8 @@ extension MemoMarkConfigurationCenterView {
             onOpenRegionContent: {
                 resetCardEditorState()
                 rootPresentationState.showsRegionContentSheet = true
-            }
+            },
+            onOpenAdvancedModules: nil
         )
     }
 
