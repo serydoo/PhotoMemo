@@ -28,6 +28,10 @@ extension MemoMarkConfigurationCenterView {
                 previewText(
                     for: CardRegion.region(for: .rightSecondary)
                 ),
+            filmMarkOutputText:
+                filmMarkPreviewText,
+            filmMarkConfiguration:
+                rootConfigurationProjectionState.filmMarkConfiguration,
             onTap: dismissKeyboard
         )
     }
@@ -326,13 +330,31 @@ extension MemoMarkConfigurationCenterView {
             .refreshDynamicPreview()
     }
 
-    private func previewText(
+    func previewText(
         for region: CardRegion
     ) -> String {
         previewSyncCoordinator
             .previewText(
                 for: region
             )
+    }
+
+    var filmMarkPreviewText: String {
+        guard presentationStyle == .filmMark else {
+            return previewText(
+                for: CardRegion.region(for: .leftPrimary)
+            )
+        }
+
+        // FM has an independent authored payload. Do not let the generic
+        // region fallback invent a classic preview sentence when that payload
+        // is absent or has not been activated in the current draft.
+        guard editorDraftState.active[.slotA] != nil else {
+            return ""
+        }
+        return previewText(
+            for: CardRegion.region(for: .leftPrimary)
+        )
     }
 
     private func templateText(for draft: MemoryCardEditorDraft) -> String {

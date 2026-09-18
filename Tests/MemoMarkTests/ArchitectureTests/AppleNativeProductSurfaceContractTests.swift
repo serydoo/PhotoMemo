@@ -185,7 +185,11 @@ struct AppleNativeProductSurfaceContractTests {
                 separatedBy: "configurationTextRow("
             ).count - 1
 
-        #expect(textFirstRowCount == 5)
+        // FM high-frequency controls now live in the main configuration
+        // surface; they are not represented as a second opaque detail row.
+        // Expression style now uses horizontal choices rather than a menu row.
+        #expect(textFirstRowCount == 3)
+        #expect(configuration.contains("private var memoryDisplayStyleChoices: some View"))
         #expect(rowLayout.contains("Text(localized(detail))"))
         #expect(rowLayout.contains(".foregroundStyle(.secondary)"))
         #expect(!processing.contains(".fill(Color.accentColor)"))

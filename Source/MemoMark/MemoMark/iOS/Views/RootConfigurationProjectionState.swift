@@ -4,6 +4,7 @@ import Foundation
 struct RootConfigurationProjectionState {
 
     var presentationStyle: RecordCardPresentationStyle = .classicWhite
+    var filmMarkConfiguration: FilmMarkConfiguration = .default
     var logoMode: ConfigurationLogoMode = .appleMini
     var customLogoBadge: Badge?
     /// A paid expression can be explored in the live editor before it is

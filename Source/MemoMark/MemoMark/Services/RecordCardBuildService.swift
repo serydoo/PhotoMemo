@@ -138,6 +138,10 @@ private extension RecordCardBuildService {
                         configuration.presentationRouteRawValue
                         ?? ""
                 ) ?? .classicWhite,
+            filmMarkConfiguration:
+                configuration.filmMarkConfiguration ?? .default,
+            filmMarkContent:
+                configuration.filmMarkContent,
             metadata: selectedPhoto.metadata,
             context: context,
             language: configuration.language,
@@ -470,7 +474,9 @@ private extension RecordCardBuildService {
             return override
         }
 
-        let blocks = CardTextBlockEngine().build(from: card)
+        let blocks = FilmMarkPresentationResolver.resolvedContentBlocks(
+            for: card
+        )
         let descriptionAreas = card.presentationStyle
             .contentContract
             .photoDescriptionTextAreas

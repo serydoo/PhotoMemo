@@ -551,6 +551,8 @@ struct MemoryResultContractTests {
                 "usesCustomMemoryWriteText",
                 "customMemoryWriteText",
                 "presentationRouteRawValue",
+                "filmMarkConfiguration",
+                "filmMarkContent",
                 "logoModeRawValue",
                 "frozenMemorySubject",
                 "frozenConfigurationSnapshot",

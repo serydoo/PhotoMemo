@@ -1,6 +1,26 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 
+/// First-level configuration heading. Insets belong to the containing surface.
+struct ConfigurationFieldHeading: View {
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(MemoMarkLanguage.interfaceStored.localized(key: title, fallback: title))
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+            Text(MemoMarkLanguage.interfaceStored.localized(key: subtitle, fallback: subtitle))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 /// Owns the adaptive layout grammar shared by Configuration Center inspector rows.
 ///
 /// The inspector provides memory/configuration-specific values and controls; this

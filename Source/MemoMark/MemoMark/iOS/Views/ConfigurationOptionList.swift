@@ -38,12 +38,23 @@ struct ConfigurationOptionList: View {
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     @State
     private var showsAdvancedModulesSheet = false
+
+    @State
+    private var showsFilmMarkDetailsSheet = false
+
+    @State
+    private var isFilmMarkPositionExpanded = true
 
     @Binding var disclosureState: ConfigurationDisclosureState
     let subjectAvatarLogoImagePath: String?
     @Binding var presentationStyle: RecordCardPresentationStyle
+    @Binding var filmMarkConfiguration: FilmMarkConfiguration
+    let filmMarkOutputText: String
     @Binding var logoMode: ConfigurationLogoMode
     @Binding var selectedLogoItem: PhotosPickerItem?
     @Binding var isLogoPickerPresented: Bool
@@ -79,6 +90,7 @@ struct ConfigurationOptionList: View {
     let configurationStatus: ConfigurationPersistenceStatus
     let onOpenRegionContent: () -> Void
     let onOpenAdvancedModules: (() -> Void)?
+    let onOpenFilmMarkDetails: (() -> Void)?
 
     var body: some View {
         VStack(
@@ -91,30 +103,52 @@ struct ConfigurationOptionList: View {
             expressionStyleSection
             configurationSectionDivider
 
-            memoryExpressionSection
-            configurationSectionDivider
+            if presentationStyle == .filmMark {
+                memoryExpressionSection
+                configurationSectionDivider
+                filmMarkContentRow
+                configurationSectionDivider
+                filmMarkPositionSection
+                configurationSectionDivider
+#if os(iOS)
+                filmMarkFontSizeSection
+                configurationSectionDivider
+                filmMarkColorSection
+                configurationSectionDivider
+                filmMarkSubstrateSection
+                configurationSectionDivider
+                filmMarkSecondaryDetailsRow
+                configurationSectionDivider
+#else
+                filmMarkSecondaryDetailsRow
+                configurationSectionDivider
+#endif
+            } else {
+                memoryExpressionSection
+                configurationSectionDivider
 
-            groupedSection(
-                title: "configuration.layout.title",
-                subtitle: "configuration.layout.subtitle",
-                isExpanded: disclosureBinding(for: .cardLayout),
-                resultTitle: "configuration.layout.result.preview",
-                expandedAccessibilityLabel: "configuration.layout.accessibility.collapse",
-                collapsedAccessibilityLabel: "configuration.layout.accessibility.expand"
-            ) {
-                regionContentRow
-                HorizontalDivider(
-                    horizontalInset:
-                        CompactInformationRowMetrics.horizontalPadding
-                )
-                advancedModulesRow
-                HorizontalDivider(
-                    horizontalInset:
-                        CompactInformationRowMetrics.horizontalPadding
-                )
-                logoRow
+                groupedSection(
+                    title: "configuration.layout.title",
+                    subtitle: "configuration.layout.subtitle",
+                    isExpanded: disclosureBinding(for: .cardLayout),
+                    resultTitle: "configuration.layout.result.preview",
+                    expandedAccessibilityLabel: "configuration.layout.accessibility.collapse",
+                    collapsedAccessibilityLabel: "configuration.layout.accessibility.expand"
+                ) {
+                    regionContentRow
+                    HorizontalDivider(
+                        horizontalInset:
+                            CompactInformationRowMetrics.horizontalPadding
+                    )
+                    advancedModulesRow
+                    HorizontalDivider(
+                        horizontalInset:
+                            CompactInformationRowMetrics.horizontalPadding
+                    )
+                    logoRow
+                }
+                configurationSectionDivider
             }
-            configurationSectionDivider
 
             outputDestinationSection
             configurationSectionDivider
@@ -137,6 +171,19 @@ struct ConfigurationOptionList: View {
                 timePresentation: timePresentation,
                 selectedTimeOptionID: selectedTimeOptionID,
                 selectedTimeSupplement: selectedTimeSupplement
+            )
+        }
+        .sheet(isPresented: $showsFilmMarkDetailsSheet) {
+            FilmMarkDetailsSheet(
+                configuration: $filmMarkConfiguration,
+                locationPresentation: locationPresentation,
+                selectedLocationOptionID: selectedLocationOptionID,
+                timePresentation: timePresentation,
+                selectedTimeOptionID: selectedTimeOptionID,
+                selectedTimeSupplement: selectedTimeSupplement,
+                onChange: {
+                    // The parent remains the single draft owner.
+                }
             )
         }
 #endif
@@ -185,7 +232,9 @@ struct ConfigurationOptionList: View {
             isExpanded: disclosureBinding(for: .outputDestination),
             resultTitle: outputDestinationCurrentValue,
             expandedAccessibilityLabel: "configuration.save_location.accessibility.collapse",
-            collapsedAccessibilityLabel: "configuration.save_location.accessibility.expand"
+            collapsedAccessibilityLabel: "configuration.save_location.accessibility.expand",
+            keepsResultOnSingleLine: true,
+            resultMaximumWidth: 196
         ) {
             OutputDestinationContent(
                 automaticallyFocusesNewAlbumName: false,
@@ -214,37 +263,7 @@ struct ConfigurationOptionList: View {
             presentationStyleSectionHeader
 
             if disclosureState.isExpanded(for: .presentationStyle) {
-                VStack(spacing: 0) {
-                    configurationTextRow(
-                        title: "当前样式",
-                        subtitle: "configuration.card_style.subtitle",
-                        value: presentationStyleTitle,
-                        detail: "",
-                        showsTrailingChevron: false
-                    ) {
-                        Menu {
-                            ForEach(
-                                RecordCardPresentationStyle.allCases,
-                                id: \.self
-                            ) { style in
-                                Button {
-                                    presentationStyle = style
-                                } label: {
-                                    menuOptionLabel(
-                                        localized(title(for: style)),
-                                        isSelected: style == presentationStyle
-                                    )
-                                }
-                            }
-                        } label: {
-                            CompactSelectionLabel(
-                                title: localized(presentationStyleTitle)
-                            )
-                        }
-                        .accessibilityLabel(localized("卡片样式"))
-                        .accessibilityValue(localized(presentationStyleTitle))
-                    }
-                }
+                presentationStyleChoiceContent
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .fill(ConfigurationUI.panelBackground)
@@ -257,6 +276,45 @@ struct ConfigurationOptionList: View {
             }
         }
         .v1SectionSurfaceLayout()
+    }
+
+    private var presentationStyleChoiceContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(
+                localized("configuration.card_style.choice.help")
+            )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    presentationStylePicker
+                        .pickerStyle(.menu)
+                } else {
+                    presentationStylePicker
+                        .pickerStyle(.segmented)
+                }
+            }
+            .tint(.accentColor)
+        }
+        .padding(.horizontal, ConfigurationUI.contentColumnPadding)
+        .padding(.vertical, ConfigurationSectionCardMetrics.cardVerticalPadding)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var presentationStylePicker: some View {
+        Picker(
+            localized("卡片样式"),
+            selection: $presentationStyle
+        ) {
+            ForEach(RecordCardPresentationStyle.allCases, id: \.self) { style in
+                Text(localized(title(for: style)))
+                    .tag(style)
+            }
+        }
+        .accessibilityLabel(localized("卡片样式"))
+        .accessibilityValue(localized(presentationStyleTitle))
     }
 
     private var presentationStyleTitle: String {
@@ -273,6 +331,8 @@ struct ConfigurationOptionList: View {
             )
         case .minimal:
             localized("极简")
+        case .filmMark:
+            localized("胶片时间")
         }
     }
 
@@ -366,6 +426,165 @@ struct ConfigurationOptionList: View {
         }
         .v1SectionSurfaceLayout()
     }
+
+    private var filmMarkSecondaryDetailsRow: some View {
+        Button {
+#if os(iOS)
+            showsFilmMarkDetailsSheet = true
+#else
+            onOpenFilmMarkDetails?()
+#endif
+        } label: {
+            filmMarkNavigationRowContent(
+                title: "filmMark.configuration.details.title",
+                subtitle: filmMarkDetailsSubtitle
+            )
+        }
+        .buttonStyle(ConfigurationNavigationRowButtonStyle())
+        .accessibilityLabel(localized("filmMark.configuration.details.title"))
+        .accessibilityHint(localized(filmMarkDetailsSubtitle))
+    }
+
+    private var filmMarkDetailsSubtitle: String {
+#if os(iOS)
+        "filmMark.configuration.details.compact.subtitle"
+#else
+        "filmMark.configuration.details.subtitle"
+#endif
+    }
+
+    private var filmMarkPositionSection: some View {
+        groupedSection(
+            title: "filmMark.configuration.position.title",
+            subtitle: "filmMark.configuration.position.help",
+            isExpanded: $isFilmMarkPositionExpanded,
+            resultTitle: filmMarkPositionSummary,
+            expandedAccessibilityLabel: "filmMark.configuration.position.accessibility.collapse",
+            collapsedAccessibilityLabel: "filmMark.configuration.position.accessibility.expand"
+        ) {
+            FilmMarkPositionDetailsContent(
+                configuration: $filmMarkConfiguration,
+                onChange: {
+                    // The parent remains the single draft owner.
+                },
+                showsHeader: false
+            )
+        }
+    }
+
+    private var filmMarkPositionSummary: String {
+        switch filmMarkConfiguration.placement.anchor {
+        case .bottomLeft:
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "filmMark.configuration.anchor.bottom_left",
+                fallback: "左下"
+            )
+        case .bottomRight:
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "filmMark.configuration.anchor.bottom_right",
+                fallback: "右下"
+            )
+        }
+    }
+
+    private var filmMarkContentRow: some View {
+        Button(action: onOpenRegionContent) {
+            filmMarkNavigationRowContent(
+                title: "filmMark.configuration.content.title",
+                subtitle: "filmMark.configuration.content.help"
+            )
+        }
+        .buttonStyle(ConfigurationNavigationRowButtonStyle())
+        .accessibilityLabel(localized("filmMark.configuration.content.title"))
+        .accessibilityHint(localized("filmMark.configuration.content.help"))
+    }
+
+    private func filmMarkNavigationRowContent(
+        title: String,
+        subtitle: String
+    ) -> some View {
+#if os(iOS)
+        HStack(spacing: 8) {
+            ConfigurationFieldHeading(title: title, subtitle: subtitle)
+                .layoutPriority(1)
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(
+                    width: ConfigurationUI.minimumInteractiveHeight,
+                    height: ConfigurationUI.minimumInteractiveHeight
+                )
+                .accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity,
+               minHeight: ConfigurationSectionCardMetrics.compactConfigurationRowMinimumHeight,
+               alignment: .leading)
+        .contentShape(Rectangle())
+        .v1SectionSurfaceLayout()
+#else
+        ConfigurationOptionRowLayout(
+            icon: Optional<EmptyView>.none,
+            title: title,
+            subtitle: subtitle,
+            detail: "",
+            showsTrailingChevron: true,
+            horizontalTrailingWidth: ConfigurationUI.compactTrailingControlWidth,
+            trailing: EmptyView()
+        )
+#endif
+    }
+
+#if os(iOS)
+    private var filmMarkSubstrateSection: some View {
+        FilmMarkConfigurationControls(
+            configuration: $filmMarkConfiguration,
+            includesPosition: false,
+            includesSubstrate: true,
+            includesFont: false,
+            includesFontSize: false,
+            includesColor: false,
+            horizontalInset: 0,
+            onChange: {
+                // The parent remains the single draft owner.
+            }
+        )
+        .v1SectionSurfaceLayout()
+    }
+
+    private var filmMarkFontSizeSection: some View {
+        FilmMarkConfigurationControls(
+            configuration: $filmMarkConfiguration,
+            includesPosition: false,
+            includesSubstrate: false,
+            includesFont: false,
+            includesFontSize: true,
+            includesColor: false,
+            horizontalInset: 0,
+            onChange: {
+                // The parent remains the single draft owner.
+            }
+        )
+        .v1SectionSurfaceLayout()
+    }
+
+    private var filmMarkColorSection: some View {
+        FilmMarkConfigurationControls(
+            configuration: $filmMarkConfiguration,
+            includesPosition: false,
+            includesSubstrate: false,
+            includesFont: false,
+            includesFontSize: false,
+            includesColor: true,
+            includesCustomColor: true,
+            horizontalInset: 0,
+            onChange: {
+                // The parent remains the single draft owner.
+            }
+        )
+        .v1SectionSurfaceLayout()
+    }
+#endif
 
     private var memoryExpressionSectionHeader: some View {
         configurationSectionHeader(
@@ -491,59 +710,27 @@ struct ConfigurationOptionList: View {
     }
 
     private var memoryDisplayRow: some View {
-        configurationTextRow(
-            title: "表达方式",
-            subtitle: memoryDisplaySubtitle,
-            value: displayedMemoryDisplayValue,
-            detail: "",
-            showsTrailingChevron: false
-        ) {
-            if availableMemoryDisplayStyles.isEmpty {
-                CompactSelectionLabel(title: localized("暂无"))
-                    .opacity(0.56)
-                    .accessibilityLabel(localized("表达方式"))
-                    .accessibilityValue(localized("暂无"))
-            } else {
-                Menu {
-                    ForEach(
-                        availableMemoryDisplayStyles,
-                        id: \.self
-                    ) { style in
-                        Button {
-                            if isMemoryDisplayStyleLocked(style) {
-                                // Keep the choice in the editor only. The
-                                // live preview is useful before purchase, but
-                                // the durable save action owns the paywall.
-                                pendingMemoryDisplayStyle = style
-                            } else {
-                                pendingMemoryDisplayStyle = nil
-                                selectedMemoryDisplayStyle.wrappedValue = style
-                            }
-                        } label: {
-                            HStack(spacing: 8) {
-                                menuOptionLabel(
-                                    localized(style.displayTitle),
-                                    isSelected:
-                                        style
-                                        == displayedMemoryDisplayStyle
-                                )
+        VStack(alignment: .leading, spacing: 10) {
+            if !availableMemoryDisplayStyles.isEmpty {
+                Text(memoryDisplaySubtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                                if isMemoryDisplayStyleLocked(style) {
-                                    Image(systemName: "lock.fill")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
+                ViewThatFits(in: .horizontal) {
+                    memoryDisplayStyleChoices
+                    ScrollView(.horizontal) {
+                        memoryDisplayStyleChoices
                     }
-                } label: {
-                    CompactSelectionLabel(
-                        title: localized(displayedMemoryDisplayValue)
-                    )
+                    .scrollIndicators(.hidden)
                 }
                 .accessibilityLabel(localized("表达方式"))
-                .accessibilityValue(localized(displayedMemoryDisplayValue))
             }
+
+            Text(localized("configuration.expression.optional_content"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             if availableMemoryDisplayStyles.contains(where: isMemoryDisplayStyleLocked) {
                 Text(
@@ -555,8 +742,46 @@ struct ConfigurationOptionList: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, CompactInformationRowMetrics.horizontalPadding)
-                .padding(.bottom, 10)
+            }
+        }
+        .padding(CompactInformationRowMetrics.horizontalPadding)
+    }
+
+    private var memoryDisplayStyleChoices: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                memoryDisplayPicker
+                    .pickerStyle(.menu)
+            } else {
+                memoryDisplayPicker
+                    .pickerStyle(.segmented)
+            }
+        }
+        .tint(.accentColor)
+        .accessibilityLabel(localized("表达方式"))
+        .accessibilityValue(localized(displayedMemoryDisplayStyle.displayTitle))
+    }
+
+    private var memoryDisplayPicker: some View {
+        Picker(
+            localized("表达方式"),
+            selection: Binding(
+                get: { displayedMemoryDisplayStyle },
+                set: { style in
+                    // Preview-only choices retain the existing save-time entitlement gate.
+                    if isMemoryDisplayStyleLocked(style) {
+                        pendingMemoryDisplayStyle = style
+                    } else {
+                        pendingMemoryDisplayStyle = nil
+                        selectedMemoryDisplayStyle.wrappedValue = style
+                    }
+                }
+            )
+        ) {
+            ForEach(availableMemoryDisplayStyles, id: \.self) { style in
+                Text(localized(style.displayTitle == "自然（默认）"
+                    ? "configuration.expression.natural.short" : style.displayTitle))
+                    .tag(style)
             }
         }
     }
@@ -587,7 +812,7 @@ struct ConfigurationOptionList: View {
 
     private var memoryExpressionPreview: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(localized("这张照片会这样表达"))
+            Text(localized("configuration.expression.example"))
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
 
@@ -620,7 +845,7 @@ struct ConfigurationOptionList: View {
         .padding(.horizontal, CompactInformationRowMetrics.horizontalPadding)
         .padding(.bottom, 12)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(localized("这张照片会这样表达"))
+        .accessibilityLabel(localized("configuration.expression.example"))
         .accessibilityValue(memoryExpressionPreviewLines.joined(separator: "，"))
     }
 
@@ -750,6 +975,8 @@ struct ConfigurationOptionList: View {
         resultTitle: String,
         expandedAccessibilityLabel: String,
         collapsedAccessibilityLabel: String,
+        keepsResultOnSingleLine: Bool = false,
+        resultMaximumWidth: CGFloat = ConfigurationUI.compactTrailingControlWidth,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(
@@ -762,7 +989,9 @@ struct ConfigurationOptionList: View {
                 resultTitle: resultTitle,
                 isExpanded: isExpanded,
                 expandedAccessibilityLabel: expandedAccessibilityLabel,
-                collapsedAccessibilityLabel: collapsedAccessibilityLabel
+                collapsedAccessibilityLabel: collapsedAccessibilityLabel,
+                keepsResultOnSingleLine: keepsResultOnSingleLine,
+                resultMaximumWidth: resultMaximumWidth
             )
 
             if isExpanded.wrappedValue {
@@ -795,7 +1024,9 @@ struct ConfigurationOptionList: View {
         resultTitle: String,
         isExpanded: Binding<Bool>,
         expandedAccessibilityLabel: String,
-        collapsedAccessibilityLabel: String
+        collapsedAccessibilityLabel: String,
+        keepsResultOnSingleLine: Bool = false,
+        resultMaximumWidth: CGFloat = ConfigurationUI.compactTrailingControlWidth
     ) -> some View {
         ConfigurationCompactSectionRow(
             title: title,
@@ -806,6 +1037,8 @@ struct ConfigurationOptionList: View {
             isExpanded: isExpanded.wrappedValue,
             expandedAccessibilityLabel: expandedAccessibilityLabel,
             collapsedAccessibilityLabel: collapsedAccessibilityLabel,
+            keepsResultOnSingleLine: keepsResultOnSingleLine,
+            resultMaximumWidth: resultMaximumWidth,
             action: {
                 isExpanded.wrappedValue.toggle()
             }

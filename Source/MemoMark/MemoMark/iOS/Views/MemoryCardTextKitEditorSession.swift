@@ -59,8 +59,8 @@ enum MemoryCardEditorInputMetrics {
     static let controlHeight: CGFloat = 40
     static let accessibilityControlHeight: CGFloat = 52
     static let rowVerticalPadding: CGFloat = 4
-    static let titleColumnWidth: CGFloat = 60
-    static let multiRegionTitleColumnWidth: CGFloat = 36
+    static let titleColumnWidth: CGFloat = 96
+    static let multiRegionTitleColumnWidth: CGFloat = 48
     static let titleInputSpacing: CGFloat = 4
     /// Keeps the insertion point from touching the rounded field border. This
     /// is the same leading/trailing rhythm used by the native message inputs

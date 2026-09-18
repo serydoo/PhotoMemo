@@ -76,6 +76,18 @@ struct MemoryCardEditorDraft: Hashable {
         return item.id
     }
 
+    @discardableResult
+    mutating func appendTextInput() -> UUID {
+        if let last = items.last,
+           last.kind == .text,
+           last.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return last.id
+        }
+        let item = MemoryCardContentItem.text("")
+        items.append(item)
+        return item.id
+    }
+
     mutating func appendComposedItem(
         _ item: MemoryCardContentItem
     ) {

@@ -16,6 +16,7 @@ struct ConfigurationCompatibilityProjection: Equatable {
     let editorState: LegacySettingsEditorState
     let mediaOutputMode: MediaOutputMode
     let savedAt: Date
+    var frozenShareSnapshot: BatchConfigurationSnapshot? = nil
 }
 
 struct ConfigurationSnapshotProjectionInput {
@@ -170,6 +171,14 @@ struct ConfigurationProjectionService {
             },
             selectedMemoryPresetID: activeConfigurationID
         )
+        var frozenShareSnapshot: BatchConfigurationSnapshot?
+        if activeConfiguration.presentation.route == .filmMark {
+            frozenShareSnapshot = try ProductionConfigurationSnapshotFactory.resolve(
+                reference: .init(configurationID: activeConfigurationID, revision: activeConfiguration.revision),
+                from: aggregate
+            )
+            frozenShareSnapshot?.timeDisplayConfiguration = legacyStore.loadTimeDisplayConfiguration()
+        }
         return ConfigurationCompatibilityProjection(
             subjectLibrary: subjectLibrary,
             productionConfigurationReference:
@@ -211,7 +220,8 @@ struct ConfigurationProjectionService {
             ),
             mediaOutputMode:
                 .originalFormat,
-            savedAt: activeConfiguration.savedAt
+            savedAt: activeConfiguration.savedAt,
+            frozenShareSnapshot: frozenShareSnapshot
         )
     }
 

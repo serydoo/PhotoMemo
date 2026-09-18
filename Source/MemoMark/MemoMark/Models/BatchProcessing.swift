@@ -256,6 +256,15 @@ struct BatchConfigurationSnapshot:
 
     var presentationRouteRawValue: String?
 
+    /// Optional for backward-compatible queue snapshots. It is required only
+    /// when `presentationRouteRawValue` resolves to the FM route.
+    var filmMarkConfiguration: FilmMarkConfiguration?
+
+    /// Independent FM content is frozen with the task. The legacy `template`
+    /// remains for Classic/Minimal compatibility and is never a fallback for
+    /// an explicit FM route.
+    var filmMarkContent: FilmMarkContentSchemaV2?
+
     var logoModeRawValue: String?
 
 #if !MEMOMARK_SHARE_EXTENSION
@@ -264,6 +273,9 @@ struct BatchConfigurationSnapshot:
 
     private(set) var frozenConfigurationSnapshot:
         ConfigurationSnapshot?
+#else
+    // The extension transports canonical meaning without importing engines.
+    private var frozenCanonicalSnapshotData: Data?
 #endif
 
     var shouldWritePhotoDescription: Bool
@@ -295,6 +307,8 @@ struct BatchConfigurationSnapshot:
         usesCustomMemoryWriteText: Bool = false,
         customMemoryWriteText: String = "",
         presentationRouteRawValue: String? = nil,
+        filmMarkConfiguration: FilmMarkConfiguration? = nil,
+        filmMarkContent: FilmMarkContentSchemaV2? = nil,
         logoModeRawValue: String? = nil,
         shouldWritePhotoDescription: Bool,
         photoDescriptionOverride: String,
@@ -325,6 +339,8 @@ struct BatchConfigurationSnapshot:
             customMemoryWriteText
         self.presentationRouteRawValue =
             presentationRouteRawValue
+        self.filmMarkConfiguration = filmMarkConfiguration
+        self.filmMarkContent = filmMarkContent
         self.logoModeRawValue =
             logoModeRawValue
         self.shouldWritePhotoDescription =
@@ -358,7 +374,10 @@ extension BatchConfigurationSnapshot {
         case usesCustomMemoryWriteText
         case customMemoryWriteText
         case presentationRouteRawValue
+        case filmMarkConfiguration
+        case filmMarkContent
         case logoModeRawValue
+        case frozenCanonicalSnapshotData
 #if !MEMOMARK_SHARE_EXTENSION
         case frozenMemorySubject
         case frozenConfigurationSnapshot
@@ -428,6 +447,14 @@ extension BatchConfigurationSnapshot {
             String.self,
             forKey: .presentationRouteRawValue
         )
+        filmMarkConfiguration = try container.decodeIfPresent(
+            FilmMarkConfiguration.self,
+            forKey: .filmMarkConfiguration
+        )
+        filmMarkContent = try container.decodeIfPresent(
+            FilmMarkContentSchemaV2.self,
+            forKey: .filmMarkContent
+        )
         logoModeRawValue = try container.decodeIfPresent(
             String.self,
             forKey: .logoModeRawValue
@@ -441,6 +468,11 @@ extension BatchConfigurationSnapshot {
             ConfigurationSnapshot.self,
             forKey: .frozenConfigurationSnapshot
         )
+        if let data = try container.decodeIfPresent(Data.self, forKey: .frozenCanonicalSnapshotData) {
+            frozenConfigurationSnapshot = try JSONDecoder().decode(ConfigurationSnapshot.self, from: data)
+        }
+#else
+        frozenCanonicalSnapshotData = try container.decodeIfPresent(Data.self, forKey: .frozenCanonicalSnapshotData)
 #endif
         shouldWritePhotoDescription = try container.decode(
             Bool.self,
@@ -514,10 +546,24 @@ extension BatchConfigurationSnapshot {
             forKey: .presentationRouteRawValue
         )
         try container.encodeIfPresent(
+            filmMarkConfiguration,
+            forKey: .filmMarkConfiguration
+        )
+        try container.encodeIfPresent(
+            filmMarkContent,
+            forKey: .filmMarkContent
+        )
+        try container.encodeIfPresent(
             logoModeRawValue,
             forKey: .logoModeRawValue
         )
 #if !MEMOMARK_SHARE_EXTENSION
+        if presentationRouteRawValue == "filmMark", let canonicalProductionSnapshot {
+            try container.encode(
+                JSONEncoder().encode(canonicalProductionSnapshot),
+                forKey: .frozenCanonicalSnapshotData
+            )
+        }
         try container.encodeIfPresent(
             frozenMemorySubject,
             forKey: .frozenMemorySubject
@@ -526,6 +572,8 @@ extension BatchConfigurationSnapshot {
             frozenConfigurationSnapshot,
             forKey: .frozenConfigurationSnapshot
         )
+#else
+        try container.encodeIfPresent(frozenCanonicalSnapshotData, forKey: .frozenCanonicalSnapshotData)
 #endif
         try container.encode(
             shouldWritePhotoDescription,
@@ -552,6 +600,40 @@ extension BatchConfigurationSnapshot {
 }
 
 extension BatchConfigurationSnapshot {
+
+#if !MEMOMARK_SHARE_EXTENSION
+    /// A missing route is the legacy Classic White transport. Once a route is
+    /// explicitly present, however, it is part of the task's frozen meaning:
+    /// unknown routes and FM routes without their dedicated payload must not
+    /// silently turn into Classic White or default FM output.
+    var presentationRouteValidationError: MemoMarkError? {
+        guard let rawValue = presentationRouteRawValue else {
+            return nil
+        }
+        guard let route = RecordCardPresentationStyle(rawValue: rawValue) else {
+            return MemoMarkError(
+                code: .configurationUnavailable,
+                message: "无法识别这次任务保存的呈现样式。",
+                diagnosticCode: "unknown_presentation_route"
+            )
+        }
+        guard route != .filmMark || filmMarkConfiguration != nil else {
+            return MemoMarkError(
+                code: .configurationUnavailable,
+                message: "胶片时间标记配置不完整，已停止处理。",
+                diagnosticCode: "missing_film_mark_configuration"
+            )
+        }
+        guard route != .filmMark || filmMarkContent != nil else {
+            return MemoMarkError(
+                code: .configurationUnavailable,
+                message: "胶片时间标记内容不完整，已停止处理。",
+                diagnosticCode: "missing_film_mark_content"
+            )
+        }
+        return nil
+    }
+#endif
 
     var productionConfigurationReference:
         ProductionConfigurationReference? {

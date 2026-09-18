@@ -21,4 +21,12 @@ struct RecordCardRendererRoutingTests {
             == .minimal
         )
     }
+
+    @Test("FilmMark presentation route selects the FM renderer")
+    func filmMarkRouteSelectsFilmMarkRenderer() {
+        #expect(
+            RecordCardRenderer.destination(for: .filmMark)
+            == .filmMark
+        )
+    }
 }

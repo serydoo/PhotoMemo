@@ -104,6 +104,9 @@ struct MemoMarkNarrativeLanguageContractTests {
         let macOS = try sourceText(
             "Source/MemoMark/MemoMark/ConfigurationCenter/ConfigurationCenterView.swift"
         )
+        let macOSPage = try sourceText(
+            "Source/MemoMark/MemoMark/ConfigurationCenter/MacConfigurationCenterPage.swift"
+        )
         let simplifiedChinese = try sourceText(
             "Source/MemoMark/MemoMark/zh-Hans.lproj/Localizable.strings"
         )
@@ -111,16 +114,17 @@ struct MemoMarkNarrativeLanguageContractTests {
             "Source/MemoMark/MemoMark/en.lproj/Localizable.strings"
         )
 
-        #expect(macOS.contains(".navigationTitle(\"记忆对象\")"))
-        #expect(macOS.contains(".navigationTitle(\"编辑\")"))
+        #expect(macOS.contains("NavigationStack {"))
+        #expect(macOS.contains("MacConfigurationCenterPage("))
+        #expect(macOSPage.contains(".navigationTitle(\"配置\")"))
         #expect(
             simplifiedChinese.contains(
-                "\"settings.guide.expression.title\" = \"照片怎样表达时间\";"
+                "\"settings.guide.expression.title\" = \"MemoMark 怎么讲述时间\";"
             )
         )
         #expect(
             english.contains(
-                "\"settings.guide.expression.title\" = \"How Photos Express Time\";"
+                "\"settings.guide.expression.title\" = \"How MemoMark Tells Time\";"
             )
         )
         #expect(

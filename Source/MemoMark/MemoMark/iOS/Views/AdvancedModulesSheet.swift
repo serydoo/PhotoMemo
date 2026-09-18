@@ -3,9 +3,6 @@ import SwiftUI
 
 struct AdvancedModulesSheet: View {
 
-    @Environment(\.dynamicTypeSize)
-    private var dynamicTypeSize
-
     @Environment(\.dismiss)
     private var dismiss
 
@@ -25,51 +22,13 @@ struct AdvancedModulesSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                IOSCompactEntryListGroup {
-                    locationDisplayRow
-                        .padding(
-                            .horizontal,
-                            ConfigurationUI.sheetPanelPadding
-                        )
-                        .padding(
-                            .vertical,
-                            ConfigurationUI.compactRowVerticalPadding
-                        )
-
-                    HorizontalDivider(
-                        horizontalInset: ConfigurationUI.sheetDividerInset
-                    )
-
-                    timeDisplaySelectionRow
-                        .padding(
-                            .horizontal,
-                            ConfigurationUI.sheetPanelPadding
-                        )
-                        .padding(
-                            .vertical,
-                            ConfigurationUI.compactRowVerticalPadding
-                        )
-
-                    HorizontalDivider(
-                        horizontalInset: ConfigurationUI.sheetDividerInset
-                    )
-
-                    timeSupplementRow
-                        .padding(
-                            .horizontal,
-                            ConfigurationUI.sheetPanelPadding
-                        )
-                        .padding(
-                            .vertical,
-                            ConfigurationUI.compactRowVerticalPadding
-                        )
-                }
-                .padding(.bottom, 28)
-                .adaptiveScrollContent(
-                    horizontalPadding: ConfigurationUI.contentColumnPadding
-                )
-            }
+            AdvancedModulesContent(
+                locationPresentation: locationPresentation,
+                selectedLocationOptionID: $selectedLocationOptionID,
+                timePresentation: timePresentation,
+                selectedTimeOptionID: $selectedTimeOptionID,
+                selectedTimeSupplement: $selectedTimeSupplement
+            )
             .safeAreaInset(edge: .top, spacing: 0) {
                 ConfigurationSheetSubtitle(
                     "决定照片中的时间和地点怎样呈现。"
@@ -95,6 +54,105 @@ struct AdvancedModulesSheet: View {
                 .large
             ]
         )
+    }
+}
+
+struct AdvancedModulesContent: View {
+
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
+    let locationPresentation:
+        LocationDisplayInspectorPresentation
+
+    @Binding
+    var selectedLocationOptionID: String
+
+    let timePresentation: TimeDisplayInspectorPresentation
+
+    @Binding
+    var selectedTimeOptionID: String
+
+    @Binding
+    var selectedTimeSupplement: TimeDisplayConfiguration.Supplement
+
+    /// FM embeds these rows in its own flat details page. The standalone
+    /// AdvancedModulesSheet keeps the existing grouped presentation.
+    var isEmbedded: Bool = false
+
+    var body: some View {
+        if isEmbedded {
+            VStack(spacing: 0) {
+                embeddedRows
+            }
+        } else {
+            ScrollView {
+                IOSCompactEntryListGroup {
+                    groupedRows
+                }
+                .padding(.bottom, 28)
+                .adaptiveScrollContent(
+                    horizontalPadding: ConfigurationUI.contentColumnPadding
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var groupedRows: some View {
+        locationDisplayRow
+            .padding(
+                .horizontal,
+                ConfigurationUI.sheetPanelPadding
+            )
+            .padding(
+                .vertical,
+                ConfigurationUI.compactRowVerticalPadding
+            )
+
+        HorizontalDivider(
+            horizontalInset: ConfigurationUI.sheetDividerInset
+        )
+
+        timeDisplaySelectionRow
+            .padding(
+                .horizontal,
+                ConfigurationUI.sheetPanelPadding
+            )
+            .padding(
+                .vertical,
+                ConfigurationUI.compactRowVerticalPadding
+            )
+
+        HorizontalDivider(
+            horizontalInset: ConfigurationUI.sheetDividerInset
+        )
+
+        timeSupplementRow
+            .padding(
+                .horizontal,
+                ConfigurationUI.sheetPanelPadding
+            )
+            .padding(
+                .vertical,
+                ConfigurationUI.compactRowVerticalPadding
+            )
+    }
+
+    @ViewBuilder
+    private var embeddedRows: some View {
+        locationDisplayRow
+            .padding(.vertical, 12)
+
+        HorizontalDivider(horizontalInset: 0)
+
+        timeDisplaySelectionRow
+            .padding(.vertical, 12)
+
+        HorizontalDivider(horizontalInset: 0)
+
+        timeSupplementRow
+            .padding(.vertical, 12)
     }
 
     @ViewBuilder

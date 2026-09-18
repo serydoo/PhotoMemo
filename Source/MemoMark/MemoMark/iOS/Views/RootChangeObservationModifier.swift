@@ -21,6 +21,7 @@ struct RootChangeObservationModifier: ViewModifier {
     @Binding var mediaPickerPresentation: MediaPickerPresentationState
     @Binding var logoMode: ConfigurationLogoMode
     @Binding var presentationStyle: RecordCardPresentationStyle
+    @Binding var filmMarkConfiguration: FilmMarkConfiguration
     @Binding var customLogoBadge: Badge?
     @Binding var outputTarget: ConfigurationOutputTarget
     @Binding var mediaOutputMode: MediaOutputMode
@@ -88,6 +89,7 @@ struct RootChangeObservationModifier: ViewModifier {
                 } else if let preset = session.state.selectedMemoryPreset {
                     logoMode = preset.logoMode
                     presentationStyle = .classicWhite
+                    filmMarkConfiguration = .default
                     customLogoBadge = nil
                     applySavedOutputConfiguration(preset)
                 }

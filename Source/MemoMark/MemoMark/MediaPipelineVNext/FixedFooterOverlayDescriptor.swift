@@ -96,7 +96,8 @@ struct PresentationArtifact {
         canvasSize: CGSize,
         photoFrame: CGRect,
         layers: [Layer],
-        canvasBackground: CanvasBackground
+        canvasBackground: CanvasBackground,
+        placement: Placement = .floating
     ) throws {
         guard !layers.isEmpty else {
             throw LivePhotoVideoCompositionError.invalidOverlayGeometry
@@ -108,6 +109,7 @@ struct PresentationArtifact {
             photoFrame: photoFrame,
             footerFrame: firstLayer.frame,
             footerImage: firstLayer.image,
+            placement: placement,
             canvasBackground: canvasBackground,
             layers: layers
         )

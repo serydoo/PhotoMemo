@@ -489,6 +489,7 @@ struct OutputDestinationContent: View {
                 outputTargetOptions
             }
             .pickerStyle(.segmented)
+            .tint(.accentColor)
         }
     }
 

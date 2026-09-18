@@ -7,6 +7,188 @@ import Testing
 @Suite("Production configuration contract")
 struct ProductionConfigurationContractTests {
 
+    @Test("FM authored content survives save reload and production without changing legacy styles")
+    func filmMarkContentSurvivesSaveReload() throws {
+        let fixture = try Self.makeFixture()
+        let before = ConfigurationDraftProjection(configuration: fixture.configuration)
+        var fmTemplate = Template.classicWhite
+        fmTemplate.leftTopArea = TemplateArea(name: "FM", items: [
+            TemplateItem(type: .text, name: "FM", value: "FM独立内容 · {{capture_time}}")
+        ])
+        let fmDrafts = ConfigurationDraftProjection.makeRegionDrafts(
+            from: fmTemplate, interfaceLanguage: .simplifiedChinese
+        )
+        var drafts = before.regionDraftsByPresentationStyle
+        drafts[.filmMark] = fmDrafts
+        let draft = ConfigurationAggregateDraft(
+            title: "FM", regionDrafts: fmDrafts,
+            regionDraftsByPresentationStyle: drafts, regionTemplateIDs: [:],
+            locationConfiguration: nil, logoMode: .appleMini, badge: nil,
+            usesCustomMemoryWriteText: false, customMemoryWriteText: "",
+            shouldWritePhotosDescription: true, photosDescriptionOverride: "保留说明",
+            outputTarget: .existingAlbum, selectedAlbumIdentifier: "album-fm",
+            albumTitle: "FM相册", mediaOutputMode: .originalFormat,
+            livePhotoPolicy: .preserveMotion, presentationRoute: .filmMark,
+            selectedTimeAnchorID: fixture.anchor.id, savedAt: fixture.captureDate
+        )
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
+            from: fixture.aggregate, draft: draft
+        )
+        let reloaded = try JSONDecoder().decode(
+            ConfigurationLibraryRecord.self,
+            from: JSONEncoder().encode(candidate.aggregate)
+        )
+        let configuration = reloaded.subjects[0].configurations[0]
+        let after = ConfigurationDraftProjection(configuration: configuration)
+        #expect(after.regionDrafts[.slotA]?.singleLineTemplateText == "FM独立内容 · {{capture_time}}")
+        #expect(configuration.editor.templatesByPresentationStyle[.filmMark] == nil)
+        #expect(after.regionDraftsByPresentationStyle[.classicWhite]?.mapValues(\.singleLineTemplateText) == before.regionDraftsByPresentationStyle[.classicWhite]?.mapValues(\.singleLineTemplateText))
+        #expect(after.regionDraftsByPresentationStyle[.minimal]?.mapValues(\.singleLineTemplateText) == before.regionDraftsByPresentationStyle[.minimal]?.mapValues(\.singleLineTemplateText))
+        let production = try ProductionConfigurationSnapshotFactory.resolve(
+            reference: .init(configurationID: configuration.id, revision: configuration.revision),
+            from: reloaded
+        )
+        #expect(production.template.leftTopArea.items.map(\.value).joined() == "FM独立内容 · {{capture_time}}")
+        #expect(production.selectedAlbumIdentifier == "album-fm")
+        #expect(production.shouldWritePhotoDescription)
+        #expect(production.photoDescriptionOverride == "保留说明")
+    }
+
+    @Test("Share provider freezes real FM payload and canonical identity from a published projection")
+    @MainActor
+    func shareProviderFreezesFilmMarkPayload() throws {
+        let fixture = try Self.makeFixture()
+        let suite = "FM.ShareFreeze.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let service = ConfigurationProjectionService(
+            legacyStore: LegacySettingsStore(defaults: defaults),
+            snapshotProvider: BatchConfigurationSnapshotProvider(defaults: defaults)
+        )
+        var aggregate = fixture.aggregate
+        aggregate.subjects[0].configurations[0].presentation.route = .filmMark
+        aggregate.subjects[0].configurations[0].presentation.filmMark.placement.anchor = .bottomLeft
+        aggregate.subjects[0].configurations[0].presentation.filmMark.appearance.fontSize = .large
+        aggregate.subjects[0].configurations[0].editor.filmMarkContent = .init(
+            primaryOutputItems: [
+                .init(type: .text, name: "FM", value: "冻结的 FM 内容")
+            ]
+        )
+        _ = try service.projectAndPersist(aggregate)
+        let captured = SharedBatchConfigurationSnapshotService(defaults: defaults).loadSnapshot()
+        #expect(captured.presentationRouteRawValue == "filmMark")
+        #expect(captured.filmMarkConfiguration?.placement.anchor == .bottomLeft)
+        #expect(captured.filmMarkConfiguration?.appearance.fontSize == .large)
+        #expect(captured.filmMarkContent?.primaryOutputItems.map(\.value) == ["冻结的 FM 内容"])
+        #expect(captured.canonicalProductionSnapshot?.configurationRevision == fixture.configuration.revision)
+        aggregate.subjects[0].configurations[0].revision += 1
+        aggregate.subjects[0].configurations[0].presentation.filmMark.placement.anchor = .bottomRight
+        _ = try service.projectAndPersist(aggregate)
+        let queued = try JSONDecoder().decode(BatchConfigurationSnapshot.self, from: JSONEncoder().encode(captured))
+        #expect(queued.filmMarkConfiguration?.placement.anchor == .bottomLeft)
+        #expect(queued.configurationRevision == fixture.configuration.revision)
+        try ProductionConfigurationSnapshotContract.validate(queued)
+    }
+
+    @MainActor
+    @Test("Share readiness rejects a frozen FM snapshot without independent content")
+    func shareReadinessRejectsMissingFilmMarkContent() throws {
+        let fixture = try Self.makeFixture()
+        let suite = "FM.ShareReadiness.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let service = ConfigurationProjectionService(
+            legacyStore: LegacySettingsStore(defaults: defaults),
+            snapshotProvider: BatchConfigurationSnapshotProvider(defaults: defaults)
+        )
+        var aggregate = fixture.aggregate
+        aggregate.subjects[0].configurations[0].presentation.route = .filmMark
+        aggregate.subjects[0].configurations[0].editor.filmMarkContent = .init(
+            primaryOutputItems: [
+                .init(type: .text, name: "FM", value: "可交付内容")
+            ]
+        )
+        _ = try service.projectAndPersist(aggregate)
+
+        var frozen = SharedBatchConfigurationSnapshotService(defaults: defaults)
+            .loadSnapshot()
+        frozen.filmMarkContent = nil
+        defaults.set(
+            try JSONEncoder().encode(frozen),
+            forKey: BatchConfigurationSnapshotProvider.frozenShareSnapshotStorageKey
+        )
+
+        #expect(
+            !BatchConfigurationSnapshotProvider(defaults: defaults)
+                .loadConfigurationReadiness()
+                .isReady
+        )
+    }
+
+    @Test("exact durable configuration resolution freezes every production field")
+    @MainActor
+    func filmMarkShareRevisionDrainsOriginalSnapshot() async throws {
+        let fixture = try Self.makeFixture()
+        let context = try Self.makeEnvironment()
+        defer { Self.cleanup(context) }
+        var aggregate = fixture.aggregate
+        aggregate.subjects[0].configurations[0].presentation.route = .filmMark
+        aggregate.subjects[0].configurations[0].presentation.filmMark = .init(
+            appearance: .init(fontSize: .large,
+                              color: .init(red: 0.2, green: 0.4, blue: 0.8),
+                              substrate: .translucentLabel),
+            placement: .init(anchor: .bottomLeft, normalizedOffset: .init(x: 0.025, y: -0.03))
+        )
+        aggregate.subjects[0].configurations[0].editor.filmMarkContent = .init(
+            primaryOutput: .init(name: "FM", items: [.init(type: .text, name: "FM", value: "冻结的文字")])
+        )
+        let receipt = try await context.environment.coordinators.configuration.saveConfigurationLibrary(aggregate)
+        let projection = ConfigurationProjectionService(
+            legacyStore: LegacySettingsStore(defaults: context.defaults),
+            snapshotProvider: .init(defaults: context.defaults)
+        )
+        _ = try projection.projectAndPersist(aggregate)
+        let frozen = SharedBatchConfigurationSnapshotService(defaults: context.defaults).loadSnapshot()
+        // Model the extension's Codable transport: app-only keys are absent.
+        var wire = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(frozen)) as? [String: Any])
+        wire.removeValue(forKey: "frozenMemorySubject")
+        wire.removeValue(forKey: "frozenConfigurationSnapshot")
+        let transported = try JSONDecoder().decode(BatchConfigurationSnapshot.self, from: JSONSerialization.data(withJSONObject: wire))
+        aggregate.revision = receipt.revision
+        aggregate.subjects[0].configurations[0].revision += 1
+        aggregate.subjects[0].configurations[0].presentation.filmMark = .default
+        aggregate.subjects[0].configurations[0].editor.filmMarkContent?.primaryOutputItems = []
+        _ = try await context.environment.coordinators.configuration.saveConfigurationLibrary(aggregate)
+        _ = try projection.projectAndPersist(aggregate)
+        let result = await context.environment.coordinators.share.process(
+            request: .init(launchSource: .shareExtension,
+                           urls: [try SyntheticFixtureLibrary.fixtureURL(.iphoneJPEG)],
+                           configurationSnapshot: transported),
+            consumedPayloadKeys: []
+        )
+        let job = try #require(result.value?.job)
+        #expect(job.configuration.configurationRevision == fixture.configuration.revision)
+        #expect(job.configuration.presentationRouteRawValue == "filmMark")
+        #expect(job.configuration.filmMarkConfiguration == frozen.filmMarkConfiguration)
+        #expect(job.configuration.template.leftTopArea == frozen.template.leftTopArea)
+        #expect(job.configuration.canonicalProductionSnapshot == frozen.canonicalProductionSnapshot)
+        #expect(job.configuration.selectedAlbumIdentifier == frozen.selectedAlbumIdentifier)
+        #expect(job.configuration.shouldWritePhotoDescription == frozen.shouldWritePhotoDescription)
+    }
+
+    @MainActor
+    @Test("corrupt FM projection blocks intake instead of using legacy settings")
+    func corruptFilmMarkShareProjectionFailsClosed() throws {
+        let suite = "FM.CorruptShare.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(Data("broken".utf8), forKey: BatchConfigurationSnapshotProvider.frozenShareSnapshotStorageKey)
+        let provider = BatchConfigurationSnapshotProvider(defaults: defaults)
+        #expect(!provider.loadConfigurationReadiness().isReady)
+        #expect(provider.loadSnapshot().presentationRouteValidationError != nil)
+    }
+
     @Test("exact durable configuration resolution freezes every production field")
     func exactResolutionFreezesCompleteProductionConfiguration() throws {
         let fixture = try Self.makeFixture()
@@ -518,6 +700,50 @@ struct ProductionConfigurationContractTests {
                 configuration: snapshot
             )
         }
+    }
+
+    @Test("FM render health follows independent authored content instead of legacy template content")
+    func filmMarkRenderHealthUsesIndependentContent() throws {
+        var legacyTemplate = Template.classicWhite
+        legacyTemplate.leftTopArea = TemplateArea(
+            name: "Legacy",
+            items: [
+                .init(type: .text, name: "Legacy", value: "旧模板内容")
+            ]
+        )
+        let authoredContent = FilmMarkContentSchemaV2(
+            primaryOutputItems: [
+                .init(type: .text, name: "FM", value: "独立 FM 内容")
+            ]
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: legacyTemplate,
+            badge: nil,
+            anchor: nil,
+            presentationRouteRawValue: RecordCardPresentationStyle.filmMark.rawValue,
+            filmMarkConfiguration: .default,
+            filmMarkContent: authoredContent,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let card = RecordCard(
+            template: legacyTemplate,
+            presentationStyle: .filmMark,
+            filmMarkConfiguration: .default,
+            filmMarkContent: authoredContent,
+            metadata: PhotoMetadata(),
+            context: MetadataContext()
+        )
+
+        let blocks = try ProductionRenderHealthCheck.validate(
+            card: card,
+            configuration: configuration
+        )
+
+        #expect(blocks.count == 1)
+        #expect(blocks.first?.value == "独立 FM 内容")
+        #expect(blocks.first?.value != "旧模板内容")
     }
 
     @Test("empty resolved content is rejected even without a memory-summary token")

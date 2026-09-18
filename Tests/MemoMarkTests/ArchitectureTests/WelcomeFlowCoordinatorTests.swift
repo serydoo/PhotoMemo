@@ -46,7 +46,10 @@ struct WelcomeFlowCoordinatorTests {
         let shareStep = steps.first(where: { $0.id == "share" })
 
         #expect(shareStep?.title == "分享给时光记")
-        #expect(shareStep?.detail == "在系统相册点分享，选择时光记。")
+        #expect(
+            shareStep?.detail
+                == "在 Apple Photos 点分享。如果时光记没有出现在前面，请向左滑应用栏，点“更多”或“编辑”，长按时光记并拖到前面。以后选好照片后，就能更快找到时光记。"
+        )
     }
 }
 #endif

@@ -8,6 +8,16 @@ enum RecordCardPresentationStyle:
 
     case classicWhite
     case minimal
+    case filmMark
+
+    /// Only these styles are backed by the legacy template dictionary. FM
+    /// keeps its presentation payload in `Presentation.filmMark`, so adding
+    /// it to the enum must not change the Classic White / Minimal transport
+    /// shape.
+    static let legacyTemplateBackedStyles: [Self] = [
+        .classicWhite,
+        .minimal
+    ]
 
     /// The content contract is the single source of truth for the editable
     /// surface, rendered text surface, and Apple Photos description source of
@@ -63,6 +73,26 @@ enum RecordCardPresentationStyle:
                     "accessibility.editor.minimal.hint",
                 editorAccessibilityHintFallback:
                     "这部分内容会显示在极简卡片上，也会写入 Apple Photos 的照片说明，方便之后查找。"
+            )
+        case .filmMark:
+            return PresentationStyleContentContract(
+                semanticProjections: [
+                    .init(role: .primaryOutput, textArea: .leftTop)
+                ],
+                editableContentRoles: [.primaryOutput],
+                renderedContentRoles: [.primaryOutput],
+                photoDescriptionRoles: [.primaryOutput],
+                editorTitleKey:
+                    "configuration.card_editor.film_mark_content",
+                editorTitleFallback: "胶片时间标记内容",
+                editorAccessibilityLabelKey:
+                    "accessibility.editor.film_mark.label",
+                editorAccessibilityLabelFallback:
+                    "胶片时间标记内容",
+                editorAccessibilityHintKey:
+                    "accessibility.editor.film_mark.hint",
+                editorAccessibilityHintFallback:
+                    "这部分内容会显示在照片上，也会写入 Apple Photos 的照片说明，方便之后查找。"
             )
         }
     }
@@ -211,6 +241,12 @@ struct RecordCard: Identifiable, Hashable {
 
     var presentationStyle: RecordCardPresentationStyle
 
+    var filmMarkConfiguration: FilmMarkConfiguration
+
+    /// FM owns an independent authored content payload. Classic White and
+    /// Minimal continue to use `template`; FM never infers content from it.
+    var filmMarkContent: FilmMarkContentSchemaV2?
+
     var metadata: PhotoMetadata
 
     var context: MetadataContext
@@ -245,6 +281,8 @@ struct RecordCard: Identifiable, Hashable {
         id: UUID = UUID(),
         template: Template = .classicWhite,
         presentationStyle: RecordCardPresentationStyle = .classicWhite,
+        filmMarkConfiguration: FilmMarkConfiguration = .default,
+        filmMarkContent: FilmMarkContentSchemaV2? = nil,
         metadata: PhotoMetadata,
         context: MetadataContext,
         language: MemoMarkLanguage = .simplifiedChinese,
@@ -260,6 +298,8 @@ struct RecordCard: Identifiable, Hashable {
         self.id = id
         self.template = template
         self.presentationStyle = presentationStyle
+        self.filmMarkConfiguration = filmMarkConfiguration
+        self.filmMarkContent = filmMarkContent
         self.metadata = metadata
         self.context = context
         self.language = language

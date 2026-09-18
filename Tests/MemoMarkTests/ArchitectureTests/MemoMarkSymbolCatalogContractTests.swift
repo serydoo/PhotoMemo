@@ -102,7 +102,7 @@ struct MemoMarkSymbolCatalogContractTests {
         )
         #expect(!settingsSource.contains("CompactHeadingIcon"))
         #expect(settingsSource.contains("settings.getting_started.title"))
-        #expect(settingsSource.contains("settings.expression_guide.title"))
+        #expect(settingsSource.contains("settings.guide.expression.title"))
         #expect(settingsSource.contains("settings.feedback.section_title"))
     }
 

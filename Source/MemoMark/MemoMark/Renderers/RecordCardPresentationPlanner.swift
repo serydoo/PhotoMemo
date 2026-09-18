@@ -12,13 +12,18 @@ struct RecordCardPresentationPlanner {
     ) -> CGSize {
         switch card.presentationStyle {
         case .classicWhite:
-            ClassicWhiteRenderer.outputPixelSize(
+            return ClassicWhiteRenderer.outputPixelSize(
                 for: card.metadata,
                 fallbackSize: fallbackSize
             )
         case .minimal:
-            MinimalRenderer.outputPixelSize(
+            return MinimalRenderer.outputPixelSize(
                 for: card.metadata,
+                fallbackSize: fallbackSize
+            )
+        case .filmMark:
+            return FilmMarkRenderer.outputPixelSize(
+                for: card,
                 fallbackSize: fallbackSize
             )
         }
@@ -30,9 +35,25 @@ struct RecordCardPresentationPlanner {
     ) -> AnyView {
         switch card.presentationStyle {
         case .classicWhite:
-            AnyView(ClassicWhiteCardRenderer(image: image, card: card))
+            return AnyView(ClassicWhiteCardRenderer(image: image, card: card))
         case .minimal:
-            AnyView(MinimalCardRenderer(image: image, card: card))
+            return AnyView(MinimalCardRenderer(image: image, card: card))
+        case .filmMark:
+            let canvasSize = FilmMarkRenderer.outputPixelSize(
+                for: card,
+                fallbackSize: CGSize(width: 1, height: 1)
+            )
+            let presentation = FilmMarkPresentationResolver
+                .resolvedPresentation(
+                    for: card,
+                    canvasSize: canvasSize
+                )
+            return AnyView(
+                FilmMarkCardRenderer(
+                    image: image,
+                    presentation: presentation
+                )
+            )
         }
     }
 
@@ -52,6 +73,11 @@ struct RecordCardPresentationPlanner {
             )
         case .minimal:
             return try minimalArtifact(
+                for: card,
+                canvasSize: canvasSize
+            )
+        case .filmMark:
+            return try filmMarkArtifact(
                 for: card,
                 canvasSize: canvasSize
             )
@@ -118,6 +144,48 @@ struct RecordCardPresentationPlanner {
             layers: [
                 .init(frame: layerFrame, image: overlayImage, zIndex: 100)
             ]
+        )
+    }
+
+    @MainActor
+    private func filmMarkArtifact(
+        for card: RecordCard,
+        canvasSize: CGSize
+    ) throws -> PresentationArtifact {
+        let outputSize = FilmMarkRenderer.outputPixelSize(
+            for: card,
+            fallbackSize: canvasSize
+        )
+        let resolvedPresentation = FilmMarkPresentationResolver
+            .resolvedPresentation(
+            for: card,
+            canvasSize: outputSize
+        )
+        guard !resolvedPresentation.layout.isContentOverflowingSafeArea else {
+            throw RecordCardExportError.renderFailed
+        }
+        let overlay = FilmMarkCardOverlayLayerRenderer(
+            presentation: resolvedPresentation
+        )
+        .frame(width: outputSize.width, height: outputSize.height)
+        let renderer = ImageRenderer(content: overlay)
+        renderer.scale = 1
+        renderer.proposedSize = .init(outputSize)
+        renderer.isOpaque = false
+
+        guard let overlayImage = renderer.cgImage else {
+            throw RecordCardExportError.renderFailed
+        }
+
+        let fullFrame = CGRect(origin: .zero, size: outputSize)
+        return try PresentationArtifact(
+            canvasSize: outputSize,
+            photoFrame: fullFrame,
+            layers: [
+                .init(frame: fullFrame, image: overlayImage, zIndex: 100)
+            ],
+            canvasBackground: .transparent,
+            placement: .floating
         )
     }
 

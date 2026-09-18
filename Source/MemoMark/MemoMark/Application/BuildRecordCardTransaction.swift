@@ -22,7 +22,11 @@ struct BuildRecordCardTransaction {
         configuration: BatchConfigurationSnapshot
     ) -> MemoMarkResult<RecordCard> {
 
-        .success(
+        if let error = configuration.presentationRouteValidationError {
+            return .failure(error)
+        }
+
+        return .success(
             buildService.buildCard(
                 from: photo,
                 configuration: configuration
@@ -55,7 +59,11 @@ struct BuildRecordCardTransaction {
         configuration: BatchConfigurationSnapshot
     ) -> MemoMarkResult<String> {
 
-        .success(
+        if let error = configuration.presentationRouteValidationError {
+            return .failure(error)
+        }
+
+        return .success(
             buildService.defaultPhotoDescription(
                 from: photo,
                 configuration: configuration

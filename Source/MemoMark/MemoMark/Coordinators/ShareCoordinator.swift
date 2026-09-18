@@ -355,6 +355,13 @@ final class ShareCoordinator {
                 }
 
                 // A request for the current or a future revision is not a
+                // FM never existed in the historical transport contract. An
+                // incomplete FM snapshot cannot borrow legacy recovery.
+                if transportConfiguration.presentationRouteRawValue == "filmMark" {
+                    throw ProductionConfigurationContractError.missingCanonicalSnapshot
+                }
+
+                // A request for the current or a future revision is not a
                 // historical transport artifact. Keep the versioned contract
                 // strict so an invalid reference cannot enter production via
                 // the compatibility adapter.

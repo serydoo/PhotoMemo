@@ -309,6 +309,9 @@ final class LegacySettingsStore {
     func persistCompatibilityProjection(
         _ projection: ConfigurationCompatibilityProjection
     ) throws {
+        // Encode before publishing any derived settings. One Data value keeps
+        // FM identity, content, appearance and canonical meaning together.
+        let frozenShareData = try projection.frozenShareSnapshot.map { try JSONEncoder().encode($0) }
         try setEncoded(
             projection.subjectLibrary,
             forKey: Keys.subjectLibrary
@@ -349,6 +352,12 @@ final class LegacySettingsStore {
         )
         saveEditorState(projection.editorState)
         saveMediaOutputMode(projection.mediaOutputMode)
+        let frozenKey = BatchConfigurationSnapshotProvider.frozenShareSnapshotStorageKey
+        if let frozenShareData {
+            defaults.set(frozenShareData, forKey: frozenKey)
+        } else {
+            defaults.removeObject(forKey: frozenKey)
+        }
     }
 
     func decodeValueResult<Value: Decodable>(

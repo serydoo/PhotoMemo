@@ -100,6 +100,7 @@ enum MemoMarkSharedContainer {
         "photomemo.locationDisplayConfiguration",
         "photomemo.personalProfile",
         "photomemo.productionConfigurationReference",
+        "photomemo.frozenShareConfiguration",
         "photomemo.v1.subjectLibrary",
         "photomemo.anchors",
         "photomemo.configurationSlots",

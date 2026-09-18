@@ -24,6 +24,7 @@ struct ConfigurationDraftProjection: Hashable {
     let livePhotoPolicy:
         MemoryConfigurationRecord.Output.LivePhotoPolicy
     let route: MemoryConfigurationRecord.Presentation.Route
+    let filmMarkConfiguration: FilmMarkConfiguration
     let selectedTimeAnchorID: UUID?
     let language: MemoMarkLanguage
     let interfaceLanguage: MemoMarkLanguage
@@ -111,6 +112,7 @@ struct ConfigurationDraftProjection: Hashable {
         mediaOutputMode = .originalFormat
         livePhotoPolicy = .preserveMotion
         route = configuration.presentation.route
+        filmMarkConfiguration = configuration.presentation.filmMark
         selectedTimeAnchorID =
             configuration.selectedTimeAnchorID
         language = configuration.language
@@ -140,6 +142,7 @@ struct ConfigurationAggregateDraft: Hashable {
         MemoryConfigurationRecord.Output.LivePhotoPolicy
     let presentationRoute:
         MemoryConfigurationRecord.Presentation.Route
+    let filmMarkConfiguration: FilmMarkConfiguration
     let selectedTimeAnchorID: UUID?
     let savedAt: Date
     let language: MemoMarkLanguage
@@ -165,6 +168,7 @@ struct ConfigurationAggregateDraft: Hashable {
             MemoryConfigurationRecord.Output.LivePhotoPolicy,
         presentationRoute:
             MemoryConfigurationRecord.Presentation.Route = .classicWhite,
+        filmMarkConfiguration: FilmMarkConfiguration = .default,
         selectedTimeAnchorID: UUID?,
         savedAt: Date,
         language: MemoMarkLanguage = .simplifiedChinese
@@ -191,6 +195,7 @@ struct ConfigurationAggregateDraft: Hashable {
         self.mediaOutputMode = mediaOutputMode
         self.livePhotoPolicy = livePhotoPolicy
         self.presentationRoute = presentationRoute
+        self.filmMarkConfiguration = filmMarkConfiguration
         self.selectedTimeAnchorID = selectedTimeAnchorID
         self.savedAt = savedAt
         self.language = language
@@ -293,12 +298,14 @@ enum ConfigurationAggregateCandidateBuilder {
                 memoryCopy: .init(
                     usesCustomText: draft.usesCustomMemoryWriteText,
                     customText: draft.customMemoryWriteText
-                )
+                ),
+                filmMarkContent: filmMarkContent(basedOn: nil, draft: draft)
             ),
             presentation: .init(
                 route: draft.presentationRoute,
                 locationConfiguration: draft.locationConfiguration,
-                logo: logo
+                logo: logo,
+                filmMark: draft.filmMarkConfiguration
             ),
             output: .init(
                 mediaMode: draft.mediaOutputMode,
@@ -359,13 +366,17 @@ enum ConfigurationAggregateCandidateBuilder {
                     usesCustomText:
                         draft.usesCustomMemoryWriteText,
                     customText: draft.customMemoryWriteText
+                ),
+                filmMarkContent: filmMarkContent(
+                    basedOn: previous.editor.filmMarkContent, draft: draft
                 )
             ),
             presentation: .init(
                 route: draft.presentationRoute,
                 locationConfiguration:
                     draft.locationConfiguration,
-                logo: logo
+                logo: logo,
+                filmMark: draft.filmMarkConfiguration
             ),
             output: .init(
                 mediaMode: draft.mediaOutputMode,
@@ -402,13 +413,16 @@ enum ConfigurationAggregateCandidateBuilder {
     ) -> [RecordCardPresentationStyle: Template] {
         Dictionary(
             uniqueKeysWithValues:
-                RecordCardPresentationStyle.allCases.map { style in
+                RecordCardPresentationStyle
+                    .legacyTemplateBackedStyles
+                    .map { style in
                     let base = existing[style]
                         ?? existing[.classicWhite]
                         ?? Template.classicWhite
-                    let styleDrafts = draft
-                        .regionDraftsByPresentationStyle[style]
-                        ?? draft.regionDrafts
+                    // FM edits must never be copied into an absent legacy buffer.
+                    guard let styleDrafts = draft.regionDraftsByPresentationStyle[style]
+                        ?? (draft.presentationRoute == .filmMark ? nil : draft.regionDrafts)
+                    else { return (style, base) }
                     return (
                         style,
                         template(
@@ -418,6 +432,22 @@ enum ConfigurationAggregateCandidateBuilder {
                         )
                     )
                 }
+        )
+    }
+
+    private static func filmMarkContent(
+        basedOn existing: FilmMarkContentSchemaV2?,
+        draft: ConfigurationAggregateDraft
+    ) -> FilmMarkContentSchemaV2? {
+        guard let contentDraft = draft.regionDraftsByPresentationStyle[.filmMark]?[.slotA]
+            ?? (draft.presentationRoute == .filmMark ? draft.regionDrafts[.slotA] : nil)
+        else { return existing }
+        return FilmMarkContentSchemaV2(
+            primaryOutputItems: area(
+                basedOn: existing?.primaryOutput
+                    ?? TemplateArea(name: "FilmMark", items: []),
+                draft: contentDraft
+            ).items
         )
     }
 

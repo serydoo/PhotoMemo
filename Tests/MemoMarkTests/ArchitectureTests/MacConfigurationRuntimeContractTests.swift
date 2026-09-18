@@ -49,9 +49,11 @@ struct MacConfigurationRuntimeContractTests {
 
         #expect(source.contains("MacConfigurationWorkspaceRoute"))
         #expect(source.contains("case cardContent"))
+        #expect(source.contains("case filmMarkDetails"))
         #expect(source.contains("case timeAndPlace"))
         #expect(source.contains("inspectorRoute"))
         #expect(source.contains("inspectorRoute = .cardContent"))
+        #expect(source.contains("inspectorRoute = .filmMarkDetails"))
         #expect(source.contains("inspectorRoute = .timeAndPlace"))
         #expect(source.contains("DispatchQueue.main.async"))
     }
@@ -113,6 +115,34 @@ struct MacConfigurationRuntimeContractTests {
 
         #expect(source.contains(".commands"))
         #expect(source.contains("InspectorCommands()"))
+    }
+
+    @Test("macOS draft editing exposes standard undo and redo commands")
+    func macDraftEditingExposesUndoRedoCommands() throws {
+        let appSource = try Self.source(
+            at: "Source/MemoMark/MemoMark/App/MemoMarkApp.swift"
+        )
+        let editingSource = try Self.source(
+            at: "Source/MemoMark/MemoMark/ConfigurationCenter/MacConfigurationEditingContext.swift"
+        )
+
+        #expect(appSource.contains("MacConfigurationUndoCommands()"))
+        #expect(appSource.contains(".undoRedo"))
+        #expect(editingSource.contains("MacConfigurationUndoCoordinator"))
+        #expect(editingSource.contains("MacConfigurationDraftSnapshot"))
+    }
+
+    @Test("macOS card editing reveals selected regions and focuses new text")
+    func macCardEditingRevealsAndFocuses() throws {
+        let source = try Self.source(
+            at: "Source/MemoMark/MemoMark/ConfigurationCenter/MacConfigurationCenterPage.swift"
+        )
+
+        #expect(source.contains("ScrollViewReader"))
+        #expect(source.contains("revealSelectedRegion"))
+        #expect(source.contains(".focused($focusedTextItemID"))
+        #expect(source.contains("appendTextInput()"))
+        #expect(source.contains(".id(region)"))
     }
 
     private static func source(at relativePath: String) throws -> String {

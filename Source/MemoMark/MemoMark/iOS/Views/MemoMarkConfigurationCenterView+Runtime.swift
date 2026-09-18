@@ -93,6 +93,8 @@ extension MemoMarkConfigurationCenterView {
                     outputDraftState.configurationAlbumTitle,
                 livePhotoPolicy: outputDraftState.livePhotoPolicy,
                 presentationRoute: presentationStyle,
+                filmMarkConfiguration:
+                    rootConfigurationProjectionState.filmMarkConfiguration,
                 selectedTimeAnchorID: session.selectedTimeAnchorID,
                 language: session.language,
                 savedAt: Date()
@@ -383,6 +385,8 @@ extension MemoMarkConfigurationCenterView {
         customLogoBadge = projection.badge
         logoMode = projection.logoMode
         presentationStyle = projection.route
+        rootConfigurationProjectionState.filmMarkConfiguration =
+            projection.filmMarkConfiguration
         locationDisplayConfiguration =
             projection.locationConfiguration
         session.language = projection.language

@@ -82,7 +82,7 @@ struct LocalizationResourceParityTests {
             "settings.interface.description",
             "settings.getting_started.title",
             "settings.getting_started.detail",
-            "settings.expression_guide.title",
+            "settings.guide.expression.title",
             "settings.photo_processing.title",
             "settings.support.title",
             "settings.data_safety.title",

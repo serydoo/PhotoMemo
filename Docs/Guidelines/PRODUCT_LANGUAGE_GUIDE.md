@@ -94,7 +94,7 @@ the subtitle:
 | Title | Subtitle role |
 | --- | --- |
 | `时间锚点` editor | `选择一个时间锚点，让照片拥有时间答案。` |
-| `这一刻怎样表达` | `表达方式：自然（默认） · 随时间变化` |
+| `MemoMark 怎么讲述时间` | `看看时间锚点如何让照片在之前、当天和之后说出不同的话。` |
 | `表达方式` | `围绕时间锚点，可选择 5 种表达方式。` The number comes from the current available styles. |
 | `卡片样式` | `选择照片卡片的整体视觉风格。` |
 | `我的预设` | `下一次分享，照片会怎样呈现。` |
@@ -111,9 +111,15 @@ collapsed summary, quieter once the real control is visible. Do not add
 
 ### Configuration Center Expression And Style Terms
 
+The iOS `胶片样式与细节` entry uses `查看字体，选择日期与地点的显示方式。`.
+Its secondary page contains font and time/location settings. Size, colors
+(including custom color), and substrate remain on the primary configuration
+surface and must not be advertised again as secondary settings. The macOS
+inspector retains its complete style-control description.
+
 The Configuration Center keeps two adjacent decisions deliberately separate:
 
-- `这一刻怎样表达` is the user-facing entry for the time-aware Memory
+- `时间怎样表达` is the user-facing entry for the optional time-aware Memory
   Expression result. It explains how the photo speaks about the moment before,
   on, or after the selected Time Anchor.
 - `表达方式` is the selectable expression choice inside that section. It
@@ -133,6 +139,27 @@ The internal model names remain implementation details:
 `MemoryAnchorExpressionStyle` and `RecordCardPresentationStyle`. User-facing
 copy should use `表达方式` and `卡片样式` so first-time users can identify what
 they are choosing without knowing the renderer or layout architecture.
+
+The expression section uses `为年龄、纪念日或倒计时选择合适的语气。` and
+five horizontal choices from the active anchor's existing catalog. The result
+below is `表达示例`, not a promise that it is the authored card's complete text.
+Its quiet scope note is `可在“卡片内容”中选择是否加入时间表达；只保留日期、地点或自己的文字也可以。`
+Selecting a tone must never insert content or rewrite the user's words.
+
+FM configuration descriptions should identify the visible object and effect:
+
+- Card content: `选择照片上显示的文字和信息。`
+- Position: `选择文字在照片中的位置，并微调。`
+- Initial position: `从照片左下或右下开始放置文字。`
+- Fine adjustment: `每次移动照片尺寸的 0.5%，轻调到合适的位置。`
+- Font: `使用清晰、耐读的等宽字体。`
+- Size: `调整文字大小，让照片上的信息清晰易读。`
+- Color: retain `选择一种更接近这段回忆的颜色。`
+- Substrate: `为文字添加衬底或阴影，让它在照片上更清楚。`
+
+Do not describe size storage ratios, internal coordinates, or renderer details
+as the primary helper copy. These descriptions also apply when the card has
+only photo facts or user-authored text and no time expression.
 
 ### Memory Subject Identity Terms
 

@@ -189,6 +189,18 @@ struct MemoMarkConfigurationCenterView: View {
         }
     }
 
+    var filmMarkConfigurationBinding:
+        Binding<FilmMarkConfiguration> {
+        Binding(
+            get: { rootConfigurationProjectionState.filmMarkConfiguration },
+            set: {
+                rootConfigurationProjectionState.filmMarkConfiguration = $0
+                activeConfigurationStatus = .dirty
+                refreshDynamicPreview()
+            }
+        )
+    }
+
     var birthdayDate: Date {
         get { rootConfigurationProjectionState.birthdayDate }
         nonmutating set {
@@ -334,6 +346,11 @@ struct MemoMarkConfigurationCenterView: View {
                 key: "极简",
                 fallback: "极简"
             )
+        case .filmMark:
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "胶片时间",
+                fallback: "胶片时间"
+            )
         }
     }
 
@@ -348,6 +365,11 @@ struct MemoMarkConfigurationCenterView: View {
             MemoMarkLanguage.interfaceStored.localized(
                 key: "一处组合内容，安静地补充这张照片的时间答案。",
                 fallback: "一处组合内容，安静地补充这张照片的时间答案。"
+            )
+        case .filmMark:
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "将时间和回忆放在照片的一角，像一张留住当天的胶片。",
+                fallback: "将时间和回忆放在照片的一角，像一张留住当天的胶片。"
             )
         }
     }
@@ -380,7 +402,6 @@ struct MemoMarkConfigurationCenterView: View {
                 customLogoBadge =
                     projection.customLogoBadge
                 logoMode = projection.logoMode
-
                 outputDraftState.outputTarget =
                     projection.outputTarget
                 outputDraftState.mediaOutputMode =
@@ -720,6 +741,8 @@ struct MemoMarkConfigurationCenterView: View {
                     $rootConfigurationProjectionState.logoMode,
                 presentationStyle:
                     $rootConfigurationProjectionState.presentationStyle,
+                filmMarkConfiguration:
+                    $rootConfigurationProjectionState.filmMarkConfiguration,
                 customLogoBadge:
                     $rootConfigurationProjectionState.customLogoBadge,
                 outputTarget: $outputDraftState.outputTarget,

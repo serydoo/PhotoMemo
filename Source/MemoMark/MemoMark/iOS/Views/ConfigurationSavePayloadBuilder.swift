@@ -39,6 +39,7 @@ struct ConfigurationSavePayloadInput {
         MemoryConfigurationRecord.Output.LivePhotoPolicy
     let presentationRoute:
         MemoryConfigurationRecord.Presentation.Route
+    let filmMarkConfiguration: FilmMarkConfiguration
     let selectedTimeAnchorID: UUID?
     let language: MemoMarkLanguage
     let savedAt: Date
@@ -116,6 +117,7 @@ enum ConfigurationSavePayloadBuilder {
             mediaOutputMode: sourceCompatibleMediaOutputMode,
             livePhotoPolicy: sourceCompatibleLivePhotoPolicy,
             presentationRoute: input.presentationRoute,
+            filmMarkConfiguration: input.filmMarkConfiguration,
             selectedTimeAnchorID: input.selectedTimeAnchorID,
             savedAt: input.savedAt,
             language: input.language

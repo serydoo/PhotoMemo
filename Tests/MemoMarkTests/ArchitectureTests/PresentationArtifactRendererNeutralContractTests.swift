@@ -107,6 +107,23 @@ struct PresentationArtifactRendererNeutralContractTests {
         _ = try artifact.validatedForEncoder()
     }
 
+    @Test("Layer-only full-canvas artifacts use floating compatibility semantics")
+    func layerOnlyFullCanvasArtifactUsesFloatingSemantics() throws {
+        let overlayImage = try makeSolidImage(width: 100, height: 100)
+        let canvas = CGRect(x: 0, y: 0, width: 100, height: 100)
+
+        let artifact = try PresentationArtifact(
+            canvasSize: canvas.size,
+            photoFrame: canvas,
+            layers: [.init(frame: canvas, image: overlayImage, zIndex: 100)],
+            canvasBackground: .transparent
+        )
+
+        #expect(artifact.placement == .floating)
+        #expect(artifact.footerFrame == canvas)
+        _ = try artifact.validatedForEncoder()
+    }
+
     @Test("Static export compositor draws floating artifact layers by frame")
     func staticExportCompositorDrawsFloatingLayersByFrame() throws {
         let sourceImage = try makeSolidImage(

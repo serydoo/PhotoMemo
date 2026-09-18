@@ -11,6 +11,32 @@ struct MemoryCardPreviewSurface: View {
     let timeText: String
     let contextText: String
     let memoryText: String
+    let filmMarkOutputText: String
+    let filmMarkConfiguration: FilmMarkConfiguration
+
+    init(
+        presentationStyle: RecordCardPresentationStyle,
+        logoMode: ConfigurationLogoMode,
+        customLogoImagePath: String?,
+        subjectAvatarLogoImagePath: String?,
+        regionText: String,
+        timeText: String,
+        contextText: String,
+        memoryText: String,
+        filmMarkOutputText: String = "",
+        filmMarkConfiguration: FilmMarkConfiguration = .default
+    ) {
+        self.presentationStyle = presentationStyle
+        self.logoMode = logoMode
+        self.customLogoImagePath = customLogoImagePath
+        self.subjectAvatarLogoImagePath = subjectAvatarLogoImagePath
+        self.regionText = regionText
+        self.timeText = timeText
+        self.contextText = contextText
+        self.memoryText = memoryText
+        self.filmMarkOutputText = filmMarkOutputText
+        self.filmMarkConfiguration = filmMarkConfiguration
+    }
 
     @ViewBuilder
     var body: some View {
@@ -63,7 +89,25 @@ struct MemoryCardPreviewSurface: View {
                         minimalPreviewCard(size: proxy.size)
                     }
                 }
+        case .filmMark:
+            FilmMarkPreviewSurface(
+                content: FilmMarkContentProjection(
+                    primaryOutput: filmMarkPreviewText
+                ),
+                configuration: filmMarkConfiguration,
+                showsPlacementGuide: true
+            )
+            .frame(maxWidth: .infinity)
         }
+    }
+
+    private var filmMarkPreviewText: String {
+        // An empty FM draft must remain empty. A hard-coded authored sentence
+        // would make the preview look healthy while production correctly has
+        // no content to render; the preview surface shows a neutral diagnostic
+        // instead of inventing memory content.
+        filmMarkOutputText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func minimalPreviewCard(size: CGSize) -> some View {

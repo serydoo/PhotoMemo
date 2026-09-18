@@ -11,6 +11,8 @@ struct MemoryCardPreviewSection: View {
     let timeText: String
     let contextText: String
     let memoryText: String
+    let filmMarkOutputText: String
+    let filmMarkConfiguration: FilmMarkConfiguration
     let onTap: (() -> Void)?
 
     var body: some View {
@@ -23,7 +25,9 @@ struct MemoryCardPreviewSection: View {
             regionText: regionText,
             timeText: timeText,
             contextText: contextText,
-            memoryText: memoryText
+            memoryText: memoryText,
+            filmMarkOutputText: filmMarkOutputText,
+            filmMarkConfiguration: filmMarkConfiguration
         )
         .contentShape(Rectangle())
         .onTapGesture {

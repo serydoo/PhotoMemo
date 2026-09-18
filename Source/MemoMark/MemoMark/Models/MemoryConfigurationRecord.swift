@@ -40,6 +40,7 @@ struct MemoryConfigurationRecord:
             [RecordCardPresentationStyle: Template]
         var regionTemplateIDs: [CardRegion: String]
         var memoryCopy: MemoryCopy
+        var filmMarkContent: FilmMarkContentSchemaV2?
 
         private enum CodingKeys:
             String,
@@ -49,6 +50,7 @@ struct MemoryConfigurationRecord:
             case templatesByPresentationStyle
             case regionTemplateIDs
             case memoryCopy
+            case filmMarkContent
         }
 
         init(
@@ -56,19 +58,28 @@ struct MemoryConfigurationRecord:
             templatesByPresentationStyle:
                 [RecordCardPresentationStyle: Template] = [:],
             regionTemplateIDs: [CardRegion: String],
-            memoryCopy: MemoryCopy
+            memoryCopy: MemoryCopy,
+            filmMarkContent: FilmMarkContentSchemaV2? = nil
         ) {
             self.template = template
             self.templatesByPresentationStyle =
-                templatesByPresentationStyle
+                templatesByPresentationStyle.filter {
+                    RecordCardPresentationStyle
+                        .legacyTemplateBackedStyles
+                        .contains($0.key)
+                }
             self.regionTemplateIDs = regionTemplateIDs
             self.memoryCopy = memoryCopy
+            self.filmMarkContent = filmMarkContent
         }
 
         func template(
             for style: RecordCardPresentationStyle
         ) -> Template {
-            templatesByPresentationStyle[style]
+            if style == .filmMark, let filmMarkContent {
+                return filmMarkContent.compositionTemplate(basedOn: template)
+            }
+            return templatesByPresentationStyle[style]
                 ?? template
         }
 
@@ -105,7 +116,11 @@ struct MemoryConfigurationRecord:
                         "Duplicate presentation style template: \(duplicate.style.rawValue)"
                 )
             }
-            self.templatesByPresentationStyle = styleBindings.reduce(
+            self.templatesByPresentationStyle = styleBindings.filter {
+                RecordCardPresentationStyle
+                    .legacyTemplateBackedStyles
+                    .contains($0.style)
+            }.reduce(
                 into: [:]
             ) { result, binding in
                 result[binding.style] = binding.template
@@ -135,6 +150,9 @@ struct MemoryConfigurationRecord:
                 MemoryCopy.self,
                 forKey: .memoryCopy
             )
+            self.filmMarkContent = try container.decodeIfPresent(
+                FilmMarkContentSchemaV2.self, forKey: .filmMarkContent
+            )
         }
 
         func encode(to encoder: Encoder) throws {
@@ -146,6 +164,11 @@ struct MemoryConfigurationRecord:
                 forKey: .template
             )
             let styleBindings = templatesByPresentationStyle
+                .filter {
+                    RecordCardPresentationStyle
+                        .legacyTemplateBackedStyles
+                        .contains($0.key)
+                }
                 .map { style, template in
                     PresentationStyleTemplateBinding(
                         style: style,
@@ -178,6 +201,7 @@ struct MemoryConfigurationRecord:
                 memoryCopy,
                 forKey: .memoryCopy
             )
+            try container.encodeIfPresent(filmMarkContent, forKey: .filmMarkContent)
         }
     }
 
@@ -232,6 +256,7 @@ struct MemoryConfigurationRecord:
         var locationConfiguration:
             ExpressionModuleConfiguration?
         var logo: Logo
+        var filmMark: FilmMarkConfiguration
 
         private enum CodingKeys:
             String,
@@ -240,29 +265,46 @@ struct MemoryConfigurationRecord:
             case route
             case locationConfiguration
             case logo
+            case filmMark
         }
 
         init(
             route: Route,
             locationConfiguration: ExpressionModuleConfiguration?,
-            logo: Logo
+            logo: Logo,
+            filmMark: FilmMarkConfiguration = .default
         ) {
             self.route = route
             self.locationConfiguration = locationConfiguration
             self.logo = logo
+            self.filmMark = filmMark
         }
 
         init(from decoder: Decoder) throws {
             let container = try decoder.container(
                 keyedBy: CodingKeys.self
             )
-            let routeRawValue = try container.decodeIfPresent(
+            let route: Route
+            if let routeRawValue = try container.decodeIfPresent(
                 String.self,
                 forKey: .route
-            )
-            self.route = routeRawValue
-                .flatMap(Route.init(rawValue:))
-                ?? .classicWhite
+            ) {
+                guard let decodedRoute = Route(rawValue: routeRawValue) else {
+                    throw DecodingError.dataCorruptedError(
+                        forKey: .route,
+                        in: container,
+                        debugDescription:
+                            "Unknown presentation route: \(routeRawValue)"
+                    )
+                }
+                route = decodedRoute
+            } else {
+                // Records written before presentation routes existed remain
+                // Classic White for compatibility. An explicit but unknown
+                // route is malformed and must not be silently downgraded.
+                route = .classicWhite
+            }
+            self.route = route
             self.locationConfiguration = try container.decodeIfPresent(
                 ExpressionModuleConfiguration.self,
                 forKey: .locationConfiguration
@@ -271,6 +313,17 @@ struct MemoryConfigurationRecord:
                 Logo.self,
                 forKey: .logo
             )
+            if route == .filmMark {
+                self.filmMark = try container.decode(
+                    FilmMarkConfiguration.self,
+                    forKey: .filmMark
+                )
+            } else {
+                self.filmMark = try container.decodeIfPresent(
+                    FilmMarkConfiguration.self,
+                    forKey: .filmMark
+                ) ?? .default
+            }
         }
 
         func encode(to encoder: Encoder) throws {
@@ -289,6 +342,12 @@ struct MemoryConfigurationRecord:
                 logo,
                 forKey: .logo
             )
+            if route == .filmMark {
+                try container.encode(
+                    filmMark,
+                    forKey: .filmMark
+                )
+            }
         }
     }
 

@@ -535,7 +535,7 @@ struct SettingsPageSurface: View {
             .navigationTitle(
                 localized(
                     "settings.overview.title",
-                    fallback: "关于时光记"
+                    fallback: "关于 MemoMark 的诞生"
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
@@ -566,8 +566,8 @@ struct SettingsPageSurface: View {
             )
             .navigationTitle(
                 localized(
-                    "settings.expression_guide.title",
-                    fallback: "照片怎样讲述这一刻"
+                    "settings.guide.expression.title",
+                    fallback: "MemoMark 怎么讲述时间"
                 )
             )
             .navigationBarTitleDisplayMode(.inline)

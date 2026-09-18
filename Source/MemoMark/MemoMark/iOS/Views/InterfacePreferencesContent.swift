@@ -39,6 +39,7 @@ struct InterfacePreferencesContent: View {
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         } else {
             appearancePickerBase.pickerStyle(.segmented)
+                .tint(.accentColor)
         }
     }
 
@@ -57,6 +58,7 @@ struct InterfacePreferencesContent: View {
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         } else {
             interfaceLanguagePickerBase.pickerStyle(.segmented)
+                .tint(.accentColor)
         }
     }
 

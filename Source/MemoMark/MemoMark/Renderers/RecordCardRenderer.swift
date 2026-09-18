@@ -6,6 +6,7 @@ struct RecordCardRenderer: View {
 
         case classicWhite
         case minimal
+        case filmMark
     }
 
     let image: Image
@@ -25,6 +26,19 @@ struct RecordCardRenderer: View {
                 image: image,
                 card: card
             )
+        case .filmMark:
+            let canvasSize = FilmMarkRenderer.outputPixelSize(
+                for: card,
+                fallbackSize: CGSize(width: 1, height: 1)
+            )
+            FilmMarkCardRenderer(
+                image: image,
+                presentation: FilmMarkPresentationResolver
+                    .resolvedPresentation(
+                        for: card,
+                        canvasSize: canvasSize
+                    )
+            )
         }
     }
 
@@ -41,6 +55,7 @@ struct RecordCardRenderer: View {
         switch style {
         case .classicWhite: .classicWhite
         case .minimal: .minimal
+        case .filmMark: .filmMark
         }
     }
 

@@ -39,6 +39,61 @@ struct MacConfigurationEditingContextTests {
         )
     }
 
+    @MainActor
+    @Test("draft undo and redo stay inside the current editing session")
+    func draftUndoRedoRoundTrip() {
+        let firstDraft = MemoryCardEditorDraft(items: [.text("第一段")])
+        let secondDraft = MemoryCardEditorDraft(items: [.text("第二段")])
+        let first = MacConfigurationDraftSnapshot(
+            regionDraftsByPresentationStyle: [.classicWhite: [.slotA: firstDraft]]
+        )
+        let second = MacConfigurationDraftSnapshot(
+            regionDraftsByPresentationStyle: [.classicWhite: [.slotA: secondDraft]]
+        )
+        let history = MacConfigurationUndoCoordinator()
+        history.reset(to: first)
+        history.record(before: first, after: second)
+
+        #expect(history.canUndo)
+        #expect(!history.canRedo)
+        #expect(history.undo() == first)
+        #expect(history.canRedo)
+        #expect(history.redo() == second)
+    }
+
+    @MainActor
+    @Test("a new draft edit clears redo history")
+    func newDraftEditClearsRedoHistory() {
+        let first = MacConfigurationDraftSnapshot(
+            regionDraftsByPresentationStyle: [.classicWhite: [.slotA: .init(items: [.text("一")])]]
+        )
+        let second = MacConfigurationDraftSnapshot(
+            regionDraftsByPresentationStyle: [.classicWhite: [.slotA: .init(items: [.text("二")])]]
+        )
+        let third = MacConfigurationDraftSnapshot(
+            regionDraftsByPresentationStyle: [.classicWhite: [.slotA: .init(items: [.text("三")])]]
+        )
+        let history = MacConfigurationUndoCoordinator()
+        history.reset(to: first)
+        history.record(before: first, after: second)
+        #expect(history.undo() == first)
+        history.record(before: first, after: third)
+
+        #expect(!history.canRedo)
+        #expect(history.undo() == first)
+    }
+
+    @Test("adding a text item creates an editable empty input")
+    func appendTextInputCreatesEmptyTextItem() {
+        var draft = MemoryCardEditorDraft(items: [.text("已有内容")])
+
+        let itemID = draft.appendTextInput()
+
+        #expect(draft.items.last?.id == itemID)
+        #expect(draft.items.last?.kind == .text)
+        #expect(draft.items.last?.value == "")
+    }
+
     @Test("a Mac module draft retains its canonical token for saving")
     func moduleDraftRetainsCanonicalToken() {
         var draft = MemoryCardEditorDraft(items: [.text("")])

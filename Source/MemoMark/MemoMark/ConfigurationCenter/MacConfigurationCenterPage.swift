@@ -6,6 +6,7 @@ enum MacConfigurationWorkspaceRoute: String, Identifiable, Hashable {
     case subject
     case preset
     case cardContent
+    case filmMarkDetails
     case timeAndPlace
 
     var id: String { rawValue }
@@ -15,6 +16,7 @@ enum MacConfigurationWorkspaceRoute: String, Identifiable, Hashable {
         case .subject: return "记忆对象"
         case .preset: return "当前预设"
         case .cardContent: return "卡片内容"
+        case .filmMarkDetails: return "胶片样式与细节"
         case .timeAndPlace: return "时间与地点"
         }
     }
@@ -24,6 +26,7 @@ enum MacConfigurationWorkspaceRoute: String, Identifiable, Hashable {
         case .subject: return "person.crop.circle"
         case .preset: return "rectangle.stack.fill"
         case .cardContent: return "rectangle.3.group"
+        case .filmMarkDetails: return "paintpalette"
         case .timeAndPlace: return "clock.badge.checkmark"
         }
     }
@@ -81,6 +84,9 @@ struct MacConfigurationCenterPage: View {
 
     @State
     private var presentationStyle = RecordCardPresentationStyle.classicWhite
+
+    @State
+    private var filmMarkConfiguration = FilmMarkConfiguration.default
 
     @State
     private var logoMode = ConfigurationLogoMode.appleMini
@@ -161,6 +167,8 @@ struct MacConfigurationCenterPage: View {
             bootstrapRuntimeIfNeeded()
             presentationStyle = session.selectedMemoryConfiguration?.presentation.route
                 ?? .classicWhite
+            filmMarkConfiguration = session.selectedMemoryConfiguration?.presentation.filmMark
+                ?? .default
             logoMode = session.selectedMemoryConfiguration?.presentation.logo.mode
                 ?? session.state.selectedMemoryPreset?.logoMode
                 ?? .appleMini
@@ -209,9 +217,11 @@ struct MacConfigurationCenterPage: View {
                 configurationStatus: $configurationStatus,
                 onSelectPreset: { session.selectMemoryPreset($0) },
                 onInsertModule: { _ in },
+                onDraftChange: { _, _, _ in },
                 selectedLocationOptionID: nil,
                 selectedTimeOptionID: nil,
                 selectedTimeSupplement: nil,
+                filmMarkConfiguration: nil,
                 onSaveCardContent: {},
                 regionDrafts: nil,
                 presentationStyle: nil,
@@ -239,7 +249,9 @@ struct MacConfigurationCenterPage: View {
                     regionText: session.previewText(for: .slotA),
                     timeText: session.previewText(for: .slotB),
                     contextText: session.previewText(for: .slotC),
-                    memoryText: session.resolvedMemoryWriteText
+                    memoryText: session.resolvedMemoryWriteText,
+                    filmMarkOutputText: session.previewText(for: .slotA),
+                    filmMarkConfiguration: filmMarkConfiguration
                 )
                 .frame(
                     maxWidth: MacConfigurationCenterMetrics.previewWidth(
@@ -322,6 +334,7 @@ struct MacConfigurationCenterPage: View {
                 session: session,
                 commerceStore: commerceStore,
                 presentationStyle: $presentationStyle,
+                filmMarkConfiguration: $filmMarkConfiguration,
                 logoMode: $logoMode,
                 customLogoBadge: $customLogoBadge,
                 loadPhotoLibraryAlbums: loadPhotoLibraryAlbums,
@@ -520,6 +533,9 @@ private struct MacConfigurationSectionHeader: View {
 /// controls that still have iOS-specific persistence coordinators.
 private struct MacIOSConfigurationEditor: View {
 
+    @EnvironmentObject
+    private var undoCoordinator: MacConfigurationUndoCoordinator
+
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
 
@@ -531,6 +547,9 @@ private struct MacIOSConfigurationEditor: View {
 
     @Binding
     var presentationStyle: RecordCardPresentationStyle
+
+    @Binding
+    var filmMarkConfiguration: FilmMarkConfiguration
 
     @Binding
     var logoMode: ConfigurationLogoMode
@@ -588,6 +607,8 @@ private struct MacIOSConfigurationEditor: View {
                 disclosureState: $disclosureState,
                 subjectAvatarLogoImagePath: subjectAvatarLogoImagePath,
                 presentationStyle: presentationStyleBinding,
+                filmMarkConfiguration: filmMarkConfigurationBinding,
+                filmMarkOutputText: session.previewText(for: .slotA),
                 logoMode: $logoMode,
                 selectedLogoItem: $selectedLogoItem,
                 isLogoPickerPresented: $isLogoPickerPresented,
@@ -618,6 +639,9 @@ private struct MacIOSConfigurationEditor: View {
                 },
                 onOpenAdvancedModules: {
                     inspectorRoute = .timeAndPlace
+                },
+                onOpenFilmMarkDetails: {
+                    inspectorRoute = .filmMarkDetails
                 }
             )
 
@@ -628,6 +652,14 @@ private struct MacIOSConfigurationEditor: View {
         .padding(.vertical, 8)
         .macConfigurationCenterSurface()
         .onAppear(perform: synchronizeFromSession)
+        .onAppear {
+            undoCoordinator.setRestoreHandler { snapshot in
+                applyDraftSnapshot(snapshot)
+            }
+        }
+        .onDisappear {
+            undoCoordinator.clearRestoreHandler()
+        }
         .onChange(of: session.state.selectedSubjectID) { _, _ in
             synchronizeFromSession()
         }
@@ -655,9 +687,11 @@ private struct MacIOSConfigurationEditor: View {
                         requestMemoryPresetSelection(preset)
                     },
                     onInsertModule: insertModule,
+                    onDraftChange: recordDraftChange,
                     selectedLocationOptionID: selectedLocationOptionBinding,
                     selectedTimeOptionID: selectedTimeOptionBinding,
                     selectedTimeSupplement: selectedTimeSupplementBinding,
+                    filmMarkConfiguration: $filmMarkConfiguration,
                     onSaveCardContent: {
                         Task { await saveCurrentConfiguration() }
                     },
@@ -753,6 +787,17 @@ private struct MacIOSConfigurationEditor: View {
             get: { presentationStyle },
             set: {
                 presentationStyle = $0
+                configurationStatus = .dirty
+            }
+        )
+    }
+
+    private var filmMarkConfigurationBinding:
+        Binding<FilmMarkConfiguration> {
+        Binding(
+            get: { filmMarkConfiguration },
+            set: {
+                filmMarkConfiguration = $0
                 configurationStatus = .dirty
             }
         )
@@ -952,6 +997,8 @@ private struct MacIOSConfigurationEditor: View {
         }
         presentationStyle = savedConfiguration?.presentation.route
             ?? .classicWhite
+        filmMarkConfiguration = savedConfiguration?.presentation.filmMark
+            ?? .default
         logoMode = savedConfiguration?.presentation.logo.mode
             ?? session.state.selectedMemoryPreset?.logoMode
             ?? .appleMini
@@ -960,6 +1007,11 @@ private struct MacIOSConfigurationEditor: View {
         regionDraftsByPresentationStyle =
             savedProjection?.regionDraftsByPresentationStyle
             ?? defaultRegionDraftsByPresentationStyle()
+        undoCoordinator.reset(
+            to: MacConfigurationDraftSnapshot(
+                regionDraftsByPresentationStyle: regionDraftsByPresentationStyle
+            )
+        )
         timeDisplayConfiguration =
             configurationCoordinator.loadTimeDisplayConfiguration()
             ?? TimeDisplayInspectorPresenter.configuration(
@@ -1051,6 +1103,7 @@ private struct MacIOSConfigurationEditor: View {
 
     private func insertModule(_ module: CenterInsertableModule) {
         let region = session.smartModuleCarrierRegion
+        let before = regionDraftsByPresentationStyle
         var drafts = regionDraftsByPresentationStyle[presentationStyle]
             ?? defaultRegionDraftsByPresentationStyle()[presentationStyle]
             ?? [:]
@@ -1066,12 +1119,60 @@ private struct MacIOSConfigurationEditor: View {
         )
         drafts[region] = draft
         regionDraftsByPresentationStyle[presentationStyle] = drafts
+        undoCoordinator.record(
+            before: MacConfigurationDraftSnapshot(
+                regionDraftsByPresentationStyle: before
+            ),
+            after: MacConfigurationDraftSnapshot(
+                regionDraftsByPresentationStyle: regionDraftsByPresentationStyle
+            )
+        )
         session.appendPreviewModule(
             title: module.title,
             value: module.previewValue,
             systemImage: module.systemImage,
             token: module.centerToken
         )
+        configurationStatus = .dirty
+    }
+
+    private func recordDraftChange(
+        region: CardRegion,
+        before: MemoryCardEditorDraft,
+        after: MemoryCardEditorDraft
+    ) {
+        var beforeDrafts = regionDraftsByPresentationStyle
+        var afterDrafts = beforeDrafts
+        var beforeStyleDrafts = beforeDrafts[presentationStyle] ?? [:]
+        beforeStyleDrafts[region] = before
+        beforeDrafts[presentationStyle] = beforeStyleDrafts
+        var afterStyleDrafts = afterDrafts[presentationStyle] ?? [:]
+        afterStyleDrafts[region] = after
+        afterDrafts[presentationStyle] = afterStyleDrafts
+        undoCoordinator.record(
+            before: MacConfigurationDraftSnapshot(
+                regionDraftsByPresentationStyle: beforeDrafts
+            ),
+            after: MacConfigurationDraftSnapshot(
+                regionDraftsByPresentationStyle: afterDrafts
+            )
+        )
+    }
+
+    private func applyDraftSnapshot(
+        _ snapshot: MacConfigurationDraftSnapshot
+    ) {
+        regionDraftsByPresentationStyle =
+            snapshot.regionDraftsByPresentationStyle
+        for (style, drafts) in snapshot.regionDraftsByPresentationStyle
+        where style == presentationStyle {
+            for (region, draft) in drafts {
+                session.updateRegionPreview(
+                    region: region,
+                    text: draft.singleLineText
+                )
+            }
+        }
         configurationStatus = .dirty
     }
 
@@ -1217,6 +1318,7 @@ private struct MacIOSConfigurationEditor: View {
             mediaOutputMode: .originalFormat,
             livePhotoPolicy: .preserveMotion,
             presentationRoute: presentationStyle,
+            filmMarkConfiguration: filmMarkConfiguration,
             selectedTimeAnchorID: session.selectedTimeAnchorID,
             savedAt: Date(),
             language: session.language
@@ -1276,6 +1378,8 @@ private struct MacCardContentInspector: View {
         [RecordCardPresentationStyle: [CardRegion: MemoryCardEditorDraft]]
     >?
     let presentationStyle: RecordCardPresentationStyle?
+    let onDraftChange:
+        (CardRegion, MemoryCardEditorDraft, MemoryCardEditorDraft) -> Void
     let onDirty: () -> Void
 
     var body: some View {
@@ -1300,6 +1404,7 @@ private struct MacCardContentInspector: View {
                     presentationStyle: presentationStyle,
                     regionDrafts: regionDrafts,
                     onInsertModule: onInsertModule,
+                    onDraftChange: onDraftChange,
                     onDirty: onDirty
                 )
             } else {
@@ -1334,6 +1439,8 @@ private struct MacRegionDraftEditor: View {
         [RecordCardPresentationStyle: [CardRegion: MemoryCardEditorDraft]]
     >
     let onInsertModule: (CenterInsertableModule) -> Void
+    let onDraftChange:
+        (CardRegion, MemoryCardEditorDraft, MemoryCardEditorDraft) -> Void
     let onDirty: () -> Void
 
     private var editableRegions: [CardRegion] {
@@ -1354,6 +1461,7 @@ private struct MacRegionDraftEditor: View {
                     },
                     onDirty: onDirty
                 )
+                .id(region)
             }
         }
         .accessibilityIdentifier("mac.configurationCenter.cardContent.editor")
@@ -1368,6 +1476,9 @@ private struct MacRegionDraftEditor: View {
             set: { nextDraft in
                 var byStyle = regionDrafts.wrappedValue
                 var drafts = byStyle[presentationStyle] ?? [:]
+                let previousDraft = drafts[region]
+                    ?? MemoryCardEditorDraft(items: [.text("")])
+                onDraftChange(region, previousDraft, nextDraft)
                 drafts[region] = nextDraft
                 byStyle[presentationStyle] = drafts
                 regionDrafts.wrappedValue = byStyle
@@ -1389,6 +1500,12 @@ private struct MacRegionDraftRow: View {
     @Binding var draft: MemoryCardEditorDraft
     let onInsertModule: (CenterInsertableModule) -> Void
     let onDirty: () -> Void
+
+    @FocusState
+    private var focusedTextItemID: UUID?
+
+    @State
+    private var shouldFocusTrailingTextInput = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -1421,6 +1538,7 @@ private struct MacRegionDraftRow: View {
             Menu {
                 ForEach(availableModules) { module in
                     Button {
+                        shouldFocusTrailingTextInput = true
                         onInsertModule(module)
                     } label: {
                         Label(module.title, systemImage: module.systemImage)
@@ -1436,29 +1554,57 @@ private struct MacRegionDraftRow: View {
     }
 
     private var editorStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(draft.items) { item in
-                    itemEditor(item)
-                }
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(draft.items) { item in
+                        itemEditor(item)
+                            .id(item.id)
+                    }
 
-                Button {
-                    var nextDraft = draft
-                    nextDraft.appendText("")
-                    draft = nextDraft
-                    session.updateRegionPreview(
-                        region: region,
-                        text: nextDraft.singleLineText
-                    )
-                    onDirty()
-                } label: {
-                    Label("文字", systemImage: "text.cursor")
-                        .font(.caption.weight(.medium))
+                    Button {
+                        var nextDraft = draft
+                        let itemID = nextDraft.appendTextInput()
+                        draft = nextDraft
+                        session.updateRegionPreview(
+                            region: region,
+                            text: nextDraft.singleLineText
+                        )
+                        onDirty()
+                        focusedTextItemID = itemID
+                        withAnimation(.snappy) {
+                            proxy.scrollTo(itemID, anchor: .trailing)
+                        }
+                    } label: {
+                        Label("文字", systemImage: "text.cursor")
+                            .font(.caption.weight(.medium))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .padding(.vertical, 2)
             }
-            .padding(.vertical, 2)
+            .onChange(of: focusedTextItemID) { _, itemID in
+                guard let itemID else {
+                    return
+                }
+                withAnimation(.snappy) {
+                    proxy.scrollTo(itemID, anchor: .center)
+                }
+            }
+            .onChange(of: draft.items) { _, _ in
+                guard shouldFocusTrailingTextInput else {
+                    return
+                }
+                shouldFocusTrailingTextInput = false
+                guard let itemID = draft.items.last(where: { $0.kind == .text })?.id else {
+                    return
+                }
+                focusedTextItemID = itemID
+                withAnimation(.snappy) {
+                    proxy.scrollTo(itemID, anchor: .trailing)
+                }
+            }
         }
         .frame(minHeight: 42)
         .padding(.horizontal, 8)
@@ -1491,6 +1637,7 @@ private struct MacRegionDraftRow: View {
                 text: textBinding(for: item)
             )
             .textFieldStyle(.roundedBorder)
+            .focused($focusedTextItemID, equals: item.id)
             .frame(minWidth: max(120, min(280, CGFloat(max(item.value.count, 6)) * 12)))
             .accessibilityIdentifier(
                 "mac.configurationCenter.cardContent.\(region.rawValue).text.\(item.id.uuidString)"
@@ -1769,6 +1916,8 @@ struct ConfigurationCompactSectionRow: View {
     let isExpanded: Bool
     let expandedAccessibilityLabel: String
     let collapsedAccessibilityLabel: String
+    var keepsResultOnSingleLine: Bool = false
+    var resultMaximumWidth: CGFloat = ConfigurationUI.compactTrailingControlWidth
     let action: () -> Void
 
     var body: some View {
@@ -1793,8 +1942,14 @@ struct ConfigurationCompactSectionRow: View {
                 Text(localized(resultTitle))
                     .font(.caption.weight(.medium))
                     .foregroundStyle(isExpanded ? .secondary : .primary)
-                    .lineLimit(2)
+                    .lineLimit(keepsResultOnSingleLine ? 1 : 2)
+                    .truncationMode(.tail)
                     .multilineTextAlignment(.trailing)
+                    .frame(
+                        minWidth: 72,
+                        maxWidth: resultMaximumWidth,
+                        alignment: .trailing
+                    )
 
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                     .font(.caption.weight(.semibold))
@@ -2256,9 +2411,12 @@ private struct MacConfigurationInspector: View {
 
     let onSelectPreset: (MemoryPreset) -> Void
     let onInsertModule: (CenterInsertableModule) -> Void
+    let onDraftChange:
+        (CardRegion, MemoryCardEditorDraft, MemoryCardEditorDraft) -> Void
     let selectedLocationOptionID: Binding<String>?
     let selectedTimeOptionID: Binding<String>?
     let selectedTimeSupplement: Binding<TimeDisplayConfiguration.Supplement>?
+    let filmMarkConfiguration: Binding<FilmMarkConfiguration>?
     let onSaveCardContent: () -> Void
     let regionDrafts: Binding<
         [RecordCardPresentationStyle: [CardRegion: MemoryCardEditorDraft]]
@@ -2286,10 +2444,18 @@ private struct MacConfigurationInspector: View {
 
             Divider()
 
-            ScrollView {
-                inspectorContent
-                    .padding(24)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    inspectorContent
+                        .padding(24)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .onAppear {
+                    revealSelectedRegion(using: proxy)
+                }
+                .onChange(of: session.state.selectedRegion) { _, _ in
+                    revealSelectedRegion(using: proxy)
+                }
             }
         }
         .background(ConfigurationUI.appBackground)
@@ -2304,6 +2470,20 @@ private struct MacConfigurationInspector: View {
             max: presentation == .inspector ? 520 : nil
         )
         .onAppear(perform: prepareSubjectFlow)
+    }
+
+    private func revealSelectedRegion(
+        using proxy: ScrollViewProxy
+    ) {
+        guard route == .cardContent else {
+            return
+        }
+        let region = session.state.selectedRegion
+        DispatchQueue.main.async {
+            withAnimation(.snappy) {
+                proxy.scrollTo(region, anchor: .center)
+            }
+        }
     }
 
     @ViewBuilder
@@ -2340,8 +2520,22 @@ private struct MacConfigurationInspector: View {
                 onInsertModule: onInsertModule,
                 regionDrafts: regionDrafts,
                 presentationStyle: presentationStyle,
+                onDraftChange: onDraftChange,
                 onDirty: onDirty
             )
+        case .filmMarkDetails:
+            if let filmMarkConfiguration {
+                FilmMarkConfigurationControls(
+                    configuration: filmMarkConfiguration,
+                    onChange: onDirty
+                )
+            } else {
+                ContentUnavailableView(
+                    "胶片样式暂不可编辑",
+                    systemImage: "paintpalette",
+                    description: Text("请从配置列表打开此编辑器。")
+                )
+            }
         case .timeAndPlace:
             if let selectedLocationOptionID,
                let selectedTimeOptionID,

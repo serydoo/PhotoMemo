@@ -240,6 +240,10 @@ extension MemoMarkConfigurationCenterView {
                 resolvedSubjectAvatarLogoImagePath,
             presentationStyle:
                 presentationStyleBinding,
+            filmMarkConfiguration:
+                filmMarkConfigurationBinding,
+            filmMarkOutputText:
+                filmMarkPreviewText,
             logoMode: logoModeSelectionBinding,
             selectedLogoItem:
                 $rootPresentationState.mediaPickerPresentation.selectedLogoItem,
@@ -336,7 +340,8 @@ extension MemoMarkConfigurationCenterView {
                 resetCardEditorState()
                 rootPresentationState.showsRegionContentSheet = true
             },
-            onOpenAdvancedModules: nil
+            onOpenAdvancedModules: nil,
+            onOpenFilmMarkDetails: nil
         )
     }
 

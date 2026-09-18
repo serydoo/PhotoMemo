@@ -145,11 +145,13 @@ struct ConfigurationResultLabel: View {
     let accessibilityLabel: String
     let accessibilityValue: String
     let isProminent: Bool
+    var keepsOnSingleLine: Bool = false
 
     var body: some View {
         Text(localized(title))
             .font(.caption.weight(.medium))
-            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
+            .lineLimit(keepsOnSingleLine ? 1 : (dynamicTypeSize.isAccessibilitySize ? 3 : 2))
+            .truncationMode(.tail)
             .allowsTightening(!dynamicTypeSize.isAccessibilitySize)
             .fixedSize(horizontal: false, vertical: true)
             .foregroundStyle(isProminent ? .primary : .secondary)
@@ -186,6 +188,8 @@ struct ConfigurationCompactSectionRow: View {
     let isExpanded: Bool
     let expandedAccessibilityLabel: String
     let collapsedAccessibilityLabel: String
+    var keepsResultOnSingleLine: Bool = false
+    var resultMaximumWidth: CGFloat = ConfigurationUI.compactTrailingControlWidth
     let action: () -> Void
 
     var body: some View {
@@ -208,8 +212,16 @@ struct ConfigurationCompactSectionRow: View {
 
                         Spacer(minLength: 0)
 
-                        resultLabel
-                        disclosureIndicator
+                        HStack(spacing: 4) {
+                            resultLabel
+                            disclosureIndicator
+                        }
+                        .frame(
+                            minWidth: 72,
+                            maxWidth: resultMaximumWidth,
+                            alignment: .trailing
+                        )
+                        .layoutPriority(0)
                     }
                 }
             }
@@ -239,22 +251,7 @@ struct ConfigurationCompactSectionRow: View {
     }
 
     private var heading: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(localized(title))
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-                .allowsTightening(true)
-                .accessibilityAddTraits(.isHeader)
-
-            Text(localized(subtitle))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.82)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+        ConfigurationFieldHeading(title: title, subtitle: subtitle)
     }
 
     private var resultLabel: some View {
@@ -262,7 +259,8 @@ struct ConfigurationCompactSectionRow: View {
             title: resultTitle,
             accessibilityLabel: resultAccessibilityLabel,
             accessibilityValue: resultAccessibilityValue,
-            isProminent: !isExpanded
+            isProminent: !isExpanded,
+            keepsOnSingleLine: keepsResultOnSingleLine
         )
         .layoutPriority(0)
     }

@@ -45,6 +45,8 @@ Skipping research or specification before renderer changes is prohibited.
 - `ResearchHistory.md`
 - `MeasurementMethodology.md`
 - `ExpressionStyles/`
+- `ExpressionStyles/FilmMark-Renderer-Spec-2026-09-14.md` -> FM independent
+  Renderer specification; Classic White and Minimal remain frozen
 - `Iconography/`
 - `ConfigurationCenterWindowSpecification.md`
 

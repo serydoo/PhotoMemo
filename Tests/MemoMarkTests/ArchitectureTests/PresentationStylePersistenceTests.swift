@@ -123,6 +123,62 @@ struct PresentationStylePersistenceTests {
         #expect(decoded.route == .minimal)
     }
 
+    @Test("Classic and Minimal presentations do not encode FM payload")
+    func nonFilmMarkPresentationsDoNotEncodeFilmMarkPayload() throws {
+        for route in [
+            RecordCardPresentationStyle.classicWhite,
+            RecordCardPresentationStyle.minimal
+        ] {
+            let object = try #require(
+                JSONSerialization.jsonObject(
+                    with: JSONEncoder().encode(
+                        makePresentation(route: route)
+                    )
+                ) as? [String: Any]
+            )
+
+            #expect(object["filmMark"] == nil)
+        }
+    }
+
+    @Test("FilmMark appearance and placement survive a persistence round trip")
+    func filmMarkConfigurationRoundTrip() throws {
+        let configuration = FilmMarkConfiguration(
+            appearance: FilmMarkAppearanceDraft(
+                fontID: .spaceMono,
+                fontSize: .prominent,
+                color: FilmMarkRGBAColor(
+                    red: 0.17,
+                    green: 0.64,
+                    blue: 0.92,
+                    alpha: 0.82
+                ),
+                substrate: .translucentLabel
+            ),
+            placement: FilmMarkPlacementDraft(
+                anchor: .bottomLeft,
+                normalizedOffset: FilmMarkNormalizedOffset(
+                    x: 0.125,
+                    y: -0.075
+                )
+            )
+        )
+        let presentation = MemoryConfigurationRecord.Presentation(
+            route: .filmMark,
+            locationConfiguration: nil,
+            logo: .init(mode: .appleMini, badge: nil),
+            filmMark: configuration
+        )
+
+        let decoded = try JSONDecoder().decode(
+            MemoryConfigurationRecord.Presentation.self,
+            from: JSONEncoder().encode(presentation)
+        )
+
+        #expect(decoded.route == .filmMark)
+        #expect(decoded.filmMark == configuration)
+    }
+
     @Test("A legacy presentation without a route defaults to classic white")
     func missingRouteDefaultsToClassicWhite() throws {
         let data = try encodedPresentationObject(route: .minimal) { object in
@@ -138,19 +194,33 @@ struct PresentationStylePersistenceTests {
         #expect(decoded.logo.mode == .appleMini)
     }
 
-    @Test("An unknown presentation route safely defaults to classic white")
-    func unknownRouteDefaultsToClassicWhite() throws {
+    @Test("An explicit unknown presentation route fails closed")
+    func unknownRouteFailsClosed() throws {
         let data = try encodedPresentationObject(route: .minimal) { object in
             object["route"] = "futureStyle"
         }
 
-        let decoded = try JSONDecoder().decode(
-            MemoryConfigurationRecord.Presentation.self,
-            from: data
-        )
+        #expect(throws: DecodingError.self) {
+            _ = try JSONDecoder().decode(
+                MemoryConfigurationRecord.Presentation.self,
+                from: data
+            )
+        }
+    }
 
-        #expect(decoded.route == .classicWhite)
-        #expect(decoded.logo.mode == .appleMini)
+    @Test("An explicit FilmMark route fails closed without its payload")
+    func explicitFilmMarkRouteFailsClosedWithoutPayload() throws {
+        let data = try encodedPresentationObject(route: .minimal) { object in
+            object["route"] = RecordCardPresentationStyle.filmMark.rawValue
+            object.removeValue(forKey: "filmMark")
+        }
+
+        #expect(throws: DecodingError.self) {
+            _ = try JSONDecoder().decode(
+                MemoryConfigurationRecord.Presentation.self,
+                from: data
+            )
+        }
     }
 
     @Test("Editor persists independent templates for each presentation style")
@@ -189,6 +259,161 @@ struct PresentationStylePersistenceTests {
             decoded.template(for: .classicWhite)
                 != decoded.template(for: .minimal)
         )
+    }
+
+    @Test("FM does not enter the legacy template transport dictionary")
+    func filmMarkDoesNotEnterLegacyTemplateTransportDictionary() throws {
+        let editor = MemoryConfigurationRecord.Editor(
+            template: .classicWhite,
+            templatesByPresentationStyle: [
+                .classicWhite: .classicWhite,
+                .minimal: .classicWhite,
+                .filmMark: .classicWhite
+            ],
+            regionTemplateIDs: [:],
+            memoryCopy: .init(
+                usesCustomText: false,
+                customText: ""
+            )
+        )
+
+        let object = try #require(
+            JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(editor)
+            ) as? [String: Any]
+        )
+        let bindings = try #require(
+            object["templatesByPresentationStyle"] as? [[String: Any]]
+        )
+        #expect(
+            bindings.contains {
+                ($0["style"] as? String) == "filmMark"
+            } == false
+        )
+        #expect(
+            MemoryConfigurationRecord.Editor(
+                template: .classicWhite,
+                templatesByPresentationStyle: [
+                    .filmMark: .classicWhite
+                ],
+                regionTemplateIDs: [:],
+                memoryCopy: .init(
+                    usesCustomText: false,
+                    customText: ""
+                )
+            ).templatesByPresentationStyle[.filmMark] == nil
+        )
+    }
+
+    @Test("explicit FM transport fails closed when its payload is missing")
+    func explicitFilmMarkTransportFailsClosedWithoutPayload() {
+        let snapshot = BatchConfigurationSnapshot(
+            template: .classicWhite,
+            badge: nil,
+            anchor: nil,
+            presentationRouteRawValue:
+                RecordCardPresentationStyle.filmMark.rawValue,
+            filmMarkConfiguration: nil,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+
+        #expect(
+            snapshot.presentationRouteValidationError?.diagnosticCode
+                == "missing_film_mark_configuration"
+        )
+    }
+
+    @Test("legacy compatibility cleanup keeps the frozen FM route and payload")
+    func legacyCompatibilityCleanupKeepsFilmMarkPayload() {
+        let configuration = FilmMarkConfiguration.default
+        let snapshot = BatchConfigurationSnapshot(
+            configurationID: UUID(),
+            configurationRevision: 3,
+            productionContractVersion: 1,
+            template: .classicWhite,
+            badge: nil,
+            anchor: nil,
+            presentationRouteRawValue:
+                RecordCardPresentationStyle.filmMark.rawValue,
+            filmMarkConfiguration: configuration,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+
+        let legacy = snapshot.asLegacyTransportCompatibility()
+        #expect(legacy.configurationID == nil)
+        #expect(legacy.configurationRevision == nil)
+        #expect(legacy.productionContractVersion == nil)
+        #expect(
+            legacy.presentationRouteRawValue
+                == RecordCardPresentationStyle.filmMark.rawValue
+        )
+        #expect(legacy.filmMarkConfiguration == configuration)
+    }
+
+    @Test("Classic and Minimal production snapshots do not carry FM payload")
+    func nonFilmMarkProductionSnapshotsDoNotCarryFilmMarkPayload() throws {
+        let subject = ConfigurationCenterMockSeed.makeState().subjects[0]
+
+        for route in [
+            RecordCardPresentationStyle.classicWhite,
+            RecordCardPresentationStyle.minimal
+        ] {
+            let configuration = MemoryConfigurationRecord(
+                id: UUID(),
+                title: "隔离测试",
+                revision: 1,
+                savedAt: Date(timeIntervalSince1970: 0),
+                selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+                editor: .init(
+                    template: .classicWhite,
+                    regionTemplateIDs: [:],
+                    memoryCopy: .init(
+                        usesCustomText: false,
+                        customText: ""
+                    )
+                ),
+                presentation: .init(
+                    route: route,
+                    locationConfiguration: nil,
+                    logo: .init(mode: .appleMini, badge: nil)
+                ),
+                output: .init(
+                    mediaMode: .originalFormat,
+                    livePhotoPolicy: .preserveMotion,
+                    photosDescriptionPolicy: .init(
+                        isEnabled: false,
+                        overrideText: ""
+                    ),
+                    album: .automatic
+                )
+            )
+            let state = ConfigurationLibraryRecord(
+                revision: 1,
+                subjects: [
+                    SubjectConfigurationRecord(
+                        subject: subject,
+                        configurations: [configuration],
+                        assetManifest: .init(entries: [])
+                    )
+                ],
+                activeSubjectID: subject.id,
+                activeConfigurationID: configuration.id
+            )
+
+            let snapshot = try ProductionConfigurationSnapshotFactory.resolve(
+                reference: .init(
+                    configurationID: configuration.id,
+                    revision: configuration.revision
+                ),
+                from: state
+            )
+
+            #expect(snapshot.filmMarkConfiguration == nil)
+        }
     }
 
     private func makePresentation(

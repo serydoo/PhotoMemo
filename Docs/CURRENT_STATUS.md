@@ -1,5 +1,263 @@
 # MemoMark Current Status
 
+## 2026-09-18 源码检查点同步准备（post-2.3.0 / 105）
+
+- 按 `Docs/07_Releases/RELEASE_SYNC_STANDARD.md` 整理了从最近正式源码同步锚点
+  `56f6a17` 到当前 `HEAD 53f91dc` 及工作树候选的主要更新材料；本轮明确不创建新
+  marketing version、不维护新的 build number，也不把源码检查点写成 App Store 或
+  TestFlight 发布。
+- 新增四份同一事实源的检查点材料：`2026-09-18-post-2.3.0-105-release-notes.md`、
+  `2026-09-18-post-2.3.0-105-app-store-whats-new.md`、
+  `2026-09-18-post-2.3.0-105-testflight-notes.md` 和
+  `2026-09-18-post-2.3.0-105-sync-manifest.md`。
+- 当前状态为 `Source Checkpoint Ready`，仅表示范围、分类和本地基础检查已整理完成；
+  本轮未执行 `git add`、提交、推送、TestFlight、App Store Connect 或版本字段修改。
+- 同步清单明确区分正式同步候选、本地保留和待决定文件；`scripts/auto_sync_to_github.sh`
+  的无差别 `add -A`/commit/push 路径未调用。真机、TX-001、BP-001、COS 新鲜复核和
+  发布外部状态继续保持未关闭。
+
+## 2026-09-18 本地代码与发布准备综合审查
+
+- 完成代码结构、队列与配置持久化、恢复/幂等、PhotoKit/Live Photo/元数据、FM 预览/导出契约、权限/日志/资源、测试与版本配置的本地综合审查；详细记录见 `Docs/03_Engineering/2026-09-18-comprehensive-local-code-release-audit.md`。
+- 本地证据保持为：完整 `MemoMarkTests` 1,865 passed / 0 failed / 1 skipped；macOS、通用 iOS、Share Extension Debug 构建、治理检查和 `git diff --check` 通过。一个 ImageIO fixture skip 与两条既有 QoS warning 已明确记录，没有被隐藏。
+- 队列文件快照、actor durable ledger、配置 primary/last-known-good、revision 防覆盖、receipt/Live Photo 配对与 FM 独立内容边界未发现新的本地 P0 代码缺陷；保留兼容投影与大文件拆分为后续有边界的维护项。
+- TX-001 真机中断/读回/重复输出、BP-001 高分辨率内存、导出高负载实测、Photos/Share/Live Photo/StoreKit/无障碍/多语言真机验收仍开放。COS 本轮因 Chat On Steroids 窗口读取触发 ScreenCaptureKit `-3811`，没有新鲜可归因的 COS 结果；未删除、重装或反复重连现有 COS。
+- 当前工作区仍有 68 个 staged、31 个 unstaged、3 个 untracked 项；本轮没有提交、推送、TestFlight、App Store Connect 或生产认证动作。发布判断维持 `AUTOMATED GATES PASS; RELEASE CERTIFICATION OPEN`。
+
+## 2026-09-18 FM non-device audit closure and COS transport gate
+
+- Implemented the non-device remediation from the FM audit. Share readiness now requires an independent `filmMarkContent` payload for a frozen FM snapshot; production render-health validation and photo-description projection use the FM-owned content resolver instead of reading the legacy template as a semantic fallback. The top-left preview also stays empty when the independent FM draft is absent, rather than inventing the generic preview sentence.
+- Centralized FM top-left-to-Core Graphics coordinate conversion through `FilmMarkCoordinateBridge`, added regression coverage for arbitrary frames, and kept preview/export canvas truth unchanged. Physical aspect-ratio calibration remains intentionally open for the user's real-device pass.
+- FM controls now localize palette, font, size, position, reset, nudge, substrate, empty-state, VoiceOver, and time/place copy across Chinese, English, Japanese, and Korean. Font size uses a menu fallback at accessibility Dynamic Type sizes; ordinary sizes retain the compact native segmented control.
+- Verification completed without a physical device: focused FM/production/layout/configuration tests passed; localization parity and active-localization audits passed; full `MemoMarkTests` passed with 1,865 tests passed, 0 failed, and 1 skipped; unsigned macOS, generic iPhoneOS `MemoMarkiOS`, and generic iPhoneOS `MemoMarkShareExtension` builds passed; governance and `git diff --check` passed. The full test result also contains two existing QoS priority-inversion runtime warnings from `FixtureExportReadbackTests`.
+- A fresh COS review was requested but could not be executed in this turn. `c2c doctor` reported a healthy local bridge/workspace but `Tunnel start timed out`, `chatgptRepair.needed: true`, and a reclaimed connector address; CUA also reported the Mac locked. Existing COS configuration was preserved and no delete/reinstall retry was performed. This is an integration gate, not a code-review pass.
+- Physical iPhone 17 Pro Max UI, Dynamic Type, VoiceOver, PhotoKit, Share-to-processing-to-Photos, Live Photo, and aspect-ratio acceptance remain for the user's afternoon real-device verification. No simulator, commit, push, TestFlight, App Store Connect, or production-certification claim was made.
+
+## 2026-09-18 Expression choices and IMG_5212–5222 verification
+
+## 2026-09-18 FM configuration second refinement IMG_5233–5239
+
+## 2026-09-18 FM configuration third refinement IMG_5240–5249
+
+- Removed the redundant “当前样式” heading from the expanded card-style card. The content now mirrors the time-expression card: one explanatory subtitle followed directly by the native single-choice control. The localized explanation tells users that each style's output is reflected in the preview above.
+- Tightened vertical density for FM color/custom-color, substrate, and position controls. The reset action and four directional buttons move upward while preserving the existing 44pt directional hit targets. The substrate control remains the same native segmented/menu pattern used by the Minimal surface.
+- Configuration and localization contract tests passed. The newest signed exact-device iOS build passed and overwrite-install preserved the existing device container. Launch was then denied by iOS because the device was locked; manual runtime and visual acceptance remain open until the phone is unlocked.
+
+- Completed the non-minimal cross-surface normalization requested after the user's physical inspection: card style, expression tone, substrate, font-size, appearance, language, and output-target choices now use the same native selection treatment while preserving their existing bindings, hit regions, accessibility fallback, and save/entitlement logic.
+- Restored the shared save-location heading and widened its single-line result rail to 196pt with vertical centering and full accessibility value. The card-content editor label column is now 96pt (multi-region 48pt) so left explanations are not compressed. Long album names still tail-truncate visually rather than changing row height.
+- Centered FM color choices and the custom color action, added localized friendly help copy, strengthened selected-state distinction with system tint, and added a configuration-only FM placement guide showing the safe border and active bottom anchor. The guide is hidden from accessibility and export; renderer/layout truth is unchanged.
+- Full MemoMarkTests passed: 1,861 passed, 0 failed, 1 skipped. Exact iPhone 17 Pro Max `MemoMarkiOS` build passed, deep code-sign verification passed, overwrite-install passed, and app plus Widget processes launched. The existing FixtureExportReadbackTests priority-inversion warnings remain non-blocking test warnings.
+- Manual visual/accessibility, Dynamic Type, save/reopen, Photos/Share/Live Photo acceptance remain separate evidence gates. No simulator, staging, commit, push, or external release mutation was performed.
+
+- Follow-up from IMG_5227–5232: the save-location heading regression was traced to the trailing summary taking infinite width; the heading now keeps priority and the album result remains single-line with tail truncation. Expression and substrate choices now use the same native segmented geometry as Appearance and Interface Language on regular sizes, with the existing menu fallback at accessibility sizes. Selection highlight is supplied by the system control; the existing draft mutation, pending preview, and save gate remain intact. Font's single available value no longer uses a tall selection capsule.
+- Verification after the broader normalization: focused configuration contract tests passed; full MemoMarkTests passed with 1,860 passed, 0 failed, 1 skipped (1,893 successful executions including parameterized cases). Signed device-targeted iOS build passed; exact signed artifact was installed over build 105 and launched successfully on the paired iPhone 17 Pro Max. Main process PID 5074 and Widget processes were observed. Governance and whitespace checks passed.
+- User performed the current physical UI check and reported the save-location title regression; automated/device deployment evidence does not replace visual, accessibility, or PhotoKit acceptance. Runtime priority warnings and the pre-existing skipped metadata fixture remain recorded. No simulator was used. GitHub sync remains paused; no staging, commit, or push.
+
+- Device reconnection follow-up: the paired iPhone 17 Pro Max became available. Signature verification and overwrite-install of the already-built artifact succeeded; installed apps confirms 2.3.0 (105). The subsequent launch was denied with FBSOpenApplicationErrorDomain Locked, despite the pre-install unlocked state. Only the Widget process was observed afterward; main-app launch and manual acceptance remain pending unlock. No uninstall or data clearing occurred. This supersedes the unavailable/install-blocked state recorded below, not the outstanding visual checks.
+
+- Shared ConfigurationOptionList now exposes the five anchor-specific expression styles as horizontal native buttons for every card style, with an adaptive scrolling fallback for long translations and accessibility sizes. Selection continues to use the existing draft/pending preview and save-time entitlement gate; it does not insert authored content.
+- Revised the heading to `时间怎样表达`, labeled the resolved sample `表达示例`, and explained that time expressions are optional in Card Content. FM control help and the four supported localizations were aligned with the product-language guide. The iOS details sheet now uses the shared content-column inset.
+- Save-destination summaries use a single visual line with tail truncation, center alignment in the regular-size row, and the complete accessibility value. Other summaries retain their existing wrapping behavior.
+- Verification: complete MemoMarkTests on macOS passed with 1,859 tests passed, 0 failed, 1 skipped (1,892 successful executions including parameterized cases); evidence `/tmp/MemoMarkExpression-full-final.log` and `/tmp/MemoMarkFMFullTests0918/Logs/Test/Test-MemoMarkTests-2026.09.18_08-34-19-+0800.xcresult`. The earlier obsolete text-row-count assertion was updated for the approved replacement of the expression menu; the earlier macOS compilation error was fixed by forwarding the new single-line option in both platform components. Signed generic iOS build passed (`/tmp/MemoMarkExpression-ios.log`). Governance validation and whitespace checks passed.
+- Two runtime priority-inversion warnings were reported in FixtureExportReadbackTests; these are not hidden or treated as visual acceptance. No simulator was used. The paired iPhone 17 Pro Max is currently unavailable: lock-state/install requests failed with CoreDevice 4016, and repeated device inventory confirmed unavailable. This revision was NOT installed or launched on the phone. Connection restoration, physical visual/accessibility checks, selection/save/reopen, and optional-content scenarios remain open.
+- GitHub sync remains paused; no staging, commit, push, or fresh external review was performed. Existing unrelated work was preserved. Detailed decisions and outstanding checks are in `Docs/03_Engineering/2026-09-18-filmmark-configuration-ui-review.md`.
+
+## 2026-09-18 FilmMark screenshot follow-up IMG_5204–5210
+
+- Removed color controls from the iOS details sheet. Presets and the native custom-color picker now share the primary color section; the secondary sheet retains font and time/location settings. Its visible and accessibility descriptions were updated in all four supported languages.
+- Primary accordion headings and FM headings now reuse `ConfigurationFieldHeading`, with container-owned insets. This closes the mixed first-level/second-level typography and indentation rather than adding per-row offsets. Redundant separators were removed.
+- The palette is centered with 44pt interactive cells and an inset selection ring; narrow containers wrap to four columns. The position reset capsule is 88pt wide and 28pt visually high inside a minimum 44pt target, centered in the left explanation column and bottom-aligned with the down-arrow target.
+- Current verification: 37 existing configuration-list and localization tests passed (`/tmp/MemoMarkFMRefinement-tests.log`), including the macOS test-target build. The signed generic iOS build passed (`/tmp/MemoMarkFMRefinement-ios.log`), and version `2.3.0 (105)` was installed over and successfully launched on the paired iPhone 17 Pro Max. `git diff --check` passed. No fresh full-suite run is claimed for this follow-up.
+- Device lock state reported `passcodeRequired: true`; physical visual, Dynamic Type, VoiceOver, scrolling, and save/reopen acceptance remain pending. The page already reserves bottom accessory and navigation clearance; screenshot overlap alone was not treated as proof of unreachable content. Renderer, persistence, Photos, and media semantics were not changed. GitHub sync remains paused; no staging, commit, or push was performed in this follow-up.
+
+## 2026-09-18 FilmMark configuration UI consolidation pass
+
+- Reworked the iOS FM Configuration Center around one compact hierarchy:
+  `卡片内容 -> 位置 -> 字号 -> 颜色 -> 底色衬托 -> 胶片样式与细节`. The first-level surface keeps the controls needed for quick visual decisions, while the secondary details sheet contains font, custom color, and time/location settings without a duplicate preview.
+- Unified FM section title/subtitle geometry with the surrounding Configuration Center, changed substrate choices to equal-weight visual cards, and aligned the position reset action under the left explanation with the directional controls. The reset target is now a wider text capsule and no longer uses a refresh symbol. iOS trailing controls share a stable trailing rail.
+- The updated `ConfigurationOptionListContractTests` focused suite and the complete `MemoMarkTests` suite both passed. Unsigned macOS Debug and signed generic `iphoneos` builds passed. The signed build installed over and launched on the paired physical iPhone 17 Pro Max; a device screenshot remained black with only the orange status indicator, so physical visual/accessibility acceptance is explicitly still open.
+- A fresh Chat on Steroids worker review could not be obtained because the connector returned `WORKER_IDENTITY_LOST` on the status retry. The implementation therefore uses the latest attributable local COS conversation as advisory input and does not claim a new COS review result. GitHub sync remains paused: no commit or push was performed.
+
+## 2026-09-18 FilmMark architecture-priority health pass
+
+- The latest Chat On Steroids review was run against the real
+  `/Users/rui/Desktop/PhotoMemo` workspace and supports the user's clarified
+  direction: FM should be allowed to repair its underlying content, snapshot,
+  layout, and rendering relationships as it grows, instead of accumulating
+  isolated visual patches. The review remains advisory; repository source and
+  this evidence record remain the implementation authority.
+- FM now carries authored content in a layout-independent `FilmMarkContentSchemaV2`.
+  V1 `TemplateArea` data is read through a compatibility decoder, while new
+  saves encode `primaryOutputItems`; `TemplateArea` is no longer FM's durable
+  layout truth. Explicit FM production snapshots carry both the independent
+  content and appearance payload and fail closed when either is missing.
+- `FilmMarkPresentationResolver` is now the single content/measurement/layout
+  bridge. Planner, preview, still export, and Live Photo overlay consumers use
+  the resulting immutable `FilmMarkResolvedPresentation`; the FM Renderer no
+  longer selects content or performs layout resolution. Preview and artifact
+  text now share a CoreText raster path, and all four selectable substrate
+  recipes are deterministic across preview and export. Soft-shadow outset is
+  included in the layout safety calculation.
+- The iOS FM surface keeps the compact unique top preview and presents the
+  high-frequency controls in one flow: Card Content, Position, Substrate,
+  Font, Font Size, Color, and Time/Location. Position uses the left explanation
+  and right directional controls requested by the screenshot review, with
+  44pt direction targets and a wider reset target. Substrate uses four equally
+  weighted visual cards rather than a narrow segmented control. The secondary
+  FM details preview was removed so it cannot cover or compete with the main
+  preview.
+- Verification: `MemoMark` unsigned macOS Debug build passed; the FM-focused
+  presentation/layout, configuration-list, production-snapshot, transport,
+  and product-surface run passed with exit 0, including 24/24 FM tests and the
+  V1-to-V2 Codable migration test. `git diff --check` passed. The earlier full
+  test invocation returned exit 65 because its compact-preview pixel test
+  expected more changed pixels than CoreText produced; that test was corrected
+  and the focused rerun is green. A fresh full-suite rerun is not being claimed
+  in this record.
+- Device deployment: the signed `MemoMarkiOS` Debug build for `2.3.0 (105)`
+  passed deep code-sign verification, installed in place over the existing
+  `com.serydoo.PhotoMemo.iOS` container on the paired physical iPhone 17 Pro
+  Max (`863C2747-6742-5E93-B715-6F89DBF90B31`), and launched successfully via
+  `devicectl`. The first exact-device Xcode destination build was blocked by
+  the device lock screen, so the successful deployment used the signed generic
+  `iphoneos` product; this is deployment evidence only, not manual visual,
+  accessibility, Photos, Share, or Live Photo acceptance.
+- Physical iPhone 17 Pro Max visual/accessibility acceptance, real
+  Share-to-processing-to-Photos readback, and static/Live Photo output
+  acceptance remain open. No original photo, Classic White/Minimal semantics,
+  commit, push, TestFlight, App Store Connect, or production certification was
+  changed or claimed.
+
+## 2026-09-17 FilmMark compact details and cross-platform route pass
+
+- Continued the COS-validated FM IA pass from the supplied iPhone screenshots.
+  The primary Configuration Center now keeps one compact 2:1 complete-output
+  preview; the FM details surface has no duplicate preview and owns the
+  continuous editing flow instead of covering the primary result window.
+- `位置` is now a first-level expandable module beside `卡片内容`. Its
+  existing photo-relative anchor and nudge implementation is reused with a
+  compact right-side four-direction control, 44pt minimum hit targets, and a
+  reset action that changes only the normalized offset and preserves the
+  selected anchor. `底色衬托` is a separate details-level module with four
+  visual samples: transparent, paper white, system glass, and soft shadow.
+- FM typography and color controls remain flat, visible choices in the same
+  details flow. Time and location rows reuse `AdvancedModulesContent` in an
+  embedded mode, so the standalone time/location sheet keeps its existing
+  grouped surface while FM avoids nested vertical scrolling and a second
+  modal jump.
+- Closed the COS-identified macOS no-op: the shared configuration list now
+  sends the FM details intent to a dedicated macOS
+  `MacConfigurationWorkspaceRoute.filmMarkDetails` inspector, while iOS keeps
+  the native FM sheet. FM draft ownership remains in the host configuration
+  session on both platforms.
+- Evidence for this pass: the focused ConfigurationOptionList,
+  MacConfigurationRuntime, and FilmMark presentation contract run exited 0;
+  the unsigned `MemoMarkiOS` generic iPhoneOS build and unsigned macOS
+  `MemoMark` Debug build both exited 0; `git diff --check` and the Codex
+  governance validator passed. Xcode beta still emits intermittent
+  `SwiftCompile ... exit code 0 but produced no further output` diagnostics
+  while compiling the large test target, but the targeted test cases reported
+  passed and the command exited successfully. Existing geocoder and legacy
+  API deprecation warnings remain outside this FM slice.
+- COS's remaining non-blocking hardening notes are retained: the current
+  system-glass persisted option uses a deterministic export fallback rather
+  than true backdrop blur, and the export planner/overlay boundary still has
+  a future P1 opportunity to pass one immutable resolved presentation instead
+  of resolving twice. These are not silently treated as production
+  certification. The paired physical iPhone remains the required manual UI,
+  accessibility, Photos, Share, and media read-back gate; no such acceptance
+  is claimed while the device/UI surface is unavailable.
+- Exact-device signed build `/tmp/MemoMarkFMDevice0917/Build/Products/Debug-iphoneos/MemoMarkiOS.app`
+  passed `codesign --verify --deep --strict` and was installed over the
+  existing `com.serydoo.PhotoMemo.iOS` container. Launch was retried both with
+  and without the display selector; the latter was rejected only because the
+  iPhone was locked (`passcodeRequired: true`). The app was not uninstalled,
+  reset, or data-cleared.
+- No commit, push, TestFlight upload, App Store Connect mutation, or release
+  certification was performed.
+
+## 2026-09-16 FilmMark review closure and transport hardening
+
+- Completed the bounded Engineering Loop pass from the COS FM review: FM now
+  has a durable `primaryOutput` content schema, a full appearance/placement
+  payload, an opaque canonical Share snapshot, fail-closed handling for a
+  malformed frozen snapshot, explicit CoreText fit diagnostics, one verified
+  Menlo measurement/drawing face, and a scaled compact preview that shows the
+  actual output text. The FM configuration surface keeps output destination
+  and Photo Description in the existing save path.
+- FM content remains owned by the configuration editor and is adapted into the
+  established composition pipeline only at the compatibility boundary. The
+  Renderer does not own layout constants or memory meaning. Classic White and
+  Minimal, including their orientation-specific layout paths, were not changed
+  by this FM slice.
+- Evidence: full `MemoMarkTests` completed with 1,848 passed, 1 skipped, and 0
+  failed; the macOS `MemoMark` no-signing build passed; generic iOS builds for
+  `MemoMarkiOS` and `MemoMarkShareExtension` passed and produced both expected
+  products; `git diff --check` and the Codex governance check passed. Existing
+  QoS warnings in `FixtureExportReadbackTests` and existing macOS geocoder
+  deprecation warnings remain outside the FM path.
+- COS final review and physical iPhone 17 Pro Max acceptance remain separate
+  gates. The current COS connector had previously reported tunnel timeout and
+  required repair, while the Mac was locked during the last UI check; no new
+  COS verdict or device acceptance is claimed until those live gates are green.
+- A direct HTTP/2 Quick Tunnel diagnostic resolved the URL request but failed
+  at the Cloudflare edge: DNS, UDP, and Cloudflare API prechecks passed, while
+  TCP/7844 was blocked and repeated TLS handshakes returned EOF. The process
+  was terminated cleanly. A follow-up forced-QUIC diagnostic could register a
+  node but then failed with `no recent network activity`, so it could not keep
+  a tunnel alive; it was also terminated cleanly. This is an external
+  connector gate, not a MemoMark workspace or FM build failure.
+  No commit, push, upload, or production certification was performed.
+
+## 2026-09-10 Expression guide anchor-first and grouping follow-up
+
+- The iOS `SettingsExpressionGuide` now puts the selected important-day
+  concept first, keeps `一句话由三部分组成` visible by default, and places
+  that explanation before the expression list. The old collapsible composition
+  row, repeated birthday phase example, and repeated formula title/detail were
+  removed; the existing `MemoryAnchorExpressionStyle` data, localized formula
+  lookup, time semantics, and anchor-type disclosure behavior remain the
+  source of truth.
+- The presentation remains a bounded SwiftUI/localization change. It does not
+  modify Memory Engine, Renderer, Layout Engine, PhotoKit, Share, persistence,
+  or the Configuration Center architecture. English, Simplified Chinese,
+  Japanese, and Korean guide resources remain key-parity aligned.
+- The composition formula card now expands to the same available width as the
+  surrounding guide content. Its three roles are now `对象 + 表达方式 +
+  时间结果`; the middle role summarizes every expression category used by the
+  anchor sections instead of showing only `自然`, and the card explains that
+  the selected style organizes the subject and time result into one sentence.
+  Each style group has a colored leading marker beside its retained text label
+  and three time-phase examples. The marker is decorative and hidden from
+  VoiceOver, so color is not the only category cue.
+- The formula labels now use `记忆对象` and `拍摄时间与设定锚点的差值` to
+  make the data roles explicit. Expression-style titles are positioned to the
+  left of their colored marker and vertically centered against the three
+  phase rows, with a flexible width for localized labels and narrow devices.
+- The Settings `开始使用` entry order now leads with `MemoMark 怎么讲述时间`,
+  followed by `关于 MemoMark 的诞生`, `重看欢迎介绍`, and `查看日常使用流程`.
+  The entry and its secondary sheet reuse `settings.guide.expression.title` so
+  the branded title describes one destination rather than two different labels.
+- The source/about copy in the active Settings help surface now uses MemoMark as
+  the primary product identity. The retired `settings.expression_guide.title`
+  key was removed so the entry and sheet cannot drift apart; unrelated
+  historical/localized strings and the separate Configuration Center guide
+  card were left unchanged.
+- `git diff --check`, the Codex governance check, and the focused static
+  expression-guide/localization contract passed. The macOS Swift Testing
+  command-line host was not used as a pass claim in this follow-up because its
+  application-host process remained alive and termination recorded signal-term
+  failures; the prior 14-test result belongs to the preceding UI pass. The
+  unsigned `MemoMarkiOS` Debug build and the signed physical-device
+  `MemoMarkiOS` Debug build both passed.
+- Signed build `2.3.0 (105)` was installed in place and launched on the paired
+  physical iPhone 17 Pro Max
+  (`863C2747-6742-5E93-B715-6F89DBF90B31`) without uninstalling or clearing the
+  app container. Device installation/launch evidence is not a substitute for
+  manual visual, Dynamic Type, VoiceOver, or localized review of the guide on
+  the phone. No GitHub push, TestFlight upload, or App Store Connect mutation
+  was performed.
+
 ## 2026-09-07 macOS Configuration Center first controlled design slice
 
 - The local main and freshly fetched origin/main both resolve to
@@ -28971,3 +29229,174 @@ Mac verification, paired iPhone 17 Pro Max acceptance, and Photos
 permission/album/original read-back remain open. No delete/reinstall, Git,
 GitHub, sync, TestFlight, App Store Connect, or App Store mutation was
 performed.
+
+## 2026-09-14 FilmMark Layout Engine foundation slice
+
+The first implementation slice for the V4 FilmMark expression-style research
+is now in place as an isolated, pure Layout Engine contract. It adds
+`FilmMarkLayoutSpecification` without registering a new production
+`RecordCardPresentationStyle`, changing the existing presentation planner, or
+touching Classic White/Minimal layout, orientation, export, or persistence
+behavior.
+
+The contract currently covers two physical image anchors (`bottomLeft` and
+`bottomRight`), a single photo-relative coordinate model, a 4% normalized safe
+area, deterministic four-direction movement, fixed-point normalized offsets
+(`10_000 units = 1.0`, `50 units = 0.005`), explicit overflow diagnostics, sRGB
+RGBA normalization, and one top-left preview to bottom-left artifact coordinate
+bridge. The resolved layout carries its source canvas size so the bridge does
+not rely on a second caller-supplied height.
+
+Verification: the focused `MemoMarkTests` scheme run passed all 9
+`FilmMarkLayoutSpecificationTests` in isolated
+`/tmp/MemoMarkDerivedDataFMStage1c`; `git diff --check` passed. COS performed a
+read-only architecture review and approved entry into the next slice after
+these coordinate, fixed-point, and physical-anchor corrections. The build used
+the macOS test target; no production style registration, UI, font bundle,
+PhotoKit export, Live Photo path, or physical iPhone 17 Pro Max acceptance has
+been claimed. The next slice is the shared resolved presentation/content
+contract, followed by an FM-only large-image preview prototype.
+
+## 2026-09-14 FilmMark renderer integration slice
+
+The FM research slice has now been connected to the bounded presentation
+route. `RecordCardPresentationStyle.filmMark` is available as a separate
+renderer destination, while Classic White and Minimal retain their existing
+renderer and orientation paths. FM configuration is carried independently in
+the active presentation record, configuration draft/save projection, batch
+snapshot compatibility carrier, and `RecordCard` build path. Older
+presentation records without the FM payload continue to decode with the
+default FM configuration.
+
+The Configuration Center exposes FM-only controls after the style selection:
+bottom-left or bottom-right starting anchor, four directional 0.5% normalized
+nudges, font candidate selection, four bounded relative font sizes, a curated
+color palette plus the native custom ColorPicker, and optional shadow or
+translucent substrate. Preview and export use the same immutable resolved
+presentation and the same photo-relative coordinates. The export adapter
+produces a transparent full-canvas overlay, leaving the photo and existing
+PhotoKit/Live Photo lifecycle owners unchanged.
+
+Verification: the unsigned macOS `MemoMark` Debug build passed, the unsigned
+iPhoneOS `MemoMarkiOS` Debug build passed, and the focused renderer/layout/
+presentation/persistence run passed 27 tests, including FM route selection,
+configuration round-trip, safe-area clamping, fixed-point nudge stability,
+preview-to-artifact coordinate conversion, and existing Classic White/Minimal
+compatibility checks. `git diff --check` passed. The COS task was used for a
+read-only architecture review and remains open. A signed Debug build using
+the existing Apple Development identity was installed and launched on the
+paired physical iPhone 17 Pro Max (`iPhone`, device id
+`863C2747-6742-5E93-B715-6F89DBF90B31`); this is deployment and launch
+evidence only. No external repository, GitHub, Photos, Share, Live Photo, or
+App Store mutation was performed.
+
+This is an integration-ready prototype slice, not yet a production-certified
+FM release. The candidate font identifiers currently fall back to a stable
+system monospaced face until bundled font assets and license evidence are
+added. The preview surface still uses its existing local illustrative preview
+instead of a physical Photos sample. Physical iPhone 17 Pro Max visual and
+accessibility acceptance, real Share-to-processing-to-Photos readback, and
+final font/visual tuning remain the next verification gate.
+
+## 2026-09-14 FilmMark screenshot-driven IA review
+
+The supplied iPhone screenshots were reviewed against the current FM build.
+The main issue is hierarchy rather than missing controls: the preview is too
+tall and can appear without a resolved output string, while high-frequency
+choices and low-frequency details are shown in one long configuration stream.
+
+The next bounded UI direction is now recorded in the FM specification:
+reduce the preview to roughly half its current height while retaining enough
+photo context to judge lower-corner placement; always show the active resolved
+output or an explicit empty-state sample; keep Time Anchor, FM style, Card
+Content entry, font, size, and color on the primary surface; move anchor
+selection, directional micro-adjustment, substrate, overflow details, and
+restore-default into a secondary FM detail destination. Existing global output
+destination and Photo Description rows remain in the configuration and continue
+to be saved by the existing aggregate.
+
+The existing Card Content editor remains the FM recording window. Its module
+library stays available, with capture time, selected anchor result, and subject
+name treated as primary suggestions and location/device/camera information
+treated as secondary suggestions. No screenshot assets were copied into the
+repository. COS was asked to perform the same read-only review; local source,
+project constitution, and screenshot evidence remain the authority until its
+response is available.
+
+## 2026-09-16 FilmMark substrate and P0 closure slice
+
+The FM presentation boundary now models the display substrate as part of the
+resolved layout contract. `paperWhite` and `systemGlass` were added while the
+existing `none`, `softShadow`, and `translucentLabel` raw values remain
+decodable. Paper white is deterministic for export; system glass is reserved
+for native preview material and resolves to the paper-white recipe at export.
+The Layout Engine now resolves a `substrateFrame` around the content frame, so
+the preview, static artifact, and Live Photo layer consumers share the same
+geometry. The layer-only `PresentationArtifact` initializer now defaults to
+floating compatibility semantics, closing the full-canvas FM/photo overlap
+failure identified by COS.
+
+Verification: new substrate Codable/geometry tests and the full-canvas artifact
+contract were added; Swift parser checks, `git diff --check`, and the Codex
+governance validator passed. A signed exact-device `MemoMarkiOS` Debug build
+produced a codesign-verifiable app and was installed over the existing
+`com.serydoo.PhotoMemo.iOS` container on the paired iPhone 17 Pro Max. The
+Share Extension generic iPhoneOS build produced both the app and extension
+products. Launch was attempted but the device reported `Locked`; no launch or
+manual UI acceptance is claimed until the phone is unlocked. Xcode beta also
+showed intermittent `SwiftCompile ... exit code 0 but produced no further
+output` failures while compiling the large macOS test target; the exact-device
+signed build is the current source-compilation evidence.
+
+COS read-only review found the artifact compatibility P0 and the prior
+production-snapshot FM-payload isolation issue; both were addressed locally.
+The COS second-stage final report was still in progress when device delivery
+reached the lock-state gate. No Git commit/push, App Store, TestFlight, or
+external release mutation was performed.
+
+## 2026-09-18 FilmMark COS follow-up optimization and device-build gate
+
+Following the COS read-only review, the FM configuration surface was expanded
+and reorganized by responsibility rather than receiving only a narrow wording
+patch. The former monolithic control file is now split into orchestration,
+appearance controls, position/details controls, details sheet, shared display
+mapping/localization support, and a dedicated calibration preview surface.
+The Renderer keeps the shared raster/text drawing path; the iOS preview now
+owns only preview composition and explicitly states that its stable wide
+canvas is a style/position calibration surface whose final output adapts to
+the source photo aspect ratio. Four-language resources and source-structure
+contracts were updated together. No persisted key, FM payload schema,
+configuration aggregate, production snapshot, Share transport, or Renderer
+ownership contract was changed by this follow-up.
+
+Verification: `git diff --check` passed; the macOS `MemoMark` Debug build
+passed; the focused FM contract run passed, including configuration UI
+structure, four-language parity, layout geometry, presentation round-trips,
+production admission, persistence, and Share revision-freeze contracts. A
+signed `MemoMarkiOS` Debug build for iPhoneOS 27.0 also passed, and
+`codesign --verify --deep --strict` accepted
+`/tmp/MemoMarkFMDeviceBuild/Build/Products/Debug-iphoneos/MemoMarkiOS.app`
+with bundle `com.serydoo.PhotoMemo.iOS`, version `2.3.0 (105)`. Installation
+to the paired physical iPhone 17 Pro Max was attempted but was not completed:
+`devicectl` reported CoreDeviceError 4016 because the device currently has no
+assertable trusted connection/service state. No uninstall, data reset, Git
+commit/push, App Store, TestFlight, Photos, Share, or Live Photo mutation was
+performed. Physical-device visual, accessibility, Photos, Share, and
+read-back acceptance remain intentionally open for the user's real-device
+verification window.
+
+## 2026-09-18 FilmMark follow-up physical deployment
+
+The paired physical iPhone 17 Pro Max returned to `available (paired)` after
+the previous CoreDevice 4016 gate. The signed `MemoMarkiOS` Debug artifact at
+`/tmp/MemoMarkFMDeviceBuild/Build/Products/Debug-iphoneos/MemoMarkiOS.app`
+was installed over the existing `com.serydoo.PhotoMemo.iOS` installation
+without uninstalling the app or clearing its container. `devicectl` reported
+successful installation and the application was then launched successfully
+with the same bundle identifier.
+
+This closes build/install/launch deployment evidence for version `2.3.0
+(105)`. It does not replace manual physical-device acceptance: FM visual and
+accessibility behavior, Photos/Share/Live Photo processing, and output
+read-back still require the user's real-device verification session. No Git,
+App Store, TestFlight, Photos, or external release mutation was performed.

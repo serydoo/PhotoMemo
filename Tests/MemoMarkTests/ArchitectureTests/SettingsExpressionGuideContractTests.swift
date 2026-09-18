@@ -14,15 +14,33 @@ struct SettingsExpressionGuideContractTests {
         #expect(source.contains("let language: MemoMarkLanguage"))
         #expect(source.contains("private func localized"))
         #expect(source.contains("formulaToken("))
-        #expect(source.contains("private var exampleOverview"))
-        #expect(source.contains("同一个时间锚点，在到来前、当天和之后，会有不同说法。"))
-        #expect(source.contains("它是怎样组成的"))
+        #expect(source.contains("private var compositionOverview"))
+        #expect(source.contains(".frame(maxWidth: .infinity, alignment: .leading)"))
+        #expect(!source.contains("private var exampleOverview"))
+        #expect(source.contains("围绕你选定的重要日子"))
+        #expect(source.contains("照片在这个日子之前、当天和之后，会有不同说法。"))
+        #expect(source.contains("一句话由三部分组成"))
+        #expect(source.contains("private var expressionStyleSummary"))
+        #expect(source.contains("settings.expression.guide.composition_note"))
+        #expect(source.contains("fallback: \"记忆对象\""))
+        #expect(source.contains("fallback: \"拍摄时间与设定锚点的差值\""))
+        #expect(!source.contains("showsCompositionExplanation"))
+        #expect(!source.contains("private var compositionExplanation"))
+        #expect(source.contains("private var stylesHeader"))
+        #expect(!source.contains("settings.expression.guide.introduction"))
+        #expect(source.contains("private func styleMarkerColor"))
+        #expect(source.contains(".overlay(alignment: .leading)"))
+        #expect(source.contains("minWidth: 64"))
+        #expect(source.contains("maxWidth: 86"))
+        #expect(source.contains("alignment: .trailing"))
+        #expect(!source.contains("colorLegend"))
+        #expect(!source.contains("settings.expression.guide.style_title"))
         #expect(source.contains("settings.expression.guide.subject"))
         #expect(source.contains("AnchorType.allCases"))
         #expect(source.contains("availableStyles"))
         #expect(source.contains("localizedStyleTitle"))
         #expect(source.contains("role: .subject"))
-        #expect(source.contains("role: .smartOutput"))
+        #expect(source.contains(".smartOutput"))
         #expect(source.contains("role: .anchorResult"))
         #expect(source.contains("formula.before"))
         #expect(source.contains("formula.onAnchor"))
@@ -54,19 +72,14 @@ struct SettingsExpressionGuideContractTests {
         #expect(!guideSource.contains("Text(\"按时间锚点看看每一种表达方式"))
 
         for key in [
-            "settings.expression.guide.introduction",
             "settings.expression.guide.original_note",
             "settings.expression.guide.header",
-            "settings.expression.guide.example_title",
-            "settings.expression.guide.example_before",
-            "settings.expression.guide.example_on_anchor",
-            "settings.expression.guide.example_after",
             "settings.expression.guide.composition_title",
-            "settings.expression.guide.formula_title",
+            "settings.expression.guide.composition_note",
+            "settings.expression.guide.styles_detail",
             "settings.expression.guide.subject",
             "settings.expression.guide.expression",
             "settings.expression.guide.time_result",
-            "settings.expression.guide.style_title",
             "settings.expression.guide.phase.before",
             "settings.expression.guide.phase.on_anchor",
             "settings.expression.guide.phase.after"
@@ -97,7 +110,30 @@ struct SettingsExpressionGuideContractTests {
 
         #expect(settingsSource.contains("private var gettingStartedSection"))
         #expect(settingsSource.contains("showsExpressionGuide"))
-        #expect(gettingStartedSource.contains("照片怎样表达时间"))
+        #expect(
+            gettingStartedSource.contains(
+                "action(\"settings.guide.expression.title\""
+            )
+        )
+        #expect(
+            gettingStartedSource.contains(
+                "action(\"settings.overview.title\""
+            )
+        )
+        #expect(
+            gettingStartedSource.range(
+                of: "action(\"settings.guide.expression.title\""
+            )!.lowerBound
+            < gettingStartedSource.range(
+                of: "action(\"settings.overview.title\""
+            )!.lowerBound
+        )
+        #expect(
+            settingsSource.contains(
+                "\"settings.guide.expression.title\""
+            )
+        )
+        #expect(!settingsSource.contains("settings.expression_guide.title"))
         #expect(gettingStartedSource.contains("Button(action: action)"))
         #expect(settingsSource.contains(".sheet(isPresented: $showsExpressionGuide)"))
         #expect(settingsSource.contains("private var expressionGuideSheet"))

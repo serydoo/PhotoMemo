@@ -43,6 +43,8 @@ enum ProductionConfigurationContractError:
     case snapshotIdentityMismatch
     case missingMemorySubject
     case missingPrimaryAnchor
+    case missingFilmMarkConfiguration
+    case missingFilmMarkContent
     case emptyResolvedContent
     case emptySemanticOutput(String)
     case emptyRendererOutput(String)
@@ -132,6 +134,12 @@ enum ProductionConfigurationSnapshotFactory {
             legacyAnchor = nil
         }
 
+        if configuration.presentation.route == .filmMark,
+           configuration.editor.filmMarkContent == nil {
+            throw ProductionConfigurationContractError
+                .missingFilmMarkContent
+        }
+
         let snapshot = BatchConfigurationSnapshot(
             configurationID: configuration.id,
             configurationRevision: configuration.revision,
@@ -161,6 +169,14 @@ enum ProductionConfigurationSnapshotFactory {
                 .customText,
             presentationRouteRawValue:
                 configuration.presentation.route.rawValue,
+            filmMarkConfiguration:
+                configuration.presentation.route == .filmMark
+                    ? configuration.presentation.filmMark
+                    : nil,
+            filmMarkContent:
+                configuration.presentation.route == .filmMark
+                    ? configuration.editor.filmMarkContent
+                    : nil,
             logoModeRawValue:
                 configuration.presentation.logo.mode.rawValue,
             shouldWritePhotoDescription:
@@ -256,6 +272,18 @@ enum ProductionConfigurationSnapshotContract {
             throw ProductionConfigurationContractError
                 .missingMemorySubject
         }
+        if snapshot.presentationRouteRawValue ==
+            RecordCardPresentationStyle.filmMark.rawValue,
+            snapshot.filmMarkConfiguration == nil {
+            throw ProductionConfigurationContractError
+                .missingFilmMarkConfiguration
+        }
+        if snapshot.presentationRouteRawValue ==
+            RecordCardPresentationStyle.filmMark.rawValue,
+            snapshot.filmMarkContent == nil {
+            throw ProductionConfigurationContractError
+                .missingFilmMarkContent
+        }
         if snapshot.usesEnabledMemorySummary,
             canonical.primaryAnchor == nil {
             throw ProductionConfigurationContractError
@@ -270,7 +298,9 @@ enum ResolvedContentValidator {
         card: RecordCard,
         configuration: BatchConfigurationSnapshot
     ) throws -> [CardTextBlock] {
-        let blocks = CardTextBlockEngine().build(from: card)
+        let blocks = FilmMarkPresentationResolver.resolvedContentBlocks(
+            for: card
+        )
         guard !blocks.isEmpty else {
             throw ProductionConfigurationContractError
                 .emptyResolvedContent
