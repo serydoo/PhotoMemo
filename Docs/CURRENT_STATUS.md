@@ -1,5 +1,14 @@
 # MemoMark Current Status
 
+## 2026-09-21 2.3.2（108）版本资料与配置中心 UI 规范维护
+
+- 按用户指定的 `2.3.1` 版本更新起点整理本轮候选；本版本首先强调 FM（FilmMark／胶片时间）的持续开发，统一所有 App、Share Extension、Widget Extension、Device QA 和测试 target 为 marketing version `2.3.2`、build `108`。仓库未发现可独立确认的 2.3.1 正式候选构建，因此没有虚构 2.3.1 的构建号或外部状态。
+- 完成配置中心 UI 规范修复：卡片样式、时间表达和相关配置说明使用统一辅助文字层级；保存主操作改用项目按钮字级；卡片样式选择与时间表达选择共享横向空间适配和大字菜单回退。
+- 保留并纳入本轮版本事实源的样式路由修复：当前编辑配置通过当前配置 ID 构造处理快照，无法解析时失败关闭，不再静默回退到经典白。
+- 更新设置内中文、English、日本語、한국어版本说明，并建立 `Docs/07_Releases/2026-09-21-2.3.2-*` 四份同步材料，内容分别投影到应用内、商店、TestFlight 和内部清单。
+- 新增 UI 回归契约先失败后通过；版本资料契约、四语资源契约和配置中心定向测试均通过。最终 `git diff --check` 与治理检查通过；macOS Debug、通用 iOS Debug 和指定 iPhone 17 Pro Max 签名构建均通过。设备已完成深度签名校验和同 Bundle ID 覆盖安装，`devicectl` 确认安装版本为 `2.3.2 (108)`；启动请求因设备处于 `Locked` 被系统拒绝，因此逐屏 UI、Dynamic Type、VoiceOver、Photos、Share、Live Photo 手工验收仍未完成。完整 `MemoMarkTests` 使用全新 DerivedData 执行并以退出码 0 完成，但 Xcode beta 仍输出既有的 `SwiftCompile ... exit code 0 but produced no further output` 工具链诊断及弃用警告，未将其掩盖为零警告。
+- 当前状态：`Version Locked; Release Evidence Open`。本轮未执行 Git 暂存、commit、push、TestFlight 上传、App Store Connect 修改或正式发布；`Docs/Outreach/` 继续本地保留。
+
 ## 2026-09-20 预设样式错配根因修复
 
 - 复现并追踪了“新建预设选择极简版，但输出仍为经典白”的完整链路：编辑器保存时已经把

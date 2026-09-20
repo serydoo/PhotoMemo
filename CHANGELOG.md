@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.3.2 (108) FilmMark Development And Configuration Center Consistency - 2026-09-21
+
+- Continued FilmMark (Film Time) development across style configuration, preview
+  relationship, and detail controls. FilmMark remains an active TestFlight
+  development direction and is not presented as production-certified.
+
+- Fixed the configuration boundary that could let a newly created preset display
+  one card style while the processing path used another, including a silent
+  fallback to Classic White. The current configuration now supplies the
+  immutable processing snapshot, and an unresolvable configuration fails closed.
+- Unified helper-text hierarchy for card style, time expression, and related
+  Configuration Center choices; the primary save action now uses the project
+  button typography token.
+- Applied the same horizontal-space adaptation to card-style and time-expression
+  choices, including an accessible menu path for larger text sizes.
+- Updated the in-app release notes in Simplified Chinese, English, Japanese,
+  and Korean, and prepared the App Store, TestFlight, and sync-manifest drafts.
+- Raised all App, Extension, Widget, Device QA, and test target configurations
+  to marketing version `2.3.2` and build `108`.
+
+This is a local TestFlight preparation candidate. Physical-device acceptance,
+Apple Photos/Share/Live Photo evidence, Xcode Cloud archive identity, StoreKit,
+App Store Connect metadata, TestFlight upload, and distribution status remain
+separate evidence classes.
+
 ## 2.3.0 (105) Release Candidate Health And Expression Clarity - 2026-09-07
 
 - Rebased the formal release summary on MemoMark 2.2.2 (95), the formal version

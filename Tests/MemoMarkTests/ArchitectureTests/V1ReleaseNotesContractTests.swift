@@ -52,12 +52,14 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("这次更新让配置、照片交接和本地恢复更连贯"))
-        #expect(simplifiedChinese.contains("照片说明和保存位置现在与记忆卡设置放在一起"))
-        #expect(simplifiedChinese.contains("完整动态照片会在验证配对后作为新的动态照片保存"))
-        #expect(english.contains("This update makes Configuration Center continuity clearer"))
-        #expect(english.contains("Photo Description and save destination now live with Memory Card settings"))
-        #expect(english.contains("A complete Live Photo is returned to Photos as a new Live Photo only after its pairing is verified"))
+        #expect(simplifiedChinese.contains("这次更新继续推进胶片时间（FilmMark）的开发"))
+        #expect(simplifiedChinese.contains("胶片时间仍在持续开发中"))
+        #expect(simplifiedChinese.contains("修复新建预设后样式选择与输出表现不一致的问题"))
+        #expect(simplifiedChinese.contains("每次处理都会生成新的记忆照片，不覆盖原图"))
+        #expect(english.contains("This update continues the development of FilmMark"))
+        #expect(english.contains("FilmMark remains under active development"))
+        #expect(english.contains("Fixed an issue where a new preset could show one style while producing another"))
+        #expect(english.contains("Each process creates a new memory photo without replacing the original"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
     }
@@ -68,20 +70,10 @@ struct V1ReleaseNotesContractTests {
             "Source/MemoMark/MemoMark.xcodeproj/project.pbxproj"
         )
         let releaseManifest = try sourceText(
-            "Docs/07_Releases/2026-09-07-2.3.0-sync-manifest.md"
+            "Docs/07_Releases/2026-09-21-2.3.2-sync-manifest.md"
         )
-        let releaseIdentity = try #require(
-            releaseManifest
-                .split(whereSeparator: { $0 == "\n" })
-                .first(where: { $0.hasPrefix("# MemoMark ") })
-        )
-        let identityParts = releaseIdentity.split(separator: " ")
-        let version = String(try #require(identityParts.dropFirst(2).first))
-        let build = String(
-            try #require(identityParts.dropFirst(3).first)
-        )
-            .replacingOccurrences(of: "(", with: "")
-            .replacingOccurrences(of: ")", with: "")
+        #expect(releaseManifest.contains("当前 marketing version：`2.3.2`"))
+        #expect(releaseManifest.contains("当前 build number：`108`"))
 
         #expect(!projectSource.contains("MARKETING_VERSION = 2.0.3;"))
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
@@ -113,8 +105,8 @@ struct V1ReleaseNotesContractTests {
                         .replacingOccurrences(of: ";", with: "")
                 }
         )
-        #expect(marketingVersions == [version])
-        #expect(projectBuilds == [build])
+        #expect(marketingVersions == ["2.3.2"])
+        #expect(projectBuilds == ["108"])
     }
 
     @Test("next release drafts keep internal TestFlight and App Store boundaries distinct")

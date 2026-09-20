@@ -5,6 +5,26 @@ import PhotosUI
 import UIKit
 #endif
 
+struct ConfigurationControlHelperText: View {
+
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        Text(text)
+#if os(iOS)
+            .font(MemoMarkDesignTokens.Typography.secondary.swiftUIFont)
+#else
+            .font(.footnote)
+#endif
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
 /// Stable, view-only scroll destinations within the editor. These are not
 /// configuration identities and must never be persisted with a preset.
 enum ConfigurationEditorScrollTarget {
@@ -282,20 +302,24 @@ struct ConfigurationOptionList: View {
 
     private var presentationStyleChoiceContent: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(
+            ConfigurationControlHelperText(
                 localized("configuration.card_style.choice.help")
             )
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
 
             Group {
                 if dynamicTypeSize.isAccessibilitySize {
                     presentationStylePicker
                         .pickerStyle(.menu)
                 } else {
-                    presentationStylePicker
-                        .pickerStyle(.segmented)
+                    ViewThatFits(in: .horizontal) {
+                        presentationStylePicker
+                            .pickerStyle(.segmented)
+                        ScrollView(.horizontal) {
+                            presentationStylePicker
+                                .pickerStyle(.segmented)
+                        }
+                        .scrollIndicators(.hidden)
+                    }
                 }
             }
             .tint(.accentColor)
@@ -704,10 +728,7 @@ struct ConfigurationOptionList: View {
     private var memoryDisplayRow: some View {
         VStack(alignment: .leading, spacing: 10) {
             if !availableMemoryDisplayStyles.isEmpty {
-                Text(memoryDisplaySubtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                ConfigurationControlHelperText(memoryDisplaySubtitle)
 
                 ViewThatFits(in: .horizontal) {
                     memoryDisplayStyleChoices
@@ -719,10 +740,9 @@ struct ConfigurationOptionList: View {
                 .accessibilityLabel(localized("表达方式"))
             }
 
-            Text(localized("configuration.expression.optional_content"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            ConfigurationControlHelperText(
+                localized("configuration.expression.optional_content")
+            )
 
             if availableMemoryDisplayStyles.contains(where: isMemoryDisplayStyleLocked) {
                 Text(

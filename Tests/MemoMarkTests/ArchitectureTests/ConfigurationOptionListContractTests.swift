@@ -67,6 +67,35 @@ struct ConfigurationOptionListContractTests {
         #expect(section.contains("selection: $presentationStyle"))
     }
 
+    @Test("configuration controls use shared helper typography and adaptive choices")
+    func configurationControlsUseSharedHelperTypographyAndAdaptiveChoices() throws {
+        let options = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
+        )
+        let cardStart = try #require(options.range(of: "private var presentationStyleChoiceContent:"))
+        let cardEnd = try #require(options.range(of: "private var presentationStylePicker:"))
+        let cardContent = options[cardStart.lowerBound..<cardEnd.lowerBound]
+        #expect(cardContent.contains("ConfigurationControlHelperText("), "card helper")
+        #expect(cardContent.contains("ViewThatFits(in: .horizontal)"), "card adaptive layout")
+        #expect(!cardContent.contains(".font(.subheadline)"), "card helper does not override typography")
+
+        let expressionStart = try #require(options.range(of: "private var memoryDisplayRow:"))
+        let expressionEnd = try #require(options.range(of: "private var memoryDisplayStyleChoices:"))
+        let expressionContent = options[expressionStart.lowerBound..<expressionEnd.lowerBound]
+        #expect(expressionContent.contains("ConfigurationControlHelperText(memoryDisplaySubtitle)"), "expression helper")
+        #expect(expressionContent.contains("ConfigurationControlHelperText("), "optional content helper")
+        #expect(expressionContent.contains("configuration.expression.optional_content"), "optional content key")
+
+        let footer = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
+        )
+        let actionStart = try #require(footer.range(of: "private var centeredPrimaryAction:"))
+        let actionEnd = try #require(footer.range(of: "private var saveActionButtonStyle:"))
+        let action = footer[actionStart.lowerBound..<actionEnd.lowerBound]
+        #expect(action.contains("MemoMarkDesignTokens.Typography.button.swiftUIFont"), "button token")
+        #expect(!action.contains(".font(.caption.weight(.semibold))"), "button is not caption")
+    }
+
     @Test("adaptive option-row layout is isolated from inspector ownership")
     func adaptiveOptionRowLayoutIsIsolatedFromInspectorOwnership() throws {
         let optionListSource = try sourceText(

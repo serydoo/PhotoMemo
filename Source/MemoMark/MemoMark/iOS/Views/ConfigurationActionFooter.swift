@@ -88,7 +88,7 @@ struct ConfigurationActionFooter: View {
     private var centeredPrimaryAction: some View {
         Button(action: onSaveCurrentConfiguration) {
             Label(saveActionTitle, systemImage: saveActionSystemImage)
-                .font(.caption.weight(.semibold))
+                .font(MemoMarkDesignTokens.Typography.button.swiftUIFont)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
         }
