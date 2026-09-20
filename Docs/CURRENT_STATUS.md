@@ -30,6 +30,20 @@
   Connect，也不改变 `2.3.0 (105)` 版本字段；真机手工 UI/Photos/Share/Live Photo 证据
   仍与源码检查点分开管理。
 
+## 2026-09-20 当前源码覆盖安装到 iPhone 17 Pro Max
+
+- 按用户指令，将当前工作树源码以签名 Debug 真机包构建并覆盖安装到精确设备
+  `iPhone 17 Pro Max`（`863C2747-6742-5E93-B715-6F89DBF90B31`，物理设备，iOS `27.2`）。
+  目标 Bundle ID 为 `com.serydoo.PhotoMemo.iOS`，安装版本为 `2.3.0 (105)`。
+- 使用独立临时 DerivedData `/tmp/MemoMarkiPhone17-20260920.8DHyxB/DerivedData`；
+  签名身份为当前 Apple Development 身份，`xcodebuild` 输出 `BUILD SUCCEEDED`，并完成深度签名
+  真机安装。安装是同 Bundle ID 的覆盖安装，未卸载应用、未清除 App 容器或用户数据。
+- 安装后通过 `devicectl` 启动成功；主进程 `MemoMarkiOS` 与 `MemoMarkWidgetExtension`
+  保持运行，短暂存活检查通过。设备当时为已解锁状态。
+- 本条记录只证明当前包已在指定真机完成构建、覆盖安装和启动；尚不等同于用户逐屏 UI、
+  VoiceOver、Apple Photos、Share、Live Photo 或生产认证完成。未执行 GitHub 推送、TestFlight、
+  App Store Connect 或其他外部发布动作。
+
 ## 2026-09-20 FM 横屏位置与字号预览收窄
 
 - 针对配置中心横屏打开 FM「位置与字号」后预览过高、底部保存操作挤压中间可见区域的问题，
