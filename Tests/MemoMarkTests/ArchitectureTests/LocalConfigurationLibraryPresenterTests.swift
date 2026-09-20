@@ -144,8 +144,8 @@ struct LocalConfigurationLibraryPresenterTests {
         #expect(action == .applyCurrentThenSave(Self.makePreset(id: currentID)))
     }
 
-    @Test("dirty non-durable current configuration is inserted before apply")
-    func dirtyNonDurableCurrentConfigurationIsPreparedForApply() throws {
+    @Test("saving a new non-default configuration preserves the processing default")
+    func savingNewNonDefaultConfigurationPreservesProcessingDefault() throws {
         let subject = Self.makeSubject(
             id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
             name: "小宝"
@@ -179,13 +179,182 @@ struct LocalConfigurationLibraryPresenterTests {
                 )
         )
 
+        // Saving an Editor Context must not silently change the configuration
+        // used by the next Apple Photos share request.
         #expect(prepared.activeSubjectID == subject.id)
-        #expect(prepared.activeConfigurationID == dirtyID)
+        #expect(prepared.activeConfigurationID == durable.id)
         #expect(
             prepared.subjects[0].configurations.map(\.id)
             == [durable.id, dirtyID]
         )
         #expect(prepared.subjects[0].configurations[1].revision == 0)
+    }
+
+    @Test("saving an existing non-default configuration preserves the processing default")
+    func savingExistingNonDefaultConfigurationPreservesProcessingDefault() throws {
+        let subject = Self.makeSubject(
+            id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
+            name: "小宝"
+        )
+        let defaultConfiguration = Self.makeConfiguration(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            title: "下次处理默认"
+        )
+        let editorConfiguration = Self.makeConfiguration(
+            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            title: "只在编辑中打开"
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 5,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [
+                        defaultConfiguration,
+                        editorConfiguration
+                    ],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: defaultConfiguration.id
+        )
+
+        let prepared = try #require(
+            LocalConfigurationLibraryPresenter.preparingCurrentConfiguration(
+                editorConfiguration.id,
+                subjectID: subject.id,
+                in: aggregate
+            )
+        )
+
+        #expect(prepared.activeSubjectID == subject.id)
+        #expect(prepared.activeConfigurationID == defaultConfiguration.id)
+        #expect(prepared.subjects[0].configurations.map(\.id) == [
+            defaultConfiguration.id,
+            editorConfiguration.id
+        ])
+    }
+
+    @Test("setting the processing default changes only the active pair")
+    func settingProcessingDefaultChangesOnlyActivePair() throws {
+        let firstSubject = Self.makeSubject(
+            id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
+            name: "小宝"
+        )
+        let secondSubject = Self.makeSubject(
+            id: UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!,
+            name: "旅行"
+        )
+        let firstConfiguration = Self.makeConfiguration(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            title: "小宝默认"
+        )
+        let secondConfiguration = Self.makeConfiguration(
+            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            title: "旅行默认"
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 5,
+            subjects: [
+                .init(
+                    subject: firstSubject,
+                    configurations: [firstConfiguration],
+                    assetManifest: .init(entries: [])
+                ),
+                .init(
+                    subject: secondSubject,
+                    configurations: [secondConfiguration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: firstSubject.id,
+            activeConfigurationID: firstConfiguration.id
+        )
+
+        let updated = try #require(
+            LocalConfigurationLibraryPresenter.settingProcessingDefault(
+                configurationID: secondConfiguration.id,
+                subjectID: secondSubject.id,
+                in: aggregate
+            )
+        )
+
+        #expect(updated.activeSubjectID == secondSubject.id)
+        #expect(updated.activeConfigurationID == secondConfiguration.id)
+        #expect(updated.revision == aggregate.revision)
+        #expect(updated.subjects == aggregate.subjects)
+    }
+
+    @Test("setting a processing default rejects a configuration owned by another subject")
+    func settingProcessingDefaultRejectsMismatchedSubjectAndConfiguration() {
+        let subject = Self.makeSubject(
+            id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
+            name: "小宝"
+        )
+        let otherSubject = Self.makeSubject(
+            id: UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!,
+            name: "旅行"
+        )
+        let configuration = Self.makeConfiguration(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            title: "小宝默认"
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 5,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [configuration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: configuration.id
+        )
+
+        #expect(
+            LocalConfigurationLibraryPresenter.settingProcessingDefault(
+                configurationID: configuration.id,
+                subjectID: otherSubject.id,
+                in: aggregate
+        ) == nil
+        )
+    }
+
+    @Test("first save repairs an incomplete processing default pair")
+    func firstSaveRepairsIncompleteProcessingDefaultPair() throws {
+        let subject = Self.makeSubject(
+            id: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!,
+            name: "小宝"
+        )
+        let configuration = Self.makeConfiguration(
+            id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            title: "首套配置"
+        )
+        let aggregate = ConfigurationLibraryRecord(
+            revision: 5,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [configuration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: nil
+        )
+
+        let prepared = try #require(
+            LocalConfigurationLibraryPresenter.preparingCurrentConfiguration(
+                configuration.id,
+                subjectID: subject.id,
+                in: aggregate
+            )
+        )
+
+        #expect(prepared.activeSubjectID == subject.id)
+        #expect(prepared.activeConfigurationID == configuration.id)
     }
 
     @Test("legacy current configuration bootstraps a durable aggregate before first apply")

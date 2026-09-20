@@ -25,6 +25,9 @@ struct ConfigurationDraftProjection: Hashable {
         MemoryConfigurationRecord.Output.LivePhotoPolicy
     let route: MemoryConfigurationRecord.Presentation.Route
     let filmMarkConfiguration: FilmMarkConfiguration
+    /// FilmMark owns a single, independent authored-output carrier. It is
+    /// intentionally not one of the classic card regions.
+    let filmMarkContentDraft: MemoryCardEditorDraft?
     let selectedTimeAnchorID: UUID?
     let language: MemoMarkLanguage
     let interfaceLanguage: MemoMarkLanguage
@@ -39,8 +42,13 @@ struct ConfigurationDraftProjection: Hashable {
         [RecordCardPresentationStyle: [CardRegion: MemoryCardEditorDraft]] {
         Dictionary(
             uniqueKeysWithValues:
-                templatesByPresentationStyle.map { style, template in
-                    (
+                templatesByPresentationStyle.compactMap { style, template in
+                    guard RecordCardPresentationStyle
+                        .legacyTemplateBackedStyles
+                        .contains(style) else {
+                        return nil
+                    }
+                    return (
                         style,
                         Self.regionDrafts(
                             from: template,
@@ -113,6 +121,12 @@ struct ConfigurationDraftProjection: Hashable {
         livePhotoPolicy = .preserveMotion
         route = configuration.presentation.route
         filmMarkConfiguration = configuration.presentation.filmMark
+        filmMarkContentDraft = configuration.editor.filmMarkContent.map {
+            Self.draft(
+                from: $0.primaryOutput,
+                interfaceLanguage: interfaceLanguage
+            )
+        }
         selectedTimeAnchorID =
             configuration.selectedTimeAnchorID
         language = configuration.language
@@ -143,6 +157,9 @@ struct ConfigurationAggregateDraft: Hashable {
     let presentationRoute:
         MemoryConfigurationRecord.Presentation.Route
     let filmMarkConfiguration: FilmMarkConfiguration
+    /// This draft is projected solely into `FilmMarkContentSchemaV2` during
+    /// save. A generic slot must never become an implicit FM content source.
+    let filmMarkContentDraft: MemoryCardEditorDraft?
     let selectedTimeAnchorID: UUID?
     let savedAt: Date
     let language: MemoMarkLanguage
@@ -169,6 +186,7 @@ struct ConfigurationAggregateDraft: Hashable {
         presentationRoute:
             MemoryConfigurationRecord.Presentation.Route = .classicWhite,
         filmMarkConfiguration: FilmMarkConfiguration = .default,
+        filmMarkContentDraft: MemoryCardEditorDraft? = nil,
         selectedTimeAnchorID: UUID?,
         savedAt: Date,
         language: MemoMarkLanguage = .simplifiedChinese
@@ -196,6 +214,7 @@ struct ConfigurationAggregateDraft: Hashable {
         self.livePhotoPolicy = livePhotoPolicy
         self.presentationRoute = presentationRoute
         self.filmMarkConfiguration = filmMarkConfiguration
+        self.filmMarkContentDraft = filmMarkContentDraft
         self.selectedTimeAnchorID = selectedTimeAnchorID
         self.savedAt = savedAt
         self.language = language
@@ -248,6 +267,7 @@ struct ConfigurationAggregateCandidate: Hashable {
 enum ConfigurationAggregateCandidateError: Error {
     case missingActiveSubject
     case missingActiveConfiguration
+    case missingSelectedConfiguration
 }
 
 enum ConfigurationAggregateCandidateBuilder {
@@ -323,20 +343,37 @@ enum ConfigurationAggregateCandidateBuilder {
         from aggregate: ConfigurationLibraryRecord,
         draft: ConfigurationAggregateDraft
     ) throws -> ConfigurationAggregateCandidate {
-        guard let subjectID = aggregate.activeSubjectID,
-              let subjectIndex = aggregate.subjects.firstIndex(
-                where: { $0.subject.id == subjectID }
-              ) else {
-            throw ConfigurationAggregateCandidateError
-                .missingActiveSubject
+        guard let activeSubjectID = aggregate.activeSubjectID,
+              aggregate.subjects.contains(where: {
+                  $0.subject.id == activeSubjectID
+              }) else {
+            throw ConfigurationAggregateCandidateError.missingActiveSubject
         }
-        guard let configurationID = aggregate.activeConfigurationID,
-              let configurationIndex = aggregate.subjects[subjectIndex]
-                .configurations.firstIndex(
-                    where: { $0.id == configurationID }
-                ) else {
+        guard let activeConfigurationID = aggregate.activeConfigurationID else {
             throw ConfigurationAggregateCandidateError
                 .missingActiveConfiguration
+        }
+        return try build(
+            from: aggregate,
+            draft: draft,
+            configurationID: activeConfigurationID
+        )
+    }
+
+    static func build(
+        from aggregate: ConfigurationLibraryRecord,
+        draft: ConfigurationAggregateDraft,
+        configurationID: UUID
+    ) throws -> ConfigurationAggregateCandidate {
+        guard let subjectIndex = aggregate.subjects.indices.first(where: {
+            aggregate.subjects[$0].configurations.contains(where: {
+                $0.id == configurationID
+            })
+        }), let configurationIndex = aggregate.subjects[subjectIndex]
+            .configurations.firstIndex(where: { $0.id == configurationID })
+        else {
+            throw ConfigurationAggregateCandidateError
+                .missingSelectedConfiguration
         }
 
         let previous = aggregate.subjects[subjectIndex]
@@ -439,9 +476,9 @@ enum ConfigurationAggregateCandidateBuilder {
         basedOn existing: FilmMarkContentSchemaV2?,
         draft: ConfigurationAggregateDraft
     ) -> FilmMarkContentSchemaV2? {
-        guard let contentDraft = draft.regionDraftsByPresentationStyle[.filmMark]?[.slotA]
-            ?? (draft.presentationRoute == .filmMark ? draft.regionDrafts[.slotA] : nil)
-        else { return existing }
+        guard let contentDraft = draft.filmMarkContentDraft else {
+            return existing
+        }
         return FilmMarkContentSchemaV2(
             primaryOutputItems: area(
                 basedOn: existing?.primaryOutput

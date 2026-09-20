@@ -7,6 +7,7 @@ enum ConfigurationLibraryActionIntent: Equatable {
     case beginRename(title: String)
     case commitRename(title: String)
     case saveCurrent
+    case setAsProcessingDefault
     case saveToLocalLibrary(ConfigurationLibrarySaveRequest)
     case requestActivation(ConfigurationLibraryActivationRequest)
     case activate(MemoryPreset)
@@ -19,6 +20,7 @@ enum ConfigurationLibraryActionDecision: Equatable {
     case beginRename(title: String)
     case commitRenameAndSave(title: String)
     case saveCurrent
+    case setAsProcessingDefault
     case applyCurrentThenSave(MemoryPreset)
     case saveDurableConfiguration(MemoryPreset)
     case confirmSaveBeforeActivation(MemoryPreset)
@@ -33,6 +35,7 @@ struct ConfigurationLibraryDeletionRequest: Equatable {
     let aggregate: ConfigurationLibraryRecord?
     let subjectID: UUID?
     let selectedConfigurationID: UUID?
+    let isProcessingDefault: Bool
     let isCurrentConfigurationDirty: Bool
     let visibleConfigurationIDs: [UUID]
     let isPersistenceAvailable: Bool
@@ -46,12 +49,14 @@ struct ConfigurationLibraryDeletionRequest: Equatable {
         isCurrentConfigurationDirty: Bool,
         visibleConfigurationIDs: [UUID],
         isPersistenceAvailable: Bool = true,
-        isSavingConfiguration: Bool = false
+        isSavingConfiguration: Bool = false,
+        isProcessingDefault: Bool = false
     ) {
         self.preset = preset
         self.aggregate = aggregate
         self.subjectID = subjectID
         self.selectedConfigurationID = selectedConfigurationID
+        self.isProcessingDefault = isProcessingDefault
         self.isCurrentConfigurationDirty = isCurrentConfigurationDirty
         self.visibleConfigurationIDs = visibleConfigurationIDs
         self.isPersistenceAvailable = isPersistenceAvailable
@@ -106,6 +111,8 @@ struct ConfigurationLibraryActions {
             return .commitRenameAndSave(title: title)
         case .saveCurrent:
             return .saveCurrent
+        case .setAsProcessingDefault:
+            return .setAsProcessingDefault
         case .saveToLocalLibrary(let request):
             return saveDecision(for: request)
         case .requestActivation(let request):
@@ -186,15 +193,18 @@ private extension ConfigurationLibraryActions {
         }
 
         var candidate = aggregate
+        if request.isProcessingDefault,
+           let replacementID = durableConfigurationIDs.first(
+               where: { $0 != request.preset.id }
+           ) {
+            // Deleting the processing default is safe when the replacement
+            // is selected in the same aggregate write. This preserves the
+            // invariant that Share/Processing always has a durable default.
+            candidate.activeConfigurationID = replacementID
+            candidate.activeSubjectID = subjectID
+        }
         candidate.subjects[subjectIndex].configurations.removeAll {
             $0.id == request.preset.id
-        }
-
-        if candidate.activeConfigurationID == request.preset.id,
-           let sibling = candidate.subjects[subjectIndex]
-            .configurations.first {
-            candidate.activeSubjectID = subjectID
-            candidate.activeConfigurationID = sibling.id
         }
 
         return .persistDeletion(

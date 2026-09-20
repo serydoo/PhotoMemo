@@ -4,6 +4,45 @@ import PhotosUI
 import UIKit
 
 extension MemoMarkConfigurationCenterView {
+
+    func createNewMemoryPresetFromClassicWhiteBaseline() {
+        session.createMemoryPresetFromClassicWhiteBaseline()
+        presentationStyle = .classicWhite
+        logoMode = .appleMini
+        customLogoBadge = nil
+        rootConfigurationProjectionState.filmMarkConfiguration = .default
+        filmMarkContentDraft = defaultFilmMarkPrimaryOutputDraft()
+        bootstrapDrafts()
+        resetOutputDraftForNewConfiguration()
+        rootPresentationState.renamePresentation.titleDraft =
+            session.currentMemoryPresetTitle
+        rootPresentationState.renamePresentation.isEditing = true
+        activeConfigurationStatus = .dirty
+    }
+
+    func saveCurrentConfigurationThenCreateNewMemoryPreset() {
+        Task { @MainActor in
+            guard await applyCurrentConfiguration(),
+                  activeConfigurationStatus.isDurablySaved else {
+                return
+            }
+            createNewMemoryPresetFromClassicWhiteBaseline()
+            rootPresentationState
+                .switchPresentation
+                .showsUnsavedPresetCreationAlert = false
+        }
+    }
+
+    func discardCurrentConfigurationThenCreateNewMemoryPreset() {
+        _ = session.discardSelectedMemoryPresetChanges()
+        synchronizeSelectedSubjectConfigurationProjection()
+        bootstrapDrafts()
+        activeConfigurationStatus = .saved
+        createNewMemoryPresetFromClassicWhiteBaseline()
+        rootPresentationState
+            .switchPresentation
+            .showsUnsavedPresetCreationAlert = false
+    }
     func beginEditingMemoryPresetTitle() {
         performConfigurationLibraryAction(
             .beginRename(title: session.currentMemoryPresetTitle)
@@ -32,12 +71,77 @@ extension MemoMarkConfigurationCenterView {
                 await applyCurrentConfiguration()
 
             guard didSave,
-                  activeConfigurationStatus == .saved else {
+                  activeConfigurationStatus.isDurablySaved else {
                 return
             }
 
             UINotificationFeedbackGenerator()
                 .notificationOccurred(.success)
+        }
+    }
+
+    /// Changes the durable default used by the *next* Apple Photos share
+    /// request without serializing the editor's current draft again. This is
+    /// deliberately separate from normal save so a user can inspect or edit
+    /// one preset without accidentally changing processing behavior.
+    @discardableResult
+    @MainActor
+    func setCurrentConfigurationAsProcessingDefault() async -> Bool {
+        guard !isSavingConfiguration,
+              activeConfigurationStatus.isProcessingProjectionReady,
+              let subjectID = session.state.selectedSubject?.id,
+              let configurationID = session.state.selectedMemoryPresetID,
+              let aggregate = session.state.configurationLibrary,
+              let candidate = LocalConfigurationLibraryPresenter
+                .settingProcessingDefault(
+                    configurationID: configurationID,
+                    subjectID: subjectID,
+                    in: aggregate
+                )
+        else {
+            return false
+        }
+
+        guard let configurationCoordinator else {
+            activeConfigurationStatus = .failure(
+                message: MemoMarkLanguage.interfaceStored.localized(
+                    key: "configuration.library.unavailable",
+                    fallback: "当前配置库不可用，请稍后重试。"
+                )
+            )
+            return false
+        }
+
+        isSavingConfiguration = true
+        activeConfigurationStatus = .saving
+
+        do {
+            let receipt = try await configurationCoordinator
+                .saveConfigurationLibrary(candidate)
+            var durableCandidate = candidate
+            durableCandidate.revision = receipt.revision
+            session.updateConfigurationLibraryReference(durableCandidate)
+            session.processingDefaultMemoryPresetID = configurationID
+            isSavingConfiguration = false
+            activeConfigurationStatus = receipt
+                .compatibilityProjectionFailure == nil
+                ? .saved
+                : .savedWithWarning(
+                    message: MemoMarkLanguage.interfaceStored.localized(
+                        key: "configuration.default.compatibility_warning",
+                        fallback: "默认配置已保存，但兼容设置未能完全同步。"
+                    )
+                )
+            return true
+        } catch {
+            isSavingConfiguration = false
+            activeConfigurationStatus = .failure(
+                message: MemoMarkLanguage.interfaceStored.localized(
+                    key: "configuration.default.save_failed",
+                    fallback: "设为下次处理默认失败，请重试。"
+                )
+            )
+            return false
         }
     }
 
@@ -104,10 +208,7 @@ extension MemoMarkConfigurationCenterView {
 
         Task { @MainActor in
             guard await applyCurrentConfiguration(),
-                  activeConfigurationStatus == .saved else {
-                rootPresentationState
-                    .switchPresentation
-                    .pendingMemoryPresetActivation = nil
+                  activeConfigurationStatus.isDurablySaved else {
                 return
             }
 
@@ -116,6 +217,20 @@ extension MemoMarkConfigurationCenterView {
                 .pendingMemoryPresetActivation = nil
             performConfigurationLibraryAction(.activate(preset))
         }
+    }
+
+    func discardCurrentConfigurationThenActivatePendingPreset() {
+        guard let preset = rootPresentationState
+            .switchPresentation
+            .pendingMemoryPresetActivation else {
+            return
+        }
+
+        _ = session.discardSelectedMemoryPresetDraft()
+        rootPresentationState
+            .switchPresentation
+            .pendingMemoryPresetActivation = nil
+        performConfigurationLibraryAction(.activate(preset))
     }
 
     func requestSubjectSelection(
@@ -151,10 +266,7 @@ extension MemoMarkConfigurationCenterView {
 
         Task { @MainActor in
             guard await applyCurrentConfiguration(),
-                  activeConfigurationStatus == .saved else {
-                rootPresentationState
-                    .switchPresentation
-                    .pendingSubjectSelectionID = nil
+                  activeConfigurationStatus.isDurablySaved else {
                 return
             }
 
@@ -242,13 +354,15 @@ extension MemoMarkConfigurationCenterView {
             selectedConfigurationID:
                 session.state.selectedMemoryPresetID,
             isCurrentConfigurationDirty:
-                activeConfigurationStatus == .dirty,
+                activeConfigurationStatus.hasUncommittedChanges,
             visibleConfigurationIDs:
                 homeAvailablePresets.map(\.id),
             isPersistenceAvailable:
                 configurationCoordinator != nil,
             isSavingConfiguration:
-                isSavingConfiguration
+                isSavingConfiguration,
+            isProcessingDefault:
+                session.processingDefaultMemoryPresetID == preset.id
         )
     }
 
@@ -257,15 +371,13 @@ extension MemoMarkConfigurationCenterView {
     ) {
         switch configurationLibraryActions.decide(intent) {
         case .create:
-            session.createMemoryPresetFromCurrent(
-                logoMode: logoMode,
-                outputConfiguration:
-                    currentSavedOutputConfiguration
-            )
-            rootPresentationState.renamePresentation.titleDraft =
-                session.currentMemoryPresetTitle
-            rootPresentationState.renamePresentation.isEditing = true
-            activeConfigurationStatus = .dirty
+            if activeConfigurationStatus.hasUncommittedChanges {
+                rootPresentationState
+                    .switchPresentation
+                    .showsUnsavedPresetCreationAlert = true
+            } else {
+                createNewMemoryPresetFromClassicWhiteBaseline()
+            }
         case .reset:
             session.resetSelectedMemoryPreset()
             bootstrapDrafts()
@@ -290,12 +402,15 @@ extension MemoMarkConfigurationCenterView {
             session.selectMemoryPreset(preset)
             synchronizeSelectedSubjectConfigurationProjection()
             bootstrapDrafts()
-            activeConfigurationStatus = .saving
-            Task {
-                await applyCurrentConfiguration()
-            }
+            activeConfigurationStatus = session.selectedMemoryPresetIsDurable
+                ? .saved
+                : .dirty
         case .saveCurrent:
             startCurrentConfigurationSaveWithFeedback()
+        case .setAsProcessingDefault:
+            Task { @MainActor in
+                _ = await setCurrentConfigurationAsProcessingDefault()
+            }
         case .applyCurrentThenDelete,
              .applyCurrentThenSave,
              .saveDurableConfiguration,
@@ -465,12 +580,6 @@ extension MemoMarkConfigurationCenterView {
             shouldSaveSubjectLibrary = true
         }
 
-        if patch.events.contains(
-            .persistActiveConfigurationSelection
-        ) {
-            persistActiveConfigurationSelection()
-        }
-
         activeConfigurationStatus =
             patch.activeConfigurationStatus
 
@@ -517,27 +626,6 @@ extension MemoMarkConfigurationCenterView {
         presentationStyle = .classicWhite
         customLogoBadge = nil
         applySavedOutputConfiguration(preset)
-    }
-
-    func persistActiveConfigurationSelection() {
-        guard session.selectedMemoryPresetIsDurable,
-              let candidate = session.state.configurationLibrary,
-              let configurationSelectionPersistenceCoordinator else {
-            return
-        }
-
-        Task { @MainActor in
-            switch await configurationSelectionPersistenceCoordinator
-                .persist(candidate) {
-            case .saved(let patch):
-                guard let current = patch.reconcile(
-                    current: session.state.configurationLibrary
-                ) else { return }
-                session.updateConfigurationLibraryReference(current)
-            case .failed(let message):
-                activeConfigurationStatus = .failure(message: message)
-            }
-        }
     }
 
     @MainActor

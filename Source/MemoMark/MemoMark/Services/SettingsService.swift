@@ -447,6 +447,7 @@ final class SettingsService: ObservableObject {
 
     func saveConfigurationLibrary(
         _ aggregate: ConfigurationLibraryRecord,
+        changedConfigurationID: UUID? = nil,
         afterSuccessfulProjection:
             @MainActor (
                 BatchConfigurationSnapshot,
@@ -455,6 +456,7 @@ final class SettingsService: ObservableObject {
     ) async throws -> ConfigurationLibrarySaveReceipt {
         try await configurationLibraryStore.save(
             aggregate,
+            changedConfigurationID: changedConfigurationID,
             compatibilityProjection: {
                 [weak self]
                 saved,

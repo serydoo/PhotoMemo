@@ -203,13 +203,13 @@ private enum FilmMarkRasterRenderer {
         )
         if presentation.appearance.substrate == .softShadow {
             context.setShadow(
-                offset: CGSize(width: 0, height: -1),
-                blur: 2,
+                offset: CGSize(width: 0, height: -1.5),
+                blur: 3.5,
                 color: CGColor(
                     red: 0,
                     green: 0,
                     blue: 0,
-                    alpha: 0.55
+                    alpha: 0.72
                 )
             )
         }
@@ -267,13 +267,13 @@ private enum FilmMarkRasterRenderer {
             context.saveGState()
             context.addPath(path)
             context.setShadow(
-                offset: CGSize(width: 0, height: -1),
-                blur: 2,
+                offset: CGSize(width: 0, height: -1.5),
+                blur: 3.5,
                 color: CGColor(
                     red: 0,
                     green: 0,
                     blue: 0,
-                    alpha: 0.55
+                    alpha: 0.72
                 )
             )
             context.setFillColor(CGColor(gray: 1, alpha: 0.001))

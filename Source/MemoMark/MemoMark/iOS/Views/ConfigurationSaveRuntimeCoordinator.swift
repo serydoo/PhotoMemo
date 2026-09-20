@@ -46,6 +46,12 @@ struct ConfigurationSaveRuntimeCoordinator {
             ConfigurationAggregateCandidate,
             ConfigurationLibrarySaveReceipt
         ) -> ConfigurationPersistenceReconciliationOutcome)?
+    private let reconcileConfigurationLibraryWithGeneration:
+        ((
+            ConfigurationAggregateCandidate,
+            ConfigurationLibrarySaveReceipt,
+            UInt64
+        ) -> ConfigurationPersistenceReconciliationOutcome)?
     private let applySavedConfigurationProjection:
         (MemoryConfigurationRecord) -> Void
     private let applySelectedMemoryPreset:
@@ -90,6 +96,11 @@ struct ConfigurationSaveRuntimeCoordinator {
             ConfigurationAggregateCandidate,
             ConfigurationLibrarySaveReceipt
         ) -> ConfigurationPersistenceReconciliationOutcome)? = nil,
+        reconcileConfigurationLibraryWithGeneration: ((
+            ConfigurationAggregateCandidate,
+            ConfigurationLibrarySaveReceipt,
+            UInt64
+        ) -> ConfigurationPersistenceReconciliationOutcome)? = nil,
         applySavedConfigurationProjection: @escaping (
             MemoryConfigurationRecord
         ) -> Void = { _ in },
@@ -117,6 +128,8 @@ struct ConfigurationSaveRuntimeCoordinator {
             reconcileSavedConfiguration
         self.reconcileConfigurationLibrary =
             reconcileConfigurationLibrary
+        self.reconcileConfigurationLibraryWithGeneration =
+            reconcileConfigurationLibraryWithGeneration
         self.applySavedConfigurationProjection =
             applySavedConfigurationProjection
         self.applySelectedMemoryPreset =
@@ -149,6 +162,11 @@ struct ConfigurationSaveRuntimeCoordinator {
         reconcileConfigurationLibrary: ((
             ConfigurationAggregateCandidate,
             ConfigurationLibrarySaveReceipt
+        ) -> ConfigurationPersistenceReconciliationOutcome)? = nil,
+        reconcileConfigurationLibraryWithGeneration: ((
+            ConfigurationAggregateCandidate,
+            ConfigurationLibrarySaveReceipt,
+            UInt64
         ) -> ConfigurationPersistenceReconciliationOutcome)? = nil,
         applySavedConfigurationProjection: @escaping (
             MemoryConfigurationRecord
@@ -185,6 +203,8 @@ struct ConfigurationSaveRuntimeCoordinator {
                 reconcileSavedConfiguration,
             reconcileConfigurationLibrary:
                 reconcileConfigurationLibrary,
+            reconcileConfigurationLibraryWithGeneration:
+                reconcileConfigurationLibraryWithGeneration,
             applySavedConfigurationProjection:
                 applySavedConfigurationProjection,
             applySelectedMemoryPreset:
@@ -198,7 +218,9 @@ struct ConfigurationSaveRuntimeCoordinator {
     func applyAggregate(
         configurationLibrary: ConfigurationLibraryRecord,
         aggregateDraft: ConfigurationAggregateDraft,
-        availableAlbums: [PhotoAlbumOption]
+        configurationID: UUID? = nil,
+        availableAlbums: [PhotoAlbumOption],
+        editorGeneration: UInt64? = nil
     ) async -> Bool {
         updateStatus(.init(status: .saving))
 
@@ -211,11 +233,18 @@ struct ConfigurationSaveRuntimeCoordinator {
 
         let candidate: ConfigurationAggregateCandidate
         do {
-            candidate = try ConfigurationAggregateCandidateBuilder
-                .build(
+            if let configurationID {
+                candidate = try ConfigurationAggregateCandidateBuilder.build(
+                    from: configurationLibrary,
+                    draft: aggregateDraft,
+                    configurationID: configurationID
+                )
+            } else {
+                candidate = try ConfigurationAggregateCandidateBuilder.build(
                     from: configurationLibrary,
                     draft: aggregateDraft
                 )
+            }
         } catch {
             let failure = ProductionDiagnosticFailureClassifier
                 .candidateConstruction(
@@ -327,20 +356,36 @@ struct ConfigurationSaveRuntimeCoordinator {
                     pickerSelectionIdentifier
                 )
             }
-            let outcome = reconcileConfigurationLibrary?(
-                receipt.candidate,
-                receipt.saveReceipt
-            ) ?? .newerEditsPreserved
+            let outcome: ConfigurationPersistenceReconciliationOutcome
+            if let editorGeneration,
+               let reconcileConfigurationLibraryWithGeneration {
+                outcome = reconcileConfigurationLibraryWithGeneration(
+                    receipt.candidate,
+                    receipt.saveReceipt,
+                    editorGeneration
+                )
+            } else {
+                outcome = reconcileConfigurationLibrary?(
+                    receipt.candidate,
+                    receipt.saveReceipt
+                ) ?? .newerEditsPreserved
+            }
             if outcome == .applied {
                 applySavedConfigurationProjection(
                     receipt.candidate.configuration
                 )
             }
             let status: ConfigurationPersistenceStatus
-            if let operationID = receipt.saveReceipt
+            if outcome != .applied {
+                // Durable storage may have accepted the candidate, but the
+                // editor is newer than that receipt. The current draft is
+                // still unsaved and must keep switch/delete protection even
+                // when compatibility projection also emitted a warning.
+                status = .dirty
+            } else if let operationID = receipt.saveReceipt
                 .diagnosticOperationID,
-               receipt.saveReceipt
-                .compatibilityProjectionFailure != nil {
+                      receipt.saveReceipt
+                        .compatibilityProjectionFailure != nil {
                 let failure = ProductionDiagnosticFailureClassifier
                     .compatibilityProjection(
                         operationID: operationID,
@@ -350,9 +395,7 @@ struct ConfigurationSaveRuntimeCoordinator {
                     message: failure.userMessage
                 )
             } else {
-                status = outcome == .applied
-                    ? .saved
-                    : .dirty
+                status = .saved
             }
             updateStatus(.init(status: status))
             return true

@@ -64,12 +64,32 @@ final class ConfigurationSession: ObservableObject {
         set { editingState.appliedMemoryPresetID = newValue }
     }
 
+    var processingDefaultMemoryPresetID: MemoryPreset.ID? {
+        get { editingState.processingDefaultMemoryPresetID }
+        set { editingState.processingDefaultMemoryPresetID = newValue }
+    }
+
+    var selectedMemoryPresetIsProcessingDefault: Bool {
+        guard let selectedID = state.selectedMemoryPresetID else {
+            return false
+        }
+        return processingDefaultMemoryPresetID == selectedID
+    }
+
     var selectedMemoryConfiguration: MemoryConfigurationRecord? {
         editingState.selectedMemoryConfiguration
     }
 
     var selectedMemoryPresetIsDurable: Bool {
         editingState.selectedMemoryPresetIsDurable
+    }
+
+    var editorGeneration: UInt64 {
+        editingState.editorGeneration
+    }
+
+    func markEditorChange() {
+        editingState.markEditorChange()
     }
 
     var activeConfigurationState: ActiveConfigurationState {
@@ -190,17 +210,21 @@ final class ConfigurationSession: ObservableObject {
         _ aggregate: ConfigurationLibraryRecord
     ) {
         editingState.state.configurationLibrary = aggregate
+        editingState.processingDefaultMemoryPresetID =
+            aggregate.activeConfigurationID
     }
 
     @discardableResult
     func reconcileConfigurationLibrarySave(
         candidate: ConfigurationAggregateCandidate,
-        receipt: ConfigurationLibrarySaveReceipt
+        receipt: ConfigurationLibrarySaveReceipt,
+        editorGeneration: UInt64? = nil
     ) -> ConfigurationPersistenceReconciliationOutcome {
         persistenceReconciler.reconcileConfigurationLibrarySave(
             candidate: candidate,
             receipt: receipt,
-            editingState: &editingState
+            editingState: &editingState,
+            editorGeneration: editorGeneration
         )
     }
 
@@ -286,7 +310,7 @@ final class ConfigurationSession: ObservableObject {
             smartText: memoryText,
             usesCustomText: usesCustomMemoryWriteText,
             customText: customMemoryWriteText
-        ) ?? "当前智能模块暂无内容"
+        ) ?? "暂无可写入的记忆内容。"
     }
 
     var generatedMemoryModuleText: String {
@@ -310,7 +334,6 @@ final class ConfigurationSession: ObservableObject {
         else {
             createMemoryPresetFromCurrent(
                 savedAt: Date(),
-                applyImmediately: true,
                 logoMode: logoMode,
                 outputConfiguration: outputConfiguration
             )
@@ -336,15 +359,56 @@ final class ConfigurationSession: ObservableObject {
     ) {
         createMemoryPresetFromCurrent(
             savedAt: nil,
-            applyImmediately: false,
             logoMode: logoMode,
             outputConfiguration: outputConfiguration
         )
     }
 
+    /// Creates an independent preset from the canonical Classic White
+    /// baseline. The memory subject and its selected anchor remain the
+    /// context, while authored regions, FilmMark content, logo, output
+    /// destination, and custom copy start clean and cannot leak from the
+    /// previously selected preset.
+    func createMemoryPresetFromClassicWhiteBaseline() {
+        let subject = editingState.state.selectedSubject
+        let styleName = TemplatePreset.classicWhite.displayName(
+            for: .interfaceStored
+        )
+        let preset = MemoryPreset(
+            title: "\(editingState.currentDefaultMemoryPresetTitle) · \(styleName)",
+            summary: styleName,
+            regionTemplateIDs: [:],
+            selectedSubjectID: subject?.id,
+            selectedTimeAnchorID: subject?.primaryTimeAnchor?.id,
+            outputOption: .processedImage,
+            storageOption: .appFolder,
+            logoMode: .appleMini,
+            usesCustomMemoryWriteText: false,
+            customMemoryWriteText: "",
+            savedOutputConfiguration: nil,
+            language: MemoMarkLanguage.defaultOutputLanguage
+        )
+
+        editingState.state.memoryPresets.append(preset)
+        editingState.state.selectedMemoryPresetID = preset.id
+        editingState.appliedMemoryPresetID = nil
+        editingState.presentationState.draftMemoryConfiguration = nil
+        editingState.refreshPresetDrivenPreview()
+    }
+
     @discardableResult
     func deleteSelectedMemoryPreset() -> Bool {
         editingState.deleteSelectedMemoryPreset()
+    }
+
+    @discardableResult
+    func discardSelectedMemoryPresetDraft() -> Bool {
+        editingState.discardSelectedMemoryPresetDraft()
+    }
+
+    @discardableResult
+    func discardSelectedMemoryPresetChanges() -> Bool {
+        editingState.discardSelectedMemoryPresetChanges()
     }
 
     func persistenceSnapshotForCurrentConfiguration(
@@ -519,7 +583,6 @@ private extension ConfigurationSession {
 
     func createMemoryPresetFromCurrent(
         savedAt: Date?,
-        applyImmediately: Bool,
         logoMode: ConfigurationLogoMode?,
         outputConfiguration: SavedOutputConfigurationSchemaV1?
     ) {
@@ -545,8 +608,9 @@ private extension ConfigurationSession {
 
         editingState.state.memoryPresets.append(snapshot)
         editingState.state.selectedMemoryPresetID = snapshot.id
-        editingState.appliedMemoryPresetID =
-            applyImmediately ? snapshot.id : nil
+        editingState.appliedMemoryPresetID = snapshot.savedAt == nil
+            ? nil
+            : snapshot.id
         editingState.refreshPresetDrivenPreview()
     }
 }

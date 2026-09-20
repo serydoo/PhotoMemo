@@ -61,5 +61,18 @@ struct ConfigurationPersistenceStatusTests {
                 .hasUncommittedChanges
         )
     }
+
+    @Test("durable save warnings remain switchable but are not processing-ready")
+    func durableSaveWarningSeparatesCapabilities() {
+        let warning = ConfigurationPersistenceStatus
+            .savedWithWarning(message: "兼容投影失败")
+
+        #expect(ConfigurationPersistenceStatus.saved.isDurablySaved)
+        #expect(warning.isDurablySaved)
+        #expect(!warning.isProcessingProjectionReady)
+        #expect(ConfigurationPersistenceStatus.saved.isProcessingProjectionReady)
+        #expect(!ConfigurationPersistenceStatus.failure(message: "保存失败").isDurablySaved)
+        #expect(!ConfigurationPersistenceStatus.dirty.isProcessingProjectionReady)
+    }
 }
 #endif

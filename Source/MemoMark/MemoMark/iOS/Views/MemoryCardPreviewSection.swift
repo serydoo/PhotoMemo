@@ -13,6 +13,7 @@ struct MemoryCardPreviewSection: View {
     let memoryText: String
     let filmMarkOutputText: String
     let filmMarkConfiguration: FilmMarkConfiguration
+    let isFilmMarkGeometryExpanded: Bool
     let onTap: (() -> Void)?
 
     var body: some View {
@@ -27,7 +28,10 @@ struct MemoryCardPreviewSection: View {
             contextText: contextText,
             memoryText: memoryText,
             filmMarkOutputText: filmMarkOutputText,
-            filmMarkConfiguration: filmMarkConfiguration
+            filmMarkConfiguration: filmMarkConfiguration,
+            filmMarkPreviewMode: isFilmMarkGeometryExpanded
+                ? .geometry
+                : .contentStrip
         )
         .contentShape(Rectangle())
         .onTapGesture {

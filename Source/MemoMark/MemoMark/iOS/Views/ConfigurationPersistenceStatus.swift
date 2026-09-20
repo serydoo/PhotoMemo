@@ -83,6 +83,28 @@ extension ConfigurationPersistenceStatus {
         }
     }
 
+    /// The aggregate has been durably written and can therefore be used for
+    /// configuration-library navigation or deletion. A compatibility
+    /// projection warning does not roll back the durable configuration.
+    var isDurablySaved: Bool {
+        switch self {
+        case .saved, .savedWithWarning:
+            return true
+        case .idle, .dirty, .saving, .subjectSynced, .failure:
+            return false
+        }
+    }
+
+    /// Processing Default is stricter than library navigation: the legacy
+    /// compatibility projection must also be ready for Share/Processing.
+    var isProcessingProjectionReady: Bool {
+        if case .saved = self {
+            return true
+        }
+
+        return false
+    }
+
     var isSaving: Bool {
         if case .saving = self {
             return true

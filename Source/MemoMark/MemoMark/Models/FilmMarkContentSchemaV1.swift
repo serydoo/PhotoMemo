@@ -8,6 +8,15 @@ struct FilmMarkContentSchemaV2: Codable, Hashable {
     let schemaVersion: Int
     var primaryOutputItems: [TemplateItem]
 
+    /// A newly created FilmMark card starts from objective capture context and
+    /// the selected time anchor's result. The editor projects these module
+    /// identities into its own draft representation; the renderer never
+    /// synthesizes them as a fallback.
+    static let defaultPrimaryOutputModules: [MemoryCardModuleID] = [
+        .captureDate,
+        .smartTime
+    ]
+
     init(primaryOutput: TemplateArea) {
         self.schemaVersion = 2
         self.primaryOutputItems = primaryOutput.items

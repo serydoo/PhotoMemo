@@ -216,6 +216,13 @@ Therefore:
 MemoMark fully trusts Apple Photos.
 ```
 
+The current detailed product-positioning source is
+`Docs/01_Product/MemoMark_Product_Positioning_And_Memory_Selection.md`. It
+records the user's final selection authority, the boundary between Apple
+Photos and MemoMark, and the long-term separation of source assets, memory
+state, and presentation projections. Use it when product language or scope
+decisions need more detail than this constitution carries.
+
 ## Immediate Task
 
 V4 starts with two separate tracks:

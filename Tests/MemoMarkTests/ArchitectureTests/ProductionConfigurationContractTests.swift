@@ -15,13 +15,31 @@ struct ProductionConfigurationContractTests {
         fmTemplate.leftTopArea = TemplateArea(name: "FM", items: [
             TemplateItem(type: .text, name: "FM", value: "FM独立内容 · {{capture_time}}")
         ])
-        let fmDrafts = ConfigurationDraftProjection.makeRegionDrafts(
+        let genericFilmMarkDrafts = ConfigurationDraftProjection.makeRegionDrafts(
             from: fmTemplate, interfaceLanguage: .simplifiedChinese
         )
         var drafts = before.regionDraftsByPresentationStyle
-        drafts[.filmMark] = fmDrafts
+        // A conflicting generic slot-A buffer proves FilmMark does not use a
+        // legacy card region as its authored content source.
+        drafts[.filmMark] = genericFilmMarkDrafts
+        let independentFilmMarkDraft = MemoryCardEditorDraft(items: [
+            .text("拍摄于 "),
+            .token(
+                "拍摄日期",
+                value: "2026年6月1日",
+                templateValue: "{{capture_time}}",
+                systemImage: "calendar"
+            ),
+            .text(" · "),
+            .token(
+                "智能结果",
+                value: "途途1岁6天",
+                templateValue: "{{anchor_age_text}}",
+                systemImage: "sparkles"
+            )
+        ])
         let draft = ConfigurationAggregateDraft(
-            title: "FM", regionDrafts: fmDrafts,
+            title: "FM", regionDrafts: genericFilmMarkDrafts,
             regionDraftsByPresentationStyle: drafts, regionTemplateIDs: [:],
             locationConfiguration: nil, logoMode: .appleMini, badge: nil,
             usesCustomMemoryWriteText: false, customMemoryWriteText: "",
@@ -29,6 +47,7 @@ struct ProductionConfigurationContractTests {
             outputTarget: .existingAlbum, selectedAlbumIdentifier: "album-fm",
             albumTitle: "FM相册", mediaOutputMode: .originalFormat,
             livePhotoPolicy: .preserveMotion, presentationRoute: .filmMark,
+            filmMarkContentDraft: independentFilmMarkDraft,
             selectedTimeAnchorID: fixture.anchor.id, savedAt: fixture.captureDate
         )
         let candidate = try ConfigurationAggregateCandidateBuilder.build(
@@ -40,7 +59,8 @@ struct ProductionConfigurationContractTests {
         )
         let configuration = reloaded.subjects[0].configurations[0]
         let after = ConfigurationDraftProjection(configuration: configuration)
-        #expect(after.regionDrafts[.slotA]?.singleLineTemplateText == "FM独立内容 · {{capture_time}}")
+        #expect(after.filmMarkContentDraft?.singleLineTemplateText == "拍摄于 {{capture_time}} · {{anchor_age_text}}")
+        #expect(after.regionDraftsByPresentationStyle[.filmMark] == nil)
         #expect(configuration.editor.templatesByPresentationStyle[.filmMark] == nil)
         #expect(after.regionDraftsByPresentationStyle[.classicWhite]?.mapValues(\.singleLineTemplateText) == before.regionDraftsByPresentationStyle[.classicWhite]?.mapValues(\.singleLineTemplateText))
         #expect(after.regionDraftsByPresentationStyle[.minimal]?.mapValues(\.singleLineTemplateText) == before.regionDraftsByPresentationStyle[.minimal]?.mapValues(\.singleLineTemplateText))
@@ -48,7 +68,7 @@ struct ProductionConfigurationContractTests {
             reference: .init(configurationID: configuration.id, revision: configuration.revision),
             from: reloaded
         )
-        #expect(production.template.leftTopArea.items.map(\.value).joined() == "FM独立内容 · {{capture_time}}")
+        #expect(production.template.leftTopArea.items.map(\.value).joined() == "拍摄于 {{capture_time}} · {{anchor_age_text}}")
         #expect(production.selectedAlbumIdentifier == "album-fm")
         #expect(production.shouldWritePhotoDescription)
         #expect(production.photoDescriptionOverride == "保留说明")

@@ -190,6 +190,7 @@ struct ConfigurationSaveRuntimeCoordinatorTests {
             aggregate.activeConfigurationID
         )
         var projectedConfiguration: MemoryConfigurationRecord?
+        var statuses: [ConfigurationSaveViewStatus] = []
         let coordinator = ConfigurationSaveRuntimeCoordinator(
             applyLegacyRequest: { _ in
                 Issue.record("Aggregate apply must not use legacy save.")
@@ -209,7 +210,13 @@ struct ConfigurationSaveRuntimeCoordinatorTests {
                             subjectID: subjectID,
                             configurationID: configurationID,
                             configurationRevision: 4,
-                            compatibilityProjectionFailure: nil
+                            compatibilityProjectionFailure:
+                                ConfigurationLibraryProjectionFailure(
+                                    underlyingDescription: "projection failed"
+                                ),
+                            diagnosticOperationID: UUID(
+                                uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE"
+                            )
                         ),
                         albumSelection: .init(
                             identifier: "",
@@ -229,7 +236,7 @@ struct ConfigurationSaveRuntimeCoordinatorTests {
                 projectedConfiguration = $0
             },
             applySelectedMemoryPreset: {},
-            updateStatus: { _ in }
+            updateStatus: { statuses.append($0) }
         )
 
         let wasSuccessful = await coordinator.applyAggregate(
@@ -240,6 +247,63 @@ struct ConfigurationSaveRuntimeCoordinatorTests {
 
         #expect(wasSuccessful)
         #expect(projectedConfiguration == nil)
+        #expect(statuses.last?.status.hasUncommittedChanges == true)
+    }
+
+    @Test("aggregate apply forwards the save-start editor generation")
+    @MainActor
+    func aggregateApplyForwardsEditorGeneration() async throws {
+        let aggregate = try Self.makeAggregate()
+        let subjectID = try #require(aggregate.activeSubjectID)
+        let configurationID = try #require(aggregate.activeConfigurationID)
+        var receivedGeneration: UInt64?
+        let coordinator = ConfigurationSaveRuntimeCoordinator(
+            applyLegacyRequest: { _ in
+                .failure(
+                    MemoMarkError(
+                        code: .invalidState,
+                        message: "Unexpected legacy save."
+                    )
+                )
+            },
+            applyAggregateRequest: { candidate, _ in
+                .success(
+                    SaveConfigurationAggregateReceipt(
+                        candidate: candidate,
+                        saveReceipt: ConfigurationLibrarySaveReceipt(
+                            revision: 3,
+                            subjectID: subjectID,
+                            configurationID: configurationID,
+                            configurationRevision: 2,
+                            compatibilityProjectionFailure: nil
+                        ),
+                        albumSelection: .init(
+                            identifier: "",
+                            title: "",
+                            pickerSelectionIdentifier: nil
+                        )
+                    )
+                )
+            },
+            reloadAlbums: {},
+            setSelectedExistingAlbumIdentifier: { _ in },
+            restoreSubject: { _ in },
+            reconcileConfigurationLibraryWithGeneration: { _, _, generation in
+                receivedGeneration = generation
+                return .applied
+            },
+            applySelectedMemoryPreset: {},
+            updateStatus: { _ in }
+        )
+
+        _ = await coordinator.applyAggregate(
+            configurationLibrary: aggregate,
+            aggregateDraft: Self.makeAggregateDraft(title: "Generation"),
+            availableAlbums: [],
+            editorGeneration: 17
+        )
+
+        #expect(receivedGeneration == 17)
     }
 
     @Test("aggregate save failure keeps the old production state dirty without legacy fallback")

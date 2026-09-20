@@ -40,6 +40,7 @@ struct ConfigurationSavePayloadInput {
     let presentationRoute:
         MemoryConfigurationRecord.Presentation.Route
     let filmMarkConfiguration: FilmMarkConfiguration
+    let filmMarkContentDraft: MemoryCardEditorDraft?
     let selectedTimeAnchorID: UUID?
     let language: MemoMarkLanguage
     let savedAt: Date
@@ -118,6 +119,7 @@ enum ConfigurationSavePayloadBuilder {
             livePhotoPolicy: sourceCompatibleLivePhotoPolicy,
             presentationRoute: input.presentationRoute,
             filmMarkConfiguration: input.filmMarkConfiguration,
+            filmMarkContentDraft: input.filmMarkContentDraft,
             selectedTimeAnchorID: input.selectedTimeAnchorID,
             savedAt: input.savedAt,
             language: input.language
@@ -136,7 +138,7 @@ enum ConfigurationSavePayloadBuilder {
                             id: configurationID,
                             draft: aggregateDraft
                         ),
-                    in: input.state.configurationLibrary
+                    in: input.state.configurationLibrary,
                 )
         } else {
             configurationLibrary = input.state.configurationLibrary

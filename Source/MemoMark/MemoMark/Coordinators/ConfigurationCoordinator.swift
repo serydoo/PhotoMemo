@@ -296,7 +296,8 @@ final class ConfigurationCoordinator {
     }
 
     func saveConfigurationLibrary(
-        _ aggregate: ConfigurationLibraryRecord
+        _ aggregate: ConfigurationLibraryRecord,
+        changedConfigurationID: UUID? = nil
     ) async throws -> ConfigurationLibrarySaveReceipt {
         let operationID = UUID()
         let startedAt = Date()
@@ -316,6 +317,7 @@ final class ConfigurationCoordinator {
             let receipt = try await settingsRepository
                 .saveConfigurationLibrary(
                     aggregate,
+                    changedConfigurationID: changedConfigurationID,
                     afterSuccessfulProjection: {
                         [applyConfigurationLibrarySnapshot]
                         snapshot,

@@ -24,6 +24,50 @@ In English:
 > Natural, restrained, and warm; always centered on people and memories, never
 > on features and technology.
 
+## Selection Authority And Revisit Language
+
+MemoMark should make the user's choice visible and respected:
+
+> 用户先决定哪些照片值得留下，MemoMark 再帮助这些照片变得更完整、更容易回看。
+
+User-facing language should describe MemoMark as helping a person revisit a
+chosen memory, not as judging the value of a person's entire photo library.
+Prefer:
+
+- `选择真正想留下的照片。`
+- `让这张照片拥有属于那段人生的时间答案。`
+- `以后打开相册，就能直接看懂那一天。`
+- `保存这段回忆。`
+
+Avoid claims that assign selection authority to MemoMark or an algorithm:
+
+- `我们替你选出最值得留下的照片。`
+- `AI 帮你决定哪张最重要。`
+- `自动整理了你的人生相册。`
+- `生成一段你没有确认过的完整故事。`
+
+If a future product surface offers search, grouping, or recommendations, call
+the result a `候选` and keep the user's confirmation explicit. This language
+rule does not authorize an AI feature and does not change the current local
+first pipeline.
+
+## Source, Memory State, And Presentation Language
+
+When explaining the product or a recovery state, keep these meanings separate:
+
+- 原始照片是用户在 Apple Photos 中保留的源资产；
+- 时间锚点、记忆对象和用户文字构成可以继续补充的记忆状态；
+- 记忆卡片或新照片是当前状态下生成的呈现结果。
+
+Prefer `生成新的记忆呈现，同时保留原始照片` over wording that suggests the
+output replaces the original. Do not promise that every Apple Photos metadata
+field is visible or searchable in the same way on every system version or
+media type.
+
+Printing is a downstream way to use a completed memory, not the definition of
+the product. Prefer `以后可以回看、分享或打印` over `批量打印照片` as the
+primary product outcome.
+
 ## Product Personality
 
 MemoMark should feel like:
@@ -117,6 +161,10 @@ Its secondary page contains font and time/location settings. Size, colors
 surface and must not be advertised again as secondary settings. The macOS
 inspector retains its complete style-control description.
 
+FilmMark 的主页面字段使用 `字号`，说明文字为
+`左右滑动微调文字大小，中间为默认大小。`。这句话说明的是用户能感受到的
+画面结果，不把固定精度比例、四档兼容值或 Renderer 实现暴露给用户。
+
 The Configuration Center keeps two adjacent decisions deliberately separate:
 
 - `时间怎样表达` is the user-facing entry for the optional time-aware Memory
@@ -149,11 +197,10 @@ Selecting a tone must never insert content or rewrite the user's words.
 FM configuration descriptions should identify the visible object and effect:
 
 - Card content: `选择照片上显示的文字和信息。`
-- Position: `选择文字在照片中的位置，并微调。`
+- Position & size: `调整文字在照片中的位置与大小。`
 - Initial position: `从照片左下或右下开始放置文字。`
 - Fine adjustment: `每次移动照片尺寸的 0.5%，轻调到合适的位置。`
 - Font: `使用清晰、耐读的等宽字体。`
-- Size: `调整文字大小，让照片上的信息清晰易读。`
 - Color: retain `选择一种更接近这段回忆的颜色。`
 - Substrate: `为文字添加衬底或阴影，让它在照片上更清楚。`
 

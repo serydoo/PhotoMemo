@@ -207,6 +207,19 @@ Expression rules:
 
 ## Product Position
 
+The current internal positioning source is
+`Docs/01_Product/MemoMark_Product_Positioning_And_Memory_Selection.md`. It
+formalizes three boundaries that must remain visible in future product work:
+
+- Apple Photos owns the complete photo library; MemoMark works on photos the
+  user deliberately chooses and returns a new presentation to that workflow.
+- The user keeps final selection authority. MemoMark must not be described as
+  an AI that decides which family memories are worth keeping.
+- The long-term model separates `Source Asset`, `Memory State`, and
+  `Presentation Projection`; an exported JPEG/HEIC is not the sole source of
+  memory truth, and printing remains a downstream use rather than the product
+  center.
+
 MemoMark V1 is a local-first memory card generator. MemoMark V2 repositions the project as a local-first Memory Presentation Engine.
 
 Photos have timestamps. Memories have positions.

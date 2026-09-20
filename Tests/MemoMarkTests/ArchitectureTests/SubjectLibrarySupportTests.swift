@@ -276,11 +276,6 @@ struct V1SubjectLibrarySupportTests {
             )
         )
         #expect(
-            patch.events.contains(
-                .persistActiveConfigurationSelection
-            )
-        )
-        #expect(
             session.state.selectedMemoryPreset?
                 .selectedSubjectID
             == secondSubject.id

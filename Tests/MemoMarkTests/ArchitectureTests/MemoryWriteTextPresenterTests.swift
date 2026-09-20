@@ -100,7 +100,7 @@ struct MemoryWriteTextPresenterTests {
             )
 
         #expect(
-            resolvedText == "当前智能模块暂无内容"
+            resolvedText == "暂无可写入的记忆内容。"
         )
     }
 

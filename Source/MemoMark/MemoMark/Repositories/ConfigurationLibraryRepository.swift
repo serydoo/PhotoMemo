@@ -56,6 +56,11 @@ nonisolated struct ConfigurationLibrarySaveReceipt:
     let subjectID: UUID
     let configurationID: UUID
     let configurationRevision: Int
+    /// The configuration whose editor payload was persisted. This is kept
+    /// separate from `configurationID`, which identifies the processing
+    /// default used by the compatibility projection.
+    let savedConfigurationID: UUID?
+    let savedConfigurationRevision: Int?
     let compatibilityProjectionFailure:
         ConfigurationLibraryProjectionFailure?
 
@@ -66,6 +71,8 @@ nonisolated struct ConfigurationLibrarySaveReceipt:
         subjectID: UUID,
         configurationID: UUID,
         configurationRevision: Int,
+        savedConfigurationID: UUID? = nil,
+        savedConfigurationRevision: Int? = nil,
         compatibilityProjectionFailure:
             ConfigurationLibraryProjectionFailure?,
         diagnosticOperationID: UUID? = nil
@@ -75,6 +82,8 @@ nonisolated struct ConfigurationLibrarySaveReceipt:
         self.configurationID = configurationID
         self.configurationRevision =
             configurationRevision
+        self.savedConfigurationID = savedConfigurationID
+        self.savedConfigurationRevision = savedConfigurationRevision
         self.compatibilityProjectionFailure =
             compatibilityProjectionFailure
         self.diagnosticOperationID =
@@ -90,6 +99,8 @@ nonisolated struct ConfigurationLibrarySaveReceipt:
             configurationID: configurationID,
             configurationRevision:
                 configurationRevision,
+            savedConfigurationID: savedConfigurationID,
+            savedConfigurationRevision: savedConfigurationRevision,
             compatibilityProjectionFailure:
                 compatibilityProjectionFailure,
             diagnosticOperationID: operationID
@@ -229,6 +240,7 @@ final class ConfigurationLibraryRepository {
 
     func save(
         _ aggregate: ConfigurationLibraryRecord,
+        changedConfigurationID: UUID? = nil,
         compatibilityProjection:
             @MainActor (
                 ConfigurationLibraryRecord,
@@ -243,6 +255,9 @@ final class ConfigurationLibraryRepository {
             try requiredActiveConfigurationID(candidate)
         let configurationRevision =
             try requiredActiveConfigurationRevision(candidate)
+        let changedConfiguration = try changedConfigurationID.map {
+            try requiredConfiguration($0, in: candidate)
+        }
         let requestedRevision = candidate.revision
 
         while true {
@@ -295,6 +310,10 @@ final class ConfigurationLibraryRepository {
                     configurationID: configurationID,
                     configurationRevision:
                         configurationRevision,
+                    savedConfigurationID:
+                        changedConfiguration?.id,
+                    savedConfigurationRevision:
+                        changedConfiguration?.revision,
                     compatibilityProjectionFailure: nil
                 )
             let projectionFailure:
@@ -323,6 +342,10 @@ final class ConfigurationLibraryRepository {
                     provisionalReceipt.configurationID,
                 configurationRevision:
                     provisionalReceipt.configurationRevision,
+                savedConfigurationID:
+                    provisionalReceipt.savedConfigurationID,
+                savedConfigurationRevision:
+                    provisionalReceipt.savedConfigurationRevision,
                 compatibilityProjectionFailure: projectionFailure
             )
         }
@@ -388,6 +411,20 @@ private extension ConfigurationLibraryRepository {
                 .missingActiveSelection
         }
         return configuration.revision
+    }
+
+    func requiredConfiguration(
+        _ configurationID: UUID,
+        in aggregate: ConfigurationLibraryRecord
+    ) throws -> MemoryConfigurationRecord {
+        guard let configuration = aggregate.subjects.lazy
+            .flatMap(\.configurations)
+            .first(where: { $0.id == configurationID })
+        else {
+            throw ConfigurationLibraryPersistenceError
+                .missingActiveSelection
+        }
+        return configuration
     }
 
     func encode(

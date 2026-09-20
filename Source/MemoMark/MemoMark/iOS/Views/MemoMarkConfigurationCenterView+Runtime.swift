@@ -95,13 +95,15 @@ extension MemoMarkConfigurationCenterView {
                 presentationRoute: presentationStyle,
                 filmMarkConfiguration:
                     rootConfigurationProjectionState.filmMarkConfiguration,
+                filmMarkContentDraft: filmMarkContentDraft,
                 selectedTimeAnchorID: session.selectedTimeAnchorID,
                 language: session.language,
                 savedAt: Date()
             )
         )
 
-        guard let configurationLibrary = payload.configurationLibrary else {
+        guard let configurationLibrary = payload.configurationLibrary,
+              let configurationID = session.state.selectedMemoryPresetID else {
             return await configurationApplyRuntimeCoordinator
                 .applyLegacyCompatibility(
                     payload.legacyCompatibilityRequest,
@@ -112,7 +114,9 @@ extension MemoMarkConfigurationCenterView {
         return await configurationApplyRuntimeCoordinator.applyAggregate(
             configurationLibrary: configurationLibrary,
             aggregateDraft: payload.aggregateDraft,
-            availableAlbums: outputDraftState.availableAlbums
+            configurationID: configurationID,
+            availableAlbums: outputDraftState.availableAlbums,
+            editorGeneration: session.editorGeneration
         )
     }
 
@@ -387,6 +391,8 @@ extension MemoMarkConfigurationCenterView {
         presentationStyle = projection.route
         rootConfigurationProjectionState.filmMarkConfiguration =
             projection.filmMarkConfiguration
+        filmMarkContentDraft = projection.filmMarkContentDraft
+            ?? defaultFilmMarkPrimaryOutputDraft()
         locationDisplayConfiguration =
             projection.locationConfiguration
         session.language = projection.language
@@ -417,6 +423,26 @@ extension MemoMarkConfigurationCenterView {
                 projection.regionDraftsByPresentationStyle,
             activeStyle: presentationStyle
         )
+    }
+
+    /// A newly created Preset starts from the canonical output defaults. Album
+    /// identity and Photos-description choices are configuration-local side
+    /// effects and must not leak from the Preset used as the copy source.
+    func resetOutputDraftForNewConfiguration() {
+        let defaults = OutputDraftState()
+        outputDraftState.outputTarget = defaults.outputTarget
+        outputDraftState.mediaOutputMode = defaults.mediaOutputMode
+        outputDraftState.shouldWritePhotosDescription =
+            defaults.shouldWritePhotosDescription
+        outputDraftState.photosDescriptionOverride =
+            defaults.photosDescriptionOverride
+        outputDraftState.configurationAlbumTitle =
+            defaults.configurationAlbumTitle
+        outputDraftState.livePhotoPolicy = defaults.livePhotoPolicy
+        outputDraftState.selectedExistingAlbumIdentifier =
+            defaults.selectedExistingAlbumIdentifier
+        outputDraftState.newAlbumName = defaults.newAlbumName
+        outputDraftState.albumStatusMessage = ""
     }
 
     var selectedBadgeForSaving: Badge {

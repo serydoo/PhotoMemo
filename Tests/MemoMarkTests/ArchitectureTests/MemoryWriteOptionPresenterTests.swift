@@ -27,7 +27,7 @@ struct MemoryWriteOptionPresenterTests {
         #expect(presentation.defaultContentTitle == "照片说明")
         #expect(
             presentation.defaultContentDescription
-            == "将记忆信息写入照片说明，方便以后在“照片”中查找。"
+            == "默认根据拍摄日期与时间锚点的差值，写入这段回忆的个性化表达；也可以补充一句自己的话。"
         )
         #expect(
             presentation.inputPlaceholder
@@ -47,7 +47,7 @@ struct MemoryWriteOptionPresenterTests {
         )
     }
 
-    @Test("uses smart-module wording when memory write is enabled")
+    @Test("uses time-anchor wording for the default memory description")
     func customEntryDisabledCopy() {
         let presentation =
             MemoryWriteOptionPresenter
@@ -68,7 +68,7 @@ struct MemoryWriteOptionPresenterTests {
         #expect(presentation.defaultContentTitle == "照片说明")
         #expect(
             presentation.defaultContentDescription
-            == "将记忆信息写入照片说明，方便以后在“照片”中查找。"
+            == "默认根据拍摄日期与时间锚点的差值，写入这段回忆的个性化表达；也可以补充一句自己的话。"
         )
         #expect(
             presentation.resolvedTitle
@@ -80,7 +80,7 @@ struct MemoryWriteOptionPresenterTests {
         )
         #expect(
             presentation.fallbackNote
-            == "会根据拍摄时间、记忆对象和时间锚点，写入对应的记忆表达。"
+            == "会根据拍摄日期与时间锚点的差值，结合记忆对象，写入对应的记忆表达。"
         )
     }
 

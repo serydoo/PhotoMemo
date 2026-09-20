@@ -216,26 +216,26 @@ struct MacConfigurationCenterHeader: View {
     }
 
     private var presetStatusTitle: String {
-        if session.selectedMemoryPresetIsApplied,
+        if session.selectedMemoryPresetIsProcessingDefault,
            session.selectedMemoryPresetIsDurable {
-            return "已保存并生效"
+            return "已保存 · 下次处理默认"
         }
 
-        if session.selectedMemoryPresetIsApplied {
-            return "当前草稿"
+        if session.selectedMemoryPresetIsDurable {
+            return "已保存配置"
         }
 
-        return "有未应用更改"
+        return "当前草稿"
     }
 
     private var presetStatusSymbol: String {
-        session.selectedMemoryPresetIsApplied
+        session.selectedMemoryPresetIsProcessingDefault
             ? "checkmark.circle.fill"
             : "circle.dotted"
     }
 
     private var presetStatusColor: Color {
-        session.selectedMemoryPresetIsApplied
+        session.selectedMemoryPresetIsProcessingDefault
             ? .green
             : .orange
     }

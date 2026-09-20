@@ -25,6 +25,9 @@ struct ConfigurationEditingState {
                     ?? resolvedState
                         .selectedMemoryPreset?
                         .id,
+                processingDefaultMemoryPresetID:
+                    resolvedState.configurationLibrary?
+                    .activeConfigurationID,
                 draftMemoryConfiguration:
                     Self.configuration(
                         id: resolvedState.selectedMemoryPresetID,
@@ -117,6 +120,27 @@ struct ConfigurationEditingState {
         set {
             presentationState
                 .appliedMemoryPresetID = newValue
+        }
+    }
+
+    var editorGeneration: UInt64 {
+        presentationState.editorGeneration
+    }
+
+    /// Advances the process-local editor fence for changes that are owned by
+    /// the view layer rather than a typed session setter.  Save receipts must
+    /// never be allowed to commit over one of those newer edits.
+    mutating func markEditorChange() {
+        presentationState.editorGeneration &+= 1
+    }
+
+    var processingDefaultMemoryPresetID:
+        MemoryPreset.ID? {
+        get {
+            presentationState.processingDefaultMemoryPresetID
+        }
+        set {
+            presentationState.processingDefaultMemoryPresetID = newValue
         }
     }
 
@@ -327,6 +351,7 @@ struct ConfigurationEditingState {
         state.selectedMemoryPresetID = nil
         state.configurationLibrary = nil
         presentationState.appliedMemoryPresetID = nil
+        presentationState.processingDefaultMemoryPresetID = nil
         presentationState.draftMemoryConfiguration = nil
     }
 
@@ -581,6 +606,51 @@ struct ConfigurationEditingState {
             restoreContext: true
         )
         return true
+    }
+
+    /// Drops only an in-memory, never-durable preset draft. A durable
+    /// configuration is restored by selecting its persisted sibling instead;
+    /// this method must never delete durable library data.
+    @discardableResult
+    mutating func discardSelectedMemoryPresetDraft() -> Bool {
+        guard let selectedID = state.selectedMemoryPresetID,
+              Self.configuration(
+                  id: selectedID,
+                  in: state.configurationLibrary
+              ) == nil,
+              let presetIndex = state.memoryPresets.firstIndex(
+                  where: { $0.id == selectedID }
+              ) else {
+            return false
+        }
+
+        state.memoryPresets.remove(at: presetIndex)
+        state.selectedMemoryPresetID = nil
+        appliedMemoryPresetID = nil
+        presentationState.draftMemoryConfiguration = nil
+        latestModuleInsertion = nil
+        return true
+    }
+
+    /// Restores the selected preset from its durable configuration when it
+    /// exists, or removes an in-memory-only new preset. Creation and switching
+    /// flows use this single discard boundary so neither path can silently
+    /// lose authored edits.
+    @discardableResult
+    mutating func discardSelectedMemoryPresetChanges() -> Bool {
+        guard let selectedPreset = state.selectedMemoryPreset else {
+            return false
+        }
+
+        if Self.configuration(
+            id: selectedPreset.id,
+            in: state.configurationLibrary
+        ) != nil {
+            selectMemoryPreset(selectedPreset)
+            return true
+        }
+
+        return discardSelectedMemoryPresetDraft()
     }
 
     mutating func updateSelectedMemoryPresetTitle(
@@ -928,6 +998,8 @@ struct ConfigurationEditingState {
     }
 
     private mutating func markSelectedMemoryPresetNeedsApply() {
+        presentationState.editorGeneration &+= 1
+
         guard selectedMemoryPresetIsApplied else {
             return
         }
@@ -935,7 +1007,7 @@ struct ConfigurationEditingState {
         appliedMemoryPresetID = nil
     }
 
-    private mutating func restoreConfigurationContext(
+    mutating func restoreConfigurationContext(
         from preset: MemoryPreset
     ) {
         if let subjectID = preset.selectedSubjectID,
@@ -968,7 +1040,7 @@ struct ConfigurationEditingState {
         )
     }
 
-    private mutating func restoreConfigurationContext(
+    mutating func restoreConfigurationContext(
         from configuration: MemoryConfigurationRecord
     ) {
         presentationState.draftMemoryConfiguration =
@@ -1046,16 +1118,14 @@ struct ConfigurationEditingState {
 
         state.selectedMemoryPresetID = preset.id
 
-        if let configuration = Self.configuration(
-            id: preset.id,
-            in: state.configurationLibrary
-        ) {
-            alignConfigurationLibraryActiveSelection(
-                configurationID: configuration.id
-            )
-            appliedMemoryPresetID = configuration.id
-        } else if createdDefaultDraft {
+        if createdDefaultDraft {
             appliedMemoryPresetID = nil
+        } else {
+            // Subject and preset selection are Editor Context only. The active
+            // pair belongs to the next Share request and changes only through
+            // an explicit processing-default command.
+            processingDefaultMemoryPresetID = state.configurationLibrary?
+                .activeConfigurationID
         }
 
         guard restoreContext else {
@@ -1088,21 +1158,6 @@ struct ConfigurationEditingState {
                 state.selectedSubject?.primaryTimeAnchor?.id,
             language: MemoMarkLanguage.defaultOutputLanguage
         )
-    }
-
-    private mutating func alignConfigurationLibraryActiveSelection(
-        configurationID: UUID?
-    ) {
-        guard var configurationLibrary =
-            state.configurationLibrary else {
-            return
-        }
-
-        configurationLibrary.activeSubjectID =
-            state.selectedSubjectID
-        configurationLibrary.activeConfigurationID =
-            configurationID
-        state.configurationLibrary = configurationLibrary
     }
 
     static func defaultPreviewText(

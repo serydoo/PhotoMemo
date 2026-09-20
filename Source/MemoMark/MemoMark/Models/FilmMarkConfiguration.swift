@@ -31,6 +31,13 @@ struct FilmMarkFontSize: Codable, Hashable {
     private static let minimumRatio: CGFloat = 0.008
     private static let maximumRatio: CGFloat = 0.060
 
+    /// The existing prominent size is the visual baseline for the editor's
+    /// continuous control. Keeping it at the midpoint preserves the effective
+    /// default while allowing deliberate refinement in either direction.
+    private static let sliderMinimumRatio: CGFloat = 0.014
+    private static let sliderMidpointRatio: CGFloat = 0.032
+    private static let sliderMaximumRatio: CGFloat = 0.050
+
     let canvasWidthRatioUnits: Int
 
     init(relativeToCanvasWidth ratio: CGFloat = 0.018) {
@@ -80,6 +87,41 @@ struct FilmMarkFontSize: Codable, Hashable {
     static let standard = FilmMarkFontSize(relativeToCanvasWidth: 0.018)
     static let large = FilmMarkFontSize(relativeToCanvasWidth: 0.024)
     static let prominent = FilmMarkFontSize(relativeToCanvasWidth: 0.032)
+
+    /// Maps the durable size ratio to the UI-only slider coordinate. The
+    /// mapping is intentionally piecewise: the established `.prominent`
+    /// result is centred, instead of becoming the rightmost selectable point.
+    static func sliderPosition(for fontSize: Self) -> CGFloat {
+        let ratio = min(
+            max(fontSize.relativeToCanvasWidth, sliderMinimumRatio),
+            sliderMaximumRatio
+        )
+        if ratio <= sliderMidpointRatio {
+            return 0.5 * (
+                ratio - sliderMinimumRatio
+            ) / (sliderMidpointRatio - sliderMinimumRatio)
+        }
+        return 0.5 + 0.5 * (
+            ratio - sliderMidpointRatio
+        ) / (sliderMaximumRatio - sliderMidpointRatio)
+    }
+
+    /// Creates the fixed-precision durable value selected by the editor's
+    /// continuous slider. This does not introduce a second stored scale.
+    static func fontSize(forSliderPosition position: CGFloat) -> Self {
+        let boundedPosition = min(max(position, 0), 1)
+        let ratio: CGFloat
+        if boundedPosition <= 0.5 {
+            ratio = sliderMinimumRatio
+                + (boundedPosition / 0.5)
+                * (sliderMidpointRatio - sliderMinimumRatio)
+        } else {
+            ratio = sliderMidpointRatio
+                + ((boundedPosition - 0.5) / 0.5)
+                * (sliderMaximumRatio - sliderMidpointRatio)
+        }
+        return Self(relativeToCanvasWidth: ratio)
+    }
 }
 
 enum FilmMarkSubstrate: String, Codable, CaseIterable, Hashable {

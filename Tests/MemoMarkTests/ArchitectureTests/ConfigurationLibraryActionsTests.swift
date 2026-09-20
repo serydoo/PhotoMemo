@@ -179,7 +179,7 @@ struct ConfigurationLibraryActionsTests {
         )
     }
 
-    @Test("deleting the active configuration selects its durable sibling")
+    @Test("deleting the active processing default atomically selects its durable sibling")
     func activeConfigurationDeletionSelectsSibling() throws {
         let firstID = UUID(
             uuidString: "11111111-1111-1111-1111-111111111111"
@@ -202,22 +202,20 @@ struct ConfigurationLibraryActionsTests {
             subjectID: subject.id,
             selectedConfigurationID: firstID,
             isCurrentConfigurationDirty: false,
-            visibleConfigurationIDs: [firstID, secondID]
+            visibleConfigurationIDs: [firstID, secondID],
+            isProcessingDefault: true
         )
 
         let decision = ConfigurationLibraryActions().decide(.delete(request))
         let result = try #require(decision.deletionResult)
-
-        #expect(result.deletedPreset == request.preset)
+        #expect(result.candidate.activeConfigurationID == secondID)
         #expect(
             result.candidate.subjects[0].configurations.map(\.id)
             == [secondID]
         )
-        #expect(result.candidate.activeSubjectID == subject.id)
-        #expect(result.candidate.activeConfigurationID == secondID)
     }
 
-    @Test("save receipt revision is projected into the deletion candidate")
+    @Test("save receipt revision is projected into a non-default deletion candidate")
     func receiptRevisionIsProjectedIntoCandidate() throws {
         let firstID = UUID(
             uuidString: "11111111-1111-1111-1111-111111111111"
@@ -232,7 +230,7 @@ struct ConfigurationLibraryActionsTests {
                 Self.makeConfiguration(id: firstID, title: "第一套"),
                 Self.makeConfiguration(id: secondID, title: "第二套")
             ],
-            activeConfigurationID: firstID
+            activeConfigurationID: secondID
         )
         let request = ConfigurationLibraryDeletionRequest(
             preset: Self.makePreset(id: firstID, title: "第一套"),
@@ -240,7 +238,8 @@ struct ConfigurationLibraryActionsTests {
             subjectID: subject.id,
             selectedConfigurationID: firstID,
             isCurrentConfigurationDirty: false,
-            visibleConfigurationIDs: [firstID, secondID]
+            visibleConfigurationIDs: [firstID, secondID],
+            isProcessingDefault: false
         )
         let decision = ConfigurationLibraryActions().decide(.delete(request))
         let result = try #require(decision.deletionResult)

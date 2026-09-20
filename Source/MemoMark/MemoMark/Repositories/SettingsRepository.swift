@@ -494,6 +494,7 @@ final class SettingsRepository {
 
     func saveConfigurationLibrary(
         _ aggregate: ConfigurationLibraryRecord,
+        changedConfigurationID: UUID? = nil,
         afterSuccessfulProjection:
             @MainActor (
                 BatchConfigurationSnapshot,
@@ -503,6 +504,7 @@ final class SettingsRepository {
         try await settingsService
             .saveConfigurationLibrary(
                 aggregate,
+                changedConfigurationID: changedConfigurationID,
                 afterSuccessfulProjection:
                     afterSuccessfulProjection
             )

@@ -345,6 +345,35 @@ extension MemoMarkConfigurationCenterView {
         session.availableMemoryPresetsForSelectedSubject
     }
 
+    func borderStyleName(for preset: MemoryPreset) -> String {
+        let route = session.state.configurationLibrary?
+            .subjects
+            .flatMap(\.configurations)
+            .first(where: { $0.id == preset.id })?
+            .presentation
+            .route
+            ?? (preset.id == session.state.selectedMemoryPresetID
+                ? presentationStyle
+                : .classicWhite)
+
+        switch route {
+        case .classicWhite:
+            return TemplatePreset.classicWhite.displayName(
+                for: .interfaceStored
+            )
+        case .minimal:
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "极简",
+                fallback: "极简"
+            )
+        case .filmMark:
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "胶片时间",
+                fallback: "胶片时间"
+            )
+        }
+    }
+
     func expansionBinding(
         for section: ConfigurationCenterSection
     ) -> Binding<Bool> {

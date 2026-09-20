@@ -49,8 +49,11 @@ enum LocalConfigurationLibraryPresenter {
         if candidate.subjects[subjectIndex].configurations.contains(
             where: { $0.id == configurationID }
         ) {
-            candidate.activeSubjectID = subjectID
-            candidate.activeConfigurationID = configurationID
+            establishInitialProcessingDefaultIfNeeded(
+                for: configurationID,
+                subjectID: subjectID,
+                in: &candidate
+            )
             return candidate
         }
         guard let source = candidate.subjects[subjectIndex]
@@ -72,8 +75,11 @@ enum LocalConfigurationLibraryPresenter {
             output: source.output
         )
         candidate.subjects[subjectIndex].configurations.append(inserted)
-        candidate.activeSubjectID = subjectID
-        candidate.activeConfigurationID = configurationID
+        establishInitialProcessingDefaultIfNeeded(
+            for: configurationID,
+            subjectID: subjectID,
+            in: &candidate
+        )
         return candidate
     }
 
@@ -135,9 +141,51 @@ enum LocalConfigurationLibraryPresenter {
                 )
             )
         }
-        candidate.activeSubjectID = subject.id
+        establishInitialProcessingDefaultIfNeeded(
+            for: configurationID,
+            subjectID: subject.id,
+            in: &candidate
+        )
+        return candidate
+    }
+
+    /// Explicitly changes only the processing default. It never rewrites the
+    /// selected configuration's authored content or output settings.
+    static func settingProcessingDefault(
+        configurationID: UUID,
+        subjectID: UUID,
+        in aggregate: ConfigurationLibraryRecord
+    ) -> ConfigurationLibraryRecord? {
+        guard aggregate.subjects.contains(where: { subjectRecord in
+            subjectRecord.subject.id == subjectID
+                && subjectRecord.configurations.contains(where: {
+                    $0.id == configurationID
+                })
+        }) else {
+            return nil
+        }
+
+        var candidate = aggregate
+        candidate.activeSubjectID = subjectID
         candidate.activeConfigurationID = configurationID
         return candidate
+    }
+
+    private static func establishInitialProcessingDefaultIfNeeded(
+        for configurationID: UUID,
+        subjectID: UUID,
+        in candidate: inout ConfigurationLibraryRecord
+    ) {
+        guard candidate.activeSubjectID == nil
+                || candidate.activeConfigurationID == nil else {
+            return
+        }
+
+        // The compatibility projection and Share pipeline require one
+        // durable processing default. This is the only implicit default: the
+        // very first successfully persisted configuration.
+        candidate.activeSubjectID = subjectID
+        candidate.activeConfigurationID = configurationID
     }
 
     static func updatingSubject(

@@ -13,6 +13,7 @@ struct MemoryCardPreviewSurface: View {
     let memoryText: String
     let filmMarkOutputText: String
     let filmMarkConfiguration: FilmMarkConfiguration
+    let filmMarkPreviewMode: FilmMarkPreviewMode
 
     init(
         presentationStyle: RecordCardPresentationStyle,
@@ -24,7 +25,8 @@ struct MemoryCardPreviewSurface: View {
         contextText: String,
         memoryText: String,
         filmMarkOutputText: String = "",
-        filmMarkConfiguration: FilmMarkConfiguration = .default
+        filmMarkConfiguration: FilmMarkConfiguration = .default,
+        filmMarkPreviewMode: FilmMarkPreviewMode = .contentStrip
     ) {
         self.presentationStyle = presentationStyle
         self.logoMode = logoMode
@@ -36,6 +38,7 @@ struct MemoryCardPreviewSurface: View {
         self.memoryText = memoryText
         self.filmMarkOutputText = filmMarkOutputText
         self.filmMarkConfiguration = filmMarkConfiguration
+        self.filmMarkPreviewMode = filmMarkPreviewMode
     }
 
     @ViewBuilder
@@ -74,11 +77,7 @@ struct MemoryCardPreviewSurface: View {
                 }
         case .minimal:
             Color.clear
-                .aspectRatio(
-                    1 / MinimalCardLayoutSpecification
-                        .compactPreview.imageSliceHeightToWidth,
-                    contentMode: .fit
-                )
+                .aspectRatio(compactPreviewAspectRatio, contentMode: .fit)
                 // The Minimal explanatory slice has a much wider aspect
                 // ratio than the Classic information bar. Keep its measured
                 // height, but let it consume the complete preview column in
@@ -95,7 +94,7 @@ struct MemoryCardPreviewSurface: View {
                     primaryOutput: filmMarkPreviewText
                 ),
                 configuration: filmMarkConfiguration,
-                showsPlacementGuide: true
+                mode: filmMarkPreviewMode
             )
             .frame(maxWidth: .infinity)
         }
@@ -115,7 +114,7 @@ struct MemoryCardPreviewSurface: View {
         let barHeight = size.width * layout.barHeightToImageWidth
 
         return ZStack(alignment: .bottomTrailing) {
-            minimalLandscapeSlice(
+            minimalPreviewPhoto(
                 width: size.width,
                 height: size.height
             )
@@ -215,58 +214,19 @@ struct MemoryCardPreviewSurface: View {
         )
     }
 
-    private func minimalLandscapeSlice(
+    private func minimalPreviewPhoto(
         width: CGFloat,
         height: CGFloat
     ) -> some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.73, green: 0.84, blue: 0.88),
-                    Color(red: 0.93, green: 0.84, blue: 0.69)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            Circle()
-                .fill(Color.white.opacity(0.68))
-                .frame(width: height * 0.34)
-                .position(
-                    x: width * 0.78,
-                    y: height * 0.26
+        Image(
+            ConfigurationPreviewBackground.minimal.assetName(
+                for: ConfigurationPreviewBackground.surface(
+                    forPreviewWidth: width
                 )
-
-            Path { path in
-                path.move(to: CGPoint(x: 0, y: height * 0.80))
-                path.addLine(to: CGPoint(x: width * 0.22, y: height * 0.30))
-                path.addLine(to: CGPoint(x: width * 0.43, y: height * 0.79))
-                path.addLine(to: CGPoint(x: width * 0.63, y: height * 0.46))
-                path.addLine(to: CGPoint(x: width, y: height * 0.82))
-                path.addLine(to: CGPoint(x: width, y: height))
-                path.addLine(to: CGPoint(x: 0, y: height))
-                path.closeSubpath()
-            }
-            .fill(
-                Color(
-                    red: 0.38,
-                    green: 0.48,
-                    blue: 0.45
-                )
-                .opacity(0.88)
             )
-
-            LinearGradient(
-                colors: [
-                    Color(red: 0.42, green: 0.56, blue: 0.50),
-                    Color(red: 0.26, green: 0.38, blue: 0.35)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: height * 0.31)
-            .frame(maxHeight: .infinity, alignment: .bottom)
-        }
+        )
+        .resizable()
+        .scaledToFill()
         .frame(width: width, height: height)
         .clipped()
         .accessibilityHidden(true)

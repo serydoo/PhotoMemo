@@ -84,6 +84,8 @@ Read only the sources relevant to the task after this brief:
 
 - Product stage and frozen architecture: `PROJECT_CONSTITUTION.md`,
   `Docs/MASTER_PLAN.md`, and the accepted V4 kickoff.
+- Current product positioning and user-selection boundary:
+  `Docs/01_Product/MemoMark_Product_Positioning_And_Memory_Selection.md`.
 - Core architecture modernization:
   `Docs/02_Architecture/RFC-002-Behavior-Preserving-Core-Architecture-Modernization.md`
   and `Docs/ADR/ADR-011-Application-Transactions-And-Dependency-Direction.md`.

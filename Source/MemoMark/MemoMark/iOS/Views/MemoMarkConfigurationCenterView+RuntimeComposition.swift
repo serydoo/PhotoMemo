@@ -52,7 +52,7 @@ extension MemoMarkConfigurationCenterView {
             currentRequest: configurationDeletionRequest(for:),
             applyCurrentConfiguration: {
                 await applyCurrentConfiguration()
-                && activeConfigurationStatus == .saved
+                && activeConfigurationStatus.isDurablySaved
             },
             persistConfigurationLibrary: {
                 try await configurationCoordinator
@@ -105,7 +105,7 @@ extension MemoMarkConfigurationCenterView {
                     selectedPresetID:
                         session.state.selectedMemoryPresetID,
                     isCurrentConfigurationDirty:
-                        activeConfigurationStatus == .dirty,
+                        activeConfigurationStatus.hasUncommittedChanges,
                     isSavingConfiguration: isSavingConfiguration,
                     availableAlbumIdentifiers: Set(
                         outputDraftState.availableAlbums
@@ -122,7 +122,7 @@ extension MemoMarkConfigurationCenterView {
             },
             applyCurrentConfiguration: {
                 await applyCurrentConfiguration()
-                && activeConfigurationStatus == .saved
+                && activeConfigurationStatus.isDurablySaved
             },
             restoreAggregate: {
                 session.restoreConfigurationLibrary($0)
@@ -208,6 +208,16 @@ extension MemoMarkConfigurationCenterView {
                 session.reconcileConfigurationLibrarySave(
                     candidate: candidate,
                     receipt: receipt
+                )
+            },
+            reconcileConfigurationLibraryWithGeneration: {
+                candidate,
+                receipt,
+                editorGeneration in
+                session.reconcileConfigurationLibrarySave(
+                    candidate: candidate,
+                    receipt: receipt,
+                    editorGeneration: editorGeneration
                 )
             },
             applySavedConfigurationProjection: {

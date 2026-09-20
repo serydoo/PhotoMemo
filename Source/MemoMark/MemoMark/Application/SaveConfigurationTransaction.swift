@@ -115,6 +115,9 @@ struct SaveConfigurationTransaction {
     private let saveConfigurationLibrary:
         ((ConfigurationLibraryRecord) async throws ->
             ConfigurationLibrarySaveReceipt)?
+    private let saveConfigurationLibraryWithIdentity:
+        ((ConfigurationLibraryRecord, UUID) async throws ->
+            ConfigurationLibrarySaveReceipt)?
 
     init(
         resolveAlbumSelection: @escaping (
@@ -129,6 +132,10 @@ struct SaveConfigurationTransaction {
         >,
         saveConfigurationLibrary: ((
             ConfigurationLibraryRecord
+        ) async throws -> ConfigurationLibrarySaveReceipt)? = nil,
+        saveConfigurationLibraryWithIdentity: ((
+            ConfigurationLibraryRecord,
+            UUID
         ) async throws -> ConfigurationLibrarySaveReceipt)? = nil
     ) {
         self.resolveAlbumSelection =
@@ -137,6 +144,8 @@ struct SaveConfigurationTransaction {
             saveConfiguration
         self.saveConfigurationLibrary =
             saveConfigurationLibrary
+        self.saveConfigurationLibraryWithIdentity =
+            saveConfigurationLibraryWithIdentity
     }
 
     init(
@@ -185,6 +194,22 @@ struct SaveConfigurationTransaction {
                 }
                 return try await configurationCoordinator
                     .saveConfigurationLibrary(aggregate)
+            },
+            saveConfigurationLibraryWithIdentity: {
+                aggregate,
+                changedConfigurationID in
+                guard let configurationCoordinator else {
+                    throw MemoMarkError(
+                        code: .configurationUnavailable,
+                        message:
+                            "Unable to save the current configuration library without an active configuration coordinator."
+                    )
+                }
+                return try await configurationCoordinator
+                    .saveConfigurationLibrary(
+                        aggregate,
+                        changedConfigurationID: changedConfigurationID
+                    )
             }
         )
     }
@@ -213,7 +238,8 @@ struct SaveConfigurationTransaction {
             do {
                 let resolvedCandidate = candidate
                     .resolvingAlbumSelection(albumSelection)
-                guard let saveConfigurationLibrary else {
+                guard saveConfigurationLibrary != nil
+                        || saveConfigurationLibraryWithIdentity != nil else {
                     return .failure(
                         MemoMarkError(
                             code: .configurationUnavailable,
@@ -222,9 +248,25 @@ struct SaveConfigurationTransaction {
                         )
                     )
                 }
-                let receipt = try await saveConfigurationLibrary(
-                    resolvedCandidate.aggregate
-                )
+                let receipt: ConfigurationLibrarySaveReceipt
+                if let saveConfigurationLibraryWithIdentity {
+                    receipt = try await saveConfigurationLibraryWithIdentity(
+                        resolvedCandidate.aggregate,
+                        resolvedCandidate.configuration.id
+                    )
+                } else if let saveConfigurationLibrary {
+                    receipt = try await saveConfigurationLibrary(
+                        resolvedCandidate.aggregate
+                    )
+                } else {
+                    return .failure(
+                        MemoMarkError(
+                            code: .configurationUnavailable,
+                            message:
+                                "Unable to save the current configuration library without an active configuration coordinator."
+                        )
+                    )
+                }
                 return .success(
                     SaveConfigurationAggregateReceipt(
                         candidate: resolvedCandidate,

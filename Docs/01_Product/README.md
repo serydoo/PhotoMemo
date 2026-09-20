@@ -5,6 +5,13 @@ Product vision, positioning, MVP scope, roadmap, backlog, and UX principles belo
 Product feedback iterations also belong here when they are driven by real usage
 and are intentionally separate from architecture RFC work.
 
+Current product-positioning source:
+
+- [`MemoMark_Product_Positioning_And_Memory_Selection.md`](MemoMark_Product_Positioning_And_Memory_Selection.md)
+  records the Apple Photos boundary, user-owned selection authority, the
+  Source Asset -> Memory State -> Presentation Projection model, and the
+  downstream role of printing.
+
 Working distinction:
 
 - Product Line improves usability through scenario-driven feedback iterations

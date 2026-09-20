@@ -17,7 +17,6 @@ enum SubjectFlowEvent:
 
     case reopenSubjectLibraryPersistence
     case rebootstrapPreviewDrafts
-    case persistActiveConfigurationSelection
 }
 
 struct SubjectFlowPatch {
@@ -216,10 +215,7 @@ enum SubjectOverviewActionCoordinator {
                 session.selectedMemoryPresetIsDurable
                 ? .saved
                 : .subjectSynced,
-            events: [
-                .rebootstrapPreviewDrafts,
-                .persistActiveConfigurationSelection
-            ],
+            events: [.rebootstrapPreviewDrafts],
             shouldCloseOverview: false,
             flowState: nil
         )

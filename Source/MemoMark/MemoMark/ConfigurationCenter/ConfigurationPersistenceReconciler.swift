@@ -120,8 +120,9 @@ struct ConfigurationPersistenceReconciler {
             configurationID ?? selectedMemoryPresetID
         editingState.state.selectedMemoryPresetID =
             reconciledConfigurationID
-        editingState.appliedMemoryPresetID =
-            reconciledConfigurationID
+        editingState.appliedMemoryPresetID = reconciledConfigurationID
+        editingState.processingDefaultMemoryPresetID = editingState.state
+            .configurationLibrary?.activeConfigurationID
         reconcileConfigurationLibraryIdentity(
             candidateID: selectedMemoryPresetID,
             configurationID: reconciledConfigurationID,
@@ -178,6 +179,8 @@ struct ConfigurationPersistenceReconciler {
             aggregate.activeConfigurationID
         editingState.appliedMemoryPresetID =
             aggregate.activeConfigurationID
+        editingState.processingDefaultMemoryPresetID =
+            aggregate.activeConfigurationID
 
         guard let activePreset =
             editingState.state.selectedMemoryPreset else {
@@ -193,22 +196,39 @@ struct ConfigurationPersistenceReconciler {
     func reconcileConfigurationLibrarySave(
         candidate: ConfigurationAggregateCandidate,
         receipt: ConfigurationLibrarySaveReceipt,
-        editingState: inout ConfigurationEditingState
+        editingState: inout ConfigurationEditingState,
+        editorGeneration: UInt64? = nil
     ) -> ConfigurationPersistenceReconciliationOutcome {
-        guard candidate.aggregate.activeSubjectID
-                == receipt.subjectID,
-              candidate.aggregate.activeConfigurationID
-                == receipt.configurationID,
-              editingState.state.selectedMemoryPresetID
-                == receipt.configurationID else {
+        let persistedConfigurationID =
+            receipt.savedConfigurationID
+            ?? receipt.configurationID
+        guard editingState.state.selectedMemoryPresetID
+                == persistedConfigurationID,
+              candidate.aggregate.subjects.contains(where: { subject in
+                  subject.subject.id
+                      == editingState.state.selectedSubjectID
+                      && subject.configurations.contains {
+                          $0.id == persistedConfigurationID
+                      }
+              }) else {
+            return .newerEditsPreserved
+        }
+
+        if let editorGeneration,
+           editingState.editorGeneration != editorGeneration {
             return .newerEditsPreserved
         }
 
         var durableAggregate = candidate.aggregate
         durableAggregate.revision = receipt.revision
-        restoreConfigurationLibrary(
-            durableAggregate,
-            editingState: &editingState
+        editingState.state.configurationLibrary = durableAggregate
+        editingState.presentationState.draftMemoryConfiguration =
+            candidate.configuration
+        editingState.appliedMemoryPresetID = persistedConfigurationID
+        editingState.processingDefaultMemoryPresetID =
+            durableAggregate.activeConfigurationID
+        editingState.restoreConfigurationContext(
+            from: candidate.configuration
         )
         return .applied
     }
@@ -286,7 +306,6 @@ struct ConfigurationPersistenceReconciler {
                 )
             break
         }
-        library.activeConfigurationID = configurationID
         editingState.state.configurationLibrary = library
     }
 }

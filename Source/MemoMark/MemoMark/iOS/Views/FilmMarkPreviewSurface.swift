@@ -1,25 +1,128 @@
 import SwiftUI
 
+/// A view-only calibration mode. It deliberately does not belong to the
+/// durable FilmMark configuration, because it changes how a person inspects
+/// the same resolved output rather than the output itself.
+enum FilmMarkPreviewMode: Equatable {
+    /// A readable lower-photo detail shared with the compact preview height of
+    /// Classic White and Minimal. This is a content reading aid, not a 1:1
+    /// position or size calibration surface.
+    case contentStrip
+
+    /// The full photo-relative canvas used while the related geometry controls
+    /// are open. This is the only preview mode that calibrates placement.
+    case geometry
+}
+
+/// Maps the durable, continuous FM type-size ratio to the compact preview.
+/// This is preview-only typography: the resolved layout used for calibration
+/// and export remains owned by the Layout Engine.
+enum FilmMarkPreviewTypography {
+    static func compactContentFontSize(
+        for fontSize: FilmMarkFontSize,
+        height: CGFloat
+    ) -> CGFloat {
+        let position = FilmMarkFontSize.sliderPosition(for: fontSize)
+        let sizeFactor: CGFloat
+
+        // The slider midpoint deliberately preserves the former prominent
+        // visual size. Values on either side remain continuous, so a custom
+        // stored ratio never falls back to the old four-step presentation.
+        if position <= 0.5 {
+            sizeFactor = 0.26 + (0.41 - 0.26) * (position / 0.5)
+        } else {
+            sizeFactor = 0.41 + (0.48 - 0.41) * ((position - 0.5) / 0.5)
+        }
+
+        return min(max(height * sizeFactor, 11), 20)
+    }
+}
+
 /// A calibration view for the authored FilmMark presentation.
 ///
-/// The preview intentionally uses a stable wide canvas so placement and
-/// typography can be compared while editing. It is not the export canvas:
-/// export resolves the same presentation against the source photo's actual
-/// pixel dimensions.
+/// The content strip keeps the three presentation styles comparable at the
+/// Configuration Center's compact preview height. Opening “位置与字号” changes
+/// only this view's inspection mode; it continues to resolve the same FM
+/// content and configuration that preview/export share.
 struct FilmMarkPreviewSurface: View {
 
     let content: FilmMarkContentProjection
     let configuration: FilmMarkConfiguration
-    var showsPlacementGuide: Bool = false
+    var mode: FilmMarkPreviewMode = .contentStrip
 
-    private let canvasSize = CGSize(width: 1_200, height: 600)
+    /// The background asset is 1600×900, while this virtual layout canvas is
+    /// deliberately smaller. Its ratio is the truth the Layout Engine needs;
+    /// rendering more pixels would only add transient raster work on every
+    /// nudge or size change in the Configuration Center.
+    private let geometryCanvasSize = CGSize(width: 1_200, height: 675)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        Group {
+            switch mode {
+            case .contentStrip:
+                contentStrip
+            case .geometry:
+                geometryCalibration
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: mode)
+    }
+
+    private var contentStrip: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: compactContentAlignment) {
+                previewBackground(
+                    width: geometry.size.width,
+                    height: geometry.size.height
+                )
+
+                if content.primaryOutput.isEmpty {
+                    emptyContentLabel
+                } else {
+                    contentStripLabel(height: geometry.size.height)
+                        .padding(
+                            .horizontal,
+                            max(10, geometry.size.width * 0.04)
+                        )
+                        .padding(
+                            .vertical,
+                            max(5, geometry.size.height * 0.12)
+                        )
+                }
+            }
+            .frame(
+                width: geometry.size.width,
+                height: geometry.size.height
+            )
+            .clipped()
+        }
+        .aspectRatio(
+            1 / RendererConstants.CompactInformationBar.landscape
+                .barHeightToWidth,
+            contentMode: .fit
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            filmMarkLocalized(
+                "filmMark.preview.content.accessibility",
+                fallback: "FilmMark 文字内容预览"
+            )
+        )
+        .accessibilityValue(content.primaryOutput)
+    }
+
+    private var geometryCalibration: some View {
+        let presentation = FilmMarkPresentationResolver.resolve(
+            content: content,
+            configuration: configuration,
+            canvasSize: geometryCanvasSize
+        )
+
+        return VStack(alignment: .leading, spacing: 6) {
             Text(
-                MemoMarkLanguage.interfaceStored.localized(
-                    key: "filmMark.preview.calibration_note",
-                    fallback: "样式与位置校准示意，实际输出会根据照片比例自适应。"
+                filmMarkLocalized(
+                    "filmMark.preview.geometry_note",
+                    fallback: "位置与字号校准示意，实际输出会根据照片比例自适应。"
                 )
             )
             .font(.caption)
@@ -27,113 +130,230 @@ struct FilmMarkPreviewSurface: View {
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isStaticText)
 
-            previewCanvas
+            GeometryReader { geometry in
+                let canvasSize = CGSize(
+                    width: geometry.size.width,
+                    height: geometry.size.width
+                        * geometryCanvasSize.height
+                        / geometryCanvasSize.width
+                )
+                let cropHeight = min(
+                    geometry.size.height,
+                    min(
+                        canvasSize.height,
+                        max(150, canvasSize.height * 0.56)
+                    )
+                )
+
+                // The editor is usually shown in a portrait phone viewport,
+                // while the FM artifact is a wide photo. Keep the wide
+                // canvas geometry intact, but present its bottom result strip
+                // at the top of the inspector instead of shrinking the full
+                // photo into a small lower-left thumbnail.
+                ZStack(alignment: .topLeading) {
+                    previewBackground(
+                        width: canvasSize.width,
+                        height: canvasSize.height
+                    )
+                    FilmMarkTextLayer(
+                        presentation: presentation,
+                        displaySize: canvasSize
+                    )
+                    FilmMarkPreviewPlacementGuide(
+                        layout: presentation.layout,
+                        displaySize: canvasSize
+                    )
+                    if presentation.content.primaryOutput.isEmpty {
+                        emptyContentLabel
+                            .frame(
+                                width: canvasSize.width,
+                                height: canvasSize.height,
+                                alignment: .center
+                            )
+                    }
+                }
+                .frame(
+                    width: canvasSize.width,
+                    height: cropHeight,
+                    alignment: .bottom
+                )
+                .clipped()
+                .frame(
+                    width: geometry.size.width,
+                    height: geometry.size.height,
+                    alignment: .top
+                )
+            }
+            .frame(height: 230)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            filmMarkLocalized(
+                "filmMark.preview.geometry.accessibility",
+                fallback: "FilmMark 位置与字号完整预览"
+            )
+        )
+        .accessibilityValue(content.primaryOutput)
+    }
+
+    private var compactContentAlignment: Alignment {
+        switch configuration.placement.anchor {
+        case .bottomLeft:
+            .bottomLeading
+        case .bottomRight:
+            .bottomTrailing
         }
     }
 
-    private var previewCanvas: some View {
-        let presentation = FilmMarkPresentationResolver.resolve(
-            content: content,
-            configuration: configuration,
-            canvasSize: canvasSize
+    private func previewBackground(
+        width: CGFloat,
+        height: CGFloat
+    ) -> some View {
+        Image(
+            ConfigurationPreviewBackground.filmMark.assetName(
+                for: ConfigurationPreviewBackground.surface(
+                    forPreviewWidth: width
+                )
+            )
         )
-
-        return GeometryReader { geometry in
-            ZStack(alignment: .topLeading) {
+            .resizable()
+            .scaledToFill()
+            .frame(
+                width: max(width, 1),
+                height: max(height, 1),
+                alignment: .bottom
+            )
+            .overlay {
                 LinearGradient(
                     colors: [
-                        Color(red: 0.20, green: 0.24, blue: 0.26),
-                        Color(red: 0.83, green: 0.54, blue: 0.25)
+                        Color.black.opacity(0.06),
+                        Color.black.opacity(0.28)
                     ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
-                Circle()
-                    .fill(Color.white.opacity(0.56))
-                    .frame(width: geometry.size.height * 0.22)
-                    .position(
-                        x: geometry.size.width * 0.76,
-                        y: geometry.size.height * 0.27
-                    )
-                Rectangle()
-                    .fill(Color.black.opacity(0.10))
-                FilmMarkTextLayer(
-                    presentation: presentation,
-                    displaySize: geometry.size
+            }
+            .clipped()
+            .accessibilityHidden(true)
+    }
+
+    private func contentStripLabel(height: CGFloat) -> some View {
+        Text(content.primaryOutput)
+            .font(
+                .system(
+                    size: compactContentFontSize(for: height),
+                    weight: .medium,
+                    design: .monospaced
                 )
-                if showsPlacementGuide {
-                    FilmMarkPreviewPlacementGuide(
-                        configuration: configuration,
-                        size: geometry.size
-                    )
-                }
-                if presentation.content.primaryOutput.isEmpty {
-                    Text(
-                        MemoMarkLanguage.interfaceStored.localized(
-                            key: "filmMark.preview.empty",
-                            fallback: "暂无胶片内容"
-                        )
-                    )
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.82))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.black.opacity(0.28), in: Capsule())
-                    .frame(
-                        width: geometry.size.width,
-                        height: geometry.size.height,
-                        alignment: .center
-                    )
-                    .allowsHitTesting(false)
-                }
+            )
+            .foregroundStyle(filmMarkColor)
+            .lineLimit(1)
+            .minimumScaleFactor(0.70)
+            .allowsTightening(true)
+            .padding(
+                .horizontal,
+                max(7, height * 0.28)
+            )
+            .padding(
+                .vertical,
+                max(4, height * 0.13)
+            )
+            .background {
+                compactSubstrate
+            }
+            .shadow(
+                color: configuration.appearance.substrate == .softShadow
+                    ? .black.opacity(0.72)
+                    : .clear,
+                radius: 3.5,
+                y: 1.5
+            )
+    }
+
+    private var compactSubstrate: some View {
+        let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
+        return Group {
+            switch configuration.appearance.substrate {
+            case .none, .softShadow:
+                Color.clear
+            case .paperWhite:
+                shape.fill(Color.white.opacity(0.94))
+            case .systemGlass:
+                shape
+                    .fill(Color.white.opacity(0.26))
+                    .overlay {
+                        shape.stroke(Color.white.opacity(0.54))
+                    }
+            case .translucentLabel:
+                shape.fill(Color.black.opacity(0.26))
             }
         }
-        .aspectRatio(canvasSize.width / canvasSize.height, contentMode: .fit)
-        .clipped()
+    }
+
+    private var emptyContentLabel: some View {
+        Text(
+            filmMarkLocalized(
+                "filmMark.preview.empty",
+                fallback: "暂无胶片内容"
+            )
+        )
+        .font(.caption.weight(.medium))
+        .foregroundStyle(.white.opacity(0.90))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.black.opacity(0.30), in: Capsule())
+        .allowsHitTesting(false)
+    }
+
+    private var filmMarkColor: Color {
+        Color(
+            red: configuration.appearance.color.red,
+            green: configuration.appearance.color.green,
+            blue: configuration.appearance.color.blue,
+            opacity: configuration.appearance.color.alpha
+        )
+    }
+
+    private func compactContentFontSize(for height: CGFloat) -> CGFloat {
+        FilmMarkPreviewTypography.compactContentFontSize(
+            for: configuration.appearance.fontSize,
+            height: height
+        )
     }
 }
 
 private struct FilmMarkPreviewPlacementGuide: View {
 
-    let configuration: FilmMarkConfiguration
-    let size: CGSize
+    let layout: FilmMarkResolvedLayout
+    let displaySize: CGSize
 
     var body: some View {
-        let inset = min(size.width, size.height) * 0.065
-        let guideRect = CGRect(
-            x: inset,
-            y: inset,
-            width: max(0, size.width - inset * 2),
-            height: max(0, size.height - inset * 2)
+        let safeFrame = scaled(layout.safeRect)
+
+        RoundedRectangle(
+            cornerRadius: max(8, displaySize.height * 0.04),
+            style: .continuous
         )
-
-        ZStack {
-            RoundedRectangle(cornerRadius: max(8, size.height * 0.04))
-                .stroke(
-                    Color.white.opacity(0.28),
-                    style: StrokeStyle(lineWidth: 1, dash: [5, 5])
-                )
-                .frame(width: guideRect.width, height: guideRect.height)
-
-            Circle()
-                .fill(Color.white.opacity(0.82))
-                .frame(width: max(6, size.height * 0.026))
-                .overlay {
-                    Circle().stroke(Color.black.opacity(0.32), lineWidth: 1)
-                }
-                .position(anchorPoint(in: guideRect))
-        }
-        .frame(width: size.width, height: size.height)
+        .stroke(
+            Color.white.opacity(0.32),
+            style: StrokeStyle(lineWidth: 1, dash: [5, 5])
+        )
+        .frame(width: safeFrame.width, height: safeFrame.height)
+        .position(x: safeFrame.midX, y: safeFrame.midY)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 
-    private func anchorPoint(in rect: CGRect) -> CGPoint {
-        switch configuration.placement.anchor {
-        case .bottomLeft:
-            CGPoint(x: rect.minX, y: rect.maxY)
-        case .bottomRight:
-            CGPoint(x: rect.maxX, y: rect.maxY)
+    private func scaled(_ frame: CGRect) -> CGRect {
+        guard layout.canvasSize.width > 0, layout.canvasSize.height > 0 else {
+            return .zero
         }
+        return CGRect(
+            x: frame.minX / layout.canvasSize.width * displaySize.width,
+            y: frame.minY / layout.canvasSize.height * displaySize.height,
+            width: frame.width / layout.canvasSize.width * displaySize.width,
+            height: frame.height / layout.canvasSize.height * displaySize.height
+        )
     }
 }

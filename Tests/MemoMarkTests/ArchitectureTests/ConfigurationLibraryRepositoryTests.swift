@@ -48,6 +48,46 @@ struct ConfigurationLibraryRepositoryTests {
     }
 
     @MainActor
+    @Test("saving an edited non-default preset reports that preset separately")
+    func savingEditedNonDefaultPresetKeepsProcessingDefaultIdentity() async throws {
+        let storage = TestConfigurationLibraryStorage()
+        let repository = Self.makeRepository(storage: storage)
+        let defaultID = UUID(
+            uuidString: "22222222-2222-2222-2222-222222222222"
+        )!
+        let editedID = UUID(
+            uuidString: "33333333-3333-3333-3333-333333333333"
+        )!
+        var aggregate = Self.makeAggregate(title: "默认")
+        let originalConfiguration = aggregate.subjects[0].configurations[0]
+        let editedConfiguration = MemoryConfigurationRecord(
+            id: editedID,
+            title: "第二套",
+            revision: originalConfiguration.revision,
+            savedAt: originalConfiguration.savedAt,
+            selectedTimeAnchorID:
+                originalConfiguration.selectedTimeAnchorID,
+            language: originalConfiguration.language,
+            editor: originalConfiguration.editor,
+            presentation: originalConfiguration.presentation,
+            output: originalConfiguration.output
+        )
+        aggregate.subjects[0].configurations.append(editedConfiguration)
+
+        _ = try await repository.save(aggregate)
+        aggregate.revision = 1
+        aggregate.subjects[0].configurations[1].revision = 2
+        let receipt = try await repository.save(
+            aggregate,
+            changedConfigurationID: editedID
+        )
+
+        #expect(receipt.configurationID == defaultID)
+        #expect(receipt.savedConfigurationID == editedID)
+        #expect(receipt.savedConfigurationRevision == 2)
+    }
+
+    @MainActor
     @Test("validation and encoding failures do not touch durable storage")
     func validationAndEncodingFailuresDoNotWrite() async throws {
         let storage = TestConfigurationLibraryStorage()

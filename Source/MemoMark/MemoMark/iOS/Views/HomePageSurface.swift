@@ -29,6 +29,9 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     let subject: MemorySubject?
     let activitySnapshot: MemoMarkBackgroundJobSnapshot?
     let completedPhotoCount: Int
+    /// Resolves the presentation route from each preset's own durable record.
+    /// A single global current route would make every row appear identical.
+    let borderStyleNameForPreset: (MemoryPreset) -> String
     let borderStyleName: String
     let borderStyleDescription: String
     let memoryPresets: [MemoryPreset]
@@ -48,7 +51,9 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     let onOpenPhotoPicker: () -> Bool
     let onOpenSettings: () -> Void
     let onOpenMemoMarkPlus: () -> Void
+    let onOpenPresetManagement: () -> Void
     let onSelectMemoryPreset: (MemoryPreset) -> Void
+    let onCreateMemoryPreset: () -> Void
     let onRenameMemoryPreset: () -> Void
     let onSaveMemoryPreset: (MemoryPreset) -> Void
     let onDeleteMemoryPreset: (MemoryPreset) -> Void
@@ -584,7 +589,8 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                             ForEach(memoryPresets) { preset in
                                 HomeMemoryPresetRow(
                                     preset: preset,
-                                    borderStyleName: borderStyleName,
+                                    borderStyleName:
+                                        borderStyleNameForPreset(preset),
                                     anchorType: anchorType(for: preset),
                                     subjectAvatarImagePath:
                                         subject?.identity.avatarPreviewImagePath
@@ -603,8 +609,20 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                                     )
                                 }
                             }
+
+                            HorizontalDivider(
+                                horizontalInset:
+                                    ConfigurationUI.innerPanelPadding
+                            )
+                            HomeNewPresetRow(
+                                action: onCreateMemoryPreset
+                            )
                         }
                     }
+                }
+
+                if memoryPresets.isEmpty {
+                    HomeNewPresetRow(action: onCreateMemoryPreset)
                 }
 
                 if isEditingMemoryPresetTitle {
@@ -699,6 +717,13 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                 Label(
                     localized("home.presets.manage"),
                     systemImage: "folder"
+                )
+            }
+
+            Button(action: onOpenPresetManagement) {
+                Label(
+                    localized("home.presets.manage_presets"),
+                    systemImage: "slider.horizontal.3"
                 )
             }
         } label: {
@@ -824,6 +849,37 @@ private struct HomeEmptyPresetRow: View {
             )
             .stroke(ConfigurationUI.faintHairline)
         )
+    }
+
+    private func localized(_ key: String) -> String {
+        interfaceLanguage.localized(key: key, fallback: key)
+    }
+}
+
+private struct HomeNewPresetRow: View {
+
+    let action: () -> Void
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
+
+    var body: some View {
+        Button(action: action) {
+            Label(
+                localized("home.presets.new"),
+                systemImage: "plus"
+            )
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.accentColor)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, ConfigurationUI.innerPanelPadding)
+        .padding(.vertical, ConfigurationUI.compactRowVerticalPadding)
+        .frame(minHeight: 48)
+        .accessibilityIdentifier("home-new-preset")
     }
 
     private func localized(_ key: String) -> String {

@@ -5,6 +5,12 @@ import PhotosUI
 import UIKit
 #endif
 
+/// Stable, view-only scroll destinations within the editor. These are not
+/// configuration identities and must never be persisted with a preset.
+enum ConfigurationEditorScrollTarget {
+    static let filmMarkGeometry = "configuration.editor.filmMark.geometry"
+}
+
 struct ConfigurationOutputBindings {
 
     @Binding
@@ -47,14 +53,12 @@ struct ConfigurationOptionList: View {
     @State
     private var showsFilmMarkDetailsSheet = false
 
-    @State
-    private var isFilmMarkPositionExpanded = true
-
     @Binding var disclosureState: ConfigurationDisclosureState
     let subjectAvatarLogoImagePath: String?
     @Binding var presentationStyle: RecordCardPresentationStyle
     @Binding var filmMarkConfiguration: FilmMarkConfiguration
     let filmMarkOutputText: String
+    @Binding var isFilmMarkGeometryExpanded: Bool
     @Binding var logoMode: ConfigurationLogoMode
     @Binding var selectedLogoItem: PhotosPickerItem?
     @Binding var isLogoPickerPresented: Bool
@@ -108,11 +112,9 @@ struct ConfigurationOptionList: View {
                 configurationSectionDivider
                 filmMarkContentRow
                 configurationSectionDivider
-                filmMarkPositionSection
+                filmMarkGeometrySection
                 configurationSectionDivider
 #if os(iOS)
-                filmMarkFontSizeSection
-                configurationSectionDivider
                 filmMarkColorSection
                 configurationSectionDivider
                 filmMarkSubstrateSection
@@ -453,14 +455,14 @@ struct ConfigurationOptionList: View {
 #endif
     }
 
-    private var filmMarkPositionSection: some View {
+    private var filmMarkGeometrySection: some View {
         groupedSection(
-            title: "filmMark.configuration.position.title",
-            subtitle: "filmMark.configuration.position.help",
-            isExpanded: $isFilmMarkPositionExpanded,
-            resultTitle: filmMarkPositionSummary,
-            expandedAccessibilityLabel: "filmMark.configuration.position.accessibility.collapse",
-            collapsedAccessibilityLabel: "filmMark.configuration.position.accessibility.expand"
+            title: "filmMark.configuration.geometry.title",
+            subtitle: "filmMark.configuration.geometry.help",
+            isExpanded: $isFilmMarkGeometryExpanded,
+            resultTitle: filmMarkGeometrySummary,
+            expandedAccessibilityLabel: "filmMark.configuration.geometry.accessibility.collapse",
+            collapsedAccessibilityLabel: "filmMark.configuration.geometry.accessibility.expand"
         ) {
             FilmMarkPositionDetailsContent(
                 configuration: $filmMarkConfiguration,
@@ -469,22 +471,28 @@ struct ConfigurationOptionList: View {
                 },
                 showsHeader: false
             )
+            HorizontalDivider(
+                horizontalInset:
+                    CompactInformationRowMetrics.horizontalPadding
+            )
+            FilmMarkConfigurationControls(
+                configuration: $filmMarkConfiguration,
+                includesPosition: false,
+                includesSubstrate: false,
+                includesFont: false,
+                includesFontSize: true,
+                includesColor: false,
+                horizontalInset: CompactInformationRowMetrics.horizontalPadding,
+                onChange: {
+                    // The parent remains the single draft owner.
+                }
+            )
         }
+        .id(ConfigurationEditorScrollTarget.filmMarkGeometry)
     }
 
-    private var filmMarkPositionSummary: String {
-        switch filmMarkConfiguration.placement.anchor {
-        case .bottomLeft:
-            return MemoMarkLanguage.interfaceStored.localized(
-                key: "filmMark.configuration.anchor.bottom_left",
-                fallback: "左下"
-            )
-        case .bottomRight:
-            return MemoMarkLanguage.interfaceStored.localized(
-                key: "filmMark.configuration.anchor.bottom_right",
-                fallback: "右下"
-            )
-        }
+    private var filmMarkGeometrySummary: String {
+        "\(filmMarkConfiguration.placement.anchor.displayTitle) · \(filmMarkConfiguration.appearance.fontSize.displayTitle)"
     }
 
     private var filmMarkContentRow: some View {
@@ -543,22 +551,6 @@ struct ConfigurationOptionList: View {
             includesSubstrate: true,
             includesFont: false,
             includesFontSize: false,
-            includesColor: false,
-            horizontalInset: 0,
-            onChange: {
-                // The parent remains the single draft owner.
-            }
-        )
-        .v1SectionSurfaceLayout()
-    }
-
-    private var filmMarkFontSizeSection: some View {
-        FilmMarkConfigurationControls(
-            configuration: $filmMarkConfiguration,
-            includesPosition: false,
-            includesSubstrate: false,
-            includesFont: false,
-            includesFontSize: true,
             includesColor: false,
             horizontalInset: 0,
             onChange: {

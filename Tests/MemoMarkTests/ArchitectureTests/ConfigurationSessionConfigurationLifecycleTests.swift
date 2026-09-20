@@ -765,6 +765,109 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         #expect(session.selectedMemoryPresetIsApplied)
     }
 
+    @Test("edited non-default configuration receipt applies without changing processing default identity")
+    func editedNonDefaultConfigurationReceiptReconcilesSelectedPreset() throws {
+        var state = ConfigurationCenterState.mock
+        let subject = try #require(state.selectedSubject)
+        let processingDefaultID = UUID(uuidString: "97979797-9797-9797-9797-979797979797")!
+        let processingDefault = Self.makeCompleteConfiguration(
+            id: processingDefaultID,
+            title: "处理默认",
+            templateValue: "处理默认",
+            locationStyle: "city",
+            logoMode: .appleMini,
+            badge: .family,
+            memoryText: "默认记忆",
+            descriptionEnabled: true,
+            descriptionOverride: "默认说明",
+            albumIdentifier: "default-album",
+            albumTitle: "Default Album",
+            mediaMode: .staticImage
+        )
+        let editedID = UUID(uuidString: "96969696-9696-9696-9696-969696969696")!
+        let editedConfiguration = Self.makeCompleteConfiguration(
+            id: editedID,
+            title: "独立配置",
+            templateValue: "独立配置",
+            locationStyle: "city",
+            logoMode: .appleMini,
+            badge: .family,
+            memoryText: "独立记忆",
+            descriptionEnabled: true,
+            descriptionOverride: "独立说明",
+            albumIdentifier: "edited-album",
+            albumTitle: "Edited Album",
+            mediaMode: .staticImage
+        )
+        state.configurationLibrary = ConfigurationLibraryRecord(
+            revision: 1,
+            subjects: [
+                .init(
+                    subject: subject,
+                    configurations: [processingDefault, editedConfiguration],
+                    assetManifest: .init(entries: [])
+                )
+            ],
+            activeSubjectID: subject.id,
+            activeConfigurationID: processingDefaultID
+        )
+        state.memoryPresets = state.memoryPresets + [
+            MemoryPreset(
+                id: editedID,
+                title: editedConfiguration.title,
+                summary: "",
+                regionTemplateIDs: editedConfiguration.editor.regionTemplateIDs,
+                selectedSubjectID: subject.id
+            )
+        ]
+        state.selectedMemoryPresetID = editedID
+        let session = ConfigurationSession(state: state)
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
+            from: try #require(state.configurationLibrary),
+            draft: ConfigurationAggregateDraft(
+                title: "独立配置已编辑",
+                regionDrafts: [.slotA: MemoryCardEditorDraft(items: [.text("已编辑")])],
+                regionTemplateIDs: [.slotA: "after.recorder"],
+                locationConfiguration: nil,
+                logoMode: .appleMini,
+                badge: .family,
+                usesCustomMemoryWriteText: true,
+                customMemoryWriteText: "已编辑记忆",
+                shouldWritePhotosDescription: true,
+                photosDescriptionOverride: "已编辑说明",
+                outputTarget: .existingAlbum,
+                selectedAlbumIdentifier: "edited-album",
+                albumTitle: "Edited Album",
+                mediaOutputMode: .originalFormat,
+                livePhotoPolicy: .preserveMotion,
+                selectedTimeAnchorID: subject.primaryTimeAnchor?.id,
+                savedAt: Date(timeIntervalSince1970: 901)
+            ),
+            configurationID: editedID
+        )
+        let receipt = ConfigurationLibrarySaveReceipt(
+            revision: candidate.aggregate.revision + 1,
+            subjectID: subject.id,
+            configurationID: processingDefaultID,
+            configurationRevision: candidate.configuration.revision,
+            savedConfigurationID: editedID,
+            savedConfigurationRevision: candidate.configuration.revision,
+            compatibilityProjectionFailure: nil
+        )
+
+        let outcome = session.reconcileConfigurationLibrarySave(
+            candidate: candidate,
+            receipt: receipt
+        )
+
+        #expect(outcome == .applied)
+        #expect(session.state.selectedMemoryPresetID == editedID)
+        #expect(session.appliedMemoryPresetID == editedID)
+        #expect(session.processingDefaultMemoryPresetID == processingDefaultID)
+        #expect(session.selectedMemoryConfiguration?.title == "独立配置已编辑")
+        #expect(session.selectedMemoryPresetIsApplied)
+    }
+
     @Test("creating a configuration in the configuration center immediately makes it available in the home-page picker for the same subject")
     func creatingConfigurationImmediatelyAppearsInSubjectPicker() {
         var state = Self.makeStateWithSecondSubject()
@@ -808,6 +911,62 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         )
         #expect(createdPreset.selectedSubjectID == secondSubject.id)
         #expect(session.state.selectedMemoryPresetID == createdPreset.id)
+    }
+
+    @Test("new preset creation uses an independent Classic White baseline")
+    func creatingConfigurationFromClassicWhiteBaselineDoesNotCloneSource() throws {
+        var state = Self.makeStateWithSecondSubject()
+        let subject = try #require(state.selectedSubject)
+        state.memoryPresets[0].regionTemplateIDs = [.slotA: "custom.source"]
+        state.memoryPresets[0].logoMode = .customUpload
+        state.memoryPresets[0].usesCustomMemoryWriteText = true
+        state.memoryPresets[0].customMemoryWriteText = "来源文案"
+        state.memoryPresets[0].savedOutputConfiguration =
+            SavedOutputConfigurationSchemaV1(
+                outputTarget: .newAlbum,
+                mediaOutputMode: .originalFormat,
+                selectedExistingAlbumIdentifier: "source-album",
+                newAlbumName: "来源相册"
+            )
+        state.selectedSubjectID = subject.id
+        state.selectedMemoryPresetID = state.memoryPresets[0].id
+
+        let session = ConfigurationSession(state: state)
+        let sourceID = try #require(session.state.selectedMemoryPresetID)
+
+        session.createMemoryPresetFromClassicWhiteBaseline()
+
+        let created = try #require(session.state.selectedMemoryPreset)
+        #expect(created.id != sourceID)
+        #expect(
+            created.summary
+            == TemplatePreset.classicWhite.displayName(
+                for: .interfaceStored
+            )
+        )
+        #expect(created.regionTemplateIDs.isEmpty)
+        #expect(created.logoMode == .appleMini)
+        #expect(!created.usesCustomMemoryWriteText)
+        #expect(created.customMemoryWriteText.isEmpty)
+        #expect(created.savedOutputConfiguration == nil)
+        #expect(created.selectedSubjectID == subject.id)
+        #expect(created.selectedTimeAnchorID == subject.primaryTimeAnchor?.id)
+    }
+
+    @Test("discarding a new preset removes only its in-memory draft")
+    func discardingNewPresetDoesNotTouchDurableLibrary() throws {
+        let session = ConfigurationSession()
+        session.createMemoryPresetFromClassicWhiteBaseline()
+        let createdID = try #require(session.state.selectedMemoryPresetID)
+
+        #expect(session.discardSelectedMemoryPresetChanges())
+        #expect(session.state.selectedMemoryPresetID == nil)
+        #expect(
+            !(session.state.configurationLibrary?
+                .subjects
+                .flatMap(\.configurations)
+                .contains(where: { $0.id == createdID }) ?? false)
+        )
     }
 
     @Test("persistence snapshot folds current output settings into the selected configuration")
@@ -1114,8 +1273,10 @@ struct ConfigurationSessionConfigurationLifecycleTests {
         session.selectSubject(secondSubject)
 
         #expect(session.state.selectedMemoryPresetID == secondConfiguration.id)
-        #expect(session.state.configurationLibrary?.activeSubjectID == secondSubject.id)
-        #expect(session.state.configurationLibrary?.activeConfigurationID == secondConfiguration.id)
+        // Browsing another subject changes only the Editor Context. The
+        // durable Processing Default remains the original pair.
+        #expect(session.state.configurationLibrary?.activeSubjectID == firstSubject.id)
+        #expect(session.state.configurationLibrary?.activeConfigurationID == firstConfiguration.id)
         #expect(session.selectedMemoryConfiguration == secondConfiguration)
         let restoredDrafts = ConfigurationDraftProjection(
             configuration: try #require(session.selectedMemoryConfiguration)

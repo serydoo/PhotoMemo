@@ -12,6 +12,13 @@ struct MemoryCardEditorPreviewFramePreferenceKey: PreferenceKey {
     }
 }
 
+/// A one-shot request to bring an editor section into view beside the already
+/// pinned preview. It is transient interaction state, not configuration data.
+struct ConfigurationEditorScrollRequest: Equatable {
+    let targetID: String
+    let revision: UUID
+}
+
 struct MemoryCardEditorPageSurface<
     PreviewContent: View,
     EditorContent: View,
@@ -24,11 +31,15 @@ struct MemoryCardEditorPageSurface<
     @Environment(\.verticalSizeClass)
     private var verticalSizeClass
 
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
     let previewPinProgress: CGFloat
     let editorRevealProgress: CGFloat
     let pageTitle: String
     let pageSubtitle: String
     let previewWidthPolicy: ConfigurationPreviewWidthPolicy
+    let editorScrollRequest: ConfigurationEditorScrollRequest?
     let onDismissKeyboard: () -> Void
     @ViewBuilder var previewContent: PreviewContent
     @ViewBuilder var editorContent: EditorContent
@@ -40,6 +51,7 @@ struct MemoryCardEditorPageSurface<
         pageTitle: String,
         pageSubtitle: String,
         previewWidthPolicy: ConfigurationPreviewWidthPolicy = .readable,
+        editorScrollRequest: ConfigurationEditorScrollRequest? = nil,
         onDismissKeyboard: @escaping () -> Void,
         @ViewBuilder previewContent: () -> PreviewContent,
         @ViewBuilder editorContent: () -> EditorContent,
@@ -50,6 +62,7 @@ struct MemoryCardEditorPageSurface<
         self.pageTitle = pageTitle
         self.pageSubtitle = pageSubtitle
         self.previewWidthPolicy = previewWidthPolicy
+        self.editorScrollRequest = editorScrollRequest
         self.onDismissKeyboard = onDismissKeyboard
         self.previewContent = previewContent()
         self.editorContent = editorContent()
@@ -139,23 +152,44 @@ struct MemoryCardEditorPageSurface<
     }
 
     private var editorScrollView: some View {
-        ScrollView {
-            VStack(spacing: 14) {
-                editorContent
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 14) {
+                    editorContent
+                }
+                .padding(.top, 8)
+                .padding(
+                    .bottom,
+                    AdaptivePageLayout
+                        .scrollBottomPadding(
+                            for: navigationStyle
+                        )
+                )
+                .adaptiveScrollContent(
+                    horizontalPadding: ConfigurationUI.contentColumnPadding
+                )
             }
-            .padding(.top, 8)
-            .padding(
-                .bottom,
-                AdaptivePageLayout
-                    .scrollBottomPadding(
-                        for: navigationStyle
-                    )
-            )
-            .adaptiveScrollContent(
-                horizontalPadding: ConfigurationUI.contentColumnPadding
-            )
+            .scrollDismissesKeyboard(.interactively)
+            .onChange(of: editorScrollRequest) { _, request in
+                guard let request else { return }
+
+                Task { @MainActor in
+                    // Wait for the disclosure and expanded calibration canvas
+                    // to settle, then present its controls directly below the
+                    // fixed preview. The person owns scrolling after this.
+                    try? await Task.sleep(nanoseconds: 220_000_000)
+                    guard editorScrollRequest == request else { return }
+
+                    if reduceMotion {
+                        proxy.scrollTo(request.targetID, anchor: .top)
+                    } else {
+                        withAnimation(.easeInOut(duration: 0.22)) {
+                            proxy.scrollTo(request.targetID, anchor: .top)
+                        }
+                    }
+                }
+            }
         }
-        .scrollDismissesKeyboard(.interactively)
     }
 
     private var navigationStyle:

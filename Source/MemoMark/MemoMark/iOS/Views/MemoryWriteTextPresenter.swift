@@ -26,7 +26,7 @@ enum MemoryWriteTextPresenter {
             smartText: resolvedText,
             usesCustomText: usesCustomText,
             customText: customText
-        ) ?? "当前智能模块暂无内容"
+        ) ?? "暂无可写入的记忆内容。"
     }
 
     static func legacyBirthdayAnchorTitle(

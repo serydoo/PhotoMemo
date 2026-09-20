@@ -4,6 +4,15 @@ import PhotosUI
 import UIKit
 
 extension MemoMarkConfigurationCenterView {
+    @ViewBuilder
+    var presentedEditorCluster: some View {
+        if rootPresentationState.isEditingFilmMarkContent {
+            filmMarkEditorCluster
+        } else {
+            editorCluster
+        }
+    }
+
     var previewSection: some View {
         MemoryCardPreviewSection(
             presentationStyle: presentationStyle,
@@ -32,6 +41,8 @@ extension MemoMarkConfigurationCenterView {
                 filmMarkPreviewText,
             filmMarkConfiguration:
                 rootConfigurationProjectionState.filmMarkConfiguration,
+            isFilmMarkGeometryExpanded:
+                rootPresentationState.isFilmMarkGeometryExpanded,
             onTap: dismissKeyboard
         )
     }
@@ -141,6 +152,79 @@ extension MemoMarkConfigurationCenterView {
                     editorInteractionState.recentInsertionItemID =
                         insert(module, into: region)
                 }
+                applyModulePanelState(
+                    ModulePanelCoordinator.selectModule(
+                        module,
+                        state: modulePanelState
+                    )
+                )
+            },
+            onCloseModuleLibrary: {
+                applyModulePanelState(
+                    ModulePanelCoordinator.setSheetPresented(
+                        false,
+                        state: modulePanelState
+                    )
+                )
+            }
+        )
+    }
+
+    /// FilmMark uses the same native TextKit editor surface as a single card
+    /// region, but its binding is deliberately its own content carrier. The
+    /// `.slotA` value below is only a visual editor identity required by the
+    /// reusable control; it never reads or writes the classic slot-A draft.
+    var filmMarkEditorCluster: some View {
+        MemoryCardRegionEditorCluster(
+            presentationStyle: .filmMark,
+            visibleRegions: [.slotA],
+            photoDescriptionRegions: [],
+            slotATextKitCommandBus: editorInteractionState.slotATextKitCommandBus,
+            slotBTextKitCommandBus: editorInteractionState.slotBTextKitCommandBus,
+            slotCTextKitCommandBus: editorInteractionState.slotCTextKitCommandBus,
+            slotDTextKitCommandBus: editorInteractionState.slotDTextKitCommandBus,
+            draft: { _ in filmMarkContentDraft },
+            onFocus: { region in
+                focusRegionEditor(for: region)
+            },
+            onFocusTextItem: { _, _ in },
+            onFocusTrailingText: { _ in },
+            onUpdateTextItem: { _, item, text in
+                var draft = filmMarkContentDraft
+                draft.updateTextItem(item, text: text)
+                updateFilmMarkContentDraft(draft)
+            },
+            onReplaceDraft: { _, draft in
+                updateFilmMarkContentDraft(draft)
+            },
+            onPrependText: { _, text in
+                var draft = filmMarkContentDraft
+                _ = draft.prependText(text)
+                updateFilmMarkContentDraft(draft)
+            },
+            onAppendText: { _, text in
+                var draft = filmMarkContentDraft
+                _ = draft.appendText(text)
+                updateFilmMarkContentDraft(draft)
+            },
+            onRemoveItem: { _, item in
+                var draft = filmMarkContentDraft
+                draft.items.removeAll { $0.id == item.id }
+                draft.normalizeTrailingTextInput()
+                updateFilmMarkContentDraft(draft)
+            },
+            onRemovePreviousComposedItem: { _, _ in false },
+            focusedRegion: editorInteractionState.focusedEditorRegion,
+            activeModuleRegion: editorInteractionState.activeModuleRegion,
+            modules: modules(for:),
+            categoryTitle: moduleCategoryTitle,
+            valueText: moduleDisplayText,
+            insertionMarkerID: { _ in nil },
+            showsInsertionMarkerAtEnd: { _ in false },
+            onSelectModule: { module, _ in
+                editorInteractionState.slotATextKitCommandBus
+                    .insert(moduleItem(module))
+                editorInteractionState.clearInsertionContext()
                 applyModulePanelState(
                     ModulePanelCoordinator.selectModule(
                         module,
@@ -346,15 +430,7 @@ extension MemoMarkConfigurationCenterView {
             )
         }
 
-        // FM has an independent authored payload. Do not let the generic
-        // region fallback invent a classic preview sentence when that payload
-        // is absent or has not been activated in the current draft.
-        guard editorDraftState.active[.slotA] != nil else {
-            return ""
-        }
-        return previewText(
-            for: CardRegion.region(for: .leftPrimary)
-        )
+        return composedText(for: filmMarkContentDraft)
     }
 
     private func templateText(for draft: MemoryCardEditorDraft) -> String {
@@ -400,6 +476,26 @@ extension MemoMarkConfigurationCenterView {
             context: previewCompositionContext,
             engine: previewCompositionEngine
         )
+    }
+
+    func defaultFilmMarkPrimaryOutputDraft() -> MemoryCardEditorDraft {
+        var draft = MemoryCardEditorDraft(
+            items: FilmMarkContentSchemaV2.defaultPrimaryOutputModules.map(
+                moduleItem
+            )
+        )
+        draft.normalizeTrailingTextInput()
+        return draft
+    }
+
+    private func updateFilmMarkContentDraft(
+        _ draft: MemoryCardEditorDraft
+    ) {
+        var normalized = draft
+        normalized.normalizeTrailingTextInput()
+        filmMarkContentDraft = normalized
+        activeConfigurationStatus = .dirty
+        refreshDynamicPreview()
     }
 
     private func insert(

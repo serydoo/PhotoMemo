@@ -6,7 +6,7 @@ import Testing
 @Suite("Configuration center output panel presenter")
 struct ConfigurationCenterOutputPanelPresenterTests {
 
-    @Test("builds fixed output and metadata copy while carrying the selected storage and smart-module summary")
+    @Test("builds output and renderer-specific metadata copy")
     func presentationCarriesOutputStorageAndSmartModuleSummary() {
         let memoryWritePresentation =
             MemoryWriteOptionPresenter
@@ -22,15 +22,16 @@ struct ConfigurationCenterOutputPanelPresenterTests {
                 outputOption: .processedImage,
                 storageOption: .targetAlbum,
                 memoryWritePresentation:
-                    memoryWritePresentation
+                    memoryWritePresentation,
+                language: .simplifiedChinese
             )
 
         #expect(presentation.outputTitle == "处理过的图片")
         #expect(presentation.outputNote == "生成新图片，不修改原始照片。")
-        #expect(presentation.metadataTitle == "保留全部元数据")
+        #expect(presentation.metadataTitle == "保留照片信息")
         #expect(
             presentation.metadataNote
-                .contains("可用元数据")
+                .contains("基础白会增加白色信息栏")
         )
         #expect(presentation.storageTitle == "目标相册")
         #expect(
@@ -47,11 +48,35 @@ struct ConfigurationCenterOutputPanelPresenterTests {
         )
         #expect(
             presentation.memoryWriteNote
-            == "会根据拍摄时间、记忆对象和时间锚点，写入对应的记忆表达。"
+            == "会根据拍摄日期与时间锚点的差值，结合记忆对象，写入对应的记忆表达。"
         )
+        #expect(presentation.memoryWriteActionTitle == "编辑卡片内容")
+    }
+
+    @Test("uses a different metadata explanation for Minimal")
+    func presentationUsesMinimalMetadataCopy() {
+        let memoryWritePresentation =
+            MemoryWriteOptionPresenter
+            .presentation(
+                usesCustomText: false,
+                resolvedText: "记录于｜2026.07.01｜还有 86 天",
+                language: .simplifiedChinese
+            )
+
+        let presentation =
+            ConfigurationCenterOutputPanelPresenter
+            .presentation(
+                outputOption: .processedImage,
+                storageOption: .appFolder,
+                memoryWritePresentation: memoryWritePresentation,
+                presentationStyle: .minimal,
+                language: .simplifiedChinese
+            )
+
+        #expect(presentation.metadataTitle == "保留照片信息")
         #expect(
-            presentation.memoryWriteActionTitle
-            == "进入智能模块"
+            presentation.metadataNote
+                .contains("不增加底部白边")
         )
     }
 
@@ -71,7 +96,8 @@ struct ConfigurationCenterOutputPanelPresenterTests {
                 outputOption: .processedImage,
                 storageOption: .appFolder,
                 memoryWritePresentation:
-                    memoryWritePresentation
+                    memoryWritePresentation,
+                language: .simplifiedChinese
             )
 
         #expect(presentation.storageTitle == "时光记文件夹")

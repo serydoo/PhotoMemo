@@ -77,6 +77,12 @@ struct MemoMarkConfigurationCenterView: View {
     @State
     var editorDraftState = ConfigurationEditorDraftState()
 
+    /// The FilmMark sentence is a separate authored output, not a classic
+    /// card-region draft. It is only projected into FilmMarkContentSchemaV2
+    /// when the configuration is saved.
+    @State
+    var filmMarkContentDraft = MemoryCardEditorDraft(items: [])
+
     @State
     var editorInteractionState =
         MemoryCardEditorInteractionState()
@@ -151,21 +157,28 @@ struct MemoMarkConfigurationCenterView: View {
         presentationStyle = newStyle
         editorDraftState.activate(
             newStyle,
-            fallback: defaultRegionDrafts()
+            fallback: defaultRegionDrafts(for: newStyle)
         )
+        if newStyle == .filmMark,
+           filmMarkContentDraft.items.isEmpty {
+            filmMarkContentDraft = defaultFilmMarkPrimaryOutputDraft()
+        }
         editorInteractionState.activeTextItemIDs = [:]
         editorInteractionState.clearInsertionContext()
         refreshDynamicPreview()
     }
 
-    private func defaultRegionDrafts() ->
+    private func defaultRegionDrafts(
+        for presentationStyle: RecordCardPresentationStyle
+    ) ->
         [CardRegion: MemoryCardEditorDraft] {
-        Dictionary(
+        let drafts = Dictionary(
             uniqueKeysWithValues:
                 CardRegion.memoryCardRegions.map { region in
                     (region, makeDefaultDraft(for: region))
                 }
         )
+        return drafts
     }
 
     var regionDraftsForSaving:
@@ -314,6 +327,9 @@ struct MemoMarkConfigurationCenterView: View {
         ConfigurationPersistenceStatus {
         get { rootLifecycleState.activeConfigurationStatus }
         nonmutating set {
+            if newValue.hasUncommittedChanges {
+                session.markEditorChange()
+            }
             rootLifecycleState.activeConfigurationStatus = newValue
         }
     }
@@ -618,6 +634,15 @@ struct MemoMarkConfigurationCenterView: View {
             }
             Button(
                 MemoMarkLanguage.interfaceStored.localized(
+                    key: "common.discard_and_switch",
+                    fallback: "放弃修改并切换"
+                ),
+                role: .destructive
+            ) {
+                discardCurrentConfigurationThenActivatePendingPreset()
+            }
+            Button(
+                MemoMarkLanguage.interfaceStored.localized(
                     key: "common.cancel",
                     fallback: "取消"
                 ),
@@ -632,6 +657,48 @@ struct MemoMarkConfigurationCenterView: View {
                 MemoMarkLanguage.interfaceStored.localized(
                     key: "configuration.unsaved_switch.message",
                     fallback: "请先保存当前配置，再切换到另一条配置，避免丢失刚刚的修改。"
+                )
+            )
+        }
+        .alert(
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "configuration.unsaved_create.title",
+                fallback: "有未保存的修改"
+            ),
+            isPresented:
+                $rootPresentationState
+                .switchPresentation
+                .showsUnsavedPresetCreationAlert
+        ) {
+            Button(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "common.save_and_create",
+                    fallback: "保存并新建"
+                )
+            ) {
+                saveCurrentConfigurationThenCreateNewMemoryPreset()
+            }
+            Button(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "common.discard_and_create",
+                    fallback: "放弃修改并新建"
+                ),
+                role: .destructive
+            ) {
+                discardCurrentConfigurationThenCreateNewMemoryPreset()
+            }
+            Button(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "common.cancel",
+                    fallback: "取消"
+                ),
+                role: .cancel
+            ) {}
+        } message: {
+            Text(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "configuration.unsaved_create.message",
+                    fallback: "请先处理当前配置的修改，再新建一条独立预设。"
                 )
             )
         }
@@ -682,7 +749,7 @@ struct MemoMarkConfigurationCenterView: View {
             MemoryCardEditorPresentationModifier(
                 showsRegionContentSheet:
                     $rootPresentationState.showsRegionContentSheet,
-                editorContent: editorCluster,
+                editorContent: presentedEditorCluster,
                 onDismissKeyboard: dismissKeyboard,
                 onToggleModuleLibrary:
                     toggleModuleLibraryFromToolbar,
@@ -691,8 +758,10 @@ struct MemoMarkConfigurationCenterView: View {
                     || editorInteractionState.activeModuleRegion != nil,
                 isModuleLibraryPresented:
                     editorInteractionState.activeModuleRegion != nil,
-                onDismissEditor:
-                    resetCardEditorState
+                onDismissEditor: {
+                    rootPresentationState.isEditingFilmMarkContent = false
+                    resetCardEditorState()
+                }
             )
         )
         .modifier(

@@ -14,7 +14,9 @@ struct ConfigurationActionFooter: View {
 
     let configurationStatus: ConfigurationPersistenceStatus
     let isSavingConfiguration: Bool
+    let isSelectedProcessingDefault: Bool
     let onSaveCurrentConfiguration: () -> Void
+    let onSetAsProcessingDefault: () -> Void
     let onCreateConfiguration: () -> Void
     let onResetConfiguration: () -> Void
     let onDeleteConfiguration: () -> Void
@@ -100,6 +102,21 @@ struct ConfigurationActionFooter: View {
 
     private var moreActionsMenu: some View {
         Menu {
+            if !isSelectedProcessingDefault {
+                Button { onSetAsProcessingDefault() } label: {
+                    Label(
+                        localized(
+                            "将已保存配置设为下次处理默认",
+                            fallback: "将已保存配置设为下次处理默认"
+                        ),
+                        systemImage: "checkmark.seal"
+                    )
+                }
+                .disabled(
+                    isSavingConfiguration
+                    || configurationStatus != .saved
+                )
+            }
             Button { onCreateConfiguration() } label: {
                 Label(localized("另存为新配置"), systemImage: "plus.square")
             }

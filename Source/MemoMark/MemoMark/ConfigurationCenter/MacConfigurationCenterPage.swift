@@ -88,6 +88,11 @@ struct MacConfigurationCenterPage: View {
     @State
     private var filmMarkConfiguration = FilmMarkConfiguration.default
 
+    /// FilmMark authored content is an independent configuration payload. It
+    /// must not be reconstructed from the classic slot-A region.
+    @State
+    private var filmMarkContentDraft = MemoryCardEditorDraft(items: [])
+
     @State
     private var logoMode = ConfigurationLogoMode.appleMini
 
@@ -222,6 +227,7 @@ struct MacConfigurationCenterPage: View {
                 selectedTimeOptionID: nil,
                 selectedTimeSupplement: nil,
                 filmMarkConfiguration: nil,
+                filmMarkContentDraft: nil,
                 onSaveCardContent: {},
                 regionDrafts: nil,
                 presentationStyle: nil,
@@ -250,7 +256,7 @@ struct MacConfigurationCenterPage: View {
                     timeText: session.previewText(for: .slotB),
                     contextText: session.previewText(for: .slotC),
                     memoryText: session.resolvedMemoryWriteText,
-                    filmMarkOutputText: session.previewText(for: .slotA),
+                    filmMarkOutputText: filmMarkContentDraft.singleLineText,
                     filmMarkConfiguration: filmMarkConfiguration
                 )
                 .frame(
@@ -335,6 +341,7 @@ struct MacConfigurationCenterPage: View {
                 commerceStore: commerceStore,
                 presentationStyle: $presentationStyle,
                 filmMarkConfiguration: $filmMarkConfiguration,
+                filmMarkContentDraft: $filmMarkContentDraft,
                 logoMode: $logoMode,
                 customLogoBadge: $customLogoBadge,
                 loadPhotoLibraryAlbums: loadPhotoLibraryAlbums,
@@ -552,6 +559,9 @@ private struct MacIOSConfigurationEditor: View {
     var filmMarkConfiguration: FilmMarkConfiguration
 
     @Binding
+    var filmMarkContentDraft: MemoryCardEditorDraft
+
+    @Binding
     var logoMode: ConfigurationLogoMode
 
     @Binding
@@ -573,6 +583,9 @@ private struct MacIOSConfigurationEditor: View {
     var inspectorRoute: MacConfigurationWorkspaceRoute?
 
     @State private var disclosureState = ConfigurationDisclosureState()
+    /// Matches iOS's independent FM authored-output draft. It is projected
+    /// into `FilmMarkContentSchemaV2` on save and never aliases slot A.
+    @State private var isFilmMarkGeometryExpanded = false
     @State private var selectedLogoItem: PhotosPickerItem?
     @State private var isLogoPickerPresented = false
     @State private var isOptimizingLogo = false
@@ -608,7 +621,8 @@ private struct MacIOSConfigurationEditor: View {
                 subjectAvatarLogoImagePath: subjectAvatarLogoImagePath,
                 presentationStyle: presentationStyleBinding,
                 filmMarkConfiguration: filmMarkConfigurationBinding,
-                filmMarkOutputText: session.previewText(for: .slotA),
+                filmMarkOutputText: filmMarkContentDraft.singleLineText,
+                isFilmMarkGeometryExpanded: $isFilmMarkGeometryExpanded,
                 logoMode: $logoMode,
                 selectedLogoItem: $selectedLogoItem,
                 isLogoPickerPresented: $isLogoPickerPresented,
@@ -657,6 +671,14 @@ private struct MacIOSConfigurationEditor: View {
                 applyDraftSnapshot(snapshot)
             }
         }
+        .onChange(of: configurationStatus) { _, newValue in
+            // Region drafts and inspector bindings are view-owned state. Keep
+            // the same save fence as typed session edits so an async receipt
+            // cannot commit over a newer macOS edit.
+            if newValue.hasUncommittedChanges {
+                session.markEditorChange()
+            }
+        }
         .onDisappear {
             undoCoordinator.clearRestoreHandler()
         }
@@ -692,6 +714,7 @@ private struct MacIOSConfigurationEditor: View {
                     selectedTimeOptionID: selectedTimeOptionBinding,
                     selectedTimeSupplement: selectedTimeSupplementBinding,
                     filmMarkConfiguration: $filmMarkConfiguration,
+                    filmMarkContentDraft: $filmMarkContentDraft,
                     onSaveCardContent: {
                         Task { await saveCurrentConfiguration() }
                     },
@@ -999,6 +1022,8 @@ private struct MacIOSConfigurationEditor: View {
             ?? .classicWhite
         filmMarkConfiguration = savedConfiguration?.presentation.filmMark
             ?? .default
+        filmMarkContentDraft = savedProjection?.filmMarkContentDraft
+            ?? MemoryCardEditorDraft(items: [])
         logoMode = savedConfiguration?.presentation.logo.mode
             ?? session.state.selectedMemoryPreset?.logoMode
             ?? .appleMini
@@ -1319,6 +1344,7 @@ private struct MacIOSConfigurationEditor: View {
             livePhotoPolicy: .preserveMotion,
             presentationRoute: presentationStyle,
             filmMarkConfiguration: filmMarkConfiguration,
+            filmMarkContentDraft: filmMarkContentDraft,
             selectedTimeAnchorID: session.selectedTimeAnchorID,
             savedAt: Date(),
             language: session.language
@@ -1339,6 +1365,16 @@ private struct MacIOSConfigurationEditor: View {
                     receipt: receipt
                 )
             },
+            reconcileConfigurationLibraryWithGeneration: {
+                candidate,
+                receipt,
+                editorGeneration in
+                session.reconcileConfigurationLibrarySave(
+                    candidate: candidate,
+                    receipt: receipt,
+                    editorGeneration: editorGeneration
+                )
+            },
             applySelectedMemoryPreset: {},
             updateStatus: { status in
                 configurationStatus = status.status
@@ -1348,7 +1384,8 @@ private struct MacIOSConfigurationEditor: View {
         _ = await saveRuntime.applyAggregate(
             configurationLibrary: configurationLibrary,
             aggregateDraft: aggregateDraft,
-            availableAlbums: availableAlbums
+            availableAlbums: availableAlbums,
+            editorGeneration: session.editorGeneration
         )
         synchronizeFromSession()
     }
@@ -1378,6 +1415,7 @@ private struct MacCardContentInspector: View {
         [RecordCardPresentationStyle: [CardRegion: MemoryCardEditorDraft]]
     >?
     let presentationStyle: RecordCardPresentationStyle?
+    let filmMarkContentDraft: Binding<MemoryCardEditorDraft>?
     let onDraftChange:
         (CardRegion, MemoryCardEditorDraft, MemoryCardEditorDraft) -> Void
     let onDirty: () -> Void
@@ -1398,7 +1436,14 @@ private struct MacCardContentInspector: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if let regionDrafts, let presentationStyle {
+            if let filmMarkContentDraft,
+               presentationStyle == .filmMark {
+                MacFilmMarkContentDraftEditor(
+                    session: session,
+                    draft: filmMarkContentDraft,
+                    onDirty: onDirty
+                )
+            } else if let regionDrafts, let presentationStyle {
                 MacRegionDraftEditor(
                     session: session,
                     presentationStyle: presentationStyle,
@@ -1426,6 +1471,47 @@ private struct MacCardContentInspector: View {
         .background(ConfigurationUI.panelBackground)
         .clipShape(RoundedRectangle(cornerRadius: ConfigurationUI.cardCornerRadius, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: ConfigurationUI.cardCornerRadius, style: .continuous).stroke(MacConfigurationCenterStyle.regionBorder, lineWidth: MacConfigurationCenterStyle.regionBorderWidth))
+    }
+}
+
+private struct MacFilmMarkContentDraftEditor: View {
+
+    @ObservedObject
+    var session: ConfigurationSession
+
+    @Binding
+    var draft: MemoryCardEditorDraft
+
+    let onDirty: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("胶片时间标记内容")
+                .font(.subheadline.weight(.semibold))
+            Text("这段文字独立于经典卡片区域，并会同时用于预览、保存和输出。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            MacRegionDraftRow(
+                session: session,
+                region: .slotA,
+                draft: $draft,
+                onInsertModule: { module in
+                    draft.appendComposedItem(
+                        .token(
+                            module.title,
+                            value: module.previewValue,
+                            templateValue: module.centerToken,
+                            systemImage: module.systemImage
+                        )
+                    )
+                    onDirty()
+                },
+                onDirty: onDirty
+            )
+        }
+        .padding(.top, 4)
+        .accessibilityIdentifier("mac.configurationCenter.filmMarkContent.editor")
     }
 }
 
@@ -2417,6 +2503,7 @@ private struct MacConfigurationInspector: View {
     let selectedTimeOptionID: Binding<String>?
     let selectedTimeSupplement: Binding<TimeDisplayConfiguration.Supplement>?
     let filmMarkConfiguration: Binding<FilmMarkConfiguration>?
+    let filmMarkContentDraft: Binding<MemoryCardEditorDraft>?
     let onSaveCardContent: () -> Void
     let regionDrafts: Binding<
         [RecordCardPresentationStyle: [CardRegion: MemoryCardEditorDraft]]
@@ -2520,6 +2607,7 @@ private struct MacConfigurationInspector: View {
                 onInsertModule: onInsertModule,
                 regionDrafts: regionDrafts,
                 presentationStyle: presentationStyle,
+                filmMarkContentDraft: filmMarkContentDraft,
                 onDraftChange: onDraftChange,
                 onDirty: onDirty
             )

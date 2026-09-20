@@ -99,6 +99,9 @@ extension MemoMarkConfigurationCenterView {
                 backgroundStatusService
                 .taskOverview
                 .completedPhotoCount,
+            borderStyleNameForPreset: { preset in
+                borderStyleName(for: preset)
+            },
             borderStyleName: currentBorderStyleName,
             borderStyleDescription: currentBorderStyleDescription,
             memoryPresets: homeAvailablePresets,
@@ -154,7 +157,15 @@ extension MemoMarkConfigurationCenterView {
             onOpenMemoMarkPlus: {
                 rootPresentationState.showsHomeMemoMarkPlus = true
             },
+            onOpenPresetManagement: {
+                entryFlowState = EntryFlowCoordinator.openEditorTab(
+                    from: entryFlowState
+                )
+            },
             onSelectMemoryPreset: activateHomePreset,
+            onCreateMemoryPreset: {
+                performConfigurationLibraryAction(.create)
+            },
             onRenameMemoryPreset: beginEditingMemoryPresetTitle,
             onSaveMemoryPreset: backupHomePreset,
             onDeleteMemoryPreset: deleteHomePreset,
@@ -181,13 +192,20 @@ extension MemoMarkConfigurationCenterView {
             editorRevealProgress: editorRevealProgress,
             configurationStatus: activeConfigurationStatus,
             isSavingConfiguration: isSavingConfiguration,
+            isSelectedProcessingDefault:
+                session.selectedMemoryPresetIsProcessingDefault,
             previewWidthPolicy:
                 presentationStyle == .minimal
                 ? .fullWidthInCompactLandscape
                 : .readable,
+            editorScrollRequest:
+                rootPresentationState.filmMarkGeometryScrollRequest,
             onDismissKeyboard: dismissKeyboard,
             onSaveCurrentConfiguration: {
                 performConfigurationLibraryAction(.saveCurrent)
+            },
+            onSetAsProcessingDefault: {
+                performConfigurationLibraryAction(.setAsProcessingDefault)
             },
             onCreateConfiguration: {
                 performConfigurationLibraryAction(.create)
@@ -201,6 +219,15 @@ extension MemoMarkConfigurationCenterView {
                 .background(offsetReader(for: .preview))
         } editorContent: {
             configurationOptionList
+        }
+        .onChange(of: rootPresentationState.isFilmMarkGeometryExpanded) {
+            _, isExpanded in
+            guard isExpanded, presentationStyle == .filmMark else { return }
+            rootPresentationState.filmMarkGeometryScrollRequest =
+                ConfigurationEditorScrollRequest(
+                    targetID: ConfigurationEditorScrollTarget.filmMarkGeometry,
+                    revision: UUID()
+                )
         }
         .sheet(
             isPresented:
@@ -244,6 +271,8 @@ extension MemoMarkConfigurationCenterView {
                 filmMarkConfigurationBinding,
             filmMarkOutputText:
                 filmMarkPreviewText,
+            isFilmMarkGeometryExpanded:
+                $rootPresentationState.isFilmMarkGeometryExpanded,
             logoMode: logoModeSelectionBinding,
             selectedLogoItem:
                 $rootPresentationState.mediaPickerPresentation.selectedLogoItem,
@@ -337,6 +366,12 @@ extension MemoMarkConfigurationCenterView {
             configurationStatus:
                 activeConfigurationStatus,
             onOpenRegionContent: {
+                rootPresentationState.isEditingFilmMarkContent =
+                    presentationStyle == .filmMark
+                if rootPresentationState.isEditingFilmMarkContent,
+                   filmMarkContentDraft.items.isEmpty {
+                    filmMarkContentDraft = defaultFilmMarkPrimaryOutputDraft()
+                }
                 resetCardEditorState()
                 rootPresentationState.showsRegionContentSheet = true
             },

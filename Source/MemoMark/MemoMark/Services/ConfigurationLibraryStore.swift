@@ -56,6 +56,7 @@ final class ConfigurationLibraryStore {
 
     func save(
         _ aggregate: ConfigurationLibraryRecord,
+        changedConfigurationID: UUID? = nil,
         compatibilityProjection:
             @MainActor (
                 ConfigurationLibraryRecord,
@@ -64,6 +65,7 @@ final class ConfigurationLibraryStore {
     ) async throws -> ConfigurationLibrarySaveReceipt {
         try await repository.save(
             aggregate,
+            changedConfigurationID: changedConfigurationID,
             compatibilityProjection: {
                 [weak self]
                 saved,

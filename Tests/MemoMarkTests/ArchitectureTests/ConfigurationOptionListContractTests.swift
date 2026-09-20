@@ -230,8 +230,8 @@ struct ConfigurationOptionListContractTests {
         )
     }
 
-    @Test("FilmMark keeps high-frequency controls in a compact ordered surface")
-    func filmMarkKeepsHighFrequencyControlsInACompactOrderedSurface() throws {
+    @Test("FilmMark groups geometry controls and promotes the matching preview")
+    func filmMarkGroupsGeometryControlsAndPromotesTheMatchingPreview() throws {
         let source = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
@@ -244,18 +244,52 @@ struct ConfigurationOptionListContractTests {
         let appearanceSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/FilmMarkAppearanceControls.swift"
         )
+        let previewSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/FilmMarkPreviewSurface.swift"
+        )
+        let previewCardSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardPreviewSurface.swift"
+        )
+        let backgroundSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationPreviewBackground.swift"
+        )
+        let previewSectionSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardPreviewSection.swift"
+        )
+        let rootPresentationSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/RootPresentationState.swift"
+        )
+        let pagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+        let editorSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Editor.swift"
+        )
+        let editorSurfaceSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
+        )
+        let configurationPageSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationPageSurface.swift"
+        )
+        let configurationCenterSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
+        )
         #expect(!source.contains("isFilmMarkContentExpanded"))
         #expect(source.contains("FilmMarkConfigurationControls("))
         #expect(source.contains("configuration: $filmMarkConfiguration"))
         #expect(source.contains("private var filmMarkContentRow: some View"))
-        #expect(source.contains("private var filmMarkPositionSection: some View"))
+        #expect(source.contains("private var filmMarkGeometrySection: some View"))
         #expect(source.contains("private var filmMarkSubstrateSection: some View"))
-        #expect(source.contains("private var filmMarkFontSizeSection: some View"))
         #expect(source.contains("private var filmMarkColorSection: some View"))
         #expect(source.contains("private var filmMarkSecondaryDetailsRow: some View"))
         #expect(source.contains("showsFilmMarkDetailsSheet"))
         #expect(source.contains("FilmMarkDetailsSheet("))
-        #expect(source.contains("isFilmMarkPositionExpanded"))
+        #expect(source.contains("@Binding var isFilmMarkGeometryExpanded: Bool"))
+        #expect(source.contains("isExpanded: $isFilmMarkGeometryExpanded"))
+        #expect(source.contains(".id(ConfigurationEditorScrollTarget.filmMarkGeometry)"))
+        #expect(!source.contains("isFilmMarkPositionExpanded"))
+        #expect(!source.contains("private var filmMarkPositionSection: some View"))
+        #expect(!source.contains("private var filmMarkFontSizeSection: some View"))
         #expect(source.contains("horizontalTrailingWidth: ConfigurationUI.compactTrailingControlWidth"))
         #expect(source.contains("#if os(iOS)"))
         #expect(!source.contains("filmMarkTimeAndLocationSection"))
@@ -269,11 +303,45 @@ struct ConfigurationOptionListContractTests {
         #expect(positionSource.contains("filmMark.configuration.nudge.help"))
         #expect(positionSource.contains("frame(width: 88"))
         #expect(appearanceSource.contains("FilmMarkSubstrate.userSelectableCases"))
-        #expect(appearanceSource.contains("FilmMarkFontSize.userSelectableCases"))
+        #expect(appearanceSource.contains("FilmMarkFontSizeSlider("))
+        #expect(appearanceSource.contains("Slider(value: sliderPosition"))
+        #expect(appearanceSource.contains("textformat.size.smaller"))
+        #expect(appearanceSource.contains("textformat.size.larger"))
         #expect(appearanceSource.contains(".pickerStyle(.menu)"))
         #expect(appearanceSource.contains("dynamicTypeSize.isAccessibilitySize"))
         #expect(!controlsSource.contains("isPositionDetailsPresented"))
         #expect(!controlsSource.contains("FilmMarkPositionDetailsSheet"))
+        #expect(previewSource.contains("enum FilmMarkPreviewMode"))
+        #expect(previewSource.contains("case contentStrip"))
+        #expect(previewSource.contains("case geometry"))
+        #expect(previewSource.contains("ConfigurationPreviewBackground.filmMark"))
+        #expect(previewSource.contains("alignment: .bottom"))
+        #expect(previewSource.contains("FilmMarkTextLayer("))
+        #expect(previewCardSource.contains("case .minimal:"))
+        #expect(previewCardSource.contains("minimalPreviewPhoto"))
+        #expect(!previewCardSource.contains("minimalLandscapeSlice"))
+        #expect(!previewCardSource.contains("Path { path in"))
+        #expect(previewCardSource.contains(".aspectRatio(compactPreviewAspectRatio"))
+        #expect(backgroundSource.contains("MinimalPreviewBackgroundPortrait"))
+        #expect(backgroundSource.contains("MinimalPreviewBackgroundLandscape"))
+        #expect(backgroundSource.contains("FilmMarkPreviewBackground"))
+        #expect(backgroundSource.contains("case (.filmMark, _):"))
+        #expect(previewSectionSource.contains("isFilmMarkGeometryExpanded"))
+        #expect(rootPresentationSource.contains("var isFilmMarkGeometryExpanded = false"))
+        #expect(rootPresentationSource.contains("filmMarkGeometryScrollRequest"))
+        #expect(pagesSource.contains("isFilmMarkGeometryExpanded:"))
+        #expect(pagesSource.contains("ConfigurationEditorScrollRequest("))
+        #expect(pagesSource.contains("editorScrollRequest:"))
+        #expect(editorSource.contains("isFilmMarkGeometryExpanded:"))
+        #expect(editorSource.contains("defaultFilmMarkPrimaryOutputDraft"))
+        #expect(editorSource.contains("FilmMarkContentSchemaV2.defaultPrimaryOutputModules"))
+        #expect(configurationCenterSource.contains("defaultRegionDrafts(for: newStyle)"))
+        #expect(!configurationCenterSource.contains("drafts[.slotA] = defaultFilmMarkPrimaryOutputDraft()"))
+        #expect(editorSurfaceSource.contains("struct ConfigurationEditorScrollRequest"))
+        #expect(editorSurfaceSource.contains("ScrollViewReader"))
+        #expect(editorSurfaceSource.contains("proxy.scrollTo(request.targetID, anchor: .top)"))
+        #expect(editorSurfaceSource.contains("accessibilityReduceMotion"))
+        #expect(configurationPageSource.contains("editorScrollRequest"))
 
         let filmMarkBranchStart = try #require(
             source.range(of: "            if presentationStyle == .filmMark {")
@@ -288,11 +356,7 @@ struct ConfigurationOptionListContractTests {
             filmMarkBranchStart.lowerBound..<filmMarkBranchEnd.lowerBound
         ]
         #expect(
-            filmMarkBranch.range(of: "filmMarkPositionSection")!.lowerBound
-                < filmMarkBranch.range(of: "filmMarkFontSizeSection")!.lowerBound
-        )
-        #expect(
-            filmMarkBranch.range(of: "filmMarkFontSizeSection")!.lowerBound
+            filmMarkBranch.range(of: "filmMarkGeometrySection")!.lowerBound
                 < filmMarkBranch.range(of: "filmMarkColorSection")!.lowerBound
         )
         #expect(
@@ -305,8 +369,8 @@ struct ConfigurationOptionListContractTests {
         )
     }
 
-    @Test("FM controls keep accessibility-size font fallback and localized labels")
-    func filmMarkControlsKeepAccessibilitySizeFontFallbackAndLocalizedLabels() throws {
+    @Test("FM controls keep native slider accessibility and localized labels")
+    func filmMarkControlsKeepNativeSliderAccessibilityAndLocalizedLabels() throws {
         let controls = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/FilmMarkConfigurationControls.swift"
         )
@@ -325,6 +389,7 @@ struct ConfigurationOptionListContractTests {
 
         #expect(appearance.contains("private var fontSizeChoiceRow: some View"))
         #expect(appearance.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(appearance.contains("filmMark.configuration.size.hint"))
         #expect(appearance.contains("filmMark.configuration.color.amber"))
         #expect(position.contains("filmMark.configuration.position.title"))
         #expect(position.contains("filmMark.configuration.anchor.title"))
@@ -332,9 +397,11 @@ struct ConfigurationOptionListContractTests {
         #expect(!controls.contains("Text(\"复位\")"))
         #expect(!controls.contains("胶片标记颜色\\(item.0)"))
         #expect(preview.contains("filmMark.preview.empty"))
-        #expect(preview.contains("filmMark.preview.calibration_note"))
+        #expect(preview.contains("filmMark.preview.geometry_note"))
+        #expect(preview.contains("filmMark.preview.content.accessibility"))
         #expect(editor.contains("filmMarkPreviewText"))
-        #expect(editor.contains("editorDraftState.active[.slotA]"))
+        #expect(editor.contains("filmMarkContentDraft"))
+        #expect(!editor.contains("editorDraftState.active[.slotA]"))
     }
 
     @Test("configuration center copy separates titles, descriptions, and current values")
@@ -457,8 +524,7 @@ struct ConfigurationOptionListContractTests {
         #expect(sourceStart.lowerBound < styleStart.lowerBound)
         #expect(styleStart.lowerBound < filmMarkBranchStart.lowerBound)
         #expect(filmMarkBranch.contains("filmMarkContentRow"))
-        #expect(filmMarkBranch.contains("filmMarkPositionSection"))
-        #expect(filmMarkBranch.contains("filmMarkFontSizeSection"))
+        #expect(filmMarkBranch.contains("filmMarkGeometrySection"))
         #expect(filmMarkBranch.contains("filmMarkColorSection"))
         #expect(filmMarkBranch.contains("filmMarkSubstrateSection"))
         #expect(filmMarkBranch.contains("filmMarkSecondaryDetailsRow"))

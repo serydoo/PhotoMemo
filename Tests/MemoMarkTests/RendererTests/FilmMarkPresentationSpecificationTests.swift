@@ -64,6 +64,88 @@ struct FilmMarkPresentationSpecificationTests {
         #expect(precise.relativeToCanvasWidth == 0.018)
     }
 
+    @Test("font size slider centres the established prominent size and round trips values")
+    func fontSizeSliderCentresTheEstablishedProminentSizeAndRoundTripsValues() {
+        #expect(
+            abs(FilmMarkFontSize.sliderPosition(for: .prominent) - 0.5)
+                < 0.0001
+        )
+        #expect(
+            FilmMarkFontSize.fontSize(
+                forSliderPosition: 0.5
+            ) == .prominent
+        )
+
+        let userSelected = FilmMarkFontSize.fontSize(forSliderPosition: 0.73)
+        #expect(
+            abs(
+                FilmMarkFontSize.sliderPosition(for: userSelected) - 0.73
+            ) < 0.003
+        )
+    }
+
+    @Test("preview backgrounds select real assets for compact and wide surfaces")
+    func previewBackgroundsSelectRealAssetsForCompactAndWideSurfaces() {
+        #expect(
+            ConfigurationPreviewBackground.minimal.assetName(
+                for: .compact
+            ) == "MinimalPreviewBackgroundPortrait"
+        )
+        #expect(
+            ConfigurationPreviewBackground.minimal.assetName(
+                for: .wide
+            ) == "MinimalPreviewBackgroundLandscape"
+        )
+        #expect(
+            ConfigurationPreviewBackground.filmMark.assetName(
+                for: .compact
+            ) == "FilmMarkPreviewBackground"
+        )
+        #expect(
+            ConfigurationPreviewBackground.filmMark.assetName(
+                for: .wide
+            ) == "FilmMarkPreviewBackground"
+        )
+    }
+
+    @Test("uses the same narrative photograph across FilmMark orientations")
+    func usesSameNarrativePhotographAcrossFilmMarkOrientations() {
+        #expect(
+            ConfigurationPreviewBackground.filmMark.assetName(for: .compact)
+                == ConfigurationPreviewBackground.filmMark.assetName(for: .wide)
+        )
+    }
+
+    @Test("starts a new FilmMark card with capture date and smart result")
+    func startsNewFilmMarkCardWithCaptureDateAndSmartResult() {
+        #expect(
+            FilmMarkContentSchemaV2.defaultPrimaryOutputModules
+                == [.captureDate, .smartTime]
+        )
+    }
+
+    @Test("maps the compact FilmMark preview continuously around its default size")
+    func mapsCompactFilmMarkPreviewContinuouslyAroundDefaultSize() {
+        let height: CGFloat = 40
+        let defaultSize = FilmMarkPreviewTypography.compactContentFontSize(
+            for: .prominent,
+            height: height
+        )
+        let userSelected = FilmMarkFontSize.fontSize(forSliderPosition: 0.73)
+        let userSelectedSize = FilmMarkPreviewTypography.compactContentFontSize(
+            for: userSelected,
+            height: height
+        )
+        let largestSize = FilmMarkPreviewTypography.compactContentFontSize(
+            for: FilmMarkFontSize.fontSize(forSliderPosition: 1),
+            height: height
+        )
+
+        #expect(abs(defaultSize - 16.4) < 0.001)
+        #expect(userSelectedSize > defaultSize)
+        #expect(userSelectedSize < largestSize)
+    }
+
     @Test("uses the short edge for stable typography across orientations")
     func usesShortEdgeForTypographyAcrossOrientations() {
         let appearance = FilmMarkAppearanceDraft(
@@ -286,13 +368,13 @@ struct FilmMarkPresentationSpecificationTests {
     }
 
     @MainActor
-    @Test("compact preview visibly draws authored output inside its displayed lower corner")
-    func compactPreviewDrawsTextInsideDisplayBounds() throws {
+    @Test("content-strip preview visibly draws authored output inside its compact bounds")
+    func contentStripPreviewDrawsTextInsideCompactBounds() throws {
         func bitmap(_ text: String) throws -> NSBitmapImageRep {
             let renderer = ImageRenderer(content: FilmMarkPreviewSurface(
                 content: .init(primaryOutput: text),
                 configuration: .init(appearance: .init(fontSize: .prominent))
-            ).frame(width: 400, height: 150))
+            ).frame(width: 400, height: 51))
             renderer.scale = 1
             return NSBitmapImageRep(cgImage: try #require(renderer.cgImage))
         }
@@ -310,11 +392,11 @@ struct FilmMarkPresentationSpecificationTests {
                 }
             }
         }
-        // CoreText rasterization can alter only a small number of pixels for
-        // two nearby date strings; the meaningful contract is that the
-        // authored difference is visible and remains in the lower band.
+        // The compact mode is a readable content strip rather than a 1:1
+        // layout calibration; authored changes must still be visible inside
+        // its shared Classic White preview height.
         #expect(changedPixels.count > 5)
-        #expect(changedPixels.allSatisfy { $0.0 >= 0 && $0.0 < 400 && $0.1 > 75 && $0.1 < 150 })
+        #expect(changedPixels.allSatisfy { $0.0 >= 0 && $0.0 < 400 && $0.1 >= 0 && $0.1 < 51 })
     }
 
     private static func source(at relativePath: String) throws -> String {

@@ -58,20 +58,12 @@ struct FilmMarkAppearanceControls: View {
 
     private var fontSizeChoiceRow: some View {
         configurationChoiceRow(title: "filmMark.configuration.size.title", subtitle: "filmMark.configuration.size.help") {
-            Picker(
-                filmMarkLocalized("filmMark.configuration.size.accessibility", fallback: "胶片标记字号"),
-                selection: Binding(
+            FilmMarkFontSizeSlider(
+                fontSize: Binding(
                     get: { configuration.appearance.fontSize },
                     set: { size in update { $0.appearance.fontSize = size } }
                 )
-            ) {
-                ForEach(FilmMarkFontSize.userSelectableCases, id: \.self) { size in
-                    Text(size.displayTitle).tag(size)
-                }
-            }
-            .tint(.accentColor)
-            .accessibilityValue(configuration.appearance.fontSize.displayTitle)
-            .modifier(FilmMarkFontSizePickerStyle(dynamicTypeSize: dynamicTypeSize))
+            )
         }
     }
 
@@ -214,12 +206,57 @@ struct FilmMarkAppearanceControls: View {
     }
 }
 
-private struct FilmMarkFontSizePickerStyle: ViewModifier {
-    let dynamicTypeSize: DynamicTypeSize
+/// A native slider with FilmMark's existing capsule footprint. The midpoint
+/// represents the pre-existing prominent default, not an arbitrary average.
+private struct FilmMarkFontSizeSlider: View {
 
-    func body(content: Content) -> some View {
-        if dynamicTypeSize.isAccessibilitySize { content.pickerStyle(.menu) }
-        else { content.pickerStyle(.segmented) }
+    @Binding var fontSize: FilmMarkFontSize
+
+    private var sliderPosition: Binding<Double> {
+        Binding(
+            get: { Double(FilmMarkFontSize.sliderPosition(for: fontSize)) },
+            set: { position in
+                fontSize = FilmMarkFontSize.fontSize(
+                    forSliderPosition: CGFloat(position)
+                )
+            }
+        )
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "textformat.size.smaller")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            Slider(value: sliderPosition, in: 0...1)
+                .tint(.accentColor)
+                .accessibilityLabel(
+                    filmMarkLocalized(
+                        "filmMark.configuration.size.accessibility",
+                        fallback: "胶片标记字号"
+                    )
+                )
+                .accessibilityValue(fontSize.displayTitle)
+                .accessibilityHint(
+                    filmMarkLocalized(
+                        "filmMark.configuration.size.hint",
+                        fallback: "向左缩小，向右放大；中间为默认大小。"
+                    )
+                )
+
+            Image(systemName: "textformat.size.larger")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 20)
+        }
+        .padding(.horizontal, 12)
+        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
+        .background {
+            Capsule(style: .continuous)
+                .fill(Color.primary.opacity(0.08))
+        }
     }
 }
 #endif

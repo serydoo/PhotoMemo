@@ -85,6 +85,19 @@ struct MacConfigurationRuntimeContractTests {
         #expect(!source.contains("MacInlineAdvancedModules"))
     }
 
+    @Test("macOS FilmMark preview and save use the independent authored draft")
+    func macFilmMarkUsesIndependentAuthoredDraft() throws {
+        let source = try Self.source(
+            at: "Source/MemoMark/MemoMark/ConfigurationCenter/MacConfigurationCenterPage.swift"
+        )
+
+        #expect(source.contains("private var filmMarkContentDraft"))
+        #expect(source.contains("filmMarkOutputText: filmMarkContentDraft.singleLineText"))
+        #expect(source.contains("filmMarkContentDraft: filmMarkContentDraft"))
+        #expect(source.contains("savedProjection?.filmMarkContentDraft"))
+        #expect(!source.contains("filmMarkOutputText: session.previewText(for: .slotA)"))
+    }
+
     @Test("macOS card-content modules expose native removal actions")
     func macCardContentModulesCanBeRemoved() throws {
         let source = try Self.source(

@@ -1,5 +1,65 @@
 # MemoMark Current Status
 
+## 2026-09-20 本地源码备份整理
+
+- 按 `Docs/07_Releases/RELEASE_SYNC_STANDARD.md` 将本轮配置中心/FilmMark 根因修复、
+  对应测试、四语资源和工程记录整理为本地备份候选；明细见
+  `Docs/07_Releases/2026-09-20-2.3.0-105-configuration-backup-manifest.md`。
+- 已创建本地 Git 备份提交；当前 HEAD 即为本轮源码检查点，GitHub 推送仍未执行。
+- `Docs/Outreach/` 对外定位、SEO 候选稿、小红书机制和其他触达材料继续留在本地，
+  不进入本次备份提交；私人照片、设备截图、构建/签名产物和 `/tmp` 证据同样排除。
+- 当前动作边界是本地源码检查点；GitHub 推送、TestFlight、App Store Connect 和生产
+  认证仍未执行，也不会由“备份”一词自动推断为已发布。
+
+## 2026-09-20 多记忆对象/多预设配置上下文根因修复
+
+- 将 Configuration Center 的编辑上下文与处理默认上下文分离：选中记忆对象/预设只刷新当前编辑内容，不再隐式改写下次 Share/Batch 的处理默认；“设为下次处理默认”变成独立、显式且只修改活动对象/配置指针的操作。
+- 保存现在按选中的配置 ID 生成候选并回执重建同一配置；新建配置不会继承旧配置的输出目标、相册、说明和 Live Photo 草稿副作用；首次建立持久化配置时才建立初始处理默认，之后保存非默认配置不会抢占默认。
+- 删除处理默认配置被保护，必须先将其他配置设为默认；非默认删除不再自动移动默认指针。FilmMark 内容继续走独立内容载荷，不再把旧卡片区域当作 FM 语义来源。
+- 新增并通过多记忆对象/多预设、配置回执、FilmMark 独立载荷和默认指针隔离测试；相关定向测试 65/65 通过，新增配置库纯逻辑测试 14/14 通过。macOS App Debug 构建、签名 iOS 2.3.0 构建、治理检查和 `git diff --check` 通过。
+- 已覆盖安装到已配对的实体 iPhone 17 Pro Max（保留原有 App 容器，未清除数据）。设备当前处于锁定状态，iOS 拒绝自动启动；解锁后的 UI、无障碍、Photos/Share/Live Photo 实机验收仍需继续，未把安装结果冒充运行验收。
+- 本轮进一步关闭并发回执的根因窗口：编辑代次现在覆盖类型化会话字段、区域草稿、FilmMark 草稿及 macOS/iOS 状态绑定；旧回执只能被拒绝并保留新编辑。`savedWithWarning` 被定义为“已持久化但不可作为处理默认”的独立状态，删除当前处理默认配置会原子选择同对象的替代配置，新建预设始终从经典白基线开始；首页逐行显示各自样式并提供“新增预设/管理预设”入口。
+- 追加验证：macOS Debug App 构建、通用 iOS `MemoMarkiOS` Debug 构建、`ConfigurationPersistenceStatusTests`、`ConfigurationLibraryActionsTests`、`ConfigurationSessionConfigurationLifecycleTests`、`ConfigurationSaveRuntimeCoordinatorTests` 与 `MacConfigurationRuntimeContractTests` 定向执行通过；全量测试目标构建仍受 Xcode 27 已知的 `SwiftCompile ... exit code 0 but produced no further output` 工具链异常影响，未将其表述为全量绿灯。
+- 进一步补上“新增预设”的数据安全边界：当前配置有未保存修改时，新增操作必须明确选择“保存并新建 / 放弃修改并新建 / 取消”；放弃操作对已持久化配置执行恢复，对仅存在于内存的草稿才执行移除，避免把“新建”变成隐式丢失旧编辑的路径。
+- 本次新增保护代码已完成签名的实体设备构建、深度签名校验和覆盖安装；安装保留既有 App 容器（database sequence `2028`）。设备随后仍由 iOS 判定为 `Locked`，两次启动请求均被拒绝；因此最新版本的主进程启动、UI/无障碍、Photos/Share/Live Photo 手工验收仍未宣称完成。
+- macOS FilmMark 现在也通过现有 Configuration Center 内容检查器编辑独立 authored draft；模块插入和文字修改不会回写经典 slotA，保存仍统一投影到 `FilmMarkContentSchemaV2`。补接该入口后的 macOS App Debug 构建再次成功。
+- 本轮针对“保存后仍无法切换/反复保存失败”完成根因修复：编辑中的预设身份与处理默认身份现在在 `ConfigurationLibrarySaveReceipt` 中分开记录（`savedConfigurationID` 与兼容保留的 `configurationID`），回执重建按实际编辑预设对账，不再把非默认预设的成功保存误判成旧编辑或失败。新增库层与会话层回归测试覆盖“处理默认为 A、编辑并保存 B”场景。
+- 首页预设列表新增居中的“新增预设”行，位于现有预设底部并保持原生行高；顶部管理菜单不再承载新建入口，管理菜单只保留重命名、保存、删除等管理动作，减少发现成本和误触路径。
+- FilmMark“位置与字号”横幅校准预览改为显示输出底部区域的裁剪结果并置于检查器顶部；仅改变配置校准展示，不改变 Layout/Renderer/export 真值。底色选项同步改为“文字衬底/无遮衬底/白色标签/玻璃质感/文字阴影”，并增强文字阴影的位移、模糊与不透明度差异，避免“无”和“柔和阴影”视觉近似。
+- 当前验证：签名 iOS `MemoMarkiOS` Debug 构建、深度签名校验、覆盖安装和启动请求均成功；覆盖安装保留既有容器，database sequence 从 `2028` 增至 `2036`。`ConfigurationSessionConfigurationLifecycleTests`（含非默认预设回执场景）、`ConfigurationOptionListContractTests` 与 `FilmMarkPresentationSpecificationTests` 定向通过。设备截图仍是锁屏，因此本轮未进行逐屏手工 UI/VoiceOver/Photos/Share/Live Photo 验收；这些仍需在解锁后按真实操作路径确认。
+
+## 2026-09-19 SEO 发布候选稿与 FM 持续开发口径
+
+- 新增今日 SEO/长文发布候选稿：
+  `Docs/Outreach/2026-09-19-MemoMark-SEO-发布稿.md`。内容将近期同类方向增多
+  作为市场观察，不点名贬损竞品，也不把跟随性竞争写成未经核验的市场数据。
+- 发布稿沿用产品定位新规范：用户拥有最终选图权，Apple Photos 负责完整图库，
+  MemoMark 负责时间锚点和记忆呈现；打印属于下游方式，原始照片保持独立。
+- 结合当前 FM 开发事实，公开表述聚焦独立内容载荷、统一 resolved presentation、
+  位置/字号/颜色/底色/时间与地点、预览与导出一致性和持续反馈；明确 FM 仍在研究、
+  实现和验证中，不声明全部平台、媒体类型或生产认证已经完成。
+- 文章强调无论 Classic、Minimal 还是 FilmMark，时间锚点仍是 MemoMark 的语义核心；
+  样式改变呈现方式，不改变 Memory Engine、用户选择权和 Apple Photos 边界。
+- 本轮仅准备 SEO 和发布候选材料，未发布、未投放、未评论/私信、未注册渠道，也未
+  修改 App Store Connect；发布前仍需复核当前版本、下载入口、价格、平台、示例照片
+  授权和所有 Apple/媒体能力表述。
+
+## 2026-09-18 产品定位与记忆选择原则同步
+
+- 将近期 Product Loop 讨论整理为内部产品原则文档：
+  `Docs/01_Product/MemoMark_Product_Positioning_And_Memory_Selection.md`。
+- 本次定位明确：Apple Photos 继续负责完整照片资产；用户拥有最终选图权；
+  MemoMark 负责为用户选出的照片补充时间、关系和用户表达；指定相册是用户整理
+  完成后的记忆集合；打印属于下游消费方式。
+- 记录长期模型 `Source Asset -> Memory State -> Presentation Projection`，明确
+  原始照片、可继续补充的记忆状态和派生呈现不可互相替代。该模型是产品与架构方向，
+  不授权当前修改导出、持久化、Share/Batch 或 FM 生产实现。
+- 同步 `Docs/Outreach/PRODUCT_POSITIONING.md` 与
+  `Docs/Guidelines/PRODUCT_LANGUAGE_GUIDE.md` 的对外和用户语言边界：不把 MemoMark
+  描述为 AI 自动选图、自动写故事、第二图库或批量打印工具。
+- 本轮为文档与产品语言变更，不涉及代码、构建、测试、设备、提交、推送、TestFlight、
+  App Store Connect 或生产认证；原有工作区改动保持不动。
+
 ## 2026-09-18 源码检查点同步准备（post-2.3.0 / 105）
 
 - 按 `Docs/07_Releases/RELEASE_SYNC_STANDARD.md` 整理了从最近正式源码同步锚点
@@ -29400,3 +29460,183 @@ This closes build/install/launch deployment evidence for version `2.3.0
 accessibility behavior, Photos/Share/Live Photo processing, and output
 read-back still require the user's real-device verification session. No Git,
 App Store, TestFlight, Photos, or external release mutation was performed.
+
+## 2026-09-19 FilmMark position-and-size calibration preview
+
+The accepted FilmMark Configuration Center refinement now groups `位置与字号`
+as one collapsed-by-default geometry section. Its opening state is temporary
+presentation state on iOS and macOS, never a field in `FilmMarkConfiguration`,
+the configuration aggregate, a production snapshot, or export payload. The
+expanded section contains the existing physical left/right anchor, four 44pt
+directional nudges, reset control, and bounded text-size picker together.
+
+All three presentation styles now share the Classic White compact preview
+height in their default state. FilmMark's closed state is intentionally a
+readable content strip rather than a false 1:1 geometry claim. Opening the
+geometry section switches the one existing FM preview to a 16:9 calibration
+canvas that resolves its text, substrate, safe area, anchor, normalized nudge,
+and typography through `FilmMarkPresentationResolver` and
+`FilmMarkLayoutSpecification`. The preview uses a 1600×900, 179 KB derivative
+of the product-owner-authorized local marketing photo; the source desktop image
+remains outside the repository and output/media behavior was not changed.
+
+Verification: `git diff --check` and `python3 scripts/validate_codex_governance.py .`
+passed; unsigned macOS `MemoMark` Debug compilation passed with only the
+pre-existing macOS 26 `CLGeocoder` deprecation warnings. A signed
+`MemoMarkiOS` Debug build was successfully installed over the existing
+`com.serydoo.PhotoMemo.iOS` container on the paired iPhone 17 Pro Max and the
+app process launched. The focused Swift test execution could not provide
+assertion evidence because the Xcode test runtime crashed before every selected
+test at `Runner._applyScopingTraits`; this is reported as a test-environment
+failure, not a passing test result. A separate `build-for-testing` completed
+and produced `MemoMarkTests.xctest`, so the changed test source did compile.
+The device locked before a FilmMark page
+could be visually inspected, so real-device preview transition, Dynamic Type,
+VoiceOver, bottom-footer clearance, save/reopen, Photos, Share, Live Photo,
+and output read-back acceptance remain open. No uninstall, data reset, Git
+commit/push, TestFlight, App Store, or external mutation was performed.
+
+## 2026-09-19 FilmMark continuous type scale and real-photo preview calibration
+
+The accepted Configuration Center refinement replaces FilmMark's four equal
+font-size segments with one native, accessible horizontal type-scale control.
+The stored source of truth remains `FilmMarkConfiguration.appearance.fontSize`:
+the slider writes its existing fixed-precision ratio and introduces neither a
+second persisted setting nor a new Renderer layout rule. Its midpoint resolves
+to the prior `.prominent` value (`0.032`), preserving the established useful
+default while allowing deliberate left/right refinement. The compact content
+preview now receives the same continuous value rather than treating a
+non-legacy intermediate value as `standard`; the expanded geometry canvas
+continues to resolve type through `FilmMarkPresentationResolver` and the
+Layout Engine.
+
+Classic White remains unchanged. Minimal no longer draws an abstract
+gradient/mountain illustration, and Minimal/FM now select a downsampled,
+product-owner-provided real-photo preview asset for compact and wide preview
+surfaces. This changes only Configuration Center calibration imagery: the
+external preview frame size, durable configuration, production snapshot,
+Renderer, export, original assets, Photos behavior, and Live Photo behavior
+are unchanged. The original desktop marketing files remain outside the
+repository; only three 1600px-or-smaller derivatives were added as app assets.
+Four-language slider guidance and accessibility hint were updated with the
+same user-facing rule: slide left/right to refine, with the middle as the
+default size.
+
+Verification: unsigned macOS `MemoMark` Debug compilation passed (only the
+pre-existing `CLGeocoder` deprecation warnings). Focused macOS tests passed:
+49 / 49 across `FilmMarkPresentationSpecificationTests` and
+`ConfigurationOptionListContractTests`; the new slider-centre/round-trip,
+real-photo asset selection, and source-structure contracts are included.
+`LocalizationResourceParityTests` and `CrossTargetLocalizationTests` also
+passed (17 / 17). A signed `MemoMarkiOS` Debug build was codesign-verified,
+installed over the existing `com.serydoo.PhotoMemo.iOS` container on the
+paired iPhone 17 Pro Max without clearing device data, and launched. The
+captured screenshot proves the app reached its Configuration Center in Classic
+White; FilmMark/Minimal selection, slider drag, compact/wide orientation,
+VoiceOver, Dynamic Type, dark appearance, save/reopen, Photos/Share/Live
+Photo, and rendered-output read-back remain manual acceptance work and are
+not claimed as verified. No uninstall, data reset, Git commit/push,
+TestFlight, App Store, or other external mutation was performed.
+
+## 2026-09-19 FilmMark calibration-focus and narrative-background follow-up
+
+The FilmMark geometry disclosure now has one intentional inspection flow on
+iOS/iPad: opening `位置与字号` changes the existing fixed preview to its
+16:9 resolver-backed calibration canvas and issues one delayed scroll request
+to place the matching control panel directly beneath that preview. The
+request is transient presentation state with a fresh revision, respects Reduce
+Motion, and hands normal scrolling back to the person immediately afterward.
+It is not stored with the FilmMark configuration, aggregate, snapshot, or
+export payload. The expanded canvas now explicitly fills its available width;
+this removes the undersized centred calibration thumbnail observed on wide
+configuration surfaces.
+
+The FM preview now uses the same owner-authorized 1600×900 real-life marketing
+photograph across compact and wide orientations, keeping bottom-aligned crop
+semantics instead of switching to a visually unrelated portrait asset. The
+compact FM label finally maps every persisted continuous type ratio rather
+than falling back to `standard` for custom values; slider midpoint retains the
+former prominent appearance. The geometry panel's heading and native slider
+now use the same card inset as the position controls. For a newly-created FM
+editor draft only, the versioned content default declares `拍摄日期` followed
+by `智能结果`; existing style-specific user drafts are not overwritten.
+
+Verification: `git diff --check` passed. Focused macOS Swift Testing passed:
+19/19 `FilmMarkPresentationSpecificationTests` and 33/33
+`ConfigurationOptionListContractTests`, including continuous compact
+typography, same-asset orientation, default FM modules, temporary scroll
+focus, and Reduce Motion source contracts. An unsigned generic iPhoneOS
+`MemoMarkiOS` Debug compile passed. A separate signed iPhone 17 Pro Max Debug
+build at `/tmp/MemoMarkFilmMarkDeviceBuild` installed over the existing
+`com.serydoo.PhotoMemo.iOS` container without uninstalling or clearing device
+data, and the app launch command succeeded. The subsequent device screenshot
+showed the lock screen, so FilmMark expansion/scroll focus, background crop,
+orientation, slider drag, Dynamic Type, VoiceOver, bottom-footer clearance,
+save/reopen, and output/media acceptance remain unverified manual work. No
+Git commit/push, data reset, App Store, TestFlight, Photos, Share, Live Photo,
+or other external release mutation was performed.
+
+## 2026-09-19 FilmMark 独立内容载荷与无人物背景修正
+
+Physical-device review exposed two valid mismatches in the preceding FM
+follow-up. The first real-photo preview asset placed a child's face at the
+centre of the calibration canvas, which made a configuration reference look
+like a subject-photo preview. It has been replaced with the owner-authorized
+`DJI_20240518_175903_697 (1).jpg` coastal landscape, downsampled to the same
+local 1600×900 FilmMark preview asset. Compact and wide layouts still crop
+this single image differently inside their existing containers; it is never
+part of a user photo, saved configuration, production snapshot, or export.
+
+The second mismatch was more substantive: the FilmMark content sheet still
+used the active generic `slot A` draft, so a classic card phrase such as
+`他爹手持 [设备型号]` appeared in an FM editor. The iOS editor now carries a
+separate `filmMarkContentDraft`, initializes an empty FM carrier with
+`拍摄日期 + 智能结果`, and routes that draft alone through preview, the native
+single-line TextKit editor, aggregate save, and
+`FilmMarkContentSchemaV2`. Generic style drafts remain separate, and the
+candidate builder no longer infers FM content from any FilmMark slot buffer.
+The TextKit component may retain `.slotA` as an internal single-editor visual
+identity, but that identity has no persistence or data-flow meaning.
+
+Verification after the correction: `git diff --check` passed; the unsigned
+generic iPhoneOS `MemoMarkiOS` Debug build passed. Focused Swift Testing also
+passed for the independent FM save/reload contract, the full
+`ConfigurationOptionListContractTests` suite, and the focused FilmMark export
+origin contract. An earlier combined macOS test invocation reported two
+intermittent unrelated failures while its tests were running concurrently;
+both affected cases passed when rerun in their focused suites. A fresh signed
+iPhone install and visual acceptance of the new asset/content sheet remain
+pending; no device data, Git history, App Store, TestFlight, or external
+service state was changed by this correction.
+
+The corrected signed `MemoMarkiOS` Debug build was then produced at
+`/tmp/MemoMarkFilmMarkCarrierDeviceBuild`, overwrite-installed on the paired
+iPhone 17 Pro Max (`863C2747-6742-5E93-B715-6F89DBF90B31`) without clearing
+its existing container, and launched as `com.serydoo.PhotoMemo.iOS`.
+Installation and launch are verified only; the user still needs to visually
+accept the new coast background and confirm that the FilmMark content sheet
+opens with `拍摄日期 + 智能结果` rather than the classic `slot A` phrase.
+
+## 2026-09-19 FilmMark 原始背景资源与本地同步整理
+
+The product owner subsequently supplied the canonical, unprocessed coastal
+source JPEG for the FilmMark configuration preview. The application asset now
+contains that source directly at its native `1254 × 627` dimensions rather
+than the preceding MemoMark-derived `1600 × 900` preview file. Its role is
+still configuration-only: it is a bundled reference asset, not a user photo,
+durable configuration value, production snapshot, renderer input, or export
+payload.
+
+The stale derived JPG and the unused FilmMark portrait imageset were moved out
+of the repository to a recoverable local temporary location after confirming
+there were no source references to the portrait name. FilmMark continues to
+select one image for compact and wide contexts and changes only its crop. The
+Minimal portrait and landscape imagesets remain because their source
+references and orientation-specific contract tests are still active.
+
+This is source-checkpoint preparation only. It does not change the current
+`2.3.0 (105)` product identity, stage files, Git index/history, GitHub remote,
+App Store, TestFlight, or device data. The final source-checkpoint decision is
+conditional on the focused test/build evidence and on the product owner
+confirming the intended changed-file scope; no staging, commit, or push is
+performed by this record.
