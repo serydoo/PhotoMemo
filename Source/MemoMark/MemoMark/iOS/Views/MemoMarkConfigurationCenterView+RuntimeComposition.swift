@@ -162,6 +162,7 @@ extension MemoMarkConfigurationCenterView {
             saveCurrentMemoryPreset: {
                 session.saveCurrentMemoryPreset(
                     logoMode: logoMode,
+                    presentationStyle: presentationStyle,
                     outputConfiguration:
                         currentSavedOutputConfiguration
                 )

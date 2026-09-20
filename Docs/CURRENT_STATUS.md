@@ -1,5 +1,102 @@
 # MemoMark Current Status
 
+## 2026-09-20 预设样式错配根因修复
+
+- 复现并追踪了“新建预设选择极简版，但输出仍为经典白”的完整链路：编辑器保存时已经把
+  `presentation.route = minimal` 写入当前配置，但 iOS 配置中心的照片处理快捷入口随后又
+  通过 `loadDefaultBatchConfigurationSnapshot()` 读取了仍指向旧经典白配置的处理默认；
+  `RecordCardBuildService` 和 Renderer 只是忠实执行了这份过期快照，根因不在极简版布局或
+  Renderer 路由，而在“当前编辑配置 ID”和“处理默认配置 ID”在提交边界被错误混用。
+- 新增按当前选中配置 ID 构造不可变生产快照的选择解析器：配置中心内的“处理这些照片”现在
+  使用用户刚刚编辑并保存的那条配置；配置 ID 无法解析时失败关闭，禁止静默回退经典白。
+  Apple Photos Share 仍保留独立的显式处理默认语义；解析当前配置时保留共享的时间表达设置，
+  不引入新的输出行为回归。
+- `MemoryPreset` 兼容投影新增并贯通 `presentationStyle`，恢复、切换、保存和无 durable
+  配置的投影不再因缺少样式字段而硬编码经典白；同步移除相关 UI 恢复路径的经典白假设。
+- 回归验证：`SettingsPersistenceLayerTests` 与 `ConfigurationSessionConfigurationLifecycleTests`
+  定向套件共 38 项通过，覆盖旧处理默认/当前极简配置、未知配置拒绝回退、共享时间表达设置
+  保留、兼容数据迁移和会话保存投影；本轮尚未把实体设备手工 UI/Photos/Share 验收宣称为完成。
+
+## 2026-09-20 本地项目文件整理（等待 GitHub 同步指令）
+
+- 复核当前 `main` 与 `origin/main` 及其他本地分支：当前主线已有本地检查点，未发现应在本轮
+  合并的未完成分支；旧分支保留为历史参考，不强行合并实验或过期版本线。
+- 本地检查点纳入产品/工程记录、当前代码、定向测试、四语资源、设备 QA 套件和 FilmMark
+  有界生产决策记录；未发现仓库内需要删除的私人照片、设备截图、归档包、签名产物或临时
+  诊断文件。
+- `Docs/Outreach/` 的定位、SEO 候选稿、小红书机制和其他触达材料继续保留在本地，不进入
+  本次源码检查点；它们仍需单独的事实复核和外部触达授权。
+- 本轮只整理本地 Git 历史和工作树，不推送 GitHub，不上传 TestFlight，不修改 App Store
+  Connect，也不改变 `2.3.0 (105)` 版本字段；真机手工 UI/Photos/Share/Live Photo 证据
+  仍与源码检查点分开管理。
+
+## 2026-09-20 FM 横屏位置与字号预览收窄
+
+- 针对配置中心横屏打开 FM「位置与字号」后预览过高、底部保存操作挤压中间可见区域的问题，
+  将配置校准视窗从固定 230pt 收窄为 150pt，并把实际照片的可见区域限制在画布底部 50% 以内；
+  文字叠加、位置/字号相对坐标和底部校准参考线继续基于完整 FM 画布计算。
+- 该调整只存在于 `FilmMarkPreviewSurface` 的 presentation-only 校准视窗，不改变
+  `FilmMarkLayoutSpecification`、`FilmMarkCardRenderer`、静态/Live Photo 导出或 PhotoKit
+  保存结果；避免把“为了校准而裁剪预览”误变成“裁剪生产输出”。
+- 新增 `FilmMarkPreviewGeometrySpec` 纯规则测试，验证底部 50% 裁剪和 150pt 可用高度；
+  `FilmMarkPresentationSpecificationTests` 定向套件通过。测试构建包含该 SwiftUI 预览的 App
+  target；独立无签名 App build 仍遇到 Xcode 已知的 `exit code 0 but produced no further
+  output` 工具链异常，未将其记为完整 build 绿灯。
+- 尚未替用户执行本次改动后的横屏逐屏视觉验收；由用户在当前设备/窗口中确认预览高度、文字
+  位置参考线和底部保存操作的可见性。随后已使用当前工作树完成签名构建，并覆盖安装到已连接
+  的 iPhone 17 Pro Max（`863C2747-6742-5E93-B715-6F89DBF90B31`），未清除 App 容器；已成功
+  启动 `com.serydoo.PhotoMemo.iOS`。本次未执行相册写入、全量 QA 重跑或任何外部发布动作。
+
+## 2026-09-20 物理设备发布前 QA 轮次重跑
+
+- 按用户重新设置的 `MemoMark QA Outputs` 目标相册重新执行了实体 iPhone 17 Pro Max
+  轮次；输入相册 `MemoMark QA Inputs` 共 57 项，包含 JPEG/HEIC still、Live Photo 和
+  带 Photos JPEG rendition 的 RAW/ProRAW。最高质量样本在 PhotoKit 中为 `8064 × 4536`
+  （36,578,304 pixels）；本轮把它作为设备原生高分辨率输入证据，不再虚构数学上的
+  48MP 矩形门槛。
+- 修正设备 QA 的同步契约：普通 JPEG/Live Photo/RAW 测试在进展页明确进入完成态后才
+  读取 `MemoMark QA Outputs`，不再用输出相册轮询充当处理等待；仅 TX-001 中的提交后
+  中断/重启测试保留 PhotoKit commit checkpoint。完成卡的极快 JPEG 路径增加短 UI settle
+  处理，避免复用旧完成卡导致假阴性。
+- 实体设备完整套件 `MemoMarkDeviceQA` 通过 `17/17`：配置中心、日/韩界面矩阵、输入
+  媒体矩阵、JPEG、Live Photo、RAW/ProRAW、Live Photo readback、静态/Live Photo 提交后
+  中断恢复幂等、输入/输出库存、Photo Picker、Subject/Time Anchor 布局、头像裁剪和日文
+  进展页均通过。完整 xcresult：
+  `/tmp/MemoMarkDeviceQAFullRestartFixed/Logs/Test/Test-MemoMarkDeviceQA-2026.09.20_16-57-55-+0800.xcresult`。
+- 本轮初次失败项已按证据收口为 QA 契约问题：配置中心测试补齐实际本地化标题；时间锚点
+  frame 检查限定在当前 `subject-anchor-group`，并只点击当前可见 row；没有放宽布局重叠
+  门槛，也没有修改生产布局常量。
+- 额外执行 FM 专项 `1/1` 通过：自动识别并切换第二个 `胶片时间` 预设；遇到当前输出
+  草稿 dirty 时选择“保存并切换”以保留用户刚刚修正的设置；处理完成后输出相册由 15
+  增至 16，新增 JPEG 为 `2160 × 4200`，原始 JPEG 保持不变。当前输出库存为 16 项：
+  12 个 JPEG、4 个 Live Photo，授权状态正常。FM 专项 xcresult：
+  `/tmp/MemoMarkDeviceQAFilmMarkJPEGSaved/Logs/Test/Test-MemoMarkDeviceQA-2026.09.20_17-17-54-+0800.xcresult`。
+- 该轮只证明当前设备、当前素材、当前两个预设和当前输出相册设置的自动化路径；不等同
+  于 BP-001 峰值内存认证、TX-001 全部生产认证、VoiceOver/Dynamic Type 全覆盖或 App
+  Store 发行批准。未清除设备容器、未删除相册输出、未执行提交/推送/TestFlight/
+  App Store Connect 或生产发布动作。
+
+## 2026-09-20 发布前审查逐项收口（本地候选）
+
+- 复核了用户提供的 ChatGPT 发布前审查与当前 checkout；审查线程的完整结论已按
+  代码、测试、设备证据和外部授权边界重新分类，没有把历史审查当作当前通过证明。
+- 已修复确定性的本地问题：四语补齐
+  `common.discard_and_switch`；Minimal 配置预览改为使用
+  `MinimalCardLayoutSpecification.compactPreview.imageSliceHeightToWidth`，不再误用
+  Classic 信息条比例。
+- `systemGlass` 仍可解码和渲染既有配置，但从新建配置的
+  `FilmMarkSubstrate.userSelectableCases` 移除；编辑器会保留历史值并禁用该选项，
+  用户仍可切换到已验证的底材。FM 配置新增 `appearanceRecipeVersion`，旧数据缺失该
+  字段时兼容解码为 `v1`，未知版本失败关闭。
+- 新增 `Docs/01_Product/V4_FilmMark_Bounded_Production_Decision_2026-09-20.md`，明确
+  FilmMark 当前仍是 `HOLD — local candidate; not production certified`，并列出
+  Product Design Review、BP-001、TX-001、真机矩阵和 superseding certification 门禁。
+- 验证结果：发布相关定向套件 124/124 通过；完整 `MemoMarkTests` 为 1,885/1,885
+  通过（266 suites）；macOS App、通用 iOS App、Share Extension 和 Widget Extension
+  Debug 构建均通过；`git diff --check` 与治理检查通过。
+- 本轮不修改 `Docs/Outreach/*` 用户已有工作区变更，不执行提交、推送、TestFlight、
+  App Store Connect 或生产认证；BP-001/TX-001/真机验收不会由自动化测试替代。
+
 ## 2026-09-20 本地源码备份整理
 
 - 按 `Docs/07_Releases/RELEASE_SYNC_STANDARD.md` 将本轮配置中心/FilmMark 根因修复、

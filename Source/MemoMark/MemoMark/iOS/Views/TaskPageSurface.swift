@@ -192,6 +192,7 @@ struct TaskPageSurface: View {
                 pipelineDetailsDisclosure
             }
         }
+        .accessibilityIdentifier("task-processing-card")
     }
 
     private var completedResultCard: some View {
@@ -240,6 +241,8 @@ struct TaskPageSurface: View {
             .padding(.vertical, 10)
             .v1CardChrome()
         }
+        .accessibilityIdentifier("task-completed-card")
+        .accessibilityValue(presentation.currentTask.jobID?.uuidString ?? "")
     }
 
     private var needsAttentionTaskCard: some View {
@@ -278,6 +281,7 @@ struct TaskPageSurface: View {
                 )
             }
         }
+        .accessibilityIdentifier("task-needs-attention-card")
     }
 
     private var currentTaskSummary: some View {

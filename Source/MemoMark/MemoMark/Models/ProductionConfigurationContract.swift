@@ -239,6 +239,62 @@ enum ProductionConfigurationSnapshotFactory {
     }
 }
 
+/// Resolves the configuration that the user is actively editing for an
+/// in-app processing request. The durable processing default remains a
+/// separate concept for Apple Photos Share requests, but the Configuration
+/// Center's explicit "process these photos" action must not silently borrow
+/// that older default after the user has selected another Preset.
+enum ConfigurationSnapshotSelectionResolver {
+
+    static func resolve(
+        selectedConfigurationID: UUID?,
+        aggregate: ConfigurationLibraryRecord?,
+        fallback: BatchConfigurationSnapshot,
+        selectedPresentationStyle:
+            RecordCardPresentationStyle? = nil
+    ) -> BatchConfigurationSnapshot? {
+        guard let aggregate,
+              let selectedConfigurationID else {
+            guard let selectedPresentationStyle else {
+                return fallback
+            }
+            var compatibilitySnapshot = fallback
+            compatibilitySnapshot.presentationRouteRawValue =
+                selectedPresentationStyle.rawValue
+            return compatibilitySnapshot
+        }
+
+        guard let configuration = aggregate.subjects
+            .lazy
+            .flatMap(\.configurations)
+            .first(where: { $0.id == selectedConfigurationID }) else {
+            // A selected ID that cannot be resolved is a configuration
+            // consistency failure, not permission to process with a stale
+            // Classic White snapshot.
+            return nil
+        }
+
+        do {
+            var snapshot = try ProductionConfigurationSnapshotFactory.resolve(
+                reference: ProductionConfigurationReference(
+                    configurationID: configuration.id,
+                    revision: configuration.revision
+                ),
+                from: aggregate
+            )
+            // Time expression is a shared compatibility setting rather than
+            // part of the per-preset durable configuration. Preserve the
+            // current value while replacing the stale default's presentation
+            // and output fields with the selected editor configuration.
+            snapshot.timeDisplayConfiguration =
+                fallback.timeDisplayConfiguration
+            return snapshot
+        } catch {
+            return nil
+        }
+    }
+}
+
 enum ProductionConfigurationSnapshotContract {
 
     static func validate(

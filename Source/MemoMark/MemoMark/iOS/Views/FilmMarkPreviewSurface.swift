@@ -9,9 +9,41 @@ enum FilmMarkPreviewMode: Equatable {
     /// position or size calibration surface.
     case contentStrip
 
-    /// The full photo-relative canvas used while the related geometry controls
-    /// are open. This is the only preview mode that calibrates placement.
+    /// The full photo-relative coordinate canvas used while the related
+    /// geometry controls are open. The viewport shows its lower photo region
+    /// so the calibration surface remains usable in landscape.
     case geometry
+}
+
+/// Presentation-only geometry for the FM calibration viewport.
+///
+/// The Layout Engine still resolves the complete photo canvas. These values
+/// only decide how much of that canvas the Configuration Center reveals while
+/// the position and size controls are open; they must never enter rendering,
+/// export, or durable FilmMark configuration.
+enum FilmMarkPreviewGeometrySpec {
+
+    static let canvasSize = CGSize(width: 1_200, height: 675)
+
+    /// Never reveal more than the lower half of the sample photograph. The
+    /// inner canvas remains bottom-aligned, so the upper half is clipped
+    /// without changing the text's photo-relative coordinate system.
+    static let maximumVisibleImageHeightFraction: CGFloat = 0.50
+
+    /// Landscape configuration needs to leave room for the editor and its
+    /// bottom save action. This is intentionally a viewport height, not a
+    /// renderer or output-canvas dimension.
+    static let calibrationViewportHeight: CGFloat = 150
+
+    static func cropHeight(
+        canvasHeight: CGFloat,
+        availableHeight: CGFloat
+    ) -> CGFloat {
+        min(
+            max(availableHeight, 0),
+            max(canvasHeight, 0) * maximumVisibleImageHeightFraction
+        )
+    }
 }
 
 /// Maps the durable, continuous FM type-size ratio to the compact preview.
@@ -54,7 +86,9 @@ struct FilmMarkPreviewSurface: View {
     /// deliberately smaller. Its ratio is the truth the Layout Engine needs;
     /// rendering more pixels would only add transient raster work on every
     /// nudge or size change in the Configuration Center.
-    private let geometryCanvasSize = CGSize(width: 1_200, height: 675)
+    private var geometryCanvasSize: CGSize {
+        FilmMarkPreviewGeometrySpec.canvasSize
+    }
 
     var body: some View {
         Group {
@@ -138,18 +172,17 @@ struct FilmMarkPreviewSurface: View {
                         / geometryCanvasSize.width
                 )
                 let cropHeight = min(
-                    geometry.size.height,
-                    min(
-                        canvasSize.height,
-                        max(150, canvasSize.height * 0.56)
-                    )
+                    FilmMarkPreviewGeometrySpec.cropHeight(
+                        canvasHeight: canvasSize.height,
+                        availableHeight: geometry.size.height
+                    ),
+                    canvasSize.height
                 )
 
-                // The editor is usually shown in a portrait phone viewport,
-                // while the FM artifact is a wide photo. Keep the wide
-                // canvas geometry intact, but present its bottom result strip
-                // at the top of the inspector instead of shrinking the full
-                // photo into a small lower-left thumbnail.
+                // Keep the wide canvas geometry intact, but present no more
+                // than its lower half at the top of the inspector. This
+                // preserves the bottom-aligned placement guide while keeping
+                // the controls and save action visible in landscape.
                 ZStack(alignment: .topLeading) {
                     previewBackground(
                         width: canvasSize.width,
@@ -184,7 +217,10 @@ struct FilmMarkPreviewSurface: View {
                     alignment: .top
                 )
             }
-            .frame(height: 230)
+            .frame(
+                height: FilmMarkPreviewGeometrySpec
+                    .calibrationViewportHeight
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)

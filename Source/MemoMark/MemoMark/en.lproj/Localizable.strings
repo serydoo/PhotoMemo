@@ -773,6 +773,7 @@
 "common.save_and_switch" = "Save and Switch";
 "common.save_and_create" = "Save and Create";
 "common.discard_and_create" = "Discard and Create";
+"common.discard_and_switch" = "Discard Changes and Switch";
 "common.cancel" = "Cancel";
 "configuration.unsaved_switch.title" = "Unsaved Changes";
 "configuration.unsaved_switch.message" = "Save the current configuration before switching to another one so your latest changes are not lost.";

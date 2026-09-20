@@ -239,6 +239,8 @@ struct ConfigurationProjectionService {
             selectedSubjectID: subjectID,
             selectedTimeAnchorID:
                 configuration.selectedTimeAnchorID,
+            presentationStyle:
+                configuration.presentation.route,
             outputOption: .processedImage,
             storageOption: .appFolder,
             logoMode: configuration.presentation.logo.mode,

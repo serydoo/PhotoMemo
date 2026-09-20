@@ -43,6 +43,7 @@ extension MemoMarkConfigurationCenterView {
             session
             .persistenceSnapshotForCurrentConfiguration(
                 logoMode: logoMode,
+                presentationStyle: presentationStyle,
                 outputConfiguration:
                     currentSavedOutputConfiguration
             )
@@ -127,8 +128,21 @@ extension MemoMarkConfigurationCenterView {
             return nil
         }
 
-        let snapshot =
+        let defaultSnapshot =
             loadProductionConfigurationSnapshot.apply()
+        guard let snapshot = ConfigurationSnapshotSelectionResolver.resolve(
+            selectedConfigurationID:
+                session.state.selectedMemoryPresetID,
+            aggregate: session.state.configurationLibrary,
+            fallback: defaultSnapshot,
+            selectedPresentationStyle: presentationStyle
+        ) else {
+            // Never enqueue a task with an older processing default when the
+            // selected configuration cannot be resolved after a successful
+            // save. The user must receive a configuration failure instead of
+            // an output rendered in the wrong style.
+            return nil
+        }
         externalIntakeCenter.updateDefaultConfiguration(snapshot)
         return snapshot
     }

@@ -327,6 +327,7 @@ final class ConfigurationSession: ObservableObject {
 
     func saveCurrentMemoryPreset(
         logoMode: ConfigurationLogoMode? = nil,
+        presentationStyle: RecordCardPresentationStyle? = nil,
         outputConfiguration: SavedOutputConfigurationSchemaV1? = nil
     ) {
         guard let presetIndex =
@@ -335,6 +336,7 @@ final class ConfigurationSession: ObservableObject {
             createMemoryPresetFromCurrent(
                 savedAt: Date(),
                 logoMode: logoMode,
+                presentationStyle: presentationStyle,
                 outputConfiguration: outputConfiguration
             )
             return
@@ -346,6 +348,7 @@ final class ConfigurationSession: ObservableObject {
                 editingState: editingState,
                 savedAt: Date(),
                 logoMode: logoMode,
+                presentationStyle: presentationStyle,
                 outputConfiguration: outputConfiguration
             )
         editingState.state.memoryPresets[presetIndex] = snapshot
@@ -355,11 +358,13 @@ final class ConfigurationSession: ObservableObject {
 
     func createMemoryPresetFromCurrent(
         logoMode: ConfigurationLogoMode? = nil,
+        presentationStyle: RecordCardPresentationStyle? = nil,
         outputConfiguration: SavedOutputConfigurationSchemaV1? = nil
     ) {
         createMemoryPresetFromCurrent(
             savedAt: nil,
             logoMode: logoMode,
+            presentationStyle: presentationStyle,
             outputConfiguration: outputConfiguration
         )
     }
@@ -413,6 +418,7 @@ final class ConfigurationSession: ObservableObject {
 
     func persistenceSnapshotForCurrentConfiguration(
         logoMode: ConfigurationLogoMode? = nil,
+        presentationStyle: RecordCardPresentationStyle? = nil,
         outputConfiguration: SavedOutputConfigurationSchemaV1? = nil,
         savedAt: Date = Date()
     ) -> (
@@ -423,6 +429,7 @@ final class ConfigurationSession: ObservableObject {
             .persistenceSnapshotForCurrentConfiguration(
                 editingState: editingState,
                 logoMode: logoMode,
+                presentationStyle: presentationStyle,
                 outputConfiguration: outputConfiguration,
                 savedAt: savedAt
             )
@@ -584,6 +591,7 @@ private extension ConfigurationSession {
     func createMemoryPresetFromCurrent(
         savedAt: Date?,
         logoMode: ConfigurationLogoMode?,
+        presentationStyle: RecordCardPresentationStyle?,
         outputConfiguration: SavedOutputConfigurationSchemaV1?
     ) {
         let basePreset = MemoryPreset(
@@ -603,6 +611,7 @@ private extension ConfigurationSession {
                 editingState: editingState,
                 savedAt: savedAt,
                 logoMode: logoMode,
+                presentationStyle: presentationStyle,
                 outputConfiguration: outputConfiguration
             )
 

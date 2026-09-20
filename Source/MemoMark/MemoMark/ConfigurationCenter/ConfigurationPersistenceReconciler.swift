@@ -18,6 +18,7 @@ struct ConfigurationPersistenceReconciler {
     func persistenceSnapshotForCurrentConfiguration(
         editingState: ConfigurationEditingState,
         logoMode: ConfigurationLogoMode? = nil,
+        presentationStyle: RecordCardPresentationStyle? = nil,
         outputConfiguration:
             SavedOutputConfigurationSchemaV1? = nil,
         savedAt: Date = Date()
@@ -30,6 +31,7 @@ struct ConfigurationPersistenceReconciler {
                 editingState: editingState,
                 savedAt: savedAt,
                 logoMode: logoMode,
+                presentationStyle: presentationStyle,
                 outputConfiguration: outputConfiguration
             )
             memoryPresets[presetIndex] = selectedPreset
@@ -53,6 +55,7 @@ struct ConfigurationPersistenceReconciler {
             editingState: editingState,
             savedAt: savedAt,
             logoMode: logoMode,
+            presentationStyle: presentationStyle,
             outputConfiguration: outputConfiguration
         )
         return ConfigurationPersistenceSnapshot(
@@ -160,6 +163,8 @@ struct ConfigurationPersistenceReconciler {
                             subjectRecord.subject.id,
                         selectedTimeAnchorID:
                             configuration.selectedTimeAnchorID,
+                        presentationStyle:
+                            configuration.presentation.route,
                         logoMode:
                             configuration.presentation.logo.mode,
                         usesCustomMemoryWriteText:
@@ -238,6 +243,7 @@ struct ConfigurationPersistenceReconciler {
         editingState: ConfigurationEditingState,
         savedAt: Date?,
         logoMode: ConfigurationLogoMode?,
+        presentationStyle: RecordCardPresentationStyle? = nil,
         outputConfiguration:
             SavedOutputConfigurationSchemaV1?
     ) -> MemoryPreset {
@@ -255,6 +261,8 @@ struct ConfigurationPersistenceReconciler {
             editingState.selectedStorageOption
         updatedPreset.logoMode =
             logoMode ?? preset.logoMode
+        updatedPreset.presentationStyle =
+            presentationStyle ?? preset.presentationStyle
         updatedPreset.usesCustomMemoryWriteText =
             editingState.usesCustomMemoryWriteText
         updatedPreset.customMemoryWriteText =

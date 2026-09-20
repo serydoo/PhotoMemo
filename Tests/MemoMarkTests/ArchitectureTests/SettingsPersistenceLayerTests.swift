@@ -92,8 +92,128 @@ struct SettingsPersistenceLayerTests {
         )
         #expect(
             store.loadProductionConfigurationReference()
-            == projection.productionConfigurationReference
+                == projection.productionConfigurationReference
         )
+    }
+
+    @MainActor
+    @Test("The current editor configuration wins over an older processing default")
+    func currentEditorConfigurationWinsOverOlderProcessingDefault() throws {
+        var aggregate = try Self.makeAggregate(revision: 23)
+        let subjectIndex = try #require(
+            aggregate.subjects.firstIndex {
+                $0.subject.id == aggregate.activeSubjectID
+            }
+        )
+        let classicConfiguration = try #require(
+            aggregate.subjects[subjectIndex].configurations.first
+        )
+        let minimalConfigurationID = UUID(
+            uuidString: "D1111111-1111-1111-1111-111111111111"
+        )!
+        var minimalPresentation = classicConfiguration.presentation
+        minimalPresentation.route = .minimal
+        let minimalConfiguration = MemoryConfigurationRecord(
+            id: minimalConfigurationID,
+            title: "极简预设",
+            revision: 1,
+            savedAt: classicConfiguration.savedAt,
+            selectedTimeAnchorID:
+                classicConfiguration.selectedTimeAnchorID,
+            language: classicConfiguration.language,
+            editor: classicConfiguration.editor,
+            presentation: minimalPresentation,
+            output: classicConfiguration.output
+        )
+        aggregate.subjects[subjectIndex]
+            .configurations
+            .append(minimalConfiguration)
+
+        let fallback = BatchConfigurationSnapshot(
+            template: .classicWhite,
+            badge: nil,
+            anchor: nil,
+            timeDisplayConfiguration:
+                ExpressionModuleConfiguration(
+                    token: "time",
+                    options: ["baseStyle": "daily"]
+                ),
+            shouldWritePhotoDescription: true,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+
+        let resolved = try #require(
+            ConfigurationSnapshotSelectionResolver.resolve(
+                selectedConfigurationID: minimalConfigurationID,
+                aggregate: aggregate,
+                fallback: fallback
+            )
+        )
+
+        #expect(
+            resolved.presentationRouteRawValue
+                == RecordCardPresentationStyle.minimal.rawValue
+        )
+        #expect(
+            resolved.timeDisplayConfiguration
+                == fallback.timeDisplayConfiguration
+        )
+        #expect(
+            ConfigurationSnapshotSelectionResolver.resolve(
+                selectedConfigurationID: nil,
+                aggregate: aggregate,
+                fallback: fallback
+            ) == fallback
+        )
+        #expect(
+            ConfigurationSnapshotSelectionResolver.resolve(
+                selectedConfigurationID: nil,
+                aggregate: nil,
+                fallback: fallback,
+                selectedPresentationStyle: .minimal
+            )?.presentationRouteRawValue
+                == RecordCardPresentationStyle.minimal.rawValue
+        )
+        #expect(
+            ConfigurationSnapshotSelectionResolver.resolve(
+                selectedConfigurationID: UUID(),
+                aggregate: aggregate,
+                fallback: fallback
+            ) == nil
+        )
+    }
+
+    @MainActor
+    @Test("MemoryPreset compatibility projection preserves style across migration")
+    func memoryPresetCompatibilityProjectionPreservesPresentationStyle() throws {
+        let preset = MemoryPreset(
+            id: UUID(uuidString: "D2222222-2222-2222-2222-222222222222")!,
+            title: "极简预设",
+            summary: "",
+            regionTemplateIDs: [:],
+            presentationStyle: .minimal
+        )
+        let encoded = try JSONEncoder().encode(preset)
+        let decoded = try JSONDecoder().decode(
+            MemoryPreset.self,
+            from: encoded
+        )
+        #expect(decoded.presentationStyle == .minimal)
+
+        var legacyObject = try #require(
+            JSONSerialization.jsonObject(with: encoded)
+                as? [String: Any]
+        )
+        legacyObject.removeValue(forKey: "presentationStyle")
+        let legacyData = try JSONSerialization.data(
+            withJSONObject: legacyObject
+        )
+        let legacyDecoded = try JSONDecoder().decode(
+            MemoryPreset.self,
+            from: legacyData
+        )
+        #expect(legacyDecoded.presentationStyle == .classicWhite)
     }
 
     @MainActor

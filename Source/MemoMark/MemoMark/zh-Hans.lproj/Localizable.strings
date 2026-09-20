@@ -733,6 +733,7 @@
 "common.save_and_switch" = "保存并切换";
 "common.save_and_create" = "保存并新建";
 "common.discard_and_create" = "放弃修改并新建";
+"common.discard_and_switch" = "放弃修改并切换";
 "common.cancel" = "取消";
 "configuration.unsaved_switch.title" = "有未保存的修改";
 "configuration.unsaved_switch.message" = "请先保存当前配置，再切换到另一条配置，避免丢失刚刚的修改。";

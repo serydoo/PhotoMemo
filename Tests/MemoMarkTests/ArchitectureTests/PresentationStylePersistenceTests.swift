@@ -179,6 +179,36 @@ struct PresentationStylePersistenceTests {
         #expect(decoded.filmMark == configuration)
     }
 
+    @Test("FilmMark configuration persists an explicit appearance recipe version")
+    func filmMarkConfigurationPersistsAppearanceRecipeVersion() throws {
+        let data = try JSONEncoder().encode(FilmMarkConfiguration.default)
+        let object = try #require(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+
+        #expect(
+            object["appearanceRecipeVersion"] as? Int
+                == FilmMarkAppearanceRecipeVersion.v1.rawValue
+        )
+    }
+
+    @Test("Legacy FilmMark configuration without a recipe version decodes as v1")
+    func legacyFilmMarkConfigurationDefaultsAppearanceRecipeVersion() throws {
+        let data = try JSONEncoder().encode(FilmMarkConfiguration.default)
+        var object = try #require(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        object.removeValue(forKey: "appearanceRecipeVersion")
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+
+        let decoded = try JSONDecoder().decode(
+            FilmMarkConfiguration.self,
+            from: legacyData
+        )
+
+        #expect(decoded.appearanceRecipeVersion == .v1)
+    }
+
     @Test("A legacy presentation without a route defaults to classic white")
     func missingRouteDefaultsToClassicWhite() throws {
         let data = try encodedPresentationObject(route: .minimal) { object in

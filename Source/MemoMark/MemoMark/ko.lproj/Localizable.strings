@@ -1152,6 +1152,7 @@
 "common.save_and_switch" = "저장하고 전환";
 "common.save_and_create" = "저장하고 새로 만들기";
 "common.discard_and_create" = "변경 사항을 버리고 새로 만들기";
+"common.discard_and_switch" = "변경 사항을 버리고 전환";
 "common.cancel" = "취소";
 "configuration.unsaved_switch.title" = "저장하지 않은 변경 사항";
 "configuration.unsaved_switch.message" = "최근 변경 사항을 잃지 않도록 현재 구성을 저장한 후 다른 구성으로 전환하세요.";

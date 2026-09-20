@@ -66,6 +66,11 @@ struct MemoryPreset:
     var savedAt: Date?
     var selectedSubjectID: MemorySubject.ID?
     var selectedTimeAnchorID: UUID?
+    /// Compatibility projection of the durable configuration route. The
+    /// configuration library remains authoritative when present, but keeping
+    /// the route here prevents an in-memory Preset draft from silently
+    /// reverting to Classic White while it is being selected or restored.
+    var presentationStyle: RecordCardPresentationStyle
     var outputOption: ConfigurationOutputOption
     var storageOption: ConfigurationStorageOption
     var logoMode: ConfigurationLogoMode
@@ -83,6 +88,7 @@ struct MemoryPreset:
         savedAt: Date? = nil,
         selectedSubjectID: MemorySubject.ID? = nil,
         selectedTimeAnchorID: UUID? = nil,
+        presentationStyle: RecordCardPresentationStyle = .classicWhite,
         outputOption: ConfigurationOutputOption = .processedImage,
         storageOption: ConfigurationStorageOption = .appFolder,
         logoMode: ConfigurationLogoMode = .appleMini,
@@ -99,6 +105,7 @@ struct MemoryPreset:
         self.savedAt = savedAt
         self.selectedSubjectID = selectedSubjectID
         self.selectedTimeAnchorID = selectedTimeAnchorID
+        self.presentationStyle = presentationStyle
         self.outputOption = outputOption
         self.storageOption = storageOption
         self.logoMode = logoMode
@@ -126,6 +133,7 @@ struct MemoryPreset:
             savedAt: savedAt,
             selectedSubjectID: selectedSubjectID,
             selectedTimeAnchorID: selectedTimeAnchorID,
+            presentationStyle: presentationStyle,
             outputOption: outputOption,
             storageOption: storageOption,
             logoMode: logoMode,
@@ -147,6 +155,7 @@ struct MemoryPreset:
         case savedAt
         case selectedSubjectID
         case selectedTimeAnchorID
+        case presentationStyle
         case outputOption
         case storageOption
         case logoMode
@@ -165,6 +174,10 @@ struct MemoryPreset:
         savedAt = try container.decodeIfPresent(Date.self, forKey: .savedAt)
         selectedSubjectID = try container.decodeIfPresent(MemorySubject.ID.self, forKey: .selectedSubjectID)
         selectedTimeAnchorID = try container.decodeIfPresent(UUID.self, forKey: .selectedTimeAnchorID)
+        presentationStyle = try container.decodeIfPresent(
+            RecordCardPresentationStyle.self,
+            forKey: .presentationStyle
+        ) ?? .classicWhite
         outputOption = try container.decode(ConfigurationOutputOption.self, forKey: .outputOption)
         storageOption = try container.decode(ConfigurationStorageOption.self, forKey: .storageOption)
         logoMode = try container.decode(ConfigurationLogoMode.self, forKey: .logoMode)
@@ -183,6 +196,7 @@ struct MemoryPreset:
         try container.encodeIfPresent(savedAt, forKey: .savedAt)
         try container.encodeIfPresent(selectedSubjectID, forKey: .selectedSubjectID)
         try container.encodeIfPresent(selectedTimeAnchorID, forKey: .selectedTimeAnchorID)
+        try container.encode(presentationStyle, forKey: .presentationStyle)
         try container.encode(outputOption, forKey: .outputOption)
         try container.encode(storageOption, forKey: .storageOption)
         try container.encode(logoMode, forKey: .logoMode)

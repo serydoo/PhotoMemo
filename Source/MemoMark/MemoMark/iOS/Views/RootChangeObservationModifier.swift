@@ -88,7 +88,7 @@ struct RootChangeObservationModifier: ViewModifier {
                     )
                 } else if let preset = session.state.selectedMemoryPreset {
                     logoMode = preset.logoMode
-                    presentationStyle = .classicWhite
+                    presentationStyle = preset.presentationStyle
                     filmMarkConfiguration = .default
                     customLogoBadge = nil
                     applySavedOutputConfiguration(preset)

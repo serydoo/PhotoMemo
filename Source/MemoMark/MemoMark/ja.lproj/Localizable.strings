@@ -1152,6 +1152,7 @@
 "common.save_and_switch" = "保存して切り替え";
 "common.save_and_create" = "保存して新規作成";
 "common.discard_and_create" = "変更を破棄して新規作成";
+"common.discard_and_switch" = "変更を破棄して切り替え";
 "common.cancel" = "キャンセル";
 "configuration.unsaved_switch.title" = "未保存の変更";
 "configuration.unsaved_switch.message" = "変更を失わないよう、現在の設定を保存してから別の設定に切り替えてください。";

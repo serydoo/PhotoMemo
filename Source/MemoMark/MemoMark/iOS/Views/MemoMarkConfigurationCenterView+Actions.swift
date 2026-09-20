@@ -623,7 +623,7 @@ extension MemoMarkConfigurationCenterView {
         }
 
         logoMode = preset.logoMode
-        presentationStyle = .classicWhite
+        presentationStyle = preset.presentationStyle
         customLogoBadge = nil
         applySavedOutputConfiguration(preset)
     }

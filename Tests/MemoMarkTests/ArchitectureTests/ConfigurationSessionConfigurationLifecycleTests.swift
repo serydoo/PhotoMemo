@@ -977,6 +977,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
             session
             .persistenceSnapshotForCurrentConfiguration(
                 logoMode: .customUpload,
+                presentationStyle: .minimal,
                 outputConfiguration:
                     V1SavedOutputConfiguration(
                         outputTarget: .newAlbum,
@@ -998,6 +999,7 @@ struct ConfigurationSessionConfigurationLifecycleTests {
 
         #expect(savedPreset.savedAt == Date(timeIntervalSince1970: 123))
         #expect(savedPreset.logoMode == .customUpload)
+        #expect(savedPreset.presentationStyle == .minimal)
         #expect(
             savedPreset.savedOutputConfiguration
             == V1SavedOutputConfiguration(

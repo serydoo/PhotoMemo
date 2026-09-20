@@ -136,9 +136,15 @@ enum FilmMarkSubstrate: String, Codable, CaseIterable, Hashable {
     static let userSelectableCases: [Self] = [
         .none,
         .paperWhite,
-        .systemGlass,
         .softShadow
     ]
+
+    /// Existing persisted configurations may still contain a substrate that
+    /// is no longer open for new production selection. Keeping this explicit
+    /// lets the editor preserve that value while preventing new selection.
+    var isProductionSelectable: Bool {
+        Self.userSelectableCases.contains(self)
+    }
 
     /// All currently selectable substrates have a deterministic static recipe.
     /// `systemGlass` intentionally means a static glass-like treatment rather
@@ -172,23 +178,71 @@ struct FilmMarkAppearanceDraft: Codable, Hashable {
     }
 }
 
+/// The appearance recipe is versioned independently of the FM content schema.
+/// A saved configuration therefore keeps its visual interpretation stable when
+/// a future recipe is introduced. Unknown versions fail closed during decode.
+enum FilmMarkAppearanceRecipeVersion: Int, Codable, Hashable {
+    case v1 = 1
+}
+
 /// Style-owned settings kept separate from the legacy template payload. This
 /// is the future persistence carrier for the FM route; it does not change the
 /// existing Classic White or Minimal template schemas.
 struct FilmMarkConfiguration: Codable, Hashable {
 
+    var appearanceRecipeVersion: FilmMarkAppearanceRecipeVersion
     var appearance: FilmMarkAppearanceDraft
     var placement: FilmMarkPlacementDraft
     var safeAreaInsets: FilmMarkNormalizedInsets
 
     init(
+        appearanceRecipeVersion: FilmMarkAppearanceRecipeVersion = .v1,
         appearance: FilmMarkAppearanceDraft = .init(),
         placement: FilmMarkPlacementDraft = .init(anchor: .bottomRight),
         safeAreaInsets: FilmMarkNormalizedInsets = .default
     ) {
+        self.appearanceRecipeVersion = appearanceRecipeVersion
         self.appearance = appearance
         self.placement = placement
         self.safeAreaInsets = safeAreaInsets
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case appearanceRecipeVersion
+        case appearance
+        case placement
+        case safeAreaInsets
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.appearanceRecipeVersion = try container.decodeIfPresent(
+            FilmMarkAppearanceRecipeVersion.self,
+            forKey: .appearanceRecipeVersion
+        ) ?? .v1
+        self.appearance = try container.decode(
+            FilmMarkAppearanceDraft.self,
+            forKey: .appearance
+        )
+        self.placement = try container.decode(
+            FilmMarkPlacementDraft.self,
+            forKey: .placement
+        )
+        self.safeAreaInsets = try container.decode(
+            FilmMarkNormalizedInsets.self,
+            forKey: .safeAreaInsets
+        )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(
+            appearanceRecipeVersion,
+            forKey: .appearanceRecipeVersion
+        )
+        try container.encode(appearance, forKey: .appearance)
+        try container.encode(placement, forKey: .placement)
+        try container.encode(safeAreaInsets, forKey: .safeAreaInsets)
     }
 
     static let `default` = FilmMarkConfiguration()

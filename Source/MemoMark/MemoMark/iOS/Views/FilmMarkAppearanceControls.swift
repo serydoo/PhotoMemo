@@ -87,10 +87,21 @@ struct FilmMarkAppearanceControls: View {
                 set: { substrate in update { $0.appearance.substrate = substrate } }
             )
         ) {
-            ForEach(FilmMarkSubstrate.userSelectableCases, id: \.self) { substrate in
+            ForEach(editorSubstrateCases, id: \.self) { substrate in
                 Text(substrate.displayTitle).tag(substrate)
+                    .disabled(!substrate.isProductionSelectable)
             }
         }
+    }
+
+    private var editorSubstrateCases: [FilmMarkSubstrate] {
+        guard !FilmMarkSubstrate.userSelectableCases.contains(
+            configuration.appearance.substrate
+        ) else {
+            return FilmMarkSubstrate.userSelectableCases
+        }
+        return [configuration.appearance.substrate]
+            + FilmMarkSubstrate.userSelectableCases
     }
 
     private var colorPalette: some View {

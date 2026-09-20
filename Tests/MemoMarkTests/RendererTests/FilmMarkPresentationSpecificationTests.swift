@@ -116,6 +116,31 @@ struct FilmMarkPresentationSpecificationTests {
         )
     }
 
+    @Test("FM geometry preview never reveals more than the lower photo half")
+    func fmGeometryPreviewNeverRevealsMoreThanTheLowerPhotoHalf() {
+        #expect(
+            FilmMarkPreviewGeometrySpec.maximumVisibleImageHeightFraction == 0.50
+        )
+        #expect(
+            FilmMarkPreviewGeometrySpec.cropHeight(
+                canvasHeight: 675,
+                availableHeight: 400
+            ) == 337.5
+        )
+        #expect(
+            FilmMarkPreviewGeometrySpec.cropHeight(
+                canvasHeight: 675,
+                availableHeight: 150
+            ) == 150
+        )
+        #expect(
+            FilmMarkPreviewGeometrySpec.cropHeight(
+                canvasHeight: 200,
+                availableHeight: 150
+            ) == 100
+        )
+    }
+
     @Test("starts a new FilmMark card with capture date and smart result")
     func startsNewFilmMarkCardWithCaptureDateAndSmartResult() {
         #expect(
@@ -293,7 +318,8 @@ struct FilmMarkPresentationSpecificationTests {
         #expect(systemGlass == .systemGlass)
         #expect(systemGlass.deterministicExportKind == .systemGlass)
         #expect(FilmMarkSubstrate.none.deterministicExportKind == .none)
-        #expect(FilmMarkSubstrate.userSelectableCases.count == 4)
+        #expect(FilmMarkSubstrate.userSelectableCases.count == 3)
+        #expect(!FilmMarkSubstrate.userSelectableCases.contains(.systemGlass))
         #expect(!FilmMarkSubstrate.userSelectableCases.contains(.translucentLabel))
     }
 

@@ -354,7 +354,7 @@ extension MemoMarkConfigurationCenterView {
             .route
             ?? (preset.id == session.state.selectedMemoryPresetID
                 ? presentationStyle
-                : .classicWhite)
+                : preset.presentationStyle)
 
         switch route {
         case .classicWhite:

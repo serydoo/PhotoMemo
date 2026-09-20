@@ -77,7 +77,10 @@ struct MemoryCardPreviewSurface: View {
                 }
         case .minimal:
             Color.clear
-                .aspectRatio(compactPreviewAspectRatio, contentMode: .fit)
+                .aspectRatio(
+                    1 / MinimalCardLayoutSpecification.compactPreview.imageSliceHeightToWidth,
+                    contentMode: .fit
+                )
                 // The Minimal explanatory slice has a much wider aspect
                 // ratio than the Classic information bar. Keep its measured
                 // height, but let it consume the complete preview column in

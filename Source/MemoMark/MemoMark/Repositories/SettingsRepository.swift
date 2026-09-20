@@ -481,6 +481,8 @@ final class SettingsRepository {
                         subjectRecord.subject.id,
                     selectedTimeAnchorID:
                         configuration.selectedTimeAnchorID,
+                    presentationStyle:
+                        configuration.presentation.route,
                     logoMode:
                         configuration.presentation.logo.mode,
                     usesCustomMemoryWriteText:
