@@ -1,6 +1,6 @@
 # MemoMark Current Brief
 
-Last updated: 2026-09-07
+Last updated: 2026-09-22
 
 This is a compact routing brief for a new Codex session. It is not a
 replacement for the project constitution, accepted specifications, contracts,
@@ -24,8 +24,10 @@ follow the linked source-of-truth document.
 ## Current Candidate
 
 - Project: `Source/MemoMark/MemoMark.xcodeproj`
-- Marketing version: `2.3.0`
-- Build: `105`
+- Marketing version: `2.3.3`
+- Build: `109`
+- Release status: `Version Locked; Release Evidence Open`
+- Release scope starts at 2026-09-07 `2.3.0 (105)`; no independently verified `2.3.1` release candidate is invented.
 - Commerce: `MemoMark Commerce v1.1` — historical lifetime and activation-code
   entitlements preserved; new users use MemoMark+ monthly or annual subscription;
   all built-in memory expression styles are included in the subscription.
@@ -36,10 +38,12 @@ follow the linked source-of-truth document.
   and presentation facade. Startup-only receipt reconciliation remains an
   isolated pre-actor Bootstrap Adapter.
 
-The build and test evidence for build 105 does not imply physical-device visual
-acceptance, StoreKit sandbox acceptance, or production certification. The 105
-package still needs installation and review on the paired physical iPhone 17
-Pro Max where the task requires it.
+The build and test evidence for build 109 does not imply physical-device visual
+acceptance, StoreKit sandbox acceptance, App Store Connect submission, or
+production certification. The 109 package has been installed over the existing
+app container on the paired physical iPhone 17 Pro Max and launched successfully
+after the device was unlocked; visual, accessibility, Photos, Share, and Live
+Photo acceptance remain open for the user's review.
 
 ## Frozen Boundaries
 

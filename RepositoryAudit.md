@@ -20,7 +20,6 @@ Key inputs included:
 - `AGENTS.md`
 - `HANDOFF.md`
 - `CHANGELOG.md`
-- `PROJECT_HISTORY.md`
 - `Docs/`
 - `Source/MemoMark/MemoMark/`
 - `Tests/`
@@ -95,7 +94,6 @@ Documents that overlap and should eventually be consolidated after research spec
   - `Docs/ProductModel.md`
   - `Docs/ProductDirection.md`
   - `Docs/ProductBacklog.md`
-  - `Docs/ROADMAP.md`
 - retired MainView refactor planning (historical only):
   - `Docs/MAINVIEW_MVP_REFACTOR_SPEC.md`
   - `Docs/MAINVIEW_MVP_REFACTOR_PLAN.md`
@@ -118,8 +116,6 @@ Documents that overlap and should eventually be consolidated after research spec
   - `HANDOFF.md`
   - `Docs/AI_HANDOFF_2026-06-21.md`
   - `Docs/AI_HANDOFF_2026-06-22.md`
-  - `Docs/SESSION_LOG.md`
-  - `PROJECT_HISTORY.md`
 
 Known cross-document conflicts:
 

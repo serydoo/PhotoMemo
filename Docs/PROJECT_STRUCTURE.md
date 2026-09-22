@@ -1,6 +1,6 @@
 # MemoMark Project Structure
 
-Last updated: 2026-09-03
+Last updated: 2026-09-22
 
 This is the practical lookup map for the current repository. Architecture and
 product ownership remain defined by `PROJECT_CONSTITUTION.md`,
@@ -15,9 +15,10 @@ product ownership remain defined by `PROJECT_CONSTITUTION.md`,
 - `Research/` — V4 research inputs, methods, and Expression Style foundation.
 - `scripts/` — build, QA, evidence, and synchronization helpers.
 - `QA/` — physical-device QA manifest and operating guidance.
-- `App/`, `DesignSystem/`, `LayoutEngine/`, `Renderer/` — repository-level
-  boundary notes; production implementation remains under `Source/MemoMark/`.
-- `Examples/`, `Screenshots/` — public, non-private example boundaries.
+- There are no root-level production source directories. The former placeholder
+  folders for app, design-system, layout, renderer, examples, and screenshots
+  have been retired; production implementation and public documentation remain
+  under `Source/MemoMark/`, `Docs/`, `Research/`, and `QA/`.
 
 ## Xcode project
 

@@ -52,11 +52,11 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("这次更新继续推进胶片时间（FilmMark）的开发"))
+        #expect(simplifiedChinese.contains("这次更新继续完善胶片时间与配置中心"))
         #expect(simplifiedChinese.contains("胶片时间仍在持续开发中"))
         #expect(simplifiedChinese.contains("修复新建预设后样式选择与输出表现不一致的问题"))
         #expect(simplifiedChinese.contains("每次处理都会生成新的记忆照片，不覆盖原图"))
-        #expect(english.contains("This update continues the development of FilmMark"))
+        #expect(english.contains("This update continues refining FilmMark and Configuration Center"))
         #expect(english.contains("FilmMark remains under active development"))
         #expect(english.contains("Fixed an issue where a new preset could show one style while producing another"))
         #expect(english.contains("Each process creates a new memory photo without replacing the original"))
@@ -70,10 +70,10 @@ struct V1ReleaseNotesContractTests {
             "Source/MemoMark/MemoMark.xcodeproj/project.pbxproj"
         )
         let releaseManifest = try sourceText(
-            "Docs/07_Releases/2026-09-21-2.3.2-sync-manifest.md"
+            "Docs/07_Releases/2026-09-22-2.3.3-sync-manifest.md"
         )
-        #expect(releaseManifest.contains("当前 marketing version：`2.3.2`"))
-        #expect(releaseManifest.contains("当前 build number：`108`"))
+        #expect(releaseManifest.contains("当前 marketing version：`2.3.3`"))
+        #expect(releaseManifest.contains("当前 build number：`109`"))
 
         #expect(!projectSource.contains("MARKETING_VERSION = 2.0.3;"))
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
@@ -105,8 +105,8 @@ struct V1ReleaseNotesContractTests {
                         .replacingOccurrences(of: ";", with: "")
                 }
         )
-        #expect(marketingVersions == ["2.3.2"])
-        #expect(projectBuilds == ["108"])
+        #expect(marketingVersions == ["2.3.3"])
+        #expect(projectBuilds == ["109"])
     }
 
     @Test("next release drafts keep internal TestFlight and App Store boundaries distinct")

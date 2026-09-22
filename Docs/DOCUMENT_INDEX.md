@@ -1,6 +1,6 @@
 # MemoMark Document Index
 
-Last updated: 2026-08-26
+Last updated: 2026-09-22
 
 ## Product Stage Source Of Truth
 
@@ -72,7 +72,6 @@ Use these when deciding what to build next:
 - `Docs/ProductDirection.md` - direction and positioning
 - `Docs/ProductBacklog.md` - now / next / later backlog
 - `Docs/01_Product/V1_UX_Feedback_Iteration_001.md` - first dedicated V1 real-usage UX feedback batch, separate from RFC work
-- `Docs/ROADMAP.md` - roadmap view
 - `Docs/UX_PRINCIPLES.md` - UX principles
 - `Docs/Interaction/IA-001_Interaction_Architecture.md` - interaction architecture
 - `Docs/Guidelines/LANGUAGE_SYSTEM.md` - product language system
@@ -120,8 +119,6 @@ Use these when changing preview, renderer, export sizing, typography, or templat
 - `Docs/RENDER_SPEC.md` - renderer and output spec
 - `Docs/PM-003_Content_Layout_System.md` - PM-003 semantic content layout system
 - `Docs/ClassicWhiteVisualQA.md` - Classic White snapshot QA workflow
-- `Docs/TEMPLATE_SYSTEM.md` - template system notes
-- `Docs/TEMPLATE_CLASSIC_WHITE.md` - Classic White template notes
 - `Docs/DesignSystem.md` - visual system notes
 - `Docs/VariableCatalogAlignment.md` - variable catalog alignment
 - `Docs/VariableEngineRoadmap.md` - variable engine roadmap
@@ -207,9 +204,6 @@ These are useful for context, but should not override current status, code behav
 - `Docs/ProductScore.md`
 - `Docs/ShareExtensionReview.md`
 - `Docs/LivePhotoAssessment.md`
-- `Docs/SESSION_LOG.md`
-- `Docs/PROJECT_MEMORY.md`
-- `PROJECT_HISTORY.md`
 
 ## Working Rule
 

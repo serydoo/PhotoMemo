@@ -104,14 +104,15 @@ These documents answer different questions:
 - ADR answers: `WHY`
 - `HANDOFF.md` answers: `WHAT CHANGED`
 - `AI_CONTEXT.md` answers: `CURRENT PROJECT STATE`
-- `PROJECT_HISTORY.md` answers: `PROJECT EVOLUTION`
+- `Docs/PRODUCT_VERSION_HISTORY.md` answers: `PRODUCT-STAGE EVOLUTION`
 
 Practical distinction:
 
 - use ADR when a contributor asks why the architecture is shaped this way
 - use `HANDOFF.md` when a contributor asks what landed recently
 - use `AI_CONTEXT.md` when a contributor needs the active product and technical framing
-- use `PROJECT_HISTORY.md` when a contributor needs long-range chronology
+- use `HANDOFF.md` and `Docs/PRODUCT_VERSION_HISTORY.md` when a contributor
+  needs historical chronology or product-stage context
 
 ## Working Rule
 

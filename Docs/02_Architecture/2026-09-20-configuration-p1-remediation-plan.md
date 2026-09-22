@@ -1,5 +1,12 @@
 # Configuration P1 Remediation Plan — 2026-09-20
 
+Current status as of 2026-09-22: the source implementation and automated
+contract coverage for this plan are present in `935f5b29`. The current HEAD
+test run passed with `1905 passed / 0 failed / 1 skipped`. This does not close
+the physical-device, Apple Photos/Share/Live Photo, performance, or release
+certification gates; see
+`Docs/03_Engineering/2026-09-22-comprehensive-audit-closure-and-current-state.md`.
+
 ## Scope
 
 This plan closes the Configuration Center P1 findings confirmed by the

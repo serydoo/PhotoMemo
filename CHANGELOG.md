@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3.3 (109) Release Materials Consolidation And Device Candidate - 2026-09-22
+
+- Consolidated the user-facing and internal release materials from the 2.3.0
+  (105) candidate on September 7 through the current 2.3.3 (109) candidate;
+  no independently verified 2.3.1 release candidate is invented.
+- Continued the Configuration Center and FilmMark refinement so the selected
+  style, preview, saved configuration, and new memory photo stay aligned.
+- Preserved the local-first Apple Photos workflow: processing remains on device,
+  the original photo is not replaced, and output remains a new memory photo.
+- Updated the in-app release notes in Simplified Chinese, English, Japanese,
+  and Korean, along with the App Store, TestFlight, and internal sync materials.
+- Raised all App, Extension, Widget, Device QA, and test target configurations
+  to marketing version `2.3.3` and build `109`.
+
+This is a local device-validation candidate. Physical-device acceptance,
+Apple Photos/Share/Live Photo evidence, StoreKit, App Store Connect metadata,
+TestFlight upload, GitHub push, and production certification remain separate
+evidence classes.
+
 ## 2.3.2 (108) FilmMark Development And Configuration Center Consistency - 2026-09-21
 
 - Continued FilmMark (Film Time) development across style configuration, preview

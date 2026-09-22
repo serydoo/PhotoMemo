@@ -1,5 +1,31 @@
 # MemoMark Current Status
 
+## 2026-09-22 2.3.3（109）发布材料与真机候选
+
+- 当前本地候选版本为 `2.3.3 (109)`，范围从 2026-09-07 的 `2.3.0 (105)` 起算；仓库没有可独立确认的 `2.3.1` 候选，因此不虚构其构建号或商店状态。
+- 已建立同一事实源的四份发布材料：应用内完整更新说明、App Store “此版本的新内容”、TestFlight 测试说明和内部同步清单，路径为 `Docs/07_Releases/2026-09-22-2.3.3-*`。
+- 已同步更新 `CHANGELOG.md`、`README.md`、`README_EN.md`、`Docs/CURRENT_BRIEF.md`、四语应用内更新日志和所有 App/Extension/Widget/Device QA/test target 版本字段；目标为 marketing version `2.3.3`、build `109`。
+- 当前事实源覆盖 2.3.0（105）之后的配置中心跨平台收口、FilmMark 独立表达关系、当前配置到输出的一致性修复、PhotoKit/队列边界维护、四语资源与无障碍布局契约；这些内容仍不能写成生产认证完成。
+- 已确认的 27 个仓库清理候选已移入 macOS 废纸篓；`Docs/Outreach/` 继续本地保留，不暂存、不提交、不推送。
+- 当前候选保持 `Version Locked; Release Evidence Open`。2.3.3/109 下的治理、四语/版本资料定向测试、完整 `MemoMarkTests`（`1905 passed / 0 failed / 1 skipped`）、macOS Debug 构建和指定 iPhone 17 Pro Max 签名构建均已通过；包已按同 Bundle ID 覆盖安装并读回为 `2.3.3 (109)`。完整测试仍记录两条既有 `FixtureExportReadbackTests` QoS priority-inversion runtime warning。第一次启动请求因设备锁定被系统拒绝；设备解锁后重试启动成功，逐屏 UI、Dynamic Type、VoiceOver、Photos、Share、Live Photo 手工验收仍未完成，等待用户初步检查；本轮不执行 GitHub push、TestFlight 上传或 App Store Connect 操作。
+
+- 本轮设备证据：签名产物为 `/tmp/MemoMark233iPhone/Build/Products/Debug-iphoneos/MemoMarkiOS.app`，`codesign --verify --deep --strict` 通过；设备为 `iPhone 17 Pro Max`（`863C2747-6742-5E93-B715-6F89DBF90B31`，iOS `27.2`），安装未卸载应用、未清除容器或用户数据。`devicectl` 的安装读回成功，解锁后启动成功；随后观察到 `MemoMarkiOS` 与 `MemoMarkWidgetExtension` 进程。启动成功只证明生命周期入口可达，不能替代用户的运行中视觉、无障碍、Photos、Share 或 Live Photo 验收。
+
+## 2026-09-22 总体审核与 2.3.2（108）HEAD 基线
+
+- 该审查记录对应 2.3.3 候选建立前的源码基线 `935f5b29`，版本为 `2.3.2 (108)`；完整总审查和关闭矩阵见
+  `Docs/03_Engineering/2026-09-22-comprehensive-audit-closure-and-current-state.md`。
+- 最新健康化提交已完成配置命令/处理默认隔离、FilmMark 独立内容与 recipe、PhotoKit/Live Photo
+  生产路径保护、四语本地化和模拟器无障碍布局契约修复。当前代码和自动化候选可继续收口，不能写成生产认证完成。
+- 当前 HEAD 直接验证：治理检查通过、`git diff --check` 通过；全量 `MemoMarkTests` 为
+  `1905 passed / 0 failed / 1 skipped`，结果为 `Passed`。仍记录两条既有 QoS priority-inversion
+  warning，以及 Xcode beta 的弃用/工具链诊断。
+- 未关闭项明确保留为：TX-001 PhotoKit 中断/精确读回/重复防护、BP-001 高分辨率真机内存证据、当前
+  HEAD 的实体 iPhone 17 Pro Max 手工 UI/无障碍/Photos/Share/Live Photo 验收、导出高负载 Instruments
+  测量、superseding production certification，以及 TestFlight/App Store Connect 外部动作。
+- 在该审查记录生成时，`main` 与 `origin/main` 指向一致；工作区的清理候选和 `Docs/Outreach/`
+  边界随后由上面的 2.3.3 候选记录接续管理。
+
 ## 2026-09-21 2.3.2（108）版本资料与配置中心 UI 规范维护
 
 - 按用户指定的 `2.3.1` 版本更新起点整理本轮候选；本版本首先强调 FM（FilmMark／胶片时间）的持续开发，统一所有 App、Share Extension、Widget Extension、Device QA 和测试 target 为 marketing version `2.3.2`、build `108`。仓库未发现可独立确认的 2.3.1 正式候选构建，因此没有虚构 2.3.1 的构建号或外部状态。
