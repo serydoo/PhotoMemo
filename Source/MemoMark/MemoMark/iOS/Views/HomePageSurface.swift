@@ -6,6 +6,9 @@ import UIKit
 
 struct HomePageSurface<ProfileTrackingBackground: View>: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
     }
@@ -73,9 +76,16 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                 topHeaderSection
 
                 topSummaryCluster
+
+                if dynamicTypeSize.isAccessibilitySize {
+                    processPhotoFooter
+                }
             }
             .padding(.top, 16)
-            .padding(.bottom, 104)
+            .padding(
+                .bottom,
+                dynamicTypeSize.isAccessibilitySize ? 16 : 104
+            )
             .adaptiveScrollContent(
                 horizontalPadding: ConfigurationUI.contentColumnPadding
             )
@@ -94,7 +104,9 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         .navigationTitle(localized("home.title"))
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            processPhotoFooter
+            if !dynamicTypeSize.isAccessibilitySize {
+                processPhotoFooter
+            }
         }
         .alert(
             currentPresetDeleteTitle,
@@ -284,8 +296,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                 Button(action: onOpenWorkflowGuide) {
                     Text(localized("home.apple_photos.share_guide"))
                         .font(.subheadline.weight(.semibold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
+                        .fixedSize(horizontal: false, vertical: true)
                         .v1CompactBottomPrimaryAction()
                 }
                 .buttonStyle(CompactPrimaryActionButtonStyle())
@@ -378,13 +389,33 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         }
     }
 
+    @ViewBuilder
     private var topHeaderSection: some View {
-        ViewThatFits(in: .horizontal) {
-            regularTopHeaderSection
-            compactTopHeaderSection
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                accessibilityTopHeaderSection
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    regularTopHeaderSection
+                    compactTopHeaderSection
+                }
+            }
         }
         .padding(.horizontal, 2)
         .padding(.vertical, 4)
+    }
+
+    private var accessibilityTopHeaderSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                HomeAppMark()
+                Spacer(minLength: 0)
+                settingsButton
+            }
+
+            brandIdentity
+            adaptiveHeaderFacts
+        }
     }
 
     private var regularTopHeaderSection: some View {
@@ -430,15 +461,22 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     @ViewBuilder
     private var brandTitle: some View {
         if showsMemoMarkPlusBadge {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    productTitle
-                    memoMarkPlusBadge
-                }
-
+            if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 6) {
                     productTitle
                     memoMarkPlusBadge
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        productTitle
+                        memoMarkPlusBadge
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        productTitle
+                        memoMarkPlusBadge
+                    }
                 }
             }
         } else {
@@ -483,18 +521,26 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         .accessibilityLabel(localized("home.settings.accessibility"))
     }
 
+    @ViewBuilder
     private var adaptiveHeaderFacts: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                privacyHeaderFact
-                Text("·")
-                    .foregroundStyle(.tertiary)
-                applePhotosHeaderFact
-            }
-
+        if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 6) {
                 privacyHeaderFact
                 applePhotosHeaderFact
+            }
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    privacyHeaderFact
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+                    applePhotosHeaderFact
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    privacyHeaderFact
+                    applePhotosHeaderFact
+                }
             }
         }
     }
@@ -784,8 +830,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                         systemImage: "photo.on.rectangle"
                     )
                     .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
                     .v1CompactBottomPrimaryAction()
                 }
                 .buttonStyle(CompactPrimaryActionButtonStyle())
@@ -950,6 +995,9 @@ private struct HomeAppMark: View {
 
 private struct HomeHeaderFact: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     let systemImage: String
     let title: String
 
@@ -960,10 +1008,10 @@ private struct HomeHeaderFact: View {
 
             Text(title)
                 .font(.caption.weight(.medium))
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(.secondary)
-        .fixedSize(horizontal: true, vertical: false)
     }
 }
 

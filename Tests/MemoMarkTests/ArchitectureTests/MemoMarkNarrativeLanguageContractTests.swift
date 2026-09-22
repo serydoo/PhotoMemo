@@ -116,7 +116,7 @@ struct MemoMarkNarrativeLanguageContractTests {
 
         #expect(macOS.contains("NavigationStack {"))
         #expect(macOS.contains("MacConfigurationCenterPage("))
-        #expect(macOSPage.contains(".navigationTitle(\"配置\")"))
+        #expect(macOSPage.contains(".navigationTitle(macLocalized(\"mac.page.title\""))
         #expect(
             simplifiedChinese.contains(
                 "\"settings.guide.expression.title\" = \"MemoMark 怎么讲述时间\";"

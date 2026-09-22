@@ -78,6 +78,9 @@ enum FilmMarkPreviewTypography {
 /// content and configuration that preview/export share.
 struct FilmMarkPreviewSurface: View {
 
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
     let content: FilmMarkContentProjection
     let configuration: FilmMarkConfiguration
     var mode: FilmMarkPreviewMode = .contentStrip
@@ -99,7 +102,10 @@ struct FilmMarkPreviewSurface: View {
                 geometryCalibration
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: mode)
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.2),
+            value: mode
+        )
     }
 
     private var contentStrip: some View {

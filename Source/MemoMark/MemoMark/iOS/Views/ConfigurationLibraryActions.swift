@@ -23,7 +23,7 @@ enum ConfigurationLibraryActionDecision: Equatable {
     case setAsProcessingDefault
     case applyCurrentThenSave(MemoryPreset)
     case saveDurableConfiguration(MemoryPreset)
-    case confirmSaveBeforeActivation(MemoryPreset)
+    case requiresActivationConfirmation(MemoryPreset)
     case activate(MemoryPreset)
     case applyCurrentThenDelete(MemoryPreset)
     case persistDeletion(ConfigurationLibraryDeletionResult)
@@ -116,11 +116,12 @@ struct ConfigurationLibraryActions {
         case .saveToLocalLibrary(let request):
             return saveDecision(for: request)
         case .requestActivation(let request):
-            if request.isCurrentConfigurationDirty,
-               request.preset.id != request.selectedConfigurationID {
-                return .confirmSaveBeforeActivation(
-                    request.preset
-                )
+            // Activation must never turn an editor draft into a durable save
+            // as a side effect. The presentation layer may offer the three
+            // explicit user choices, but the application decision remains
+            // unambiguous until one of them is chosen.
+            if request.isCurrentConfigurationDirty {
+                return .requiresActivationConfirmation(request.preset)
             }
             return .activate(request.preset)
         case .activate(let preset):

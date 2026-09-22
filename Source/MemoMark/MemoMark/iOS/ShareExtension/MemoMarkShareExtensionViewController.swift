@@ -174,6 +174,9 @@ private extension MemoMarkShareExtensionViewController {
         view.backgroundColor =
             .systemBackground
 
+        let displayScale =
+            max(view.traitCollection.displayScale, 1)
+
         configureScrollView()
         configureContentStack()
         configureBottomActionStack()
@@ -200,7 +203,8 @@ private extension MemoMarkShareExtensionViewController {
                 ),
                 contentView:
                     ShareExtensionSurfaceFactory.makeInnerCardContainer(
-                        contentView: makeSummaryStack()
+                        contentView: makeSummaryStack(),
+                        displayScale: displayScale
                     )
             )
         summarySectionView =
@@ -211,7 +215,8 @@ private extension MemoMarkShareExtensionViewController {
                 headerView: statusTitleLabel,
                 contentView:
                     ShareExtensionSurfaceFactory.makeInnerCardContainer(
-                        contentView: makeStatusStack()
+                        contentView: makeStatusStack(),
+                        displayScale: displayScale
                     )
             )
 
@@ -1056,7 +1061,9 @@ private extension MemoMarkShareExtensionViewController {
 
         if addsDivider {
             stack.addArrangedSubview(
-                ShareExtensionSurfaceFactory.makeInsetDivider()
+                ShareExtensionSurfaceFactory.makeInsetDivider(
+                    displayScale: max(view.traitCollection.displayScale, 1)
+                )
             )
         }
 

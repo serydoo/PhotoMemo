@@ -186,13 +186,21 @@ struct MemoMarkShareExtensionError:
         }
     }
 
-    var diagnosticSummaryLine: String? {
+    func diagnosticSummaryLine(
+        for language: MemoMarkLanguage
+    ) -> String? {
 
         if let failureContext =
             resolvedFailureContext {
 
             var parts = [
-                "失败阶段：\(failureContext.stage.title)"
+                String(
+                    format: language.localized(
+                        key: "share.diagnostics.failure_stage",
+                        fallback: "Failure stage: %@"
+                    ),
+                    failureContext.stage.title
+                )
             ]
 
             if let errorSummary =
@@ -205,7 +213,13 @@ struct MemoMarkShareExtensionError:
             if let supportID =
                 failureContext.supportID {
                 parts.append(
-                    "故障编号：\(supportID)"
+                    String(
+                        format: language.localized(
+                            key: "share.diagnostics.support_id",
+                            fallback: "Support ID: %@"
+                        ),
+                        supportID
+                    )
                 )
             }
 
@@ -222,7 +236,13 @@ struct MemoMarkShareExtensionError:
         }
 
         return [
-            "拒绝原因：\(rejectionReport.title)",
+            String(
+                format: language.localized(
+                    key: "share.diagnostics.rejection_reason",
+                    fallback: "Rejection reason: %@"
+                ),
+                rejectionReport.title
+            ),
             rejectionReport.reasonRawValue
         ]
         .compactMap { $0 }

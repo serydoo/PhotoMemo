@@ -164,6 +164,11 @@ struct MemoryBlockInspectorCustomFieldsSection: View {
                     .frame(width: 32, height: 32)
             }
             .buttonStyle(.borderless)
+            .frame(
+                minWidth: ConfigurationUI.minimumInteractiveHeight,
+                minHeight: ConfigurationUI.minimumInteractiveHeight
+            )
+            .contentShape(Rectangle())
             .help("删除自定义内容")
         }
         .padding(10)

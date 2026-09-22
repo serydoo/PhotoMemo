@@ -207,5 +207,51 @@ struct ExportAlbumPresenterTests {
             == "Unable to load system photo albums."
         )
     }
+
+    @Test("an explicitly selected album that is absent fails closed")
+    func explicitlySelectedAlbumThatIsAbsentFailsClosed() async throws {
+        let result = await ResolveOutputAlbumSelectionIntent(
+            request: OutputAlbumSelectionRequest(
+                outputTarget: .existingAlbum,
+                availableAlbums: [],
+                selectedExistingAlbumIdentifier: "deleted-album",
+                newAlbumName: ""
+            ),
+            coordinator: nil
+        ).execute()
+
+        guard case .failure(let error) = result else {
+            Issue.record("Expected an unavailable album to fail closed")
+            return
+        }
+
+        #expect(error.code == .photoLibrarySaveFailed)
+        #expect(error.diagnosticCode == "photoLibrary.album.notFound")
+    }
+
+    @Test("static and Live Photo destination resolution share sentinel semantics")
+    func staticAndLivePhotoDestinationResolutionShareSentinelSemantics() throws {
+        #expect(
+            try PhotoLibraryOutputDestinationResolver.resolve(
+                preferredAlbumIdentifier:
+                    MemoMarkAlbumSelection.automaticIdentifier,
+                albumExists: { _ in false }
+            ) == .memoMarkDefault
+        )
+        #expect(
+            try PhotoLibraryOutputDestinationResolver.resolve(
+                preferredAlbumIdentifier:
+                    MemoMarkAlbumSelection.systemLibraryIdentifier,
+                albumExists: { _ in false }
+            ) == .systemLibrary
+        )
+        #expect(throws: PhotoLibraryOutputDestinationResolutionError
+            .explicitAlbumNotFound) {
+            try PhotoLibraryOutputDestinationResolver.resolve(
+                preferredAlbumIdentifier: "missing-album",
+                albumExists: { _ in false }
+            )
+        }
+    }
 }
 #endif

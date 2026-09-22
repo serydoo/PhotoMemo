@@ -261,6 +261,25 @@ struct MemoMarkCommerceUIContractTests {
         #expect(source.contains("accessSource"))
     }
 
+    @Test("remaining records localization accepts the Int64 formatter")
+    func remainingRecordsLocalizationUsesInt64Specifier() throws {
+        for languageCode in ["en", "zh-Hans", "ja", "ko"] {
+            let resource = try sourceText(
+                "Source/MemoMark/MemoMark/\(languageCode).lproj/Localizable.strings"
+            )
+            let line = try #require(
+                resource
+                    .split(separator: "\n")
+                    .first {
+                        $0.contains("\"commerce.settings.remaining_status\"")
+                    }
+            )
+
+            #expect(line.contains("%lld"))
+            #expect(!line.contains("%@"))
+        }
+    }
+
     @Test("Settings separates First Recorder identity from current Access")
     func settingsFirstRecorderProjectionIsAccessFirst() throws {
         let source = try sourceText(

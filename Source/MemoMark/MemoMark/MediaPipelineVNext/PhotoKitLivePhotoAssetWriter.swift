@@ -573,25 +573,20 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
         _ localIdentifier: String?
     ) async throws -> PHAssetCollection? {
 
-        let normalizedIdentifier =
-            MemoMarkAlbumSelection
-            .normalizedIdentifier(
-                localIdentifier ?? ""
-            )
+        let destination = try PhotoLibraryOutputDestinationResolver.resolve(
+            preferredAlbumIdentifier: localIdentifier,
+            albumExists: { [photoLibraryGateway] identifier in
+                photoLibraryGateway.album(with: identifier)
+                    != nil
+            }
+        )
 
-        if normalizedIdentifier
-            == MemoMarkAlbumSelection
-            .systemLibraryIdentifier {
+        if destination == .systemLibrary {
             return nil
         }
 
-        if !normalizedIdentifier.isEmpty {
-            guard
-                let existingAlbum =
-                    fetchAlbum(
-                        with: normalizedIdentifier
-                    )
-            else {
+        if case .explicitAlbum(let identifier) = destination {
+            guard let existingAlbum = fetchAlbum(with: identifier) else {
                 throw LivePhotoAssetWritingError
                     .albumNotFound
             }

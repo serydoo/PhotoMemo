@@ -10,6 +10,9 @@ struct MemoryCardRegionEditorCluster: View {
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
     let presentationStyle: RecordCardPresentationStyle
 
     let visibleRegions: [CardRegion]
@@ -211,7 +214,7 @@ struct MemoryCardRegionEditorCluster: View {
         using proxy: ScrollViewProxy
     ) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            withAnimation(.easeOut(duration: 0.2)) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
                 proxy.scrollTo(region, anchor: .center)
             }
         }

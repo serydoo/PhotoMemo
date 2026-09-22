@@ -91,9 +91,55 @@ struct PhotoAlbumOption: Identifiable, Hashable {
 
     static let automatic = PhotoAlbumOption(
         id: automaticIdentifier,
-        title: "自动存入时光记",
+        title: MemoMarkLanguage.interfaceStored.localized(
+            key: "output.destination.automatic.title",
+            fallback: "Automatic — MemoMark album"
+        ),
         localIdentifier: nil
     )
+}
+
+/// The production output destination is a domain value, not an optional
+/// string. Both still-image and Live Photo writers must resolve the same
+/// destination semantics before touching PhotoKit.
+enum PhotoLibraryOutputDestination: Hashable, Sendable {
+    case systemLibrary
+    case memoMarkDefault
+    case explicitAlbum(localIdentifier: String)
+}
+
+enum PhotoLibraryOutputDestinationResolutionError: Error, Equatable {
+    case explicitAlbumNotFound
+}
+
+enum PhotoLibraryOutputDestinationResolver {
+
+    static func resolve(
+        preferredAlbumIdentifier: String?,
+        albumExists: (String) -> Bool
+    ) throws -> PhotoLibraryOutputDestination {
+        let normalizedIdentifier = MemoMarkAlbumSelection.normalizedIdentifier(
+            preferredAlbumIdentifier ?? ""
+        )
+
+        if normalizedIdentifier
+            == MemoMarkAlbumSelection.systemLibraryIdentifier {
+            return .systemLibrary
+        }
+
+        if normalizedIdentifier.isEmpty
+            || normalizedIdentifier
+                == MemoMarkAlbumSelection.automaticIdentifier {
+            return .memoMarkDefault
+        }
+
+        guard albumExists(normalizedIdentifier) else {
+            throw PhotoLibraryOutputDestinationResolutionError
+                .explicitAlbumNotFound
+        }
+
+        return .explicitAlbum(localIdentifier: normalizedIdentifier)
+    }
 }
 
 enum PhotoLibraryExportError: LocalizedError {
@@ -124,24 +170,29 @@ enum PhotoLibraryExportError: LocalizedError {
     }
 
     var errorDescription: String? {
-
+        let key: String
+        let fallback: String
         switch self {
-
         case .unauthorized:
-            return "请先允许时光记访问你的系统相册。"
-
+            key = "output.error.photo_library.permission_denied"
+            fallback = "Allow MemoMark to access your Photos library first."
         case .albumNotFound:
-            return "未找到你选择的相册，请刷新后重试。"
-
+            key = "output.error.photo_library.album_not_found"
+            fallback = "The selected album is unavailable. Choose another album."
         case .albumCreateFailed:
-            return "无法创建时光记相册。"
-
+            key = "output.error.photo_library.album_create_failed"
+            fallback = "MemoMark could not create the destination album."
         case .assetSaveFailed:
-            return "图片已生成，但写入系统相册失败。"
-
+            key = "output.error.photo_library.asset_save_failed"
+            fallback = "The photo was generated, but could not be saved to Photos."
         case .savedAssetReadbackPending:
-            return "照片正在写入系统相册，请稍后重试。"
+            key = "output.error.photo_library.readback_pending"
+            fallback = "The photo is still being written to Photos. Try again shortly."
         }
+        return MemoMarkLanguage.interfaceStored.localized(
+            key: key,
+            fallback: fallback
+        )
     }
 }
 
@@ -650,24 +701,22 @@ private extension PhotoLibraryExportService {
         _ localIdentifier: String?
     ) async throws -> PHAssetCollection? {
 
-        let normalizedIdentifier =
-            MemoMarkAlbumSelection
-            .normalizedIdentifier(
-                localIdentifier ?? ""
-            )
+        let destination = try PhotoLibraryOutputDestinationResolver.resolve(
+            preferredAlbumIdentifier: localIdentifier,
+            albumExists: { [photoLibraryGateway] identifier in
+                photoLibraryGateway.album(with: identifier)
+                    != nil
+            }
+        )
 
-        if normalizedIdentifier
-            == MemoMarkAlbumSelection
-            .systemLibraryIdentifier {
+        if destination == .systemLibrary {
             return nil
         }
 
-        if !normalizedIdentifier.isEmpty,
-           let existingAlbum =
-            fetchAlbum(
-                with: normalizedIdentifier
-            ) {
-
+        if case .explicitAlbum(let identifier) = destination {
+            guard let existingAlbum = fetchAlbum(with: identifier) else {
+                throw PhotoLibraryExportError.albumNotFound
+            }
             return existingAlbum
         }
 

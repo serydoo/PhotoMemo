@@ -424,6 +424,11 @@ struct ConfigurationCenterTopPreviewSection<
             Circle()
                 .stroke(ConfigurationUI.faintHairline)
         )
+        .frame(
+            width: ConfigurationUI.minimumInteractiveHeight,
+            height: ConfigurationUI.minimumInteractiveHeight
+        )
+        .contentShape(Rectangle())
         .help(title)
     }
 

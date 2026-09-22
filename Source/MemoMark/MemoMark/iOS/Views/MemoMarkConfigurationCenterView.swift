@@ -616,52 +616,6 @@ struct MemoMarkConfigurationCenterView: View {
         )
         .alert(
             MemoMarkLanguage.interfaceStored.localized(
-                key: "configuration.unsaved_switch.title",
-                fallback: "有未保存的修改"
-            ),
-            isPresented:
-                $rootPresentationState
-                .switchPresentation
-                .showsUnsavedPresetSwitchAlert
-        ) {
-            Button(
-                MemoMarkLanguage.interfaceStored.localized(
-                    key: "common.save_and_switch",
-                    fallback: "保存并切换"
-                )
-            ) {
-                saveCurrentConfigurationThenActivatePendingPreset()
-            }
-            Button(
-                MemoMarkLanguage.interfaceStored.localized(
-                    key: "common.discard_and_switch",
-                    fallback: "放弃修改并切换"
-                ),
-                role: .destructive
-            ) {
-                discardCurrentConfigurationThenActivatePendingPreset()
-            }
-            Button(
-                MemoMarkLanguage.interfaceStored.localized(
-                    key: "common.cancel",
-                    fallback: "取消"
-                ),
-                role: .cancel
-            ) {
-                rootPresentationState
-                    .switchPresentation
-                    .pendingMemoryPresetActivation = nil
-            }
-        } message: {
-            Text(
-                MemoMarkLanguage.interfaceStored.localized(
-                    key: "configuration.unsaved_switch.message",
-                    fallback: "请先保存当前配置，再切换到另一条配置，避免丢失刚刚的修改。"
-                )
-            )
-        }
-        .alert(
-            MemoMarkLanguage.interfaceStored.localized(
                 key: "configuration.unsaved_create.title",
                 fallback: "有未保存的修改"
             ),
@@ -699,6 +653,47 @@ struct MemoMarkConfigurationCenterView: View {
                 MemoMarkLanguage.interfaceStored.localized(
                     key: "configuration.unsaved_create.message",
                     fallback: "请先处理当前配置的修改，再新建一条独立预设。"
+                )
+            )
+        }
+        .alert(
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "configuration.unsaved_activation.title",
+                fallback: "有未保存的修改"
+            ),
+            isPresented: $rootPresentationState
+                .switchPresentation
+                .showsUnsavedPresetActivationAlert
+        ) {
+            Button(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "common.save_and_activate",
+                    fallback: "保存并使用"
+                )
+            ) {
+                saveCurrentConfigurationThenActivatePendingPreset()
+            }
+            Button(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "common.discard_and_activate",
+                    fallback: "放弃修改并使用"
+                ),
+                role: .destructive
+            ) {
+                discardCurrentConfigurationThenActivatePendingPreset()
+            }
+            Button(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "common.cancel",
+                    fallback: "取消"
+                ),
+                role: .cancel
+            ) {}
+        } message: {
+            Text(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "configuration.unsaved_activation.message",
+                    fallback: "切换到其他预设前，请选择是否保存当前配置。"
                 )
             )
         }

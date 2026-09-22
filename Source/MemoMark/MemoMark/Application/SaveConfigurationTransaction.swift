@@ -95,6 +95,126 @@ struct SaveConfigurationAggregateReceipt {
     let albumSelection: ResolvedAlbumSelection
 }
 
+/// Explicitly changes the durable configuration used by future processing.
+/// This command is intentionally independent from Open and Save: activating a
+/// persisted configuration must not serialize the editor's current draft.
+struct ActivateConfigurationCommand: Hashable {
+    let subjectID: UUID
+    let configurationID: UUID
+}
+
+struct ActivateConfigurationReceipt {
+    let candidate: ConfigurationLibraryRecord
+    let saveReceipt: ConfigurationLibrarySaveReceipt
+}
+
+enum ConfigurationActivationCommandError: Error {
+    case configurationUnavailable
+    case targetConfigurationNotFound
+    case activationProjectionUnavailable
+}
+
+@MainActor
+struct ActivateConfigurationTransaction {
+
+    private let saveConfigurationLibrary:
+        (ConfigurationLibraryRecord) async throws
+        -> ConfigurationLibrarySaveReceipt
+    private let validateActivation:
+        (ConfigurationLibraryRecord) throws -> Void
+
+    init(
+        configurationCoordinator: ConfigurationCoordinator?
+    ) {
+        self.validateActivation = { aggregate in
+            guard let configurationCoordinator else {
+                throw ConfigurationActivationCommandError
+                    .configurationUnavailable
+            }
+            do {
+                try configurationCoordinator
+                    .validateConfigurationActivation(aggregate)
+            } catch {
+                throw ConfigurationActivationCommandError
+                    .activationProjectionUnavailable
+            }
+        }
+        self.saveConfigurationLibrary = { aggregate in
+            guard let configurationCoordinator else {
+                throw ConfigurationActivationCommandError
+                    .configurationUnavailable
+            }
+            return try await configurationCoordinator
+                .saveConfigurationLibrary(aggregate)
+        }
+    }
+
+    init(
+        saveConfigurationLibrary: @escaping (
+            ConfigurationLibraryRecord
+        ) async throws -> ConfigurationLibrarySaveReceipt,
+        validateActivation: @escaping (
+            ConfigurationLibraryRecord
+        ) throws -> Void = { _ in }
+    ) {
+        self.saveConfigurationLibrary = saveConfigurationLibrary
+        self.validateActivation = validateActivation
+    }
+
+    static func candidate(
+        for command: ActivateConfigurationCommand,
+        in aggregate: ConfigurationLibraryRecord
+    ) -> ConfigurationLibraryRecord? {
+        guard aggregate.subjects.contains(where: { subjectRecord in
+            subjectRecord.subject.id == command.subjectID
+                && subjectRecord.configurations.contains(where: {
+                    $0.id == command.configurationID
+                })
+        }) else {
+            return nil
+        }
+
+        var candidate = aggregate
+        candidate.activeSubjectID = command.subjectID
+        candidate.activeConfigurationID = command.configurationID
+        return candidate
+    }
+
+    func apply(
+        _ command: ActivateConfigurationCommand,
+        in aggregate: ConfigurationLibraryRecord
+    ) async throws -> ActivateConfigurationReceipt {
+        guard let candidate = Self.candidate(
+            for: command,
+            in: aggregate
+        ) else {
+            throw ConfigurationActivationCommandError
+                .targetConfigurationNotFound
+        }
+
+        do {
+            try validateActivation(candidate)
+        } catch let error as ConfigurationActivationCommandError {
+            throw error
+        } catch {
+            throw ConfigurationActivationCommandError
+                .activationProjectionUnavailable
+        }
+
+        let receipt = try await saveConfigurationLibrary(candidate)
+        guard receipt.compatibilityProjectionFailure == nil else {
+            throw ConfigurationActivationCommandError
+                .activationProjectionUnavailable
+        }
+        var durableCandidate = candidate
+        durableCandidate.revision = receipt.revision
+        return ActivateConfigurationReceipt(
+            candidate: durableCandidate,
+            saveReceipt: receipt
+        )
+    }
+}
+
 @MainActor
 struct SaveConfigurationTransaction {
 

@@ -28,8 +28,8 @@ struct ConfigurationLibraryActionsTests {
         #expect(actions.decide(.activate(preset)) == .activate(preset))
     }
 
-    @Test("dirty configuration requires saving before activating another configuration")
-    func dirtyConfigurationRequiresSavingBeforeActivation() {
+    @Test("dirty configuration requires an explicit activation confirmation")
+    func dirtyConfigurationRequiresAnExplicitActivationConfirmation() {
         let currentID = UUID(
             uuidString: "11111111-1111-1111-1111-111111111111"
         )!
@@ -49,12 +49,12 @@ struct ConfigurationLibraryActionsTests {
             ConfigurationLibraryActions().decide(
                 .requestActivation(request)
             )
-            == .confirmSaveBeforeActivation(destination)
+            == .requiresActivationConfirmation(destination)
         )
     }
 
-    @Test("clean or already-selected configuration activates immediately")
-    func cleanOrAlreadySelectedConfigurationActivatesImmediately() {
+    @Test("clean configuration activates immediately while dirty configuration still requires confirmation")
+    func cleanConfigurationActivatesImmediatelyWhileDirtyConfigurationStillRequiresConfirmation() {
         let destination = Self.makePreset(
             id: UUID(
                 uuidString: "22222222-2222-2222-2222-222222222222"
@@ -85,8 +85,157 @@ struct ConfigurationLibraryActionsTests {
                     )
                 )
             )
-            == .activate(destination)
+            == .requiresActivationConfirmation(destination)
         )
+    }
+
+    @Test("activation transaction changes only the durable active configuration")
+    func activationTransactionChangesOnlyTheDurableActiveConfiguration() async throws {
+        let subject = Self.makeSubject()
+        let activeID = UUID(
+            uuidString: "11111111-1111-1111-1111-111111111111"
+        )!
+        let destinationID = UUID(
+            uuidString: "22222222-2222-2222-2222-222222222222"
+        )!
+        let aggregate = Self.makeAggregate(
+            subject: subject,
+            configurations: [
+                Self.makeConfiguration(id: activeID, title: "当前"),
+                Self.makeConfiguration(id: destinationID, title: "目标")
+            ],
+            activeConfigurationID: activeID
+        )
+        var savedAggregate: ConfigurationLibraryRecord?
+        let transaction = ActivateConfigurationTransaction(
+            saveConfigurationLibrary: { candidate in
+                savedAggregate = candidate
+                return ConfigurationLibrarySaveReceipt(
+                    revision: 9,
+                    subjectID: subject.id,
+                    configurationID: destinationID,
+                    configurationRevision: 2,
+                    compatibilityProjectionFailure: nil
+                )
+            }
+        )
+
+        let receipt = try await transaction.apply(
+            ActivateConfigurationCommand(
+                subjectID: subject.id,
+                configurationID: destinationID
+            ),
+            in: aggregate
+        )
+
+        #expect(savedAggregate?.activeSubjectID == subject.id)
+        #expect(savedAggregate?.activeConfigurationID == destinationID)
+        #expect(receipt.candidate.revision == 9)
+        #expect(
+            receipt.candidate.subjects
+                == aggregate.subjects
+        )
+    }
+
+    @Test("activation preflight failure does not save or change the active configuration")
+    func activationPreflightFailureDoesNotSave() async throws {
+        let subject = Self.makeSubject()
+        let activeID = UUID(
+            uuidString: "11111111-1111-1111-1111-111111111111"
+        )!
+        let destinationID = UUID(
+            uuidString: "22222222-2222-2222-2222-222222222222"
+        )!
+        let aggregate = Self.makeAggregate(
+            subject: subject,
+            configurations: [
+                Self.makeConfiguration(id: activeID, title: "当前"),
+                Self.makeConfiguration(id: destinationID, title: "目标")
+            ],
+            activeConfigurationID: activeID
+        )
+        var saveCalled = false
+        let transaction = ActivateConfigurationTransaction(
+            saveConfigurationLibrary: { _ in
+                saveCalled = true
+                return ConfigurationLibrarySaveReceipt(
+                    revision: 9,
+                    subjectID: subject.id,
+                    configurationID: destinationID,
+                    configurationRevision: 2,
+                    compatibilityProjectionFailure: nil
+                )
+            },
+            validateActivation: { _ in
+                throw ConfigurationActivationCommandError
+                    .activationProjectionUnavailable
+            }
+        )
+
+        do {
+            try await transaction.apply(
+                ActivateConfigurationCommand(
+                    subjectID: subject.id,
+                    configurationID: destinationID
+                ),
+                in: aggregate
+            )
+            Issue.record("Activation should fail during projection preflight.")
+        } catch ConfigurationActivationCommandError
+            .activationProjectionUnavailable {
+            // Expected: the application command must not reach persistence.
+        } catch {
+            Issue.record("Unexpected activation error: \(error)")
+        }
+        #expect(!saveCalled)
+        #expect(aggregate.activeConfigurationID == activeID)
+    }
+
+    @Test("activation receipt with a projection warning is not reported as active")
+    func activationReceiptWarningIsNotReportedAsActive() async throws {
+        let subject = Self.makeSubject()
+        let activeID = UUID(
+            uuidString: "11111111-1111-1111-1111-111111111111"
+        )!
+        let destinationID = UUID(
+            uuidString: "22222222-2222-2222-2222-222222222222"
+        )!
+        let aggregate = Self.makeAggregate(
+            subject: subject,
+            configurations: [
+                Self.makeConfiguration(id: activeID, title: "当前"),
+                Self.makeConfiguration(id: destinationID, title: "目标")
+            ],
+            activeConfigurationID: activeID
+        )
+        let transaction = ActivateConfigurationTransaction(
+            saveConfigurationLibrary: { _ in
+                ConfigurationLibrarySaveReceipt(
+                    revision: 9,
+                    subjectID: subject.id,
+                    configurationID: destinationID,
+                    configurationRevision: 2,
+                    compatibilityProjectionFailure:
+                        .init(underlyingDescription: "projection failed")
+                )
+            }
+        )
+
+        do {
+            try await transaction.apply(
+                ActivateConfigurationCommand(
+                    subjectID: subject.id,
+                    configurationID: destinationID
+                ),
+                in: aggregate
+            )
+            Issue.record("Activation should reject a projection warning.")
+        } catch ConfigurationActivationCommandError
+            .activationProjectionUnavailable {
+            // Expected: a warning is not an activation receipt.
+        } catch {
+            Issue.record("Unexpected activation error: \(error)")
+        }
     }
 
     @Test("begin rename can refresh its draft while already editing")

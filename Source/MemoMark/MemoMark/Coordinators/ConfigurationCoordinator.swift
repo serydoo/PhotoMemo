@@ -398,6 +398,31 @@ final class ConfigurationCoordinator {
         }
     }
 
+    func validateConfigurationActivation(
+        _ aggregate: ConfigurationLibraryRecord
+    ) throws {
+        try settingsRepository
+            .validateConfigurationLibraryProjection(aggregate)
+
+        guard let configurationID = aggregate.activeConfigurationID,
+              let configuration = aggregate.subjects.lazy
+                .flatMap(\.configurations)
+                .first(where: { $0.id == configurationID })
+        else {
+            throw ConfigurationLibraryPersistenceError
+                .missingActiveSelection
+        }
+
+        let snapshot = try ProductionConfigurationSnapshotFactory.resolve(
+            reference: .init(
+                configurationID: configurationID,
+                revision: configuration.revision
+            ),
+            from: aggregate
+        )
+        try ProductionConfigurationSnapshotContract.validate(snapshot)
+    }
+
     func loadConfigurationLibrary()
     async throws -> ConfigurationLibraryLoadReceipt {
         try await settingsRepository

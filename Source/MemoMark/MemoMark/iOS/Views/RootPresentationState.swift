@@ -17,9 +17,9 @@ struct ConfigurationRenamePresentationState {
 
 struct ConfigurationSwitchPresentationState {
     var showsConfigurationRequiredAlert = false
-    var pendingMemoryPresetActivation: MemoryPreset?
-    var showsUnsavedPresetSwitchAlert = false
     var showsUnsavedPresetCreationAlert = false
+    var showsUnsavedPresetActivationAlert = false
+    var pendingMemoryPresetActivation: MemoryPreset?
     var pendingSubjectSelectionID: UUID?
     var showsUnsavedSubjectSwitchAlert = false
 }

@@ -79,6 +79,15 @@ struct ConfigurationProjectionService {
         return projection
     }
 
+    /// Validates the compatibility projection without mutating legacy stores.
+    /// Activate uses this preflight so a projection-invalid candidate cannot
+    /// become the durable processing default.
+    func validate(
+        _ aggregate: ConfigurationLibraryRecord
+    ) throws {
+        _ = try makeProjection(from: aggregate)
+    }
+
     func buildBatchConfigurationSnapshot(
         input: ConfigurationSnapshotProjectionInput,
         durableAggregate: ConfigurationLibraryRecord?

@@ -5,12 +5,11 @@ import Testing
 @Suite("V1 adaptive page layout")
 struct AdaptivePageLayoutTests {
 
-    @Test("regular-height iPhone keeps the bottom tab bar")
-    func regularHeightIPhoneKeepsBottomTabBar() {
+    @Test("compact width and regular height keeps the bottom tab bar")
+    func compactWidthAndRegularHeightKeepsBottomTabBar() {
         #expect(
             AdaptivePageLayout
                 .navigationStyle(
-                    isPad: false,
                     hasRegularHorizontalSizeClass: false,
                     hasCompactVerticalSizeClass: false
                 )
@@ -18,12 +17,11 @@ struct AdaptivePageLayoutTests {
         )
     }
 
-    @Test("compact-height iPhone moves navigation to a compact sidebar")
-    func compactHeightIPhoneUsesCompactSidebar() {
+    @Test("regular width and compact height uses a compact sidebar")
+    func regularWidthAndCompactHeightUsesCompactSidebar() {
         #expect(
             AdaptivePageLayout
                 .navigationStyle(
-                    isPad: false,
                     hasRegularHorizontalSizeClass: true,
                     hasCompactVerticalSizeClass: true
                 )
@@ -31,38 +29,23 @@ struct AdaptivePageLayoutTests {
         )
     }
 
-    @Test("regular-width iPad uses the full sidebar")
-    func regularWidthIPadUsesRegularSidebar() {
+    @Test("regular width and regular height uses the full sidebar")
+    func regularWidthAndRegularHeightUsesRegularSidebar() {
         #expect(
             AdaptivePageLayout
                 .navigationStyle(
-                    isPad: true,
                     hasRegularHorizontalSizeClass: true,
-                    hasCompactVerticalSizeClass: true
+                    hasCompactVerticalSizeClass: false
                 )
             == .regularSidebar
         )
     }
 
-    @Test("regular-height compact iPad window keeps the bottom tab bar")
-    func regularHeightCompactIPadKeepsBottomTabBar() {
+    @Test("compact width and compact height uses a compact sidebar")
+    func compactWidthAndCompactHeightUsesCompactSidebar() {
         #expect(
             AdaptivePageLayout
                 .navigationStyle(
-                    isPad: true,
-                    hasRegularHorizontalSizeClass: false,
-                    hasCompactVerticalSizeClass: false
-                )
-            == .bottomTabBar
-        )
-    }
-
-    @Test("short compact iPad window uses the compact sidebar")
-    func shortCompactIPadUsesCompactSidebar() {
-        #expect(
-            AdaptivePageLayout
-                .navigationStyle(
-                    isPad: true,
                     hasRegularHorizontalSizeClass: false,
                     hasCompactVerticalSizeClass: true
                 )
@@ -96,6 +79,28 @@ struct AdaptivePageLayoutTests {
                     for: .regularSidebar
                 )
             == 26
+        )
+    }
+
+    @Test("regular workspace requires regular width and height")
+    func regularWorkspaceRequiresRegularWidthAndHeight() {
+        #expect(
+            AdaptivePageLayout.usesRegularWorkspace(
+                hasRegularHorizontalSizeClass: true,
+                hasRegularVerticalSizeClass: true
+            )
+        )
+        #expect(
+            !AdaptivePageLayout.usesRegularWorkspace(
+                hasRegularHorizontalSizeClass: false,
+                hasRegularVerticalSizeClass: true
+            )
+        )
+        #expect(
+            !AdaptivePageLayout.usesRegularWorkspace(
+                hasRegularHorizontalSizeClass: true,
+                hasRegularVerticalSizeClass: false
+            )
         )
     }
 }

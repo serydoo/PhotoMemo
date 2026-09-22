@@ -13,6 +13,12 @@ struct ConfigurationPageSurface<
     private var interfaceLanguagePreferenceRawValue =
         MemoMarkInterfaceLanguagePreference.system.rawValue
 
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
+
+    @Environment(\.verticalSizeClass)
+    private var verticalSizeClass
+
     let previewPinProgress: CGFloat
     let editorRevealProgress: CGFloat
     let configurationStatus: ConfigurationPersistenceStatus
@@ -84,19 +90,46 @@ struct ConfigurationPageSurface<
         } editorContent: {
             editorContent
         } accessoryContent: {
-            ConfigurationActionFooter(
-                configurationStatus: configurationStatus,
-                isSavingConfiguration: isSavingConfiguration,
-                isSelectedProcessingDefault: isSelectedProcessingDefault,
-                onSaveCurrentConfiguration: onSaveCurrentConfiguration,
-                onSetAsProcessingDefault: onSetAsProcessingDefault,
-                onCreateConfiguration: onCreateConfiguration,
-                onResetConfiguration: onResetConfiguration,
-                onDeleteConfiguration: onDeleteConfiguration
-            )
+            if usesToolbarConfigurationActions {
+                EmptyView()
+            } else {
+                ConfigurationActionFooter(
+                    configurationStatus: configurationStatus,
+                    isSavingConfiguration: isSavingConfiguration,
+                    isSelectedProcessingDefault: isSelectedProcessingDefault,
+                    onSaveCurrentConfiguration: onSaveCurrentConfiguration,
+                    onSetAsProcessingDefault: onSetAsProcessingDefault,
+                    onCreateConfiguration: onCreateConfiguration,
+                    onResetConfiguration: onResetConfiguration,
+                    onDeleteConfiguration: onDeleteConfiguration
+                )
+            }
         }
         .navigationTitle("")
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(usesToolbarConfigurationActions ? .visible : .hidden, for: .navigationBar)
+        .toolbar {
+            if usesToolbarConfigurationActions {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    ConfigurationActionToolbar(
+                        configurationStatus: configurationStatus,
+                        isSavingConfiguration: isSavingConfiguration,
+                        isSelectedProcessingDefault: isSelectedProcessingDefault,
+                        onSaveCurrentConfiguration: onSaveCurrentConfiguration,
+                        onSetAsProcessingDefault: onSetAsProcessingDefault,
+                        onCreateConfiguration: onCreateConfiguration,
+                        onResetConfiguration: onResetConfiguration,
+                        onDeleteConfiguration: onDeleteConfiguration
+                    )
+                }
+            }
+        }
+    }
+
+    private var usesToolbarConfigurationActions: Bool {
+        AdaptivePageLayout.usesRegularWorkspace(
+            hasRegularHorizontalSizeClass: horizontalSizeClass == .regular,
+            hasRegularVerticalSizeClass: verticalSizeClass == .regular
+        )
     }
 
     private var interfaceLanguage: MemoMarkLanguage {

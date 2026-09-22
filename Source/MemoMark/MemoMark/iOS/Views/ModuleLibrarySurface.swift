@@ -4,8 +4,8 @@ import UIKit
 
 struct ModuleLibrarySurface: View {
 
-    static let fixedHeight: CGFloat = 84
-    static let accessibilityHeight: CGFloat = 108
+    static let fixedHeight: CGFloat = 108
+    static let accessibilityHeight: CGFloat = 132
 
     static func height(for dynamicTypeSize: DynamicTypeSize) -> CGFloat {
         dynamicTypeSize.isAccessibilitySize
@@ -63,7 +63,10 @@ struct ModuleLibrarySurface: View {
                                 }
                             }
                         }
-                        .frame(height: 30, alignment: .top)
+                        .frame(
+                            height: ConfigurationUI.minimumInteractiveHeight,
+                            alignment: .top
+                        )
                         .overlay(alignment: .trailing) {
                             if group.modules.count > 4 {
                                 LinearGradient(
@@ -153,6 +156,8 @@ struct ModuleLibrarySurface: View {
             )
         }
         .buttonStyle(.plain)
+        .frame(minHeight: ConfigurationUI.minimumInteractiveHeight)
+        .contentShape(Rectangle())
         .accessibilityLabel(
             String(
                 format: interfaceLanguage.localized(

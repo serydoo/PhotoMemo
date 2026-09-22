@@ -102,7 +102,7 @@ enum MemoMarkLanguage: String, Codable, CaseIterable, Hashable {
         }
     }
 
-    var locale: Locale {
+    nonisolated var locale: Locale {
         switch self {
         case .simplifiedChinese:
             return Locale(identifier: "zh_CN")

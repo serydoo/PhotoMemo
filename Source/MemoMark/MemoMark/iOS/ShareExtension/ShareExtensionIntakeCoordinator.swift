@@ -166,7 +166,9 @@ final class ShareExtensionIntakeCoordinator {
         for error: MemoMarkShareExtensionError
     ) -> String {
         if let diagnosticSummary =
-            error.diagnosticSummaryLine {
+            error.diagnosticSummaryLine(
+                for: .interfaceStored
+            ) {
             MemoMarkShareIntakeLog.error(
                 "User-facing intake failure detail: \(diagnosticSummary)"
             )

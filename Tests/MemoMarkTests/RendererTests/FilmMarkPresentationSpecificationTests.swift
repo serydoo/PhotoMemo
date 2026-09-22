@@ -373,6 +373,24 @@ struct FilmMarkPresentationSpecificationTests {
         #expect(presentation.content.primaryOutput == "2026/08/16 21:29")
     }
 
+    @Test("production FilmMark rasterization fails closed when its context is unavailable")
+    func productionFilmMarkRasterizationFailsClosedWhenContextIsUnavailable() {
+        let presentation = FilmMarkResolvedPresentation(
+            canvasSize: CGSize(width: 1_200, height: 450),
+            content: .init(primaryOutput: "2026/08/16 21:29"),
+            appearance: .init(fontSize: .standard),
+            measuredContentSize: CGSize(width: 360, height: 54),
+            placement: .init(anchor: .bottomRight)
+        )
+
+        #expect(throws: FilmMarkRasterizationError.contextUnavailable) {
+            try FilmMarkRasterRenderer.render(
+                presentation: presentation,
+                contextFactory: { _, _, _ in nil }
+            )
+        }
+    }
+
     @Test("FM export overlay keeps the same top-leading origin as preview")
     func exportOverlayKeepsTopLeadingOrigin() throws {
         let source = try Self.source(

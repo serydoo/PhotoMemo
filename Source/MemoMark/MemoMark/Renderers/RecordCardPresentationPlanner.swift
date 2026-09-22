@@ -164,16 +164,15 @@ struct RecordCardPresentationPlanner {
         guard !resolvedPresentation.layout.isContentOverflowingSafeArea else {
             throw RecordCardExportError.renderFailed
         }
-        let overlay = FilmMarkCardOverlayLayerRenderer(
-            presentation: resolvedPresentation
-        )
-        .frame(width: outputSize.width, height: outputSize.height)
-        let renderer = ImageRenderer(content: overlay)
-        renderer.scale = 1
-        renderer.proposedSize = .init(outputSize)
-        renderer.isOpaque = false
-
-        guard let overlayImage = renderer.cgImage else {
+        // Production uses the throwing CoreText raster path directly. The
+        // SwiftUI layer remains a preview adapter and may degrade, but a
+        // missing context/font/image must never become a successful export.
+        let overlayImage: CGImage
+        do {
+            overlayImage = try FilmMarkRasterRenderer.render(
+                presentation: resolvedPresentation
+            )
+        } catch {
             throw RecordCardExportError.renderFailed
         }
 

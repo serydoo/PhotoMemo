@@ -34,6 +34,9 @@ struct SubjectHomeEntryContent<StatisticsStrip: View>: View {
 
 private struct SubjectPrimaryCard<StatisticsStrip: View>: View {
 
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
     let summary:
         HomeSubjectSummaryProjection
 
@@ -66,10 +69,15 @@ private struct SubjectPrimaryCard<StatisticsStrip: View>: View {
         .accessibilityIdentifier("subject-home-entry")
     }
 
+    @ViewBuilder
     private var responsiveCardContent: some View {
-        ViewThatFits(in: .horizontal) {
-            regularCardContent
+        if dynamicTypeSize.isAccessibilitySize {
             compactCardContent
+        } else {
+            ViewThatFits(in: .horizontal) {
+                regularCardContent
+                compactCardContent
+            }
         }
     }
 
@@ -112,7 +120,8 @@ private struct SubjectPrimaryCard<StatisticsStrip: View>: View {
         Text(summary.title)
             .font(.title3.weight(.semibold))
             .foregroundStyle(.primary)
-            .lineLimit(1)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func subjectAvatar(
@@ -149,18 +158,28 @@ private struct SubjectPrimaryCard<StatisticsStrip: View>: View {
         )
     }
 
+    @ViewBuilder
     private var subjectMetaRow: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                subjectSubtitleText
-                Text("·")
-                    .foregroundStyle(.tertiary)
-                subjectAnchorCountText
-            }
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    subjectSubtitleText
+                    subjectAnchorCountText
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        subjectSubtitleText
+                        Text("·")
+                            .foregroundStyle(.tertiary)
+                        subjectAnchorCountText
+                    }
 
-            VStack(alignment: .leading, spacing: 6) {
-                subjectSubtitleText
-                subjectAnchorCountText
+                    VStack(alignment: .leading, spacing: 6) {
+                        subjectSubtitleText
+                        subjectAnchorCountText
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -170,16 +189,16 @@ private struct SubjectPrimaryCard<StatisticsStrip: View>: View {
         Text(summary.subtitle)
             .font(.subheadline)
             .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.85)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private var subjectAnchorCountText: some View {
         return Text(anchorCountText)
             .font(.subheadline.weight(.medium))
             .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.85)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+            .fixedSize(horizontal: false, vertical: true)
             .accessibilityLabel(anchorCountText)
     }
 

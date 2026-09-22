@@ -6,9 +6,9 @@ struct ActiveLocalizationUsageAuditTests {
 
     private let languageCodes = ["en", "zh-Hans", "ja", "ko"]
 
-    // This is the current iOS Main App surface allowlist. It intentionally
-    // excludes Share Extension, Widget, macOS-only views, and coordinators
-    // whose strings are developer diagnostics rather than UI copy.
+    // This allowlist covers user-visible Main App, macOS, Share Extension,
+    // notification, service, and coordinator paths. Developer-only logging
+    // remains outside the scan; user-facing diagnostic summaries do not.
     private let activeSurfaceFiles = [
         "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift",
         "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterActiveRegionEditorSection.swift",
@@ -39,11 +39,17 @@ struct ActiveLocalizationUsageAuditTests {
         "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift",
         "Source/MemoMark/MemoMark/iOS/Views/WelcomeAndSettingsPresentationModifier.swift",
         "Source/MemoMark/MemoMark/iOS/Views/WelcomePresentation.swift",
-        "Source/MemoMark/MemoMark/Services/MemoMarkCommerceStore.swift"
+        "Source/MemoMark/MemoMark/Services/MemoMarkCommerceStore.swift",
+        "Source/MemoMark/MemoMark/Services/BatchNotificationService.swift",
+        "Source/MemoMark/MemoMark/Services/PhotoLibraryExportService.swift",
+        "Source/MemoMark/MemoMark/ConfigurationCenter/MacConfigurationCenterPage.swift",
+        "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift",
+        "Source/MemoMark/MemoMark/iOS/ShareExtension/MemoMarkShareExtensionIntakeService.swift",
+        "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionIntakeCoordinator.swift"
     ]
 
     private let keyPattern = try! NSRegularExpression(
-        pattern: #""((?:common|settings|configuration|welcome|processing|task|commerce|output|home)\.[A-Za-z0-9_.]+)""#
+        pattern: #""((?:common|settings|configuration|welcome|processing|task|commerce|output|home|notification|share|mac|persistSharedItems|progress)\.[A-Za-z0-9_.]+)""#
     )
 
     private let intentionalEnglishKeys: Set<String> = [

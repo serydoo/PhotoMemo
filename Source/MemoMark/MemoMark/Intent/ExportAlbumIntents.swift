@@ -20,26 +20,50 @@ enum ConfigurationOutputTarget:
     var title: String {
         switch self {
         case .automatic:
-            return "自动"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.destination.target.automatic",
+                fallback: "Automatic"
+            )
         case .applePhotos:
-            return "系统图库"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.destination.target.apple_photos",
+                fallback: "Apple Photos Library"
+            )
         case .existingAlbum:
-            return "已有相册"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.destination.target.existing_album",
+                fallback: "Existing Album"
+            )
         case .newAlbum:
-            return "新建相册"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.destination.target.new_album",
+                fallback: "New Album"
+            )
         }
     }
 
     var note: String {
         switch self {
         case .automatic:
-            return "不选择时，生成照片会进入系统图库，并自动归入时光记相册。"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.destination.target.automatic.note",
+                fallback: "Generated photos go to the Photos library and the MemoMark album."
+            )
         case .applePhotos:
-            return "生成照片只写入系统图库，不额外加入时光记指定相册。"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.destination.target.apple_photos.note",
+                fallback: "Generated photos go only to the Photos library."
+            )
         case .existingAlbum:
-            return "生成照片会写入系统图库，并加入选中的相册。"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.destination.target.existing_album.note",
+                fallback: "Generated photos go to the Photos library and the selected album."
+            )
         case .newAlbum:
-            return "保存配置时会创建或复用这个相册。"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.destination.target.new_album.note",
+                fallback: "The album is created or reused when you save this configuration."
+            )
         }
     }
 }
@@ -61,18 +85,30 @@ enum MediaOutputMode:
     var title: String {
         switch self {
         case .originalFormat:
-            return "原格式"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.result.mode.original",
+                fallback: "Original Format"
+            )
         case .staticImage:
-            return "静态图片"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.result.mode.static",
+                fallback: "Still Image"
+            )
         }
     }
 
     var note: String {
         switch self {
         case .originalFormat:
-            return "普通照片按现有规则输出；Live Photo 会保留动态，并自动生成可配对的照片与视频资源。"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.result.mode.original.note",
+                fallback: "Still photos keep their format; Live Photos keep their motion."
+            )
         case .staticImage:
-            return "Live Photo 只输出加边框后的静态图片；普通照片继续按现有静态图片规则处理。"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "output.result.mode.static.note",
+                fallback: "Live Photos become still images; still photos keep the current card style."
+            )
         }
     }
 
@@ -173,7 +209,10 @@ struct ResolveOutputAlbumSelectionIntent:
                     identifier:
                         MemoMarkAlbumSelection
                         .systemLibraryIdentifier,
-                    title: "系统图库",
+                    title: MemoMarkLanguage.interfaceStored.localized(
+                        key: "output.destination.target.apple_photos",
+                        fallback: "Apple Photos Library"
+                    ),
                     pickerSelectionIdentifier:
                         nil
                 )
@@ -188,21 +227,19 @@ struct ResolveOutputAlbumSelectionIntent:
                     request
                     .availableAlbums
                     .first(where: {
-                        $0.id
+                    $0.id
                         == request
                         .selectedExistingAlbumIdentifier
                     })
             else {
-                return .success(
-                    ResolvedAlbumSelection(
-                        identifier:
-                            MemoMarkAlbumSelection
-                            .automaticIdentifier,
-                        title:
-                            MemoMarkAlbumSelection
-                            .defaultAlbumTitle,
-                        pickerSelectionIdentifier:
-                            nil
+                return .failure(
+                    MemoMarkError(
+                        code: .photoLibrarySaveFailed,
+                        message: MemoMarkLanguage.interfaceStored.localized(
+                            key: "output.destination.album_unavailable",
+                            fallback: "你选择的相册已不可用，请重新选择。"
+                        ),
+                        diagnosticCode: "photoLibrary.album.notFound"
                     )
                 )
             }

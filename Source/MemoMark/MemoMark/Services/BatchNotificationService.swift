@@ -8,14 +8,16 @@ enum BatchNotificationMessageFormatter {
         completedCount: Int,
         failedCount: Int,
         finishedAt: Date,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        language: MemoMarkLanguage = .simplifiedChinese
     ) -> String {
 
         finishedTitle(
             completedCount: completedCount,
             needsAttentionCount: failedCount,
             finishedAt: finishedAt,
-            calendar: calendar
+            calendar: calendar,
+            language: language
         )
     }
 
@@ -24,7 +26,8 @@ enum BatchNotificationMessageFormatter {
         completedCount: Int,
         needsAttentionCount: Int,
         finishedAt: Date,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        language: MemoMarkLanguage = .simplifiedChinese
     ) -> String {
 
         let timeText =
@@ -34,14 +37,39 @@ enum BatchNotificationMessageFormatter {
             )
 
         if needsAttentionCount == 0 {
-            return "\(timeText) 处理 \(completedCount) 张照片已完成"
+            return String(
+                format: language.localized(
+                    key: "notification.batch.finished.complete",
+                    fallback: "%@ Processed %d Photos"
+                ),
+                locale: language.locale,
+                timeText,
+                completedCount
+            )
         }
 
         if completedCount == 0 {
-            return "\(timeText) \(needsAttentionCount) 张照片需处理"
+            return String(
+                format: language.localized(
+                    key: "notification.batch.finished.attention_only",
+                    fallback: "%@ %d Photos Need Attention"
+                ),
+                locale: language.locale,
+                timeText,
+                needsAttentionCount
+            )
         }
 
-        return "\(timeText) 已完成 \(completedCount) 张，\(needsAttentionCount) 张需处理"
+        return String(
+            format: language.localized(
+                key: "notification.batch.finished.partial",
+                fallback: "%@ %d Complete, %d Need Attention"
+            ),
+            locale: language.locale,
+            timeText,
+            completedCount,
+            needsAttentionCount
+        )
     }
 
     nonisolated
@@ -49,14 +77,16 @@ enum BatchNotificationMessageFormatter {
         completedCount: Int,
         failedCount: Int,
         totalCount: Int,
-        savedAlbumName: String? = nil
+        savedAlbumName: String? = nil,
+        language: MemoMarkLanguage = .simplifiedChinese
     ) -> String {
 
         finishedMessage(
             completedCount: completedCount,
             needsAttentionCount: failedCount,
             totalCount: totalCount,
-            savedAlbumName: savedAlbumName
+            savedAlbumName: savedAlbumName,
+            language: language
         )
     }
 
@@ -65,20 +95,34 @@ enum BatchNotificationMessageFormatter {
         completedCount: Int,
         needsAttentionCount: Int,
         totalCount: Int,
-        savedAlbumName: String? = nil
+        savedAlbumName: String? = nil,
+        language: MemoMarkLanguage = .simplifiedChinese
     ) -> String {
 
         if needsAttentionCount == 0 {
             return savedAlbumName
                 .flatMap(normalizedAlbumName)
                 .map {
-                    "已保存到「\($0)」。"
+                    String(
+                        format: language.localized(
+                            key: "notification.batch.finished.saved_to_album",
+                            fallback: "Saved to \"%@\"."
+                        ),
+                        locale: language.locale,
+                        $0
+                    )
                 }
-                ?? "时光记已生成新的照片。"
+                ?? language.localized(
+                    key: "notification.batch.finished.generated",
+                    fallback: "MemoMark generated new photos."
+                )
         }
 
         if completedCount == 0 {
-            return "请回到时光记查看原因，并按提示继续处理。"
+            return language.localized(
+                key: "notification.batch.finished.return_to_app",
+                fallback: "Return to MemoMark to review the reason and continue."
+            )
         }
 
         if Double(completedCount)
@@ -87,19 +131,51 @@ enum BatchNotificationMessageFormatter {
             if let albumName =
                 savedAlbumName
                 .flatMap(normalizedAlbumName) {
-                return "大部分结果已保存到「\(albumName)」，剩余 \(needsAttentionCount) 张可回到时光记查看。"
+                return String(
+                    format: language.localized(
+                        key: "notification.batch.finished.mostly_saved_to_album",
+                        fallback: "Most results were saved to \"%@\". %d still need attention in MemoMark."
+                    ),
+                    locale: language.locale,
+                    albumName,
+                    needsAttentionCount
+                )
             }
 
-            return "大部分结果已经完成，剩余 \(needsAttentionCount) 张可回到时光记查看。"
+            return String(
+                format: language.localized(
+                    key: "notification.batch.finished.mostly_saved",
+                    fallback: "Most results are complete. %d still need attention in MemoMark."
+                ),
+                locale: language.locale,
+                needsAttentionCount
+            )
         }
 
         if let albumName =
             savedAlbumName
             .flatMap(normalizedAlbumName) {
-            return "已保存 \(completedCount) 张到「\(albumName)」，另有 \(needsAttentionCount) 张需处理。"
+            return String(
+                format: language.localized(
+                    key: "notification.batch.finished.partial_saved_to_album",
+                    fallback: "%d saved to \"%@\". %d still need attention."
+                ),
+                locale: language.locale,
+                completedCount,
+                albumName,
+                needsAttentionCount
+            )
         }
 
-        return "已完成 \(completedCount) 张，仍有 \(needsAttentionCount) 张需处理。"
+        return String(
+            format: language.localized(
+                key: "notification.batch.finished.partial_saved",
+                fallback: "%d complete. %d still need attention."
+            ),
+            locale: language.locale,
+            completedCount,
+            needsAttentionCount
+        )
     }
 
     nonisolated
@@ -173,7 +249,10 @@ final class BatchNotificationService:
             UNMutableNotificationContent()
 
         content.title =
-            "时光记已接收任务"
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "notification.batch.queued.title",
+                fallback: "MemoMark received a task"
+            )
         content.body =
             queuedMessage(
                 for: job
@@ -249,7 +328,8 @@ final class BatchNotificationService:
                 savedAlbumName:
                     savedAlbumName(
                         for: job
-                    )
+                    ),
+                language: MemoMarkLanguage.interfaceStored
             )
         content.sound = .default
         content.attachments =
@@ -299,7 +379,10 @@ final class BatchNotificationService:
             UNMutableNotificationContent()
 
         content.title =
-            "时光记正在后台处理"
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "notification.batch.progress.title",
+                fallback: "MemoMark is processing in the background"
+            )
         content.body =
             progressMessage(
                 for: job,
@@ -579,7 +662,10 @@ private extension BatchNotificationService {
         }
 
         if albumNames.count > 1 {
-            return "多个相册"
+            return MemoMarkLanguage.interfaceStored.localized(
+                key: "notification.batch.multiple_albums",
+                fallback: "Multiple Albums"
+            )
         }
 
         return nil
@@ -588,6 +674,8 @@ private extension BatchNotificationService {
     func queuedMessage(
         for job: BatchJob
     ) -> String {
+
+        let language = MemoMarkLanguage.interfaceStored
 
         let templateName =
             job.configuration.template.displayName(
@@ -603,7 +691,14 @@ private extension BatchNotificationService {
             ?? ""
 
         let summary =
-            "已接收 \(job.totalTaskCount) 张照片，时光记会按当前配置继续处理。"
+            String(
+                format: language.localized(
+                    key: "notification.batch.queued.message",
+                    fallback: "Received %d photos. MemoMark will continue with the current configuration."
+                ),
+                locale: language.locale,
+                job.totalTaskCount
+            )
 
         let intakeWarningSummary =
             intakeWarningSummary(
@@ -618,15 +713,23 @@ private extension BatchNotificationService {
 
         if !templateName.isEmpty,
            !anchorName.isEmpty {
-            return "\(enrichedSummary) 当前预设：\(templateName)，时间点：\(anchorName)。"
+            return "\(enrichedSummary) " + String(
+                format: language.localized(
+                    key: "notification.batch.queued.preset_and_anchor",
+                    fallback: "Preset: %@. Time anchor: %@."
+                ),
+                locale: language.locale,
+                templateName,
+                anchorName
+            )
         }
 
         if !templateName.isEmpty {
-            return "\(enrichedSummary) 当前预设：\(templateName)。"
+            return "\(enrichedSummary) \(String(format: language.localized(key: "notification.batch.queued.preset", fallback: "Preset: %@."), locale: language.locale, templateName))"
         }
 
         if !anchorName.isEmpty {
-            return "\(enrichedSummary) 时间点：\(anchorName)。"
+            return "\(enrichedSummary) \(String(format: language.localized(key: "notification.batch.queued.anchor", fallback: "Time anchor: %@."), locale: language.locale, anchorName))"
         }
 
         return enrichedSummary
@@ -646,13 +749,27 @@ private extension BatchNotificationService {
 
         if intakeSummary.skippedCount > 0 {
             parts.append(
-                "另有 \(intakeSummary.skippedCount) 张已跳过"
+                String(
+                    format: MemoMarkLanguage.interfaceStored.localized(
+                        key: "notification.batch.intake_skipped",
+                        fallback: "%d skipped"
+                    ),
+                    locale: MemoMarkLanguage.interfaceStored.locale,
+                    intakeSummary.skippedCount
+                )
             )
         }
 
         if intakeSummary.failedCount > 0 {
             parts.append(
-                "\(intakeSummary.failedCount) 张未能导入"
+                String(
+                    format: MemoMarkLanguage.interfaceStored.localized(
+                        key: "notification.batch.intake_failed",
+                        fallback: "%d could not be imported"
+                    ),
+                    locale: MemoMarkLanguage.interfaceStored.locale,
+                    intakeSummary.failedCount
+                )
             )
         }
 
@@ -660,7 +777,18 @@ private extension BatchNotificationService {
             return nil
         }
 
-        return " 本次分享中，\(parts.joined(separator: "，"))。"
+        let language = MemoMarkLanguage.interfaceStored
+        return " " + String(
+            format: language.localized(
+                key: "notification.batch.intake_warning",
+                fallback: "In this share, %@."
+            ),
+            locale: language.locale,
+            parts.joined(separator: language.localized(
+                key: "notification.batch.list_separator",
+                fallback: ", "
+            ))
+        )
     }
 
     func progressMessage(
@@ -678,39 +806,87 @@ private extension BatchNotificationService {
             job.runningTaskCount
 
         let stageTitle: String
+        let language = MemoMarkLanguage.interfaceStored
 
         switch stage {
 
         case "raw":
-            stageTitle = "正在准备 RAW 照片"
+            stageTitle = language.localized(
+                key: "notification.batch.progress.raw",
+                fallback: "preparing RAW photos"
+            )
 
         case "imported":
-            stageTitle = "已开始读取原图和 EXIF"
+            stageTitle = language.localized(
+                key: "notification.batch.progress.imported",
+                fallback: "reading originals and EXIF"
+            )
 
         case "rendering":
-            stageTitle = "正在生成记忆卡片图片"
+            stageTitle = language.localized(
+                key: "notification.batch.progress.rendering",
+                fallback: "rendering memory cards"
+            )
 
         case "saving":
-            stageTitle = "正在写入系统相册"
+            stageTitle = language.localized(
+                key: "notification.batch.progress.saving",
+                fallback: "saving to Photos"
+            )
 
         default:
-            stageTitle = "正在后台处理"
+            stageTitle = language.localized(
+                key: "notification.batch.progress.default",
+                fallback: "processing in the background"
+            )
         }
 
         var summary =
-            "\(totalCount) 张照片\(stageTitle)。"
+            String(
+                format: language.localized(
+                    key: "notification.batch.progress.summary",
+                    fallback: "%d photos: %@."
+                ),
+                locale: language.locale,
+                totalCount,
+                stageTitle
+            )
 
         if completedCount > 0
             || failedCount > 0 {
-            summary += " 已完成 \(completedCount) 张"
+            summary += " " + String(
+                format: language.localized(
+                    key: "notification.batch.progress.completed",
+                    fallback: "%d complete"
+                ),
+                locale: language.locale,
+                completedCount
+            )
 
             if failedCount > 0 {
-                summary += "，失败 \(failedCount) 张"
+                summary += " " + String(
+                    format: language.localized(
+                        key: "notification.batch.progress.failed",
+                        fallback: "%d failed"
+                    ),
+                    locale: language.locale,
+                    failedCount
+                )
             }
 
-            summary += "。"
+            summary += language.localized(
+                key: "notification.batch.progress.full_stop",
+                fallback: "."
+            )
         } else if runningCount > 0 {
-            summary += " 当前还有 \(runningCount) 张在队列中。"
+            summary += " " + String(
+                format: language.localized(
+                    key: "notification.batch.progress.queued",
+                    fallback: "%d remain in the queue."
+                ),
+                locale: language.locale,
+                runningCount
+            )
         }
 
         return summary

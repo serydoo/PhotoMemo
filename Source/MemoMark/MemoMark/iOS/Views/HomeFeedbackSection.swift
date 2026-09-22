@@ -3,6 +3,9 @@ import SwiftUI
 
 struct HomeFeedbackSection: View {
 
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
+
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
     }
@@ -33,7 +36,7 @@ struct HomeFeedbackSection: View {
 
     private var disclosureControl: some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.20)) {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.20)) {
                 isExpanded.toggle()
             }
         } label: {

@@ -483,6 +483,12 @@ final class SettingsService: ObservableObject {
         )
     }
 
+    func validateConfigurationLibraryProjection(
+        _ aggregate: ConfigurationLibraryRecord
+    ) throws {
+        try configurationProjectionService.validate(aggregate)
+    }
+
     func loadConfigurationLibrary()
     async throws -> ConfigurationLibraryLoadReceipt {
         try await configurationLibraryStore.load()

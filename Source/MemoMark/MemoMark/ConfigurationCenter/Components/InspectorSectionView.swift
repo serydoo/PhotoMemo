@@ -33,11 +33,10 @@ enum ConfigurationUI {
         MemoMarkDesignTokens.Layout.configurationSheetCompactHeight
     static let contentSheetFraction =
         MemoMarkDesignTokens.Layout.configurationSheetContentFraction
-    /// Conservative startup fallback used before the real preview reports its
-    /// frame. Once measured, the card editor is bounded by that preview.
+    /// Stable window-relative boundary for the card editor overlay. The
+    /// editor must not follow the scrolling preview's global frame.
     static let contentEditorTopBoundaryFraction: CGFloat = 0.16
     static let contentEditorMinimumTopBoundary: CGFloat = 136
-    static let contentEditorPreviewGap: CGFloat = 12
     static let cardEditorDismissThreshold: CGFloat = 96
     #else
     static let cornerRadius: CGFloat = 12

@@ -105,7 +105,7 @@ struct MacConfigurationRuntimeContractTests {
         )
 
         #expect(source.contains(".contextMenu"))
-        #expect(source.contains("移除模块"))
+        #expect(source.contains("mac.editor.remove_module"))
         #expect(source.contains("items.removeAll"))
     }
 

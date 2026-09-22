@@ -17,19 +17,25 @@ enum AdaptivePageLayout {
         CGFloat = 720
 
     static func navigationStyle(
-        isPad: Bool,
         hasRegularHorizontalSizeClass: Bool,
         hasCompactVerticalSizeClass: Bool
     ) -> EntryNavigationStyle {
-        if isPad && hasRegularHorizontalSizeClass {
-            return .regularSidebar
-        }
-
         if hasCompactVerticalSizeClass {
             return .compactSidebar
         }
 
+        if hasRegularHorizontalSizeClass {
+            return .regularSidebar
+        }
+
         return .bottomTabBar
+    }
+
+    static func usesRegularWorkspace(
+        hasRegularHorizontalSizeClass: Bool,
+        hasRegularVerticalSizeClass: Bool
+    ) -> Bool {
+        hasRegularHorizontalSizeClass && hasRegularVerticalSizeClass
     }
 
     static func scrollBottomPadding(
@@ -47,6 +53,22 @@ enum AdaptivePageLayout {
 
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
+
+private struct AdaptiveScrollContentViewportModifier: ViewModifier {
+
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if horizontalSizeClass == .regular {
+            content
+        } else {
+            content
+                .containerRelativeFrame(.horizontal)
+        }
+    }
+}
 
 extension View {
 
@@ -76,7 +98,7 @@ extension View {
             horizontalPadding:
                 horizontalPadding
         )
-        .containerRelativeFrame(.horizontal)
+        .modifier(AdaptiveScrollContentViewportModifier())
     }
 }
 #endif

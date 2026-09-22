@@ -512,6 +512,13 @@ final class SettingsRepository {
             )
     }
 
+    func validateConfigurationLibraryProjection(
+        _ aggregate: ConfigurationLibraryRecord
+    ) throws {
+        try settingsService
+            .validateConfigurationLibraryProjection(aggregate)
+    }
+
     func loadConfigurationLibrary()
     async throws -> ConfigurationLibraryLoadReceipt {
         try await settingsService

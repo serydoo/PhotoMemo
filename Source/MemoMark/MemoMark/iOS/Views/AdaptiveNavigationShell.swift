@@ -94,9 +94,57 @@ struct EntryNavigationSurface<
     }
 
     private var regularSidebarNavigation: some View {
-        sidebarNavigation(width: 220) {
-            EntrySidebar(selection: $selection)
+        NavigationSplitView {
+            List {
+                Section {
+                    ForEach(EntryTab.sidebarNavigationCases) { destination in
+                        Button {
+                            selection = destination
+                        } label: {
+                            Label(
+                                destination.localizedTitle,
+                                systemImage: destination.symbolName
+                            )
+                            .frame(
+                                maxWidth: .infinity,
+                                alignment: .leading
+                            )
+                            .foregroundStyle(
+                                selection == destination
+                                ? Color.accentColor
+                                : Color.primary
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(
+                            selection == destination
+                            ? .isSelected
+                            : []
+                        )
+                        .listRowBackground(
+                            selection == destination
+                            ? Color.accentColor.opacity(0.12)
+                            : Color.clear
+                        )
+                    }
+                }
+            }
+            .navigationTitle(localized("时光记"))
+            .listStyle(.sidebar)
+        } detail: {
+            NavigationStack {
+                sidebarDestination
+            }
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity
+            )
         }
+        .navigationSplitViewStyle(.balanced)
+        .background(
+            ConfigurationUI.appBackground
+                .ignoresSafeArea()
+        )
     }
 
     private func sidebarNavigation<Sidebar: View>(

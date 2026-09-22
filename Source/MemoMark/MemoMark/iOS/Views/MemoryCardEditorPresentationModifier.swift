@@ -17,18 +17,11 @@ struct MemoryCardEditorPresentationModifier<EditorContent: View>: ViewModifier {
     @Environment(\.accessibilityReduceMotion)
     private var accessibilityReduceMotion
 
-    @State private var measuredPreviewFrame: CGRect?
-
     func body(content: Content) -> some View {
         content
-            .onPreferenceChange(MemoryCardEditorPreviewFramePreferenceKey.self) { frame in
-                guard !frame.isEmpty else { return }
-                measuredPreviewFrame = frame
-            }
             .overlay {
                 if showsRegionContentSheet {
                     MemoryCardEditorOverlay(
-                        previewFrame: measuredPreviewFrame,
                         editorContent: editorContent,
                         onDismiss: {
                             onDismissKeyboard()
@@ -58,7 +51,6 @@ struct MemoryCardEditorPresentationModifier<EditorContent: View>: ViewModifier {
 
 private struct MemoryCardEditorOverlay<EditorContent: View>: View {
 
-    let previewFrame: CGRect?
     @State private var keyboardBottomInset: CGFloat = 0
     @State private var editorViewportBottom: CGFloat = 0
     @State private var pullDownOffset: CGFloat = 0
@@ -85,22 +77,10 @@ private struct MemoryCardEditorOverlay<EditorContent: View>: View {
                 ConfigurationUI.contentEditorMinimumTopBoundary
             )
             let currentViewportFrame = proxy.frame(in: .global)
-            let measuredPreviewBottom = previewFrame?.maxY
-            let previewTopBoundary = measuredPreviewBottom.map {
-                max(
-                    0,
-                    $0 - currentViewportFrame.minY
-                        + ConfigurationUI.contentEditorPreviewGap
-                )
-            } ?? 0
-            let editorTopBoundary = max(
-                previewTopBoundary,
-                fallbackTopBoundary
-            )
             let currentViewportBottom = currentViewportFrame.maxY
             let editorHeight = max(
                 0,
-                proxy.size.height - bottomInset - editorTopBoundary
+                proxy.size.height - bottomInset - fallbackTopBoundary
             )
 
             ZStack(alignment: .bottom) {

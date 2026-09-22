@@ -156,19 +156,13 @@ enum LocalConfigurationLibraryPresenter {
         subjectID: UUID,
         in aggregate: ConfigurationLibraryRecord
     ) -> ConfigurationLibraryRecord? {
-        guard aggregate.subjects.contains(where: { subjectRecord in
-            subjectRecord.subject.id == subjectID
-                && subjectRecord.configurations.contains(where: {
-                    $0.id == configurationID
-                })
-        }) else {
-            return nil
-        }
-
-        var candidate = aggregate
-        candidate.activeSubjectID = subjectID
-        candidate.activeConfigurationID = configurationID
-        return candidate
+        ActivateConfigurationTransaction.candidate(
+            for: ActivateConfigurationCommand(
+                subjectID: subjectID,
+                configurationID: configurationID
+            ),
+            in: aggregate
+        )
     }
 
     private static func establishInitialProcessingDefaultIfNeeded(

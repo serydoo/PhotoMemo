@@ -1,7 +1,6 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 import PhotosUI
-import UIKit
 
 extension MemoMarkConfigurationCenterView {
     @ViewBuilder
@@ -79,9 +78,6 @@ extension MemoMarkConfigurationCenterView {
         EntryNavigationStyle {
         AdaptivePageLayout
             .navigationStyle(
-                isPad:
-                    UIDevice.current
-                    .userInterfaceIdiom == .pad,
                 hasRegularHorizontalSizeClass:
                     horizontalSizeClass == .regular,
                 hasCompactVerticalSizeClass:

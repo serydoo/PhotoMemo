@@ -77,7 +77,7 @@ struct ShareExtensionControllerSplitContractTests {
         #expect(controller.contains("primaryButton.configuration?.imagePadding =\n            8"))
         #expect(controller.contains("ShareExtensionSurfaceFactory.makeTitledSectionContainer("))
         #expect(controller.contains("ShareExtensionSurfaceFactory.makeInnerCardContainer("))
-        #expect(controller.contains("ShareExtensionSurfaceFactory.makeInsetDivider()"))
+        #expect(controller.contains("ShareExtensionSurfaceFactory.makeInsetDivider("))
         #expect(surfaceFactory.contains("static func makeTitledSectionContainer"))
         #expect(surfaceFactory.contains("static func makeInnerCardContainer"))
         #expect(controller.contains("stack.alignment = .fill"))
@@ -143,10 +143,11 @@ struct ShareExtensionControllerSplitContractTests {
             "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionSurfaceFactory.swift"
         )
 
-        #expect(controller.contains("ShareExtensionSurfaceFactory.makeInsetDivider()"))
+        #expect(controller.contains("ShareExtensionSurfaceFactory.makeInsetDivider("))
         #expect(surfaceFactory.contains("divider.backgroundColor = .separator"))
         #expect(surfaceFactory.contains("equalToConstant:"))
-        #expect(surfaceFactory.contains("1 / UIScreen.main.scale"))
+        #expect(surfaceFactory.contains("displayScale: CGFloat"))
+        #expect(!surfaceFactory.contains("UIScreen.main.scale"))
         #expect(surfaceFactory.contains("MemoMarkDesignTokens.Layout.dividerInset"))
         #expect(surfaceFactory.contains("-MemoMarkDesignTokens.Layout.dividerInset"))
         #expect(tokens.contains("static let dividerInset: CGFloat = 12"))

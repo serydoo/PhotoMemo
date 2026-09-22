@@ -259,6 +259,17 @@ struct ConfigurationOptionListContractTests {
         )
     }
 
+    @Test("FilmMark preview mode transition respects reduced motion")
+    func filmMarkPreviewModeTransitionRespectsReducedMotion() throws {
+        let source = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/FilmMarkPreviewSurface.swift"
+        )
+
+        #expect(source.contains("@Environment(\\.accessibilityReduceMotion)"))
+        #expect(source.contains("reduceMotion ? nil : .easeInOut(duration: 0.2)"))
+        #expect(source.contains("value: mode"))
+    }
+
     @Test("FilmMark groups geometry controls and promotes the matching preview")
     func filmMarkGroupsGeometryControlsAndPromotesTheMatchingPreview() throws {
         let source = try sourceText(
@@ -370,6 +381,7 @@ struct ConfigurationOptionListContractTests {
         #expect(editorSurfaceSource.contains("ScrollViewReader"))
         #expect(editorSurfaceSource.contains("proxy.scrollTo(request.targetID, anchor: .top)"))
         #expect(editorSurfaceSource.contains("accessibilityReduceMotion"))
+        #expect(editorSurfaceSource.contains("if !reduceMotion"))
         #expect(configurationPageSource.contains("editorScrollRequest"))
 
         let filmMarkBranchStart = try #require(
@@ -1520,6 +1532,54 @@ struct ConfigurationOptionListContractTests {
             contentsOf: repositoryRoot.appendingPathComponent(relativePath),
             encoding: .utf8
         )
+    }
+
+    @Test("regular configuration workspace promotes save and more actions to the toolbar")
+    func regularConfigurationWorkspacePromotesActionsToToolbar() throws {
+        let page = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationPageSurface.swift"
+        )
+        let toolbar = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionToolbar.swift"
+        )
+
+        #expect(page.contains("usesToolbarConfigurationActions"))
+        #expect(page.contains("ConfigurationActionToolbar("))
+        #expect(page.contains("EmptyView()"))
+        #expect(
+            page.contains(
+                ".toolbar(usesToolbarConfigurationActions ? .visible : .hidden"
+            )
+        )
+        #expect(toolbar.contains("Menu"))
+        #expect(toolbar.contains("onSaveCurrentConfiguration"))
+        #expect(toolbar.contains("onResetConfiguration"))
+        #expect(toolbar.contains("onDeleteConfiguration"))
+    }
+
+    @Test("secondary disclosure and editor reveal motion respect reduced motion")
+    func secondaryDisclosureAndEditorRevealMotionRespectReducedMotion() throws {
+        let feedback = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomeFeedbackSection.swift"
+        )
+        let editor = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
+        )
+
+        #expect(feedback.contains("accessibilityReduceMotion"))
+        #expect(feedback.contains("withAnimation(reduceMotion ? nil"))
+        #expect(editor.contains("accessibilityReduceMotion"))
+        #expect(editor.contains("withAnimation(reduceMotion ? nil"))
+    }
+
+    @Test("macOS configuration inspector reveal respects reduced motion")
+    func macOSConfigurationInspectorRevealRespectsReducedMotion() throws {
+        let source = try sourceText(
+            "Source/MemoMark/MemoMark/ConfigurationCenter/MacConfigurationCenterPage.swift"
+        )
+
+        #expect(source.contains("@Environment(\\.accessibilityReduceMotion)"))
+        #expect(source.contains("withAnimation(reduceMotion ? nil : .snappy)"))
     }
 }
 #endif

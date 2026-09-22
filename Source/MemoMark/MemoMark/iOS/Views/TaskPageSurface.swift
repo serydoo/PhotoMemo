@@ -1,6 +1,5 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
-import UIKit
 
 struct TaskPageSurface: View {
 
@@ -84,9 +83,6 @@ struct TaskPageSurface: View {
     private var navigationStyle:
         EntryNavigationStyle {
         AdaptivePageLayout.navigationStyle(
-            isPad:
-                UIDevice.current
-                .userInterfaceIdiom == .pad,
             hasRegularHorizontalSizeClass:
                 horizontalSizeClass == .regular,
             hasCompactVerticalSizeClass:

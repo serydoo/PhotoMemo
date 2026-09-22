@@ -7,6 +7,50 @@ import Testing
 @Suite("Production configuration contract")
 struct ProductionConfigurationContractTests {
 
+    @Test("Open resolves editor context without changing the active configuration")
+    func openResolvesEditorContextWithoutChangingActiveConfiguration() throws {
+        let fixture = try Self.makeFixture()
+        let activeConfigurationID = fixture.aggregate.activeConfigurationID
+        let context = try OpenConfigurationTransaction.apply(
+            OpenConfigurationCommand(
+                subjectID: fixture.subject.id,
+                configurationID: fixture.configuration.id
+            ),
+            in: fixture.aggregate
+        )
+
+        #expect(context.subject.id == fixture.subject.id)
+        #expect(context.configuration.id == fixture.configuration.id)
+        #expect(fixture.aggregate.activeConfigurationID == activeConfigurationID)
+    }
+
+    @Test("Freeze for processing returns a validated immutable production snapshot")
+    func freezeForProcessingReturnsValidatedImmutableSnapshot() throws {
+        let fixture = try Self.makeFixture()
+        let fallback = try ProductionConfigurationSnapshotFactory.resolve(
+            reference: .init(
+                configurationID: fixture.configuration.id,
+                revision: fixture.configuration.revision
+            ),
+            from: fixture.aggregate
+        )
+        let frozen = try FreezeForProcessingTransaction.apply(
+            FreezeForProcessingCommand(
+                subjectID: fixture.subject.id,
+                configurationID: fixture.configuration.id
+            ),
+            in: fixture.aggregate,
+            fallback: fallback
+        )
+
+        #expect(frozen.configurationID == fixture.configuration.id)
+        #expect(frozen.configurationRevision == fixture.configuration.revision)
+        try ProductionConfigurationSnapshotContract.validate(frozen)
+
+        #expect(frozen.canonicalProductionSnapshot?.configurationID == fixture.configuration.id)
+        #expect(frozen.canonicalProductionSnapshot?.configurationRevision == fixture.configuration.revision)
+    }
+
     @Test("FM authored content survives save reload and production without changing legacy styles")
     func filmMarkContentSurvivesSaveReload() throws {
         let fixture = try Self.makeFixture()

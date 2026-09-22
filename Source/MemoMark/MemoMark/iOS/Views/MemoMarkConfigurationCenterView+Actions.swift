@@ -87,28 +87,27 @@ extension MemoMarkConfigurationCenterView {
     @discardableResult
     @MainActor
     func setCurrentConfigurationAsProcessingDefault() async -> Bool {
+        guard let configurationID = session.state.selectedMemoryPresetID else {
+            return false
+        }
+        return await setConfigurationAsProcessingDefault(
+            configurationID: configurationID
+        )
+    }
+
+    /// Persists the selected preset as the durable default used by Share and
+    /// background processing. This is deliberately separate from selecting
+    /// the editor projection so a tap on a preset updates both surfaces.
+    @discardableResult
+    @MainActor
+    func setConfigurationAsProcessingDefault(
+        configurationID: MemoryPreset.ID
+    ) async -> Bool {
         guard !isSavingConfiguration,
               activeConfigurationStatus.isProcessingProjectionReady,
               let subjectID = session.state.selectedSubject?.id,
-              let configurationID = session.state.selectedMemoryPresetID,
-              let aggregate = session.state.configurationLibrary,
-              let candidate = LocalConfigurationLibraryPresenter
-                .settingProcessingDefault(
-                    configurationID: configurationID,
-                    subjectID: subjectID,
-                    in: aggregate
-                )
+              let aggregate = session.state.configurationLibrary
         else {
-            return false
-        }
-
-        guard let configurationCoordinator else {
-            activeConfigurationStatus = .failure(
-                message: MemoMarkLanguage.interfaceStored.localized(
-                    key: "configuration.library.unavailable",
-                    fallback: "当前配置库不可用，请稍后重试。"
-                )
-            )
             return false
         }
 
@@ -116,11 +115,18 @@ extension MemoMarkConfigurationCenterView {
         activeConfigurationStatus = .saving
 
         do {
-            let receipt = try await configurationCoordinator
-                .saveConfigurationLibrary(candidate)
-            var durableCandidate = candidate
-            durableCandidate.revision = receipt.revision
-            session.updateConfigurationLibraryReference(durableCandidate)
+            let transaction = ActivateConfigurationTransaction(
+                configurationCoordinator: configurationCoordinator
+            )
+            let result = try await transaction.apply(
+                ActivateConfigurationCommand(
+                    subjectID: subjectID,
+                    configurationID: configurationID
+                ),
+                in: aggregate
+            )
+            let receipt = result.saveReceipt
+            session.updateConfigurationLibraryReference(result.candidate)
             session.processingDefaultMemoryPresetID = configurationID
             isSavingConfiguration = false
             activeConfigurationStatus = receipt
@@ -199,38 +205,72 @@ extension MemoMarkConfigurationCenterView {
         )
     }
 
-    func saveCurrentConfigurationThenActivatePendingPreset() {
-        guard let preset = rootPresentationState
-            .switchPresentation
-            .pendingMemoryPresetActivation else {
-            return
-        }
-
-        Task { @MainActor in
+    @MainActor
+    private func activatePresetAfterRequiredSave(
+        _ preset: MemoryPreset,
+        saveCurrentDraft: Bool
+    ) async {
+        if saveCurrentDraft {
             guard await applyCurrentConfiguration(),
                   activeConfigurationStatus.isDurablySaved else {
                 return
             }
+        }
 
+        guard await setConfigurationAsProcessingDefault(
+            configurationID: preset.id
+        ) else {
+            return
+        }
+
+        session.selectMemoryPreset(preset)
+        synchronizeSelectedSubjectConfigurationProjection()
+        bootstrapDrafts()
+        activeConfigurationStatus = session.selectedMemoryPresetIsDurable
+            ? .saved
+            : .dirty
+    }
+
+    func saveCurrentConfigurationThenActivatePendingPreset() {
+        guard let preset = rootPresentationState
+            .switchPresentation.pendingMemoryPresetActivation else {
+            return
+        }
+        Task { @MainActor in
+            await activatePresetAfterRequiredSave(
+                preset,
+                saveCurrentDraft: true
+            )
             rootPresentationState
                 .switchPresentation
                 .pendingMemoryPresetActivation = nil
-            performConfigurationLibraryAction(.activate(preset))
+            rootPresentationState
+                .switchPresentation
+                .showsUnsavedPresetActivationAlert = false
         }
     }
 
     func discardCurrentConfigurationThenActivatePendingPreset() {
         guard let preset = rootPresentationState
-            .switchPresentation
-            .pendingMemoryPresetActivation else {
+            .switchPresentation.pendingMemoryPresetActivation else {
             return
         }
-
-        _ = session.discardSelectedMemoryPresetDraft()
+        _ = session.discardSelectedMemoryPresetChanges()
+        synchronizeSelectedSubjectConfigurationProjection()
+        bootstrapDrafts()
+        activeConfigurationStatus = .saved
         rootPresentationState
             .switchPresentation
             .pendingMemoryPresetActivation = nil
-        performConfigurationLibraryAction(.activate(preset))
+        rootPresentationState
+            .switchPresentation
+            .showsUnsavedPresetActivationAlert = false
+        Task { @MainActor in
+            await activatePresetAfterRequiredSave(
+                preset,
+                saveCurrentDraft: false
+            )
+        }
     }
 
     func requestSubjectSelection(
@@ -391,20 +431,20 @@ extension MemoMarkConfigurationCenterView {
             rootPresentationState.renamePresentation.isEditing = false
             memoryPresetTitleFieldFocused = false
             startCurrentConfigurationSaveWithFeedback()
-        case .confirmSaveBeforeActivation(let preset):
+        case .activate(let preset):
+            Task { @MainActor in
+                await activatePresetAfterRequiredSave(
+                    preset,
+                    saveCurrentDraft: false
+                )
+            }
+        case .requiresActivationConfirmation(let preset):
             rootPresentationState
                 .switchPresentation
                 .pendingMemoryPresetActivation = preset
             rootPresentationState
                 .switchPresentation
-                .showsUnsavedPresetSwitchAlert = true
-        case .activate(let preset):
-            session.selectMemoryPreset(preset)
-            synchronizeSelectedSubjectConfigurationProjection()
-            bootstrapDrafts()
-            activeConfigurationStatus = session.selectedMemoryPresetIsDurable
-                ? .saved
-                : .dirty
+                .showsUnsavedPresetActivationAlert = true
         case .saveCurrent:
             startCurrentConfigurationSaveWithFeedback()
         case .setAsProcessingDefault:

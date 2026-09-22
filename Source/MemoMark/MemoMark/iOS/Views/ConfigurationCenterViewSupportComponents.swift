@@ -481,15 +481,27 @@ struct CompactPrimaryActionButtonStyle:
     }
 }
 
-extension View {
+private struct CompactBottomPrimaryActionModifier: ViewModifier {
 
-    func v1CompactBottomPrimaryAction() -> some View {
-        self
+    @Environment(\.dynamicTypeSize)
+    private var dynamicTypeSize
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        content
             .foregroundStyle(MemoMarkDesignTokens.Semantic.onAccent)
             .padding(.horizontal, 14)
+            .fixedSize(horizontal: false, vertical: true)
             .frame(
-                width: CompactBottomActionMetrics.width,
-                height: CompactBottomActionMetrics.height
+                width: dynamicTypeSize.isAccessibilitySize
+                    ? nil
+                    : CompactBottomActionMetrics.width
+            )
+            .frame(minHeight: CompactBottomActionMetrics.height)
+            .frame(
+                maxWidth: dynamicTypeSize.isAccessibilitySize
+                    ? .infinity
+                    : nil
             )
             .background(
                 RoundedRectangle(
@@ -518,6 +530,13 @@ extension View {
                     .Layout
                     .compactPrimaryActionShadowOffsetY
             )
+    }
+}
+
+extension View {
+
+    func v1CompactBottomPrimaryAction() -> some View {
+        modifier(CompactBottomPrimaryActionModifier())
     }
 }
 

@@ -141,8 +141,8 @@ struct ExportMigrationTests {
         }
     }
 
-    @Test("ResolveV1OutputAlbumSelectionIntent keeps an existing album selection and falls back to automatic when missing")
-    func resolveV1OutputAlbumSelectionIntentKeepsExistingAlbumSelectionAndFallsBackToAutomaticWhenMissing() async {
+    @Test("ResolveOutputAlbumSelectionIntent keeps an existing album selection and fails closed when it is missing")
+    func resolveOutputAlbumSelectionIntentKeepsExistingAlbumSelectionAndFailsClosedWhenMissing() async {
 
         let selectedAlbum =
             PhotoAlbumOption(
@@ -196,7 +196,7 @@ struct ExportMigrationTests {
             )
         }
 
-        let fallbackResult =
+        let unavailableResult =
             await ResolveV1OutputAlbumSelectionIntent(
                 request:
                     V1OutputAlbumSelectionRequest(
@@ -212,26 +212,14 @@ struct ExportMigrationTests {
             )
             .execute()
 
-        switch fallbackResult {
-        case .success(let selection):
-            #expect(
-                selection.identifier
-                == MemoMarkAlbumSelection
-                .automaticIdentifier
-            )
-            #expect(
-                selection.title
-                == MemoMarkAlbumSelection
-                .defaultAlbumTitle
-            )
-            #expect(
-                selection.pickerSelectionIdentifier
-                == nil
+        switch unavailableResult {
+        case .success:
+            Issue.record(
+                "An unavailable explicit album must not fall back to the automatic destination"
             )
         case .failure(let error):
-            Issue.record(
-                "Expected missing existing-album selection to fall back to automatic, got \(error.message)"
-            )
+            #expect(error.code == .photoLibrarySaveFailed)
+            #expect(error.diagnosticCode == "photoLibrary.album.notFound")
         }
     }
 

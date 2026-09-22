@@ -91,7 +91,11 @@ struct HomeMemoryPresetRow: View {
 
     private var presetDetail: String {
         guard isSelected, let savedAt = preset.savedAt else { return preset.summary }
-        return HomeProjection.savedStatusValue(savedAt: savedAt)
+        return String(
+            format: localized("home.preset.active_status_format"),
+            locale: interfaceLanguage.locale,
+            HomeProjection.savedStatusValue(savedAt: savedAt)
+        )
     }
 
     private var presetIdentityMark: some View {

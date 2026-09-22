@@ -1,16 +1,5 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
-import UIKit
-
-struct MemoryCardEditorPreviewFramePreferenceKey: PreferenceKey {
-    static var defaultValue: CGRect = .zero
-
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        let next = nextValue()
-        guard !next.isEmpty else { return }
-        value = next
-    }
-}
 
 /// A one-shot request to bring an editor section into view beside the already
 /// pinned preview. It is transient interaction state, not configuration data.
@@ -70,7 +59,7 @@ struct MemoryCardEditorPageSurface<
     }
 
     var body: some View {
-        stackedContent
+        adaptiveContent
             .frame(
                 maxWidth: .infinity,
                 maxHeight: .infinity,
@@ -86,6 +75,22 @@ struct MemoryCardEditorPageSurface<
             }
     }
 
+    @ViewBuilder
+    private var adaptiveContent: some View {
+        if usesSplitConfigurationLayout {
+            sideBySideContent
+        } else {
+            stackedContent
+        }
+    }
+
+    private var usesSplitConfigurationLayout: Bool {
+        AdaptivePageLayout.usesRegularWorkspace(
+            hasRegularHorizontalSizeClass: horizontalSizeClass == .regular,
+            hasRegularVerticalSizeClass: verticalSizeClass == .regular
+        )
+    }
+
     private var stackedContent: some View {
         VStack(spacing: 0) {
             previewPane
@@ -95,19 +100,37 @@ struct MemoryCardEditorPageSurface<
         }
     }
 
+    private var sideBySideContent: some View {
+        HStack(alignment: .top, spacing: 0) {
+            previewPane
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity,
+                    alignment: .top
+                )
+
+            Rectangle()
+                .fill(ConfigurationUI.faintHairline)
+                .frame(width: 0.5)
+
+            editorScrollView
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity
+                )
+        }
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .top
+        )
+    }
+
     private var previewPane: some View {
         previewPaneContent
             .background(
                 ConfigurationUI.appBackground
             )
-            .overlay {
-                GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: MemoryCardEditorPreviewFramePreferenceKey.self,
-                        value: proxy.frame(in: .global)
-                    )
-                }
-            }
     }
 
     @ViewBuilder
@@ -146,7 +169,6 @@ struct MemoryCardEditorPageSurface<
 
     private var usesCompactLandscapeFullWidthPreview: Bool {
         previewWidthPolicy == .fullWidthInCompactLandscape
-            && UIDevice.current.userInterfaceIdiom == .phone
             && horizontalSizeClass == .regular
             && verticalSizeClass == .compact
     }
@@ -177,7 +199,9 @@ struct MemoryCardEditorPageSurface<
                     // Wait for the disclosure and expanded calibration canvas
                     // to settle, then present its controls directly below the
                     // fixed preview. The person owns scrolling after this.
-                    try? await Task.sleep(nanoseconds: 220_000_000)
+                    if !reduceMotion {
+                        try? await Task.sleep(nanoseconds: 220_000_000)
+                    }
                     guard editorScrollRequest == request else { return }
 
                     if reduceMotion {
@@ -195,9 +219,6 @@ struct MemoryCardEditorPageSurface<
     private var navigationStyle:
         EntryNavigationStyle {
         AdaptivePageLayout.navigationStyle(
-            isPad:
-                UIDevice.current
-                .userInterfaceIdiom == .pad,
             hasRegularHorizontalSizeClass:
                 horizontalSizeClass == .regular,
             hasCompactVerticalSizeClass:

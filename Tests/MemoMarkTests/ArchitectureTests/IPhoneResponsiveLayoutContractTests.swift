@@ -58,6 +58,17 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(source.contains("alignment: .center"))
     }
 
+    @Test("regular sidebar detail content does not use the outer split viewport")
+    func regularSidebarDetailContentUsesItsOwnViewport() throws {
+        let source = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/AdaptivePageLayout.swift"
+        )
+
+        #expect(source.contains("AdaptiveScrollContentViewportModifier"))
+        #expect(source.contains("horizontalSizeClass == .regular"))
+        #expect(source.contains("containerRelativeFrame(.horizontal)"))
+    }
+
     @Test("Minimal editor preview can use a compact landscape width policy")
     func minimalPreviewUsesDedicatedCompactLandscapePolicy() throws {
         let layout = try sourceText(
@@ -190,6 +201,37 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(source.contains("fixedSize(horizontal: true"))
     }
 
+    @Test("maximum Dynamic Type reflows home content instead of shrinking text")
+    func maximumDynamicTypeUsesReflowInsteadOfScale() throws {
+        let home = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+        )
+        let subject = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSupport.swift"
+        )
+        let actions = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterViewSupportComponents.swift"
+        )
+
+        #expect(home.contains("@Environment(\\.dynamicTypeSize)"))
+        #expect(home.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(home.contains("accessibilityTopHeaderSection"))
+        #expect(home.contains("fixedSize(horizontal: false, vertical: true)"))
+        #expect(home.contains("if !dynamicTypeSize.isAccessibilitySize"))
+        #expect(home.contains("if dynamicTypeSize.isAccessibilitySize"))
+        #expect(!home.contains("minimumScaleFactor"))
+
+        #expect(subject.contains("@Environment(\\.dynamicTypeSize)"))
+        #expect(subject.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(subject.contains("fixedSize(horizontal: false, vertical: true)"))
+        #expect(!subject.contains("minimumScaleFactor"))
+
+        #expect(actions.contains("CompactBottomPrimaryActionModifier"))
+        #expect(actions.contains("dynamicTypeSize.isAccessibilitySize"))
+        #expect(actions.contains("frame(minHeight: CompactBottomActionMetrics.height)"))
+        #expect(!actions.contains("height: CompactBottomActionMetrics.height"))
+    }
+
     @Test("home preset rows and settings disclosures preserve readable content")
     func compactRowsProvideVerticalFallbacks() throws {
         let home = try sourceText(
@@ -271,6 +313,17 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!source.contains("Image(systemName: \"photo.stack\")"))
     }
 
+    @Test("configuration navigator controls preserve a 44 point hit target")
+    func configurationNavigatorControlsPreserveA44PointHitTarget() throws {
+        let source = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterTopPreviewSection.swift"
+        )
+
+        #expect(source.contains("frame(width: 32, height: 32)"))
+        #expect(source.contains("width: ConfigurationUI.minimumInteractiveHeight"))
+        #expect(source.contains("contentShape(Rectangle())"))
+    }
+
     @Test("configuration backup library uses a native row menu")
     func configurationBackupLibraryUsesNativeRowMenu() throws {
         let source = try sourceText(
@@ -322,16 +375,20 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(anchors.contains("ScrollView"))
     }
 
-    @Test("configuration preview stays above the inspector at every viewport")
-    func configurationPreviewStaysAboveInspector() throws {
+    @Test("configuration preview and inspector adapt to available space")
+    func configurationPreviewAndInspectorAdaptToAvailableSpace() throws {
         let editor = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
         )
 
+        #expect(editor.contains("private var adaptiveContent"))
         #expect(editor.contains("private var stackedContent"))
+        #expect(editor.contains("private var sideBySideContent"))
+        #expect(editor.contains("usesSplitConfigurationLayout"))
+        #expect(editor.contains("horizontalSizeClass == .regular"))
+        #expect(editor.contains("verticalSizeClass == .regular"))
         #expect(editor.contains("previewPane"))
         #expect(editor.contains("editorScrollView"))
-        #expect(!editor.contains("sideBySideContent"))
         #expect(!editor.contains("availableWidth * 0.46"))
     }
 
@@ -790,7 +847,9 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(library.contains("ForEach(group.modules)"))
         #expect(library.contains(".caption2"))
         #expect(library.contains("Color(uiColor: .secondarySystemGroupedBackground)"))
-        #expect(library.contains("static let fixedHeight: CGFloat = 84"))
+        #expect(library.contains("static let fixedHeight: CGFloat = 108"))
+        #expect(library.contains(".frame(minHeight: ConfigurationUI.minimumInteractiveHeight)"))
+        #expect(library.contains("height: ConfigurationUI.minimumInteractiveHeight"))
         #expect(library.contains(".frame(width: 48, alignment: .leading)"))
         #expect(library.contains("LinearGradient"))
         #expect(library.contains("group.modules.count > 4"))
@@ -803,6 +862,17 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!library.contains("选择一项，放入当前光标位置。"))
         #expect(!library.contains("LazyVGrid"))
         #expect(!library.contains("ignoresSafeArea"))
+    }
+
+    @Test("configuration inspector destructive controls preserve the shared hit target")
+    func configurationInspectorDestructiveControlsPreserveSharedHitTarget() throws {
+        let source = try sourceText(
+            "Source/MemoMark/MemoMark/ConfigurationCenter/Inspector/MemoryBlockInspectorCustomFieldsSection.swift"
+        )
+        #expect(source.contains("Button(role: .destructive)"))
+        #expect(source.contains("minWidth: ConfigurationUI.minimumInteractiveHeight"))
+        #expect(source.contains("minHeight: ConfigurationUI.minimumInteractiveHeight"))
+        #expect(source.contains("contentShape(Rectangle())"))
     }
 
     @Test("card editor owns the bounded viewport while the keyboard is visible")
@@ -835,24 +905,16 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(cluster.contains("ModuleLibrarySurface.height(for: dynamicTypeSize)"))
     }
 
-    @Test("card editor top boundary follows the measured real preview")
-    func cardEditorTopBoundaryFollowsMeasuredPreview() throws {
-        let page = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
-        )
+    @Test("card editor top boundary stays stable while content scrolls")
+    func cardEditorTopBoundaryStaysStableWhileContentScrolls() throws {
         let modifier = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
         )
 
-        #expect(page.contains("MemoryCardEditorPreviewFramePreferenceKey"))
-        #expect(page.contains("frame(in: .global)"))
-        #expect(modifier.contains("onPreferenceChange(MemoryCardEditorPreviewFramePreferenceKey.self)"))
-        #expect(modifier.contains("measuredPreviewFrame"))
-        #expect(modifier.contains("measuredPreviewBottom"))
-        #expect(modifier.contains("contentEditorPreviewGap"))
-        #expect(modifier.contains("previewFrame?.maxY"))
-        #expect(modifier.contains("editorTopBoundary"))
         #expect(modifier.contains("fallbackTopBoundary"))
+        #expect(modifier.contains("proxy.size.height - bottomInset - fallbackTopBoundary"))
+        #expect(!modifier.contains("MemoryCardEditorPreviewFramePreferenceKey"))
+        #expect(!modifier.contains("previewFrame"))
     }
 
     @Test("card editor input surfaces protect IME and accessibility geometry")
@@ -879,7 +941,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(textKit.contains("accessibilityLabel:"))
         #expect(textKit.contains("region.localizedEditorAccessibilityLabel"))
         #expect(library.contains("dynamicTypeSize.isAccessibilitySize"))
-        #expect(library.contains("static let accessibilityHeight: CGFloat = 108"))
+        #expect(library.contains("static let accessibilityHeight: CGFloat = 132"))
         #expect(cluster.contains("presentationStyle.contentContract"))
         #expect(cluster.contains(".editorTitle("))
         #expect(recordCard.contains("configuration.card_editor.output_content"))
@@ -1301,7 +1363,9 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(navigationSource.contains("TabView(selection: $selection)"))
         #expect(navigationSource.contains("compactSidebarNavigation"))
         #expect(navigationSource.contains("EntryCompactSidebar(selection: $selection)"))
-        #expect(navigationSource.contains("EntrySidebar(selection: $selection)"))
+        #expect(navigationSource.contains("NavigationSplitView"))
+        #expect(navigationSource.contains("List {"))
+        #expect(navigationSource.contains("selection = destination"))
         #expect(navigationSource.contains(".tag(EntryTab.home)"))
         #expect(navigationSource.contains(".tag(EntryTab.editor)"))
         #expect(!navigationSource.contains(".tag(EntryTab.output)"))

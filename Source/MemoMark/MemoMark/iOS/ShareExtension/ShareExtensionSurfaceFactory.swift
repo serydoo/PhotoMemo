@@ -6,7 +6,7 @@ import UIKit
 /// the view controller and its focused collaborators.
 enum ShareExtensionSurfaceFactory {
 
-    static func makeInsetDivider() -> UIView {
+    static func makeInsetDivider(displayScale: CGFloat) -> UIView {
         let container = UIView()
         container.translatesAutoresizingMaskIntoConstraints = false
 
@@ -27,7 +27,7 @@ enum ShareExtensionSurfaceFactory {
             ),
             divider.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             divider.heightAnchor.constraint(
-                equalToConstant: 1 / UIScreen.main.scale
+                equalToConstant: 1 / displayScale
             )
         ])
         return container
@@ -93,7 +93,8 @@ enum ShareExtensionSurfaceFactory {
     }
 
     static func makeInnerCardContainer(
-        contentView: UIView
+        contentView: UIView,
+        displayScale: CGFloat
     ) -> UIView {
         let container = UIView()
         container.translatesAutoresizingMaskIntoConstraints = false
@@ -103,7 +104,7 @@ enum ShareExtensionSurfaceFactory {
         container.layer.cornerCurve = .continuous
         container.layer.borderColor =
             UIColor.separator.withAlphaComponent(0.35).cgColor
-        container.layer.borderWidth = 1 / UIScreen.main.scale
+        container.layer.borderWidth = 1 / displayScale
         container.addSubview(contentView)
 
         let padding = MemoMarkDesignTokens.Layout.compactInnerCardPadding

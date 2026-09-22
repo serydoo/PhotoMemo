@@ -196,7 +196,10 @@ struct HomeProjectionTests {
         #expect(projection.memoryWriteLabel == "写入说明已关闭")
         #expect(
             projection.targetNote
-            == ConfigurationOutputTarget.automatic.note
+            == MemoMarkLanguage.interfaceStored.localized(
+                key: "legacy.home.output.note.automatic",
+                fallback: ConfigurationOutputTarget.automatic.note
+            )
         )
         #expect(
             projection.memoryWriteDetail

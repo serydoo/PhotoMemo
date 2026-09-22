@@ -115,7 +115,9 @@ struct FilmMarkTextLayer: View {
     let displaySize: CGSize
 
     var body: some View {
-        if let image = FilmMarkRasterRenderer.image(for: presentation) {
+        if let image = try? FilmMarkRasterRenderer.render(
+            presentation: presentation
+        ) {
             Image(decorative: image, scale: 1)
                 .resizable()
                 .interpolation(.high)
@@ -128,28 +130,54 @@ struct FilmMarkTextLayer: View {
     }
 }
 
+enum FilmMarkRasterizationError: Error, Equatable {
+    case invalidCanvas
+    case colorSpaceUnavailable
+    case contextUnavailable
+    case fontUnavailable
+    case textOverflow
+    case imageUnavailable
+}
+
 /// Rasterizes the resolved FM artifact with the same CoreText face and frame
 /// that the Layout Engine measured. This is the shared preview/still/motion
 /// drawing adapter; it intentionally receives no authored or layout choices.
-private enum FilmMarkRasterRenderer {
+enum FilmMarkRasterRenderer {
 
-    static func image(
-        for presentation: FilmMarkResolvedPresentation
-    ) -> CGImage? {
+    static func render(
+        presentation: FilmMarkResolvedPresentation,
+        contextFactory: ((Int, Int, CGColorSpace) -> CGContext?)? = nil
+    ) throws -> CGImage {
         let canvasWidth = Int(ceil(presentation.canvasSize.width))
         let canvasHeight = Int(ceil(presentation.canvasSize.height))
-        guard canvasWidth > 0, canvasHeight > 0 else { return nil }
+        guard canvasWidth > 0, canvasHeight > 0 else {
+            throw FilmMarkRasterizationError.invalidCanvas
+        }
 
-        guard let context = CGContext(
-            data: nil,
-            width: canvasWidth,
-            height: canvasHeight,
-            bitsPerComponent: 8,
-            bytesPerRow: canvasWidth * 4,
-            space: CGColorSpace(name: CGColorSpace.sRGB)!,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else {
-            return nil
+        guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) else {
+            throw FilmMarkRasterizationError.colorSpaceUnavailable
+        }
+
+        let context: CGContext?
+        if let contextFactory {
+            context = contextFactory(
+                canvasWidth,
+                canvasHeight,
+                colorSpace
+            )
+        } else {
+            context = CGContext(
+                data: nil,
+                width: canvasWidth,
+                height: canvasHeight,
+                bitsPerComponent: 8,
+                bytesPerRow: canvasWidth * 4,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        }
+        guard let context else {
+            throw FilmMarkRasterizationError.contextUnavailable
         }
 
         let layout = presentation.layout
@@ -166,7 +194,10 @@ private enum FilmMarkRasterRenderer {
         context.restoreGState()
 
         guard !presentation.content.primaryOutput.isEmpty else {
-            return context.makeImage()
+            guard let image = context.makeImage() else {
+                throw FilmMarkRasterizationError.imageUnavailable
+            }
+            return image
         }
 
         let font = CTFontCreateWithName(
@@ -174,6 +205,9 @@ private enum FilmMarkRasterRenderer {
             pointSize,
             nil
         )
+        guard CTFontGetGlyphCount(font) > 0 else {
+            throw FilmMarkRasterizationError.fontUnavailable
+        }
         let attributedText = NSAttributedString(
             string: presentation.content.primaryOutput,
             attributes: [
@@ -201,6 +235,10 @@ private enum FilmMarkRasterRenderer {
             textPath,
             nil
         )
+        guard CTFrameGetVisibleStringRange(frame).length
+            == attributedText.length else {
+            throw FilmMarkRasterizationError.textOverflow
+        }
         if presentation.appearance.substrate == .softShadow {
             context.setShadow(
                 offset: CGSize(width: 0, height: -1.5),
@@ -214,7 +252,10 @@ private enum FilmMarkRasterRenderer {
             )
         }
         CTFrameDraw(frame, context)
-        return context.makeImage()
+        guard let image = context.makeImage() else {
+            throw FilmMarkRasterizationError.imageUnavailable
+        }
+        return image
     }
 
     private static func drawSubstrate(
