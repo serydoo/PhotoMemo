@@ -137,7 +137,9 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
 
             currentPresetSection
 
-            workflowReminderCard
+            if shouldShowBeginnerGuidance {
+                workflowReminderCard
+            }
 
             photoPickerWorkflowHintTimeline
         }
@@ -853,7 +855,13 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var shouldShowInAppPhotoPicker: Bool {
-        true
+        shouldShowBeginnerGuidance
+    }
+
+    private var shouldShowBeginnerGuidance: Bool {
+        HomePhotoPickerGuidancePolicy.shouldShowBeginnerGuidance(
+            useCount: photoPickerUseCount
+        )
     }
 }
 
@@ -1037,8 +1045,8 @@ private struct HomeWorkflowReminderCard: View {
             Text(
                 localized("home.workflow.note")
             )
-            .font(.caption2)
-            .foregroundStyle(.tertiary)
+            .font(.caption)
+            .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

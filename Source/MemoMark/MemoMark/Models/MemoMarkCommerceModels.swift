@@ -72,6 +72,10 @@ nonisolated enum HomePhotoPickerGuidancePolicy {
     static let useThreshold = 10
     static let guidanceDuration: TimeInterval = 24 * 60 * 60
 
+    static func shouldShowBeginnerGuidance(useCount: Int) -> Bool {
+        max(useCount, 0) < useThreshold
+    }
+
     static func shouldShow(
         useCount: Int,
         guidanceStartedAt: Date?,

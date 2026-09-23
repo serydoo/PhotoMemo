@@ -70,7 +70,7 @@ struct HomeMemoryPresetRow: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(lineLimit)
-            Text(borderStyleName)
+            Text(presetDescriptor)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(lineLimit)
@@ -90,12 +90,30 @@ struct HomeMemoryPresetRow: View {
     }
 
     private var presetDetail: String {
-        guard isSelected, let savedAt = preset.savedAt else { return preset.summary }
-        return String(
-            format: localized("home.preset.active_status_format"),
-            locale: interfaceLanguage.locale,
-            HomeProjection.savedStatusValue(savedAt: savedAt)
+        if isSelected {
+            return localized("home.preset.active")
+        }
+        return preset.summary
+    }
+
+    private var presetDescriptor: String {
+        let anchorTitle = anchorType.localizedDisplayName(
+            for: interfaceLanguage
         )
+        let styleTitle = borderStyleName.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        let presetTitle = preset.title.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !styleTitle.isEmpty,
+              styleTitle.caseInsensitiveCompare(presetTitle)
+                != .orderedSame else {
+            return anchorTitle
+        }
+
+        return "\(anchorTitle) · \(styleTitle)"
     }
 
     private var presetIdentityMark: some View {

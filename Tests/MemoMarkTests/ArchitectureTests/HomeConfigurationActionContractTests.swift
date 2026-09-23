@@ -40,8 +40,8 @@ struct HomeConfigurationActionContractTests {
         #expect(!rootSource.contains("WorkflowGuideSurface("))
     }
 
-    @Test("in-app photo picker stays discoverable while guidance is bounded")
-    func homePhotoPickerKeepsDiscoverabilityAndBoundedGuidance() throws {
+    @Test("in-app photo picker stays discoverable through the beginner stage")
+    func homePhotoPickerUsesTheBeginnerGuidanceStage() throws {
         let source = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
@@ -57,7 +57,8 @@ struct HomeConfigurationActionContractTests {
 
         #expect(source.contains("shouldShowInAppPhotoPicker"))
         #expect(source.contains("private var shouldShowInAppPhotoPicker: Bool"))
-        #expect(source.contains("shouldShowInAppPhotoPicker: Bool {\n        true"))
+        #expect(source.contains("shouldShowBeginnerGuidance"))
+        #expect(source.contains("HomePhotoPickerGuidancePolicy.shouldShowBeginnerGuidance"))
         #expect(source.contains("HomePhotoPickerGuidancePolicy.useThreshold"))
         #expect(source.contains("photoPickerGuidanceStartedAt"))
         #expect(source.contains("onOpenPhotoPicker: () -> Bool"))
