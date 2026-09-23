@@ -138,7 +138,15 @@ struct MemorySubjectEditingDraft: Equatable {
             anchors: &anchors
         )
 
-        return anchors
+        return anchors.filter { suggestion in
+            !subject.timeAnchors.contains { existingAnchor in
+                existingAnchor.anchorType == suggestion.anchorType
+                    && calendar.isDate(
+                        existingAnchor.date,
+                        inSameDayAs: suggestion.date
+                    )
+            }
+        }
     }
 
     /// Adds one editor-only anchor when the configured cardinality allows it.

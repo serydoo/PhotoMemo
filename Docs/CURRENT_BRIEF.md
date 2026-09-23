@@ -1,6 +1,6 @@
 # MemoMark Current Brief
 
-Last updated: 2026-09-22
+Last updated: 2026-09-23
 
 This is a compact routing brief for a new Codex session. It is not a
 replacement for the project constitution, accepted specifications, contracts,
@@ -13,8 +13,11 @@ follow the linked source-of-truth document.
 - Subphase: `V4.0 Research And Product Definition`
 - Product loop: `ES-001 User Expression Scenarios`, expression-style taxonomy,
   measurable Classic and Minimal studies, and bounded existing-surface polish.
-- Engineering loop: close `TX-001` Export Commit Protocol, `BP-001` enforced
-  single-task memory contract, and publish superseding production certification.
+- Engineering loop: the `2.3.3 (111)` release record initially closes `TX-001`,
+  `BP-001`, and the specified iPhone 17 Pro Max FilmMark full path for this
+  version; later user feedback or new evidence may reopen them. The scoped
+  decision is recorded in
+  `Docs/01_Product/V4_FilmMark_2.3.3_111_Initial_Production_Closure_2026-09-23.md`.
 - Architecture loop: execute the behavior-preserving core modernization in
   RFC-002 and ADR-011. Internal owners and facades may change; product features,
   durable compatibility, media truth, and Apple Photos guarantees may not.
@@ -25,7 +28,7 @@ follow the linked source-of-truth document.
 
 - Project: `Source/MemoMark/MemoMark.xcodeproj`
 - Marketing version: `2.3.3`
-- Build: `109`
+- Build: `111`
 - Release status: `Version Locked; Release Evidence Open`
 - Release scope starts at 2026-09-07 `2.3.0 (105)`; no independently verified `2.3.1` release candidate is invented.
 - Commerce: `MemoMark Commerce v1.1` — historical lifetime and activation-code
@@ -38,12 +41,14 @@ follow the linked source-of-truth document.
   and presentation facade. Startup-only receipt reconciliation remains an
   isolated pre-actor Bootstrap Adapter.
 
-The build and test evidence for build 109 does not imply physical-device visual
-acceptance, StoreKit sandbox acceptance, App Store Connect submission, or
-production certification. The 109 package has been installed over the existing
-app container on the paired physical iPhone 17 Pro Max and launched successfully
-after the device was unlocked; visual, accessibility, Photos, Share, and Live
-Photo acceptance remain open for the user's review.
+The signed 111 package has been installed over the existing app container on
+the paired physical iPhone 17 Pro Max, read back as `2.3.3 (111)`, and launched
+successfully without clearing data. The scoped FilmMark full-path initial
+acceptance, together with `TX-001` and `BP-001`, is closed for this version by
+the product-owner decision recorded above. This does not imply StoreKit
+sandbox acceptance, App Store Connect submission, or a global/permanent
+production certification; unrelated app-wide visual or manual acceptance still
+follows its own evidence boundary.
 
 ## Frozen Boundaries
 

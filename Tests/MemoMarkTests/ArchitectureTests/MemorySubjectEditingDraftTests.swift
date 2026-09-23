@@ -150,6 +150,27 @@ struct MemorySubjectEditingDraftTests {
         #expect(suggestions.map(\.anchorType) == [.birthday, .custom])
         #expect(suggestions[0].date == hundredthDay)
         #expect(suggestions[1].date == halfYear)
+
+        var subjectWithDefaultAnchor = subject
+        subjectWithDefaultAnchor.timeAnchors = anchors
+        subjectWithDefaultAnchor.activeTimeAnchorID = anchors[0].id
+        subjectWithDefaultAnchor.behavior.primaryAnchor = anchors[0].title
+        subjectWithDefaultAnchor.referenceDate = anchors[0].date
+        let stableSuggestions =
+            MemorySubjectEditingDraft.suggestedTimeAnchors(
+                for: subjectWithDefaultAnchor,
+                calendar: calendar
+            )
+
+        var materializedSubject = subjectWithDefaultAnchor
+        materializedSubject.timeAnchors.append(stableSuggestions[0])
+        let remainingSuggestions =
+            MemorySubjectEditingDraft.suggestedTimeAnchors(
+                for: materializedSubject,
+                calendar: calendar
+            )
+        #expect(remainingSuggestions.count == 1)
+        #expect(remainingSuggestions[0].anchorType == .custom)
     }
 
     @Test("draft enforces time anchor cardinality and keeps selection valid")
@@ -178,6 +199,40 @@ struct MemorySubjectEditingDraftTests {
         let removedFirstAnchor = draft.removeTimeAnchor(id: firstAnchorID)
         #expect(removedFirstAnchor)
         #expect(draft.timeAnchors.count == 3)
+    }
+
+    @Test("moving a time anchor preserves the active anchor identity")
+    func movingTimeAnchorPreservesActiveAnchorIdentity() throws {
+        let first = anchor(
+            id: UUID(uuidString: "66666666-6666-6666-6666-666666666666")!,
+            title: "生日",
+            date: Date(timeIntervalSince1970: 6_000)
+        )
+        let active = anchor(
+            id: UUID(uuidString: "77777777-7777-7777-7777-777777777777")!,
+            title: "入园",
+            date: Date(timeIntervalSince1970: 7_000)
+        )
+        let last = anchor(
+            id: UUID(uuidString: "88888888-8888-8888-8888-888888888888")!,
+            title: "纪念日",
+            date: Date(timeIntervalSince1970: 8_000)
+        )
+        var subject = makeSubject(anchors: [first, active, last])
+        subject.activeTimeAnchorID = active.id
+        subject.behavior.primaryAnchor = active.title
+        subject.referenceDate = active.date
+
+        let moved = try #require(
+            subject.movingTimeAnchor(
+                id: first.id,
+                toIndex: 2
+            )
+        )
+
+        #expect(moved.timeAnchors.map(\.id) == [active.id, last.id, first.id])
+        #expect(moved.activeTimeAnchorID == active.id)
+        #expect(moved.primaryTimeAnchor?.id == active.id)
     }
 
     private func makeSubject(

@@ -198,6 +198,46 @@ struct TimeAnchorEditingTransactionTests {
         )
     }
 
+    @Test("memory subject editing exposes native anchor reordering")
+    func memorySubjectEditingExposesNativeAnchorReordering() throws {
+        let source = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
+        )
+        let normalizedSource = source.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
+
+        #expect(source.contains("allowsReordering"))
+        #expect(source.contains("reorderControls"))
+        #expect(source.contains("canMoveUp"))
+        #expect(source.contains("canMoveDown"))
+        #expect(source.contains("accessibility.time_anchor_move_up"))
+        #expect(source.contains("accessibility.time_anchor_move_down"))
+        #expect(source.contains("accessibility.time_anchor_reorder_hint"))
+        #expect(source.contains("accessibility.time_anchor_type_prefix"))
+        #expect(!source.contains("accessibilityLabel: \"上移时间锚点\""))
+        #expect(!source.contains("accessibilityLabel: \"下移时间锚点\""))
+        #expect(
+            normalizedSource.contains(
+                ".frame( width: ConfigurationUI.minimumInteractiveHeight"
+            )
+        )
+        #expect(source.contains(".interactiveSpring("))
+        #expect(source.contains("response: 0.25"))
+        #expect(source.contains("dampingFraction: 0.9"))
+        #expect(!source.contains("DragGesture("))
+        #expect(!source.contains("activeReorder"))
+        #expect(!source.contains("AnchorRowFramePreferenceKey"))
+        #expect(!source.contains(".draggable(anchor.id.uuidString)"))
+        #expect(!source.contains(".dropDestination(for: String.self)"))
+        #expect(source.contains("onMoveTimeAnchor"))
+        #expect(source.contains("accessibilityAction(named: localized("))
+        #expect(!source.contains("accessibilityAction(named: \"上移\")"))
+        #expect(!source.contains("accessibilityAction(named: \"下移\")"))
+    }
+
     @Test("existing anchor transaction preserves the original value and selection")
     func existingAnchorTransactionPreservesOriginalState() {
         let anchor = MemorySubject.TimeAnchor(

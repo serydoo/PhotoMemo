@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsExpressionGuide: View {
 
     let language: MemoMarkLanguage
+    let onOpenTimeExpression: () -> Void
 
     @State
     private var expandedAnchorTypes: Set<String> = [
@@ -61,7 +62,7 @@ struct SettingsExpressionGuide: View {
             Text(
                 localized(
                     "settings.expression.guide.header",
-                    fallback: "围绕你选定的重要日子"
+                    fallback: "照片的拍摄时间，遇见你选定的重要日子"
                 )
             )
                 .font(.subheadline.weight(.semibold))
@@ -70,7 +71,7 @@ struct SettingsExpressionGuide: View {
             Text(
                 localized(
                     "settings.expression.guide.detail",
-                    fallback: "照片在这个日子之前、当天和之后，会有不同说法。"
+                    fallback: "记忆对象是谁、你想用怎样的语气，以及照片距离这个日子有多久，共同组成照片上的一句话。"
                 )
             )
                 .font(.caption)
@@ -84,13 +85,25 @@ struct SettingsExpressionGuide: View {
             Text(
                 localized(
                     "settings.expression.guide.composition_title",
-                    fallback: "一句话由三部分组成"
+                    fallback: "一句话，来自三个决定"
                 )
             )
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            formulaOverview
+            compositionSteps
+
+            Text(
+                localized(
+                    "settings.expression.guide.composition_note",
+                    fallback: "记忆对象提供主角称呼；表达方式决定语气；时间结果来自照片拍摄时间与时间锚点日期的差值。"
+                )
+            )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            configurationLink
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -99,6 +112,149 @@ struct SettingsExpressionGuide: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(ConfigurationUI.controlBackground.opacity(0.5))
         )
+    }
+
+    private var compositionSteps: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            compositionStep(
+                number: "1",
+                title: localized(
+                    "settings.expression.guide.subject",
+                    fallback: "记忆对象"
+                ),
+                detail: localized(
+                    "settings.expression.guide.subject_detail",
+                    fallback: "主角的称呼，可以是宝宝、儿子，或你自定义的名字。"
+                ),
+                role: .subject
+            )
+
+            compositionConnector
+
+            compositionStep(
+                number: "2",
+                title: localized(
+                    "settings.expression.guide.expression",
+                    fallback: "表达方式"
+                ),
+                detail: localized(
+                    "settings.expression.guide.expression_detail",
+                    fallback: "语气与说法，例如自然、仪式感、成长、温馨或极简。"
+                ),
+                role: .smartOutput
+            )
+
+            compositionConnector
+
+            compositionStep(
+                number: "3",
+                title: localized(
+                    "settings.expression.guide.time_result",
+                    fallback: "时间结果"
+                ),
+                detail: localized(
+                    "settings.expression.guide.time_result_detail",
+                    fallback: "照片拍摄时间与时间锚点日期的差值。"
+                ),
+                role: .anchorResult
+            )
+        }
+    }
+
+    private func compositionStep(
+        number: String,
+        title: String,
+        detail: String,
+        role: FormulaRole
+    ) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(number)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(color(for: role))
+                .frame(width: 24, height: 24)
+                .background(
+                    Circle()
+                        .fill(color(for: role).opacity(0.12))
+                )
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var compositionConnector: some View {
+        Rectangle()
+            .fill(ConfigurationUI.faintHairline)
+            .frame(width: 1, height: 10)
+            .padding(.leading, 11.5)
+            .accessibilityHidden(true)
+    }
+
+    private var configurationLink: some View {
+        Button(action: onOpenTimeExpression) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 24, height: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(
+                        localized(
+                            "settings.expression.guide.configuration.title",
+                            fallback: "在配置中心自定义时间表达"
+                        )
+                    )
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text(configurationSummary)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.accentColor.opacity(0.08))
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            localized(
+                "settings.expression.guide.configuration.title",
+                fallback: "在配置中心自定义时间表达"
+            )
+        )
+        .accessibilityHint(
+            localized(
+                "settings.expression.guide.configuration.detail",
+                fallback: "选择当前时间锚点的表达方式，并在卡片上查看示例。"
+            )
+        )
+    }
+
+    private var configurationSummary: String {
+        "\(localized("configuration.expression.title", fallback: "时间怎样表达")) · \(localized("configuration.expression.subtitle", fallback: "为年龄、纪念日或倒计时选择合适的语气。"))"
     }
 
     private var stylesHeader: some View {
@@ -113,108 +269,6 @@ struct SettingsExpressionGuide: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-    }
-
-    private var formulaOverview: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 5) {
-                    formulaToken(
-                        localized(
-                            "settings.expression.guide.subject",
-                            fallback: "记忆对象"
-                        ),
-                        role: .subject
-                    )
-                    plusMark
-                    expressionStylesToken
-                    plusMark
-                    formulaToken(
-                        localized(
-                            "settings.expression.guide.time_result",
-                            fallback: "拍摄时间与设定锚点的差值"
-                        ),
-                        role: .anchorResult
-                    )
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    formulaToken(
-                        localized(
-                            "settings.expression.guide.subject",
-                            fallback: "记忆对象"
-                        ),
-                        role: .subject
-                    )
-                    plusMark
-                    expressionStylesToken
-                    plusMark
-                    formulaToken(
-                        localized(
-                            "settings.expression.guide.time_result",
-                            fallback: "拍摄时间与设定锚点的差值"
-                        ),
-                        role: .anchorResult
-                    )
-                }
-            }
-
-            Text(
-                localized(
-                    "settings.expression.guide.composition_note",
-                    fallback: "表达方式决定如何把记忆对象与这个时间差组织成一句话。"
-                )
-            )
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var expressionStylesToken: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(
-                localized(
-                    "settings.expression.guide.expression",
-                    fallback: "表达方式"
-                )
-            )
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(color(for: .smartOutput))
-
-            Text(expressionStyleSummary)
-                .font(.caption2)
-                .foregroundStyle(color(for: .smartOutput))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.horizontal, 7)
-        .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(color(for: .smartOutput).opacity(0.10))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(color(for: .smartOutput).opacity(0.18))
-        )
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var expressionStyleSummary: String {
-        var titles: [String] = []
-
-        for anchorType in AnchorType.allCases {
-            for style in MemoryAnchorExpressionStyle.availableStyles(
-                for: anchorType
-            ) {
-                let title = localizedStyleTitle(style)
-                if !titles.contains(title) {
-                    titles.append(title)
-                }
-            }
-        }
-
-        return titles.joined(separator: " · ")
     }
 
     private func anchorTypeSection(
@@ -474,32 +528,6 @@ struct SettingsExpressionGuide: View {
         case .custom:
             return "calendar"
         }
-    }
-
-    private func formulaToken(
-        _ title: String,
-        role: FormulaRole
-    ) -> some View {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(color(for: role))
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 5)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(color(for: role).opacity(0.10))
-            )
-            .overlay(
-                Capsule(style: .continuous)
-                    .stroke(color(for: role).opacity(0.18))
-            )
-    }
-
-    private var plusMark: some View {
-        Text("+")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.tertiary)
     }
 
     private func color(

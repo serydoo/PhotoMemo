@@ -52,14 +52,16 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("这次更新继续完善胶片时间与配置中心"))
-        #expect(simplifiedChinese.contains("胶片时间仍在持续开发中"))
-        #expect(simplifiedChinese.contains("修复新建预设后样式选择与输出表现不一致的问题"))
+        #expect(simplifiedChinese.contains("从 2.3.0 开始"))
+        #expect(simplifiedChinese.contains("经典白、极简与胶片时间"))
+        #expect(simplifiedChinese.contains("更丰富的自定义空间"))
+        #expect(simplifiedChinese.contains("重新整理了记忆对象的编辑与时间锚点"))
         #expect(simplifiedChinese.contains("每次处理都会生成新的记忆照片，不覆盖原图"))
-        #expect(english.contains("This update continues refining FilmMark and Configuration Center"))
-        #expect(english.contains("FilmMark remains under active development"))
-        #expect(english.contains("Fixed an issue where a new preset could show one style while producing another"))
-        #expect(english.contains("Each process creates a new memory photo without replacing the original"))
+        #expect(english.contains("Since 2.3.0"))
+        #expect(english.contains("Classic White, Minimal, and FilmMark"))
+        #expect(english.contains("more room to decide"))
+        #expect(english.contains("reorganized Memory Object editing and Time Anchors"))
+        #expect(english.contains("each process creates a new memory photo without replacing the original"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
     }
@@ -73,7 +75,7 @@ struct V1ReleaseNotesContractTests {
             "Docs/07_Releases/2026-09-22-2.3.3-sync-manifest.md"
         )
         #expect(releaseManifest.contains("当前 marketing version：`2.3.3`"))
-        #expect(releaseManifest.contains("当前 build number：`109`"))
+        #expect(releaseManifest.contains("当前 build number：`111`"))
 
         #expect(!projectSource.contains("MARKETING_VERSION = 2.0.3;"))
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
@@ -106,7 +108,7 @@ struct V1ReleaseNotesContractTests {
                 }
         )
         #expect(marketingVersions == ["2.3.3"])
-        #expect(projectBuilds == ["109"])
+        #expect(projectBuilds == ["111"])
     }
 
     @Test("next release drafts keep internal TestFlight and App Store boundaries distinct")

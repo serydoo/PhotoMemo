@@ -174,6 +174,42 @@ struct LocalizationResourceParityTests {
         }
     }
 
+    @Test("Time anchor accessibility actions have explicit four-language values")
+    func timeAnchorAccessibilityHasLocalizedValues() throws {
+        let resources = try ["en", "zh-Hans", "ja", "ko"].map { code in
+            (
+                code: code,
+                entries: parseResource(
+                    try sourceText(
+                        "Source/MemoMark/MemoMark/\(code).lproj/Localizable.strings"
+                    )
+                ).entries
+            )
+        }
+        let keys = [
+            "accessibility.time_anchor_move_up",
+            "accessibility.time_anchor_move_down",
+            "accessibility.time_anchor_reorder_hint",
+            "accessibility.time_anchor_type_prefix"
+        ]
+        let english = try #require(
+            resources.first(where: { $0.code == "en" })?.entries
+        )
+
+        for key in keys {
+            let englishValue = try #require(english[key])
+            #expect(!englishValue.isEmpty)
+            for resource in resources where resource.code != "en" {
+                let localizedValue = try #require(resource.entries[key])
+                #expect(!localizedValue.isEmpty)
+                #expect(
+                    localizedValue != englishValue,
+                    "\(resource.code) unexpectedly uses the English baseline for \(key)"
+                )
+            }
+        }
+    }
+
     @Test("Welcome core surface has explicit Japanese and Korean values")
     func welcomeCoreSurfaceHasLocalizedValues() throws {
         let resources = try ["en", "ja", "ko"].map { code in

@@ -13,17 +13,22 @@ struct SettingsExpressionGuideContractTests {
 
         #expect(source.contains("let language: MemoMarkLanguage"))
         #expect(source.contains("private func localized"))
-        #expect(source.contains("formulaToken("))
         #expect(source.contains("private var compositionOverview"))
+        #expect(source.contains("private var compositionSteps"))
+        #expect(source.contains("compositionStep("))
+        #expect(source.contains("onOpenTimeExpression"))
+        #expect(source.contains("configuration.expression.title"))
+        #expect(source.contains("configuration.expression.subtitle"))
         #expect(source.contains(".frame(maxWidth: .infinity, alignment: .leading)"))
         #expect(!source.contains("private var exampleOverview"))
-        #expect(source.contains("围绕你选定的重要日子"))
-        #expect(source.contains("照片在这个日子之前、当天和之后，会有不同说法。"))
-        #expect(source.contains("一句话由三部分组成"))
-        #expect(source.contains("private var expressionStyleSummary"))
+        #expect(source.contains("照片的拍摄时间，遇见你选定的重要日子"))
+        #expect(source.contains("记忆对象是谁、你想用怎样的语气"))
+        #expect(source.contains("一句话，来自三个决定"))
+        #expect(source.contains("private var configurationLink"))
         #expect(source.contains("settings.expression.guide.composition_note"))
-        #expect(source.contains("fallback: \"记忆对象\""))
-        #expect(source.contains("fallback: \"拍摄时间与设定锚点的差值\""))
+        #expect(source.contains("settings.expression.guide.subject_detail"))
+        #expect(source.contains("settings.expression.guide.expression_detail"))
+        #expect(source.contains("settings.expression.guide.time_result_detail"))
         #expect(!source.contains("showsCompositionExplanation"))
         #expect(!source.contains("private var compositionExplanation"))
         #expect(source.contains("private var stylesHeader"))
@@ -57,6 +62,9 @@ struct SettingsExpressionGuideContractTests {
         let settingsSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
         )
+        let configurationPagesSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
         let simplifiedChinese = try sourceText(
             "Source/MemoMark/MemoMark/zh-Hans.lproj/Localizable.strings"
         )
@@ -66,9 +74,12 @@ struct SettingsExpressionGuideContractTests {
 
         #expect(
             settingsSource.contains(
-                "SettingsExpressionGuide(language: interfaceLanguage)"
+                "SettingsExpressionGuide("
             )
         )
+        #expect(settingsSource.contains("let onOpenTimeExpression: () -> Void"))
+        #expect(configurationPagesSource.contains("for: .memoryExpression"))
+        #expect(configurationPagesSource.contains("EntryFlowCoordinator.openEditorTab"))
         #expect(!guideSource.contains("Text(\"按时间锚点看看每一种表达方式"))
 
         for key in [
@@ -78,8 +89,13 @@ struct SettingsExpressionGuideContractTests {
             "settings.expression.guide.composition_note",
             "settings.expression.guide.styles_detail",
             "settings.expression.guide.subject",
+            "settings.expression.guide.subject_detail",
             "settings.expression.guide.expression",
+            "settings.expression.guide.expression_detail",
             "settings.expression.guide.time_result",
+            "settings.expression.guide.time_result_detail",
+            "settings.expression.guide.configuration.title",
+            "settings.expression.guide.configuration.detail",
             "settings.expression.guide.phase.before",
             "settings.expression.guide.phase.on_anchor",
             "settings.expression.guide.phase.after"
@@ -137,7 +153,7 @@ struct SettingsExpressionGuideContractTests {
         #expect(gettingStartedSource.contains("Button(action: action)"))
         #expect(settingsSource.contains(".sheet(isPresented: $showsExpressionGuide)"))
         #expect(settingsSource.contains("private var expressionGuideSheet"))
-        #expect(settingsSource.contains("SettingsExpressionGuide(language: interfaceLanguage)"))
+        #expect(settingsSource.contains("SettingsExpressionGuide("))
         #expect(settingsSource.contains("key: \"common.done\""))
         #expect(settingsSource.contains(".memoMarkSheet(.browser)"))
     }

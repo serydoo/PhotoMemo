@@ -33,6 +33,18 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(preference.contains("case dark"))
     }
 
+    @Test("appearance changes commit without an implicit transition")
+    func appearanceChangesCommitWithoutAnImplicitTransition() throws {
+        let settings = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
+        )
+
+        #expect(settings.contains("withTransaction(appearancePreferenceTransaction)"))
+        #expect(settings.contains("private var appearancePreferenceTransaction"))
+        #expect(settings.contains("transaction.animation = nil"))
+        #expect(settings.contains("transaction.disablesAnimations = true"))
+    }
+
     @Test("shared runtime headings resolve through the selected interface language")
     func sharedRuntimeHeadingsResolveLocalization() throws {
         let support = try sourceText(

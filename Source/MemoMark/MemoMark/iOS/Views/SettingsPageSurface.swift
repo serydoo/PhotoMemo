@@ -114,6 +114,7 @@ struct SettingsPageSurface: View {
     let onOpenMemoMarkPlus: () -> Void
 
     let onShowWelcome: () -> Void
+    let onOpenTimeExpression: () -> Void
     let onDismissKeyboard: () -> Void
     var onExportDiagnostics:
         () async throws -> URL = {
@@ -268,9 +269,18 @@ struct SettingsPageSurface: View {
                 ) ?? .system
             },
             set: { preference in
-                appearancePreferenceRawValue = preference.rawValue
+                withTransaction(appearancePreferenceTransaction) {
+                    appearancePreferenceRawValue = preference.rawValue
+                }
             }
         )
+    }
+
+    private var appearancePreferenceTransaction: Transaction {
+        var transaction = Transaction()
+        transaction.animation = nil
+        transaction.disablesAnimations = true
+        return transaction
     }
 
     private var interfaceLanguageBinding:
@@ -553,7 +563,16 @@ struct SettingsPageSurface: View {
     private var expressionGuideSheet: some View {
         NavigationStack {
             ScrollView {
-                SettingsExpressionGuide(language: interfaceLanguage)
+                SettingsExpressionGuide(
+                    language: interfaceLanguage,
+                    onOpenTimeExpression: {
+                        showsExpressionGuide = false
+                        Task { @MainActor in
+                            await Task.yield()
+                            onOpenTimeExpression()
+                        }
+                    }
+                )
                     .padding(.top, 16)
                     .padding(.bottom, 34)
                     .adaptiveScrollContent(

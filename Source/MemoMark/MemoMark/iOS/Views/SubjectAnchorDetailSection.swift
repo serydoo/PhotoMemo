@@ -41,6 +41,9 @@ struct SubjectAnchorDetailSection: View {
     @State
     private var showsLastAnchorWarning = false
 
+    @Environment(\.accessibilityReduceMotion)
+    private var accessibilityReduceMotion
+
     var body: some View {
         if let subject = session.state.selectedSubject {
             VStack(spacing: 0) {
@@ -48,22 +51,33 @@ struct SubjectAnchorDetailSection: View {
                     Array(subject.timeAnchors.enumerated()),
                     id: \.element.id
                 ) { index, anchor in
-                    SubjectAnchorDetailModule(
-                        anchor: anchor,
-                        subjectName: subject.identity.shortName,
-                        onConfigure: {
-                            editingDraft = AnchorDraft(
-                                originalID: anchor.id,
-                                anchor: anchor
-                            )
-                        },
-                        onDelete: {
-                            requestDeletion(anchor)
-                        },
-                        leadingContentInset:
-                            allowsSwipeDeletion ? 30 : 0
-                    )
-                    .overlay(alignment: .leading) {
+                    ZStack(alignment: .leading) {
+                        SubjectAnchorDetailModule(
+                            anchor: anchor,
+                            subjectName: subject.identity.shortName,
+                            onConfigure: {
+                                editingDraft = AnchorDraft(
+                                    originalID: anchor.id,
+                                    anchor: anchor
+                                )
+                            },
+                            onDelete: {
+                                requestDeletion(anchor)
+                            },
+                            leadingContentInset:
+                                allowsSwipeDeletion ? 30 : 0,
+                            allowsReordering: allowsSwipeDeletion,
+                            canMoveUp: index > 0,
+                            canMoveDown:
+                                index < subject.timeAnchors.count - 1,
+                            onMoveTimeAnchor: { direction in
+                                moveTimeAnchor(
+                                    anchor.id,
+                                    direction: direction
+                                )
+                            }
+                        )
+
                         if allowsSwipeDeletion {
                             Button(role: .destructive) {
                                 requestDeletion(anchor)
@@ -79,6 +93,10 @@ struct SubjectAnchorDetailSection: View {
                             .accessibilityLabel("删除时间锚点")
                         }
                     }
+                    .animation(
+                        reorderAnimation,
+                        value: subject.timeAnchors.map(\.id)
+                    )
                     .swipeActions(
                         edge: .leading,
                         allowsFullSwipe: false
@@ -271,17 +289,7 @@ struct SubjectAnchorDetailSection: View {
     private func suggestedTimeAnchors(
         for subject: MemorySubject
     ) -> [MemorySubject.TimeAnchor] {
-        return MemorySubjectEditingDraft
-            .suggestedTimeAnchors(for: subject)
-            .filter { suggestion in
-                !subject.timeAnchors.contains { existingAnchor in
-                    existingAnchor.anchorType == suggestion.anchorType
-                    && Calendar.current.isDate(
-                        existingAnchor.date,
-                        inSameDayAs: suggestion.date
-                    )
-                }
-            }
+        MemorySubjectEditingDraft.suggestedTimeAnchors(for: subject)
     }
 
     private func localized(
@@ -351,6 +359,45 @@ struct SubjectAnchorDetailSection: View {
 
     private func cancelEditingDraft() {
         editingDraft = nil
+    }
+
+    private func moveTimeAnchor(
+        _ anchorID: UUID,
+        direction: Int
+    ) {
+        guard let subject = session.state.selectedSubject,
+              let currentIndex = subject.timeAnchors.firstIndex(
+                  where: { $0.id == anchorID }
+              ) else {
+            return
+        }
+
+        let targetIndex = min(
+            max(currentIndex + direction, 0),
+            subject.timeAnchors.count - 1
+        )
+        guard targetIndex != currentIndex,
+              let updatedSubject = subject.movingTimeAnchor(
+                  id: anchorID,
+                  toIndex: targetIndex
+              ) else {
+            return
+        }
+
+        withAnimation(reorderAnimation) {
+            session.updateSelectedSubject(updatedSubject)
+        }
+        onPersistSubjectChanges()
+    }
+
+    private var reorderAnimation: Animation {
+        accessibilityReduceMotion
+            ? .linear(duration: 0.01)
+            : .interactiveSpring(
+                response: 0.25,
+                dampingFraction: 0.9,
+                blendDuration: 0.08
+            )
     }
 }
 
@@ -476,22 +523,39 @@ struct SubjectAnchorDetailModule: View {
     let onConfigure: () -> Void
     let onDelete: () -> Void
     let leadingContentInset: CGFloat
+    let allowsReordering: Bool
+    let canMoveUp: Bool
+    let canMoveDown: Bool
+    let onMoveTimeAnchor: (Int) -> Void
 
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
+
+    private var interfaceLanguage: MemoMarkLanguage {
+        .interfaceStored
+    }
 
     var body: some View {
         Group {
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 8) {
                     anchorFacts
-                    anchorTypeMarker
+                    HStack(alignment: .center, spacing: 12) {
+                        anchorTypeMarker
+                        Spacer(minLength: 0)
+                        if allowsReordering {
+                            reorderControls
+                        }
+                    }
                 }
             } else {
                 HStack(alignment: .center, spacing: 16) {
                     anchorFacts
                     Spacer(minLength: 8)
                     anchorTypeMarker
+                    if allowsReordering {
+                        reorderControls
+                    }
                 }
             }
         }
@@ -519,7 +583,72 @@ struct SubjectAnchorDetailModule: View {
         .accessibilityAction(named: "删除时间锚点") {
             onDelete()
         }
+        .accessibilityAction(named: localized(
+            "accessibility.time_anchor_move_up",
+            fallback: "Move Time Anchor Up"
+        )) {
+            guard canMoveUp else { return }
+            onMoveTimeAnchor(-1)
+        }
+        .accessibilityAction(named: localized(
+            "accessibility.time_anchor_move_down",
+            fallback: "Move Time Anchor Down"
+        )) {
+            guard canMoveDown else { return }
+            onMoveTimeAnchor(1)
+        }
         .accessibilityIdentifier("subject-anchor-row")
+    }
+
+    @ViewBuilder
+    private var reorderControls: some View {
+        HStack(spacing: 4) {
+            if canMoveUp {
+                reorderButton(
+                    direction: -1,
+                    systemName: "chevron.up",
+                    accessibilityLabel: localized(
+                        "accessibility.time_anchor_move_up",
+                        fallback: "Move Time Anchor Up"
+                    )
+                )
+            }
+            if canMoveDown {
+                reorderButton(
+                    direction: 1,
+                    systemName: "chevron.down",
+                    accessibilityLabel: localized(
+                        "accessibility.time_anchor_move_down",
+                        fallback: "Move Time Anchor Down"
+                    )
+                )
+            }
+        }
+    }
+
+    private func reorderButton(
+        direction: Int,
+        systemName: String,
+        accessibilityLabel: String
+    ) -> some View {
+        Button {
+            onMoveTimeAnchor(direction)
+        } label: {
+            Image(systemName: systemName)
+                .font(.body.weight(.semibold))
+                .frame(
+                    width: ConfigurationUI.minimumInteractiveHeight,
+                    height: ConfigurationUI.minimumInteractiveHeight
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint(localized(
+            "accessibility.time_anchor_reorder_hint",
+            fallback: "Adjust the time anchor order"
+        ))
     }
 
     private var anchorFacts: some View {
@@ -569,9 +698,21 @@ struct SubjectAnchorDetailModule: View {
         let typeName = anchor.resolvedAnchorType.localizedDisplayName(
             for: .interfaceStored
         )
-        return MemoMarkLanguage.interfaceStored == .simplifiedChinese
-            ? "类型，\(typeName)"
-            : "Type, \(typeName)"
+        return String(
+            format: localized(
+                "accessibility.time_anchor_type_prefix",
+                fallback: "Type, %@"
+            ),
+            locale: interfaceLanguage.locale,
+            typeName
+        )
+    }
+
+    private func localized(
+        _ key: String,
+        fallback: String
+    ) -> String {
+        interfaceLanguage.localized(key: key, fallback: fallback)
     }
 
     private var anchorTypeTint: Color {

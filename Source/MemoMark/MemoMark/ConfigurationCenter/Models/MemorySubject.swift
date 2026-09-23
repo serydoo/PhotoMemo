@@ -318,6 +318,58 @@ extension MemorySubject {
         return updatedSubject
     }
 
+    /// Reorders one time anchor without changing which anchor is active.
+    /// `toIndex` is the destination index after the moved anchor is removed.
+    func movingTimeAnchor(
+        id: TimeAnchor.ID,
+        toIndex: Int
+    ) -> MemorySubject? {
+        guard timeAnchors.count > 1,
+              let currentIndex = timeAnchors.firstIndex(
+                  where: { $0.id == id }
+              ) else {
+            return nil
+        }
+
+        var updatedSubject = self
+        let movedAnchor = updatedSubject.timeAnchors.remove(
+            at: currentIndex
+        )
+        let destinationIndex = min(
+            max(toIndex, 0),
+            updatedSubject.timeAnchors.count
+        )
+        updatedSubject.timeAnchors.insert(
+            movedAnchor,
+            at: destinationIndex
+        )
+        return updatedSubject
+    }
+
+    /// Moves one time anchor immediately before another anchor.
+    func movingTimeAnchor(
+        id: TimeAnchor.ID,
+        before targetID: TimeAnchor.ID
+    ) -> MemorySubject? {
+        guard id != targetID,
+              let currentIndex = timeAnchors.firstIndex(
+                  where: { $0.id == id }
+              ),
+              let targetIndex = timeAnchors.firstIndex(
+                  where: { $0.id == targetID }
+              ) else {
+            return nil
+        }
+
+        let destinationIndex = currentIndex < targetIndex
+            ? targetIndex - 1
+            : targetIndex
+        return movingTimeAnchor(
+            id: id,
+            toIndex: destinationIndex
+        )
+    }
+
     private static func normalizedOptionalText(
         _ text: String?
     ) -> String? {

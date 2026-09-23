@@ -36,6 +36,7 @@ struct ActiveLocalizationUsageAuditTests {
         "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift",
         "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift",
         "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift",
         "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift",
         "Source/MemoMark/MemoMark/iOS/Views/WelcomeAndSettingsPresentationModifier.swift",
         "Source/MemoMark/MemoMark/iOS/Views/WelcomePresentation.swift",

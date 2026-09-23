@@ -5,7 +5,7 @@
 MemoMark（时光记）是一款为 Apple Photos 设计的本地优先照片记忆工具。
 它不会替代系统相册，也不会修改你的原始照片。MemoMark 读取照片已有的拍摄时间、地点、设备和拍摄信息，再结合你设定的重要日期，为照片生成一份新的记忆版本。
 
-当前本地源码候选版本：**MemoMark 2.3.3（构建 109）**。本轮从 2026 年 9 月 7 日的 2.3.0（105）开始整理，汇总配置中心、FilmMark、照片处理边界、四语文案和本地验证的连续维护；当前重点是让所选样式可靠地延续到预览、保存和新的记忆照片中。当前继续维护 MemoMark Commerce v1.1：历史永久权益与 48 元激活码权益继续保留，新用户使用 MemoMark+ 月度或年度订阅，订阅一次解锁全部内置的记忆表达方式。当前状态为 `Version Locked; Release Evidence Open`。详见 [2.3.3（109）版本更新说明](Docs/07_Releases/2026-09-22-2.3.3-release-notes.md)。
+当前本地源码候选版本：**MemoMark 2.3.3（构建 111）**。本轮从 2026 年 9 月 7 日的 2.3.0（105）开始整理，重点呈现经典白、极简和胶片时间（FilmMark）三种展示框架，以及 FilmMark 更丰富的自定义空间；同时重新组织配置中心、记忆对象细节和时间锚点，让从选择到保存的记忆表达更完整。当前继续维护 MemoMark Commerce v1.1：历史永久权益与 48 元激活码权益继续保留，新用户使用 MemoMark+ 月度或年度订阅，订阅一次解锁全部内置的记忆表达方式。当前状态为 `Version Locked; Release Evidence Open`。详见 [2.3.3（111）版本更新说明](Docs/07_Releases/2026-09-22-2.3.3-release-notes.md)。
 
 例如，一张普通的宝宝照片，除了拍摄日期，还可以留下：
 
@@ -111,7 +111,7 @@ Apple Photos 负责保存记忆，MemoMark 负责帮助你读懂记忆。
 
 MemoMark（时光记）当前处于 V4 Expression Style System 的研究与受控优化阶段，持续验证和完善记忆表达、配置中心、Live Photo 与媒体可靠性、本地处理、国际化、无障碍和 Apple 平台适配。
 
-仓库中的 V4 研究、TX-001 与 BP-001 可靠性记录代表进行中的工程工作，不应被理解为已经完成的生产认证或云端能力承诺。
+`2.3.3 (111)` 的 FilmMark 指定链路、TX-001 与 BP-001 已按本版本范围记录为初步关闭，后续用户反馈仍可补充或重新打开；这不等于云端能力承诺、外部提交完成或永久全局生产认证。
 
 ## 关于项目
 
@@ -127,7 +127,7 @@ MemoMark 是一个独立开发项目。它使用 Swift、SwiftUI、PhotoKit 等 
 
 进一步了解项目内部设计，可阅读 `PROJECT_CONSTITUTION.md`、`Docs/MASTER_PLAN.md`、`Docs/PRODUCT_VERSION_HISTORY.md`、`Docs/CURRENT_STATUS.md` 与 `PROJECT_PHILOSOPHY.md`。
 
-发布与同步遵循 [MemoMark 发布同步规范](Docs/07_Releases/RELEASE_SYNC_STANDARD.md)。版本号、更新范围、GitHub 同步、TestFlight 和 App Store 提交分别确认，不把源码检查点等同于正式发布。当前本地候选为 MemoMark `2.3.2`（构建 `108`）；本轮外部同步仍需完成代码证据、真机手工验收、Xcode Cloud 归档和 App Store Connect 页面核对。
+发布与同步遵循 [MemoMark 发布同步规范](Docs/07_Releases/RELEASE_SYNC_STANDARD.md)。版本号、更新范围、GitHub 同步、TestFlight 和 App Store 提交分别确认，不把源码检查点等同于正式发布。当前本地候选为 MemoMark `2.3.3`（构建 `111`）；本地优化完成后仍需形成唯一 commit，再由用户单独确认 GitHub、TestFlight 和 App Store Connect 动作。
 
 ## English
 

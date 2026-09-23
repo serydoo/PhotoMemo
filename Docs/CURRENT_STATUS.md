@@ -1,5 +1,61 @@
 # MemoMark Current Status
 
+## 2026-09-23 2.3.3（111）FilmMark 初步生产关闭与时间锚点本地化收口
+
+- 根据本次产品发布决定，FilmMark 纳入 `2.3.3 (111)` 正式用户版本；`BP-001` 高分辨率内存、`TX-001` PhotoKit 事务和指定 iPhone 17 Pro Max 的 FilmMark 全链路，在本版本范围内初步关闭。正式记录见 `Docs/01_Product/V4_FilmMark_2.3.3_111_Initial_Production_Closure_2026-09-23.md`；后续用户反馈或新证据可以重新打开，不把本次决定扩展成永久全局认证。
+- 未修改商品加载、月/年购买、恢复购买、重启后权益恢复和历史永久权益兼容逻辑；本次不新增 StoreKit 验收结论。
+- 时间锚点上下移 VoiceOver 动作、顺序提示和类型前缀改为 English、简体中文、日本語、한국어四语资源；`SubjectAnchorDetailSection.swift` 已纳入活动本地化键审计，并补充资源奇偶性测试。先失败后通过的 focused 测试覆盖 `TimeAnchorEditingTransactionTests`、`LocalizationResourceParityTests` 和 `ActiveLocalizationUsageAuditTests`。
+- 本轮重新生成的签名 `MemoMarkiOS` iPhoneOS 包已通过 `codesign --verify --deep --strict`，包内版本为 `2.3.3 (111)`；指定 iPhone 17 Pro Max 恢复 `available (paired)` 后，已使用 `devicectl device install app` 同 Bundle ID 覆盖安装，设备端读回 `2.3.3 (111)`，安装序列号为 `2588`，未卸载或清除既有 App 容器数据。首次启动请求因设备仍锁定被拒绝，解锁后重试启动成功；该证据证明生命周期入口可达，不替代用户逐屏 VoiceOver/视觉验收。
+- 本轮没有盲目重构高分辨率导出的 `@MainActor` 工作；若后续出现性能反馈，仍按 Instruments 与可复现设备场景专项处理。
+- 当前工作树继续保持未提交状态；本轮不执行 GitHub push、TestFlight 上传或 App Store Connect 操作，`Docs/Outreach/` 继续本地保留。
+
+## 2026-09-23 外观浅色/深色切换即时反馈优化
+
+- 复核“设置 → 界面 → 外观”切换路径：浅色、深色和跟随系统仍由共享 `@AppStorage` 持久化，并由根场景 `.preferredColorScheme` 投影；问题集中在选择写入时可能继承隐式动画，造成颜色方案传播看起来偏慢。
+- 外观偏好绑定现在使用专用 `Transaction` 写入，显式清除 animation 并设置 `disablesAnimations = true`；不改变三种外观语义、不修改存储 key，也不影响其他设置区的展开动画。
+- `AppleNativeProductSurfaceContractTests` 先失败后通过；签名 `MemoMarkiOS` 构建、包签名、iPhone 17 Pro Max 覆盖安装、版本读回和启动均通过，当前为 `2.3.3 (111)`。既有 Xcode beta `SwiftCompile ... exit code 0 but produced no further output` 诊断和弃用警告仍按工具链背景记录。
+- 尚未替代用户进行逐次浅色→深色→跟随系统的主观速度与视觉验收；本轮不执行 GitHub push、TestFlight 上传或 App Store Connect 操作，`Docs/Outreach/` 继续本地保留。
+
+## 2026-09-23 时间表达说明结构与配置中心直达优化
+
+- 将“MemoMark 怎么讲述时间”从分散的彩色公式改为纵向三步说明：记忆对象、表达方式、时间结果；明确记忆对象负责主角称呼（可自定义为宝宝、儿子或其他名称），表达方式负责语气，时间结果来自照片拍摄时间与时间锚点日期的差值。
+- 在说明页增加“在配置中心自定义时间表达”入口，点击后关闭说明页和设置页，返回 Configuration Center 编辑页并自动展开“时间怎样表达”区域，沿用当前 `configuration.expression.title` / `subtitle` 文案，不复制另一套配置语义。
+- 四语资源已同步更新；`SettingsExpressionGuideContractTests` focused 5/5 通过。`MemoMarkiOS` 签名构建、包签名、iPhone 17 Pro Max 覆盖安装、版本读回和启动均通过，当前版本为 `2.3.3 (111)`。
+- 逐屏视觉、Dynamic Type、VoiceOver，以及从说明页点击入口后配置中心焦点与实际交互仍待用户在真机上初步验收；本轮不执行 GitHub push、TestFlight 上传或 App Store Connect 操作，`Docs/Outreach/` 继续本地保留。
+
+## 2026-09-23 2.3.3（111）正式用户版本说明与 FilmMark 重点收口
+
+- 按正式用户阅读路径重写应用内更新日志，明确从 2.3.0（105）到当前候选的连续价值：经典白、极简和胶片时间（FilmMark）三种展示框架，FilmMark 更丰富的样式/内容/位置/字号/底色/时间/地点自定义空间，配置中心与记忆对象关系重组，以及时间锚点编辑整理。
+- 同步更新四语应用内文案、App Store “此版本的新内容”、TestFlight 测试说明、内部同步清单、`CHANGELOG.md`、中英文 README 和当前简报；保留本地优先、原图不变、新记忆照片和未完成证据边界，不把架构重构或 FilmMark 持续演进写成生产认证完成。
+- marketing version 保持 `2.3.3`，所有 App、Extension、Widget、Device QA 和 test target 的构建号统一维护到 `111`；本轮新字段已写入工程和版本材料。修正本地化契约后，完整 `MemoMarkTests` 为 `1909 passed / 0 failed / 1 skipped`，签名构建、包签名、设备覆盖安装、版本读回与启动均已有 111 的新证据。
+- 最终全量测试结果包为 `/tmp/MemoMark233Full111Final/Logs/Test/Test-MemoMarkTests-2026.09.23_10-54-43-+0800.xcresult`，结果为 `Passed`；仍记录两条既有 `FixtureExportReadbackTests` QoS priority-inversion runtime warning，以及 Xcode beta 的 `SwiftCompile ... exit code 0 but produced no further output` 诊断。它们未被包装成零警告，也不改变本次测试结果的通过状态。
+- `MemoMarkiOS` 签名产物已通过 `codesign --verify --verbose=4`，包内版本为 `2.3.3 (111)`；指定 iPhone 17 Pro Max（`863C2747-6742-5E93-B715-6F89DBF90B31`）按同 Bundle ID 覆盖安装，设备读回 `2.3.3 (111)`，并成功启动。未卸载应用、未清除容器数据；逐屏 UI、Dynamic Type、VoiceOver、Photos、Share、Live Photo 和用户手工验收仍开放。
+- 本轮不执行 GitHub push、TestFlight 上传或 App Store Connect 操作；`Docs/Outreach/` 继续本地保留，不暂存、不提交、不推送。
+
+## 2026-09-23 时间锚点顺序按钮收口
+
+- 根据真机录屏，将不稳定的拖动排序从“编辑记忆对象”界面移除；真实时间锚点行现在在卡片标题右侧提供边界感知的上移/下移按钮：首项仅显示下移，末项仅显示上移，中间项显示两个按钮。左侧删除按钮和示例锚点的自动消失规则保持不变。
+- 上下按钮复用 `MemorySubject.movingTimeAnchor` 顺序事务，不改变 `activeTimeAnchorID`、主锚点身份或参考日期；点击后使用短交互弹簧让整组列表稳定换位，`Reduce Motion` 下退化为无弹性的短线性过渡。
+- 移除了行几何偏好值、拖动状态、拖动手势和右侧三横线手柄，避免与行级上下文菜单竞争；VoiceOver 同时保留“上移/下移”动作，并为可见按钮提供 44pt 触控目标、明确标签和调整顺序提示。
+- focused `MemoMarkTests/TimeAnchorEditingTransactionTests` 使用 `MemoMarkTests` scheme 通过（11 项）；此前使用未配置 test action 的 `MemoMark` scheme 仅返回 scheme 配置错误，未将其误记为测试失败。
+- `MemoMarkiOS` generic iPhoneOS 签名 Debug 构建已通过，包签名读回有效，版本为 `2.3.3 (109)`；设备恢复为 `available (paired)` 后，已对指定 iPhone 17 Pro Max 做同 Bundle ID 覆盖安装，设备读回版本仍为 `2.3.3 (109)`，并成功启动。未卸载应用、未清除容器数据；待用户完成真机初步检查。未执行 GitHub push、TestFlight 上传或 App Store Connect 操作，`Docs/Outreach/` 继续本地保留。
+
+## 2026-09-23 时间锚点拖动稳定性修正
+
+- 根据真机录屏复核，撤掉了只携带右侧三横线图标的系统 `draggable`/`dropDestination` 预览；该路径会让锚点标题、日期、类型和左侧删除按钮留在原位，造成视觉与落位反馈不一致。
+- 编辑界面现在由右侧手柄触发原生 SwiftUI `DragGesture`：整行信息与删除按钮一起跟手，拖动中心跨过相邻行中心后才换序，其他行使用可中断的交互弹簧让位；松手后只执行一次持久化。
+- 通过行几何偏好值维持拖动对象在上下换序后的连续位置；`Reduce Motion` 下退化为极短线性过渡，不改变排序语义；VoiceOver 的上移/下移动作继续保留。
+- 示例锚点的“已添加即消失”过滤已下沉到 `MemorySubjectEditingDraft`，视图层不再重复维护同一规则；回归测试因此直接覆盖 durable subject 与 suggestion 的边界。
+- 通用 iOS 构建、签名设备构建、包签名读回、`2.3.3 (109)` 版本读回、iPhone 17 Pro Max 覆盖安装和 `devicectl` 启动均已完成。focused 测试仍受 Xcode beta 的 `SwiftCompile ... exit code 0 but produced no further output` 工具链异常影响，整行拖动手感和上下换序仍需用户在真机上复核；本轮未执行 GitHub push、TestFlight 上传或 App Store Connect 操作。
+
+## 2026-09-23 记忆对象时间锚点编辑交互收口
+
+- 按当前 Configuration Center 决策，将时间锚点的结构管理收拢到“编辑记忆对象”界面：真实锚点保留左侧删除按钮，并新增右侧拖动手柄；总览页不新增排序入口。
+- `MemorySubject` 新增顺序变更事务，拖动只调整 `timeAnchors` 数组顺序，不改变 `activeTimeAnchorID`、主锚点语义或参考日期；VoiceOver 在行级提供“上移/下移”动作。
+- 示例锚点继续是推荐内容，不提供删除或拖动；示例被显式添加为真实锚点后，现有过滤逻辑会立即将其从“更多时间锚点示例”区域移除，并补充了回归测试。
+- 治理检查、`git diff --check` 和通用 iOS Debug 构建通过；签名 `2.3.3 (109)` 已覆盖安装到 iPhone 17 Pro Max（`863C2747-6742-5E93-B715-6F89DBF90B31`），未卸载、未清除容器，`devicectl` 启动成功。
+- focused `MemoMarkTests` 本轮未能形成完整通过证据：Xcode beta 在无关测试 SwiftCompile 子任务上反复报告 `exit code 0 but produced no further output`，未将该工具链异常误记为产品通过。拖动手感、删除确认、示例自动消失、Dynamic Type 和 VoiceOver 仍等待用户在真机上初步检查；本轮未执行 GitHub push、TestFlight 上传或 App Store Connect 操作。
+
 ## 2026-09-22 2.3.3（109）发布材料与真机候选
 
 - 当前本地候选版本为 `2.3.3 (109)`，范围从 2026-09-07 的 `2.3.0 (105)` 起算；仓库没有可独立确认的 `2.3.1` 候选，因此不虚构其构建号或商店状态。

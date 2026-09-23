@@ -40,6 +40,17 @@ extension MemoMarkConfigurationCenterView {
                     rootPresentationState.showsWelcomeInformation = true
                 }
             },
+            onOpenTimeExpression: {
+                rootPresentationState.configurationDisclosureState.setExpanded(
+                    true,
+                    for: .memoryExpression
+                )
+                entryFlowState = EntryFlowCoordinator.openEditorTab(
+                    from: EntryFlowCoordinator.closeSettingsPage(
+                        from: entryFlowState
+                    )
+                )
+            },
             onDismissKeyboard: dismissKeyboard,
             onExportDiagnostics: {
                 guard let productionDiagnosticsRepository else {
