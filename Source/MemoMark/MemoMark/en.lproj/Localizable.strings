@@ -672,6 +672,7 @@
 "home.preset.identity_format" = "%@, Logo Mark: %@";
 "home.preset.active" = "In use";
 "home.preset.active_status_format" = "Active · %@";
+"home.preset.accessibility_format" = "%@, %@, for %@, %@";
 "home.logo.apple" = "Apple Mark";
 "home.logo.custom" = "Custom Mark";
 "home.logo.avatar" = "Use Subject Avatar";

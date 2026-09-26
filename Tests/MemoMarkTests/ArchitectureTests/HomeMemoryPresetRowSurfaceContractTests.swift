@@ -31,6 +31,25 @@ struct HomeMemoryPresetRowSurfaceContractTests {
         #expect(!rowSource.contains("BatchQueueStore"))
     }
 
+    @Test("preset rows expose the memory object in a compact metadata rail")
+    func presetRowsExposeMemoryObjectInCompactMetadataRail() throws {
+        let homeSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+        )
+        let rowSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/HomeMemoryPresetRow.swift"
+        )
+
+        #expect(homeSource.contains("subjectTitle: subjectSummary.title"))
+        #expect(rowSource.contains("let subjectTitle: String"))
+        #expect(rowSource.contains("private var horizontalPresetMetadata"))
+        #expect(rowSource.contains("Text(\"·\")"))
+        #expect(rowSource.contains("presetAccessibilityLabel"))
+        #expect(rowSource.contains(".accessibilityLabel(presetAccessibilityLabel)"))
+        #expect(rowSource.contains("home.preset.accessibility_format"))
+        #expect(rowSource.contains("verticalPresetTextContent"))
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         let testsDirectory = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

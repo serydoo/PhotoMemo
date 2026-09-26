@@ -1,5 +1,13 @@
 # MemoMark Current Status
 
+## 2026-09-26 首页预设记忆对象信息层级收口
+
+- 按首页真实信息密度收敛“我的预设”行：第一行保留用户自定义预设名称，第二行在普通字号下横向展示“锚点/样式 · 记忆对象 · 当前使用”，未选中项不重复显示状态；空间不足或 Dynamic Type 辅助功能字号下回落为纵向信息布局。
+- 记忆对象名称直接读取当前 Home `subjectSummary.title`，没有新增 `MemoryPreset` 字段、持久化键、配置快照或输出契约；预设选择仍由 Home 页面回调负责，右侧选择标记和原有对象头像/标识保持不变。
+- 新增四语无障碍整行标签，分隔点对 VoiceOver 隐藏；补充 `HomeMemoryPresetRowSurfaceContractTests` 契约覆盖和四语资源键。`git diff --check` 通过。
+- `MemoMarkiOS` iPhoneOS Debug 签名构建、`codesign --verify --deep --strict`、指定 iPhone 17 Pro Max 覆盖安装与启动均成功，未卸载应用或清除容器数据。Xcode Beta 的 macOS focused test runner 在既有 `GeocoderService.swift` 弃用诊断处异常中止，未将该次测试记为通过；设备启动不替代用户对横向信息密度、Dynamic Type、VoiceOver 和视觉构图的人工验收。
+- 本轮未执行 Git commit/push、TestFlight 或 App Store Connect 操作；`Docs/Outreach/` 与 `Research/` 本地材料保持原样。
+
 ## 2026-09-26 预览交互与竖图 viewport 契约校正
 
 - 依据本轮预览机制审查，当前生产 Configuration Center 预览的横竖图切换事实统一为左右 edge buttons；预览区不再以横向 swipe、跟手位移或 predicted-end 位移作为方向切换契约。竖向拖动仍只承担竖图 compact/full inspection 的展开动作，不改变方向切换事实。

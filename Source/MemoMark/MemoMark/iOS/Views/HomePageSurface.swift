@@ -640,6 +640,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                                     borderStyleName:
                                         borderStyleNameForPreset(preset),
                                     anchorType: anchorType(for: preset),
+                                    subjectTitle: subjectSummary.title,
                                     subjectAvatarImagePath:
                                         subject?.identity.avatarPreviewImagePath
                                         ?? subject?.identity.avatarImagePath,

@@ -14,6 +14,7 @@ struct HomeMemoryPresetRow: View {
     let preset: MemoryPreset
     let borderStyleName: String
     let anchorType: AnchorType
+    let subjectTitle: String
     let subjectAvatarImagePath: String?
     let isSelected: Bool
     let onSelect: () -> Void
@@ -24,7 +25,9 @@ struct HomeMemoryPresetRow: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityLabel(presetAccessibilityLabel)
     }
 
     private var rowContent: some View {
@@ -48,7 +51,7 @@ struct HomeMemoryPresetRow: View {
     private var horizontalPresetRowContent: some View {
         HStack(alignment: .center, spacing: 12) {
             presetIdentityMark
-            presetTextContent(lineLimit: 2)
+            horizontalPresetTextContent
             Spacer(minLength: 8)
             presetSelectionMark
         }
@@ -58,28 +61,62 @@ struct HomeMemoryPresetRow: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 12) {
                 presetIdentityMark
-                presetTextContent(lineLimit: 3)
+                verticalPresetTextContent
             }
             presetSelectionMark.frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
-    private func presetTextContent(lineLimit: Int) -> some View {
+    private var horizontalPresetTextContent: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(preset.title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(lineLimit)
+            presetTitleText
+            horizontalPresetMetadata
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var verticalPresetTextContent: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            presetTitleText
             Text(presetDescriptor)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
-                .lineLimit(lineLimit)
+                .lineLimit(2)
+            Text(subjectTitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
             Text(presetDetail)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-                .lineLimit(lineLimit)
+                .lineLimit(2)
         }
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var presetTitleText: some View {
+        Text(preset.title)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.primary)
+            .lineLimit(2)
+    }
+
+    private var horizontalPresetMetadata: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(presetDescriptor)
+            Text("·")
+                .accessibilityHidden(true)
+            Text(subjectTitle)
+            if isSelected {
+                Text("·")
+                    .accessibilityHidden(true)
+                Text(presetDetail)
+            }
+        }
+        .font(.caption.weight(.medium))
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     private var presetSelectionMark: some View {
@@ -94,6 +131,17 @@ struct HomeMemoryPresetRow: View {
             return localized("home.preset.active")
         }
         return preset.summary
+    }
+
+    private var presetAccessibilityLabel: String {
+        String(
+            format: localized("home.preset.accessibility_format"),
+            locale: interfaceLanguage.locale,
+            preset.title,
+            presetDescriptor,
+            subjectTitle,
+            presetDetail
+        )
     }
 
     private var presetDescriptor: String {

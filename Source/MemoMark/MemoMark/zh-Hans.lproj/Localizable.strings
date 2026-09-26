@@ -633,6 +633,7 @@
 "home.preset.identity_format" = "%@，Logo 标识：%@";
 "home.preset.active" = "当前使用";
 "home.preset.active_status_format" = "当前生效 · %@";
+"home.preset.accessibility_format" = "%@，%@，围绕%@，%@";
 "home.logo.apple" = "Apple 标识";
 "home.logo.custom" = "自选标识";
 "home.logo.avatar" = "使用对象头像";

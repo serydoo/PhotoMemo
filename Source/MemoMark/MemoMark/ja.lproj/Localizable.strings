@@ -672,6 +672,7 @@
 "home.preset.identity_format" = "%@、ロゴ：%@";
 "home.preset.active" = "使用中";
 "home.preset.active_status_format" = "現在有効 · %@";
+"home.preset.accessibility_format" = "%@、%@、%@向け、%@";
 "home.logo.apple" = "Appleマーク";
 "home.logo.custom" = "カスタムマーク";
 "home.logo.avatar" = "対象のアバターを使用";

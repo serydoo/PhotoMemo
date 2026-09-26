@@ -672,6 +672,7 @@
 "home.preset.identity_format" = "%@, 로고: %@";
 "home.preset.active" = "사용 중";
 "home.preset.active_status_format" = "현재 적용 · %@";
+"home.preset.accessibility_format" = "%@, %@, %@ 대상, %@";
 "home.logo.apple" = "Apple 마크";
 "home.logo.custom" = "사용자 지정 마크";
 "home.logo.avatar" = "대상 아바타 사용";
