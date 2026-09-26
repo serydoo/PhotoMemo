@@ -1818,3 +1818,11 @@
 "output.error.photo_library.album_create_failed" = "MemoMark could not create the destination album.";
 "output.error.photo_library.asset_save_failed" = "The photo was generated, but could not be saved to Photos.";
 "output.error.photo_library.readback_pending" = "The photo is still being written to Photos. Try again shortly.";
+"configuration.preview.orientation.landscape" = "Landscape photo";
+"configuration.preview.orientation.portrait" = "Portrait photo";
+"configuration.preview.orientation.switch_to_portrait" = "Switch to portrait photo";
+"configuration.preview.orientation.switch_to_landscape" = "Switch to landscape photo";
+"configuration.preview.zoom.fit" = "Fit preview to window";
+"configuration.preview.zoom.expand" = "Inspect full photo";
+"configuration.preview.zoom.hint" = "Changes only the preview, not the output or preset.";
+"filmMark.preview.photo.accessibility" = "FilmMark full photo preview";

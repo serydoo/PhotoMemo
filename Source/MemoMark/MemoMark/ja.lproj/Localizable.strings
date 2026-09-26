@@ -1818,3 +1818,11 @@
 "output.error.photo_library.album_create_failed" = "MemoMarkは保存先アルバムを作成できませんでした。";
 "output.error.photo_library.asset_save_failed" = "写真は生成されましたが、写真ライブラリに保存できませんでした。";
 "output.error.photo_library.readback_pending" = "写真を写真ライブラリに書き込んでいます。しばらくしてから再試行してください。";
+"configuration.preview.orientation.landscape" = "横向きの写真";
+"configuration.preview.orientation.portrait" = "縦向きの写真";
+"configuration.preview.orientation.switch_to_portrait" = "縦向きの写真に切り替える";
+"configuration.preview.orientation.switch_to_landscape" = "横向きの写真に切り替える";
+"configuration.preview.zoom.fit" = "プレビューをウインドウに合わせる";
+"configuration.preview.zoom.expand" = "写真全体を拡大して確認";
+"configuration.preview.zoom.hint" = "プレビューのみを変更し、出力やプリセットには影響しません。";
+"filmMark.preview.photo.accessibility" = "FilmMark の写真全体プレビュー";

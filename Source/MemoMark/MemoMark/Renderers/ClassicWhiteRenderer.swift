@@ -26,6 +26,8 @@ enum ClassicWhiteRenderer {
 
         let leftColumnWidthRatio: CGFloat
 
+        let leftGroupOffsetRatio: CGFloat
+
         let rightColumnWidthRatio: CGFloat
 
         let logoSlotWidthRatio: CGFloat
@@ -229,6 +231,7 @@ enum ClassicWhiteRenderer {
                 logoToDividerSpacingRatio: 0.007,
                 dividerToTextSpacingRatio: 0.021,
                 leftColumnWidthRatio: 0.42,
+                leftGroupOffsetRatio: 0,
                 rightColumnWidthRatio: 0.271,
                 logoSlotWidthRatio: 0.076,
                 logoSizeRatio: 0.50,
@@ -255,12 +258,25 @@ enum ClassicWhiteRenderer {
 
             return Layout(
                 borderToImageHeightRatio: 753 / 8064,
-                horizontalPaddingRatio: 0.045,
+                horizontalPaddingRatio:
+                    ClassicWhitePortraitLayoutSpecification
+                    .minimumCanvasEdgeInset,
                 verticalPaddingRatio: 0.2,
-                logoToDividerSpacingRatio: 0.015,
-                dividerToTextSpacingRatio: 0.026,
-                leftColumnWidthRatio: 0.43,
-                rightColumnWidthRatio: 0.406,
+                logoToDividerSpacingRatio:
+                    ClassicWhitePortraitLayoutSpecification
+                    .logoToDividerSpacing,
+                dividerToTextSpacingRatio:
+                    ClassicWhitePortraitLayoutSpecification
+                    .dividerToRightTextSpacing,
+                leftColumnWidthRatio:
+                    ClassicWhitePortraitLayoutSpecification
+                    .leftTextWidth,
+                leftGroupOffsetRatio:
+                    ClassicWhitePortraitLayoutSpecification
+                    .leftGroupOffset,
+                rightColumnWidthRatio:
+                    ClassicWhitePortraitLayoutSpecification
+                    .rightTextWidth,
                 logoSlotWidthRatio: 0.10,
                 logoSizeRatio: 0.42,
                 customLogoScaleRatio: 1.36,
@@ -278,8 +294,7 @@ enum ClassicWhiteRenderer {
                 titleTracking: -0.12,
                 metadataTracking: -0.12,
                 bottomTracking: 0,
-                rightColumnAlignment:
-                    .leading
+                rightColumnAlignment: .leading
             )
         }
     }
@@ -413,8 +428,13 @@ struct ClassicWhiteCardRenderer: View {
         height: CGFloat,
         layout: ClassicWhiteRenderer.Layout
     ) -> some View {
+        let portraitGeometry = resolvedPortraitGeometry(
+            width: width,
+            height: height,
+            layout: layout
+        )
 
-        HStack(
+        return HStack(
             alignment: .center,
             spacing: 0
         ) {
@@ -422,7 +442,8 @@ struct ClassicWhiteCardRenderer: View {
             leftArea(
                 width: width,
                 height: height,
-                layout: layout
+                layout: layout,
+                portraitGeometry: portraitGeometry
             )
 
             Spacer(minLength: 0)
@@ -430,7 +451,8 @@ struct ClassicWhiteCardRenderer: View {
             trailingCluster(
                 width: width,
                 height: height,
-                layout: layout
+                layout: layout,
+                portraitGeometry: portraitGeometry
             )
         }
         .padding(
@@ -454,7 +476,8 @@ struct ClassicWhiteCardRenderer: View {
     private func leftArea(
         width: CGFloat,
         height: CGFloat,
-        layout: ClassicWhiteRenderer.Layout
+        layout: ClassicWhiteRenderer.Layout,
+        portraitGeometry: ClassicWhitePortraitResolvedLayout?
     ) -> some View {
 
         pinnedColumn(
@@ -515,8 +538,14 @@ struct ClassicWhiteCardRenderer: View {
         .frame(
             width:
                 width
-                * layout.leftColumnWidthRatio,
+                * (portraitGeometry?.leftTextWidth ?? layout.leftColumnWidthRatio),
             alignment: .leading
+        )
+        .offset(
+            x: width * (
+                (portraitGeometry?.leftTextOriginX ?? layout.horizontalPaddingRatio)
+                    - layout.horizontalPaddingRatio
+            )
         )
     }
 
@@ -524,13 +553,18 @@ struct ClassicWhiteCardRenderer: View {
     private func trailingCluster(
         width: CGFloat,
         height: CGFloat,
-        layout: ClassicWhiteRenderer.Layout
+        layout: ClassicWhiteRenderer.Layout,
+        portraitGeometry: ClassicWhitePortraitResolvedLayout?
     ) -> some View {
 
         HStack(
             alignment: .center,
             spacing: 0
         ) {
+            let dividerWidth = max(
+                ClassicWhiteRenderer.dividerWidth,
+                height * layout.dividerWidthRatio
+            )
 
             if showsLogo {
 
@@ -557,20 +591,14 @@ struct ClassicWhiteCardRenderer: View {
                     )
                     .frame(
                         width:
-                            max(
-                                ClassicWhiteRenderer
-                                    .dividerWidth,
-                                height
-                                    * layout.dividerWidthRatio
-                            ),
+                            dividerWidth,
                         height:
                             height
                             * layout.dividerHeightRatio
                     )
                     .padding(
                         .trailing,
-                        width
-                        * layout.dividerToTextSpacingRatio
+                        width * layout.dividerToTextSpacingRatio
                     )
             }
 
@@ -582,13 +610,61 @@ struct ClassicWhiteCardRenderer: View {
             .frame(
                 width:
                     width
-                    * layout.rightColumnWidthRatio,
+                    * (portraitGeometry?.rightTextWidth ?? layout.rightColumnWidthRatio),
                 alignment:
                     layout.rightColumnAlignment == .leading
                     ? .leading
                     : .trailing
             )
         }
+    }
+
+    private func resolvedPortraitGeometry(
+        width: CGFloat,
+        height: CGFloat,
+        layout: ClassicWhiteRenderer.Layout
+    ) -> ClassicWhitePortraitResolvedLayout? {
+        guard ClassicWhiteRenderer.orientation(for: card.metadata) == .portrait else {
+            return nil
+        }
+
+        let leftTopFontSize = max(16, height * layout.titleFontRatio)
+        let leftBottomFontSize = max(12, height * layout.bottomFontRatio)
+        let rightTopFontSize = max(15, height * layout.metadataFontRatio)
+        let rightBottomFontSize = max(12, height * layout.bottomFontRatio)
+
+        return ClassicWhitePortraitLayoutSpecification.resolve(
+            leftRowWidths: [
+                ClassicWhitePortraitLayoutSpecification.measureTextWidth(
+                    frameInput.slot0,
+                    fontSize: leftTopFontSize,
+                    tracking: layout.titleTracking
+                ) / max(width, 1),
+                ClassicWhitePortraitLayoutSpecification.measureTextWidth(
+                    frameInput.slot2,
+                    fontSize: leftBottomFontSize,
+                    tracking: layout.bottomTracking,
+                    weight: []
+                ) / max(width, 1)
+            ],
+            rightRowWidths: [
+                ClassicWhitePortraitLayoutSpecification.measureTextWidth(
+                    frameInput.slot1,
+                    fontSize: rightTopFontSize,
+                    tracking: layout.metadataTracking
+                ) / max(width, 1),
+                ClassicWhitePortraitLayoutSpecification.measureTextWidth(
+                    frameInput.slot3,
+                    fontSize: rightBottomFontSize,
+                    tracking: layout.bottomTracking,
+                    weight: []
+                ) / max(width, 1)
+            ],
+            dividerWidthRatio: max(
+                ClassicWhiteRenderer.dividerWidth,
+                height * layout.dividerWidthRatio
+            ) / max(width, 1)
+        )
     }
 
     @ViewBuilder

@@ -69,6 +69,10 @@ side remains a single continuous capsule edge around the text region.
 
 ## Configuration Center preview
 
+The compact-slice rule in this section is superseded by the 2026-09-23
+preview-direction amendment below. It remains here as historical geometry
+evidence.
+
 The Configuration Center Minimal preview is a compact explanatory image slice,
 not a miniature output card with an appended border area. It must show only the
 sample photo surface and the bottom-right floating capsule. Top/bottom blank
@@ -79,14 +83,34 @@ The preview uses `imageSliceHeightToWidth = 0.20625` as its visible height and
 reuses the same capsule/avatar measured silhouette listed above. Its purpose is
 to communicate placement and rhythm, not to simulate the full exported photo.
 
+### 2026-09-23 preview-direction amendment
+
+Status: Product-owner direction accepted; exact preview height awaits visual
+review on the paired iPhone 17 Pro Max.
+
+- Show a complete app-bundled sample photo with the floating capsule at its
+  actual relative position. Do not append a footer or crop the photo to fill a
+  fixed preview ratio.
+- Let users move horizontally between landscape and portrait preview samples;
+  also expose orientation as a visible, accessible control. This view state
+  must not change the saved Presentation route, source photo, or export.
+- The preview height is style-specific. Do not preserve equal default heights
+  merely for alignment with Classic White or FilmMark.
+- The preview communicates composition rather than serving as a 1:1 measurement
+  surface. Rendering, layout, and export geometry remain unchanged.
+
+The former `imageSliceHeightToWidth = 0.20625` measurement applies only to the
+superseded compact explanatory slice and must not constrain the full-photo
+preview.
+
 ## Acceptance criteria
 
 - Minimal static output has the same width and height as the source photo.
 - The capsule is inside the source photo, anchored near the bottom-right.
 - The capsule has one continuous rounded silhouette; the avatar sits inside its
   measured left-side area and does not overrun the stroke.
-- Configuration Center Minimal preview shows the floating capsule over a sample
-  image slice without top or bottom blank preview bands.
+- Configuration Center Minimal preview shows the floating capsule over a full
+  landscape or portrait sample photo, without appended bands or forced crop.
 - Minimal Live Photo still and paired video use the same overlay coordinates.
 - No black/gray/white band is introduced solely by Minimal composition.
 - Static input remains static; Live Photo input remains a paired Live Photo.

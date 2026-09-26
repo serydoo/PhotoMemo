@@ -84,36 +84,216 @@ struct FilmMarkPresentationSpecificationTests {
         )
     }
 
-    @Test("preview backgrounds select real assets for compact and wide surfaces")
-    func previewBackgroundsSelectRealAssetsForCompactAndWideSurfaces() {
+    @Test("all production styles select the same orientation-matched photographs")
+    func allProductionStylesSelectSharedOrientationMatchedPhotographs() {
+        let styles: [ConfigurationPreviewBackground] = [
+            .classicWhite,
+            .minimal,
+            .filmMark
+        ]
+
+        for style in styles {
+            #expect(
+                style.assetName(forOrientation: .landscape)
+                    == "MidAutumnPreviewBackgroundLandscape"
+            )
+            #expect(
+                style.assetName(forOrientation: .portrait)
+                    == "MidAutumnPreviewBackgroundPortrait"
+            )
+        }
+    }
+
+    @Test("production previews select shared assets and matching canvas ratios")
+    func productionPreviewsSelectSharedAssetsAndCanvasRatios() {
         #expect(
             ConfigurationPreviewBackground.minimal.assetName(
-                for: .compact
-            ) == "MinimalPreviewBackgroundPortrait"
+                forOrientation: .landscape
+            ) == "MidAutumnPreviewBackgroundLandscape"
         )
         #expect(
             ConfigurationPreviewBackground.minimal.assetName(
-                for: .wide
-            ) == "MinimalPreviewBackgroundLandscape"
+                forOrientation: .portrait
+            ) == "MidAutumnPreviewBackgroundPortrait"
         )
         #expect(
             ConfigurationPreviewBackground.filmMark.assetName(
-                for: .compact
-            ) == "FilmMarkPreviewBackground"
+                forOrientation: .portrait
+            ) == "MidAutumnPreviewBackgroundPortrait"
         )
         #expect(
-            ConfigurationPreviewBackground.filmMark.assetName(
-                for: .wide
-            ) == "FilmMarkPreviewBackground"
+            abs(ConfigurationPreviewBackground.landscapeAspectRatio - 16.0 / 9.0)
+                < 0.0001
+        )
+        #expect(
+            abs(ConfigurationPreviewBackground.portraitAspectRatio - 9.0 / 16.0)
+                < 0.0001
+        )
+        #expect(
+            abs(
+                ConfigurationPreviewViewportSpec.viewportAspectRatio(
+                    for: .landscape,
+                    isExpanded: false
+                ) - (16.0 / 9.0 / ConfigurationPreviewViewportSpec.landscapeFitScale)
+            ) < 0.0001
+        )
+        #expect(
+            abs(
+                ConfigurationPreviewViewportSpec.viewportAspectRatio(
+                    for: .portrait,
+                    isExpanded: false
+                ) - (
+                    1.125
+                        / (
+                            ConfigurationPreviewViewportSpec.portraitFitScale
+                                * ConfigurationPreviewViewportSpec
+                                    .portraitFitVisibleFraction
+                        )
+                )
+            ) < 0.0001
+        )
+        #expect(
+            FilmMarkPreviewGeometrySpec.canvasSize(for: .landscape)
+                == CGSize(width: 1_200, height: 675)
+        )
+        #expect(
+            FilmMarkPreviewGeometrySpec.canvasSize(for: .portrait)
+                == CGSize(width: 675, height: 1_200)
         )
     }
 
-    @Test("uses the same narrative photograph across FilmMark orientations")
-    func usesSameNarrativePhotographAcrossFilmMarkOrientations() {
+    @Test("preview preferences remain app-local UI state")
+    func previewPreferencesRemainAppLocalUIState() {
         #expect(
-            ConfigurationPreviewBackground.filmMark.assetName(for: .compact)
-                == ConfigurationPreviewBackground.filmMark.assetName(for: .wide)
+            ConfigurationPreviewPreferenceKey.orientation
+                == "memomark.configuration.preview.orientation"
         )
+        #expect(
+            ConfigurationPreviewViewportSpec.canvasWidth(
+                availableWidth: 400,
+                for: .landscape,
+                isExpanded: false
+            ) == 400 * ConfigurationPreviewViewportSpec.landscapeFitScale
+        )
+        #expect(
+            ConfigurationPreviewViewportSpec.canvasWidth(
+                availableWidth: 400,
+                for: .portrait,
+                isExpanded: false
+            ) == 400 * ConfigurationPreviewViewportSpec.portraitFitScale
+        )
+        let availableWidth: CGFloat = 400
+        let canvasAspectRatio = ConfigurationPreviewBackground.portraitAspectRatio
+        let canvasWidth = availableWidth
+            * ConfigurationPreviewViewportSpec.portraitFitScale
+        let canvasHeight = canvasWidth / canvasAspectRatio
+        let viewportHeight = availableWidth
+            / ConfigurationPreviewViewportSpec.viewportAspectRatio(
+                canvasAspectRatio: canvasAspectRatio,
+                for: .portrait,
+                isExpanded: false
+            )
+        #expect(
+            abs(
+                viewportHeight / canvasHeight
+                    - ConfigurationPreviewViewportSpec.portraitFitVisibleFraction
+            ) < 0.0001
+        )
+        #expect(ConfigurationPreviewViewportSpec.alternateCardPeekScale > 0.90)
+        #expect(ConfigurationPreviewViewportSpec.alternateCardPeekScale < 1)
+        #expect(ConfigurationPreviewViewportSpec.alternateCardPeekOpacity > 0.65)
+        #expect(ConfigurationPreviewViewportSpec.alternateCardPeekOffset > 0)
+    }
+
+    @Test("Classic White preview includes its complete information bar in the canvas ratio")
+    func classicWhitePreviewIncludesCompleteInformationBarInCanvasRatio() {
+        for orientation in ConfigurationPreviewBackground.Orientation.allCases {
+            let imageAspectRatio = ConfigurationPreviewBackground.aspectRatio(
+                for: orientation
+            )
+            let barOrientation: CompactInformationBarOrientation =
+                orientation == .landscape ? .landscape : .portrait
+            let informationBarHeightToWidth =
+                RendererConstants.CompactInformationBar.spec(for: barOrientation)
+                    .barHeightToWidth
+            let expectedCanvasAspectRatio = 1 / (
+                1 / imageAspectRatio + informationBarHeightToWidth
+            )
+
+            #expect(
+                abs(
+                    ConfigurationPreviewViewportSpec.canvasAspectRatio(
+                        for: .classicWhite,
+                        orientation: orientation
+                    ) - expectedCanvasAspectRatio
+                ) < 0.0001
+            )
+        }
+    }
+
+    @MainActor
+    @Test("full-canvas FilmMark surface renders both orientations")
+    func reviewFullCanvasFilmMarkSurfaceRendersBothOrientations() throws {
+        for orientation in ConfigurationPreviewBackground.Orientation.allCases {
+            let canvasSize = FilmMarkPreviewGeometrySpec.canvasSize(
+                for: orientation
+            )
+            let displayWidth: CGFloat = 360
+            let displayHeight = displayWidth
+                / ConfigurationPreviewBackground.aspectRatio(for: orientation)
+            let renderer = ImageRenderer(
+                content: FilmMarkPreviewSurface(
+                    content: .init(
+                        primaryOutput: "2026.06.18 · 出生第 428 天"
+                    ),
+                    configuration: .default,
+                    mode: .fullPhotoCanvas(
+                        orientation: orientation,
+                        showsGuides: true
+                    )
+                )
+                .frame(width: displayWidth, height: displayHeight)
+            )
+            renderer.scale = 1
+
+            let image = try #require(renderer.cgImage)
+            #expect(image.width == Int(displayWidth))
+            #expect(abs(image.height - Int(displayHeight.rounded())) <= 1)
+            #expect(canvasSize.width > 0 && canvasSize.height > 0)
+        }
+    }
+
+    @MainActor
+    @Test("Classic White review preserves each photo above its complete information bar")
+    func classicWhiteReviewPreservesPhotoAndInformationBarDimensions() throws {
+        for orientation in ConfigurationPreviewBackground.Orientation.allCases {
+            let aspectRatio = ConfigurationPreviewViewportSpec.canvasAspectRatio(
+                for: .classicWhite,
+                orientation: orientation
+            )
+            let width: CGFloat = 360
+            let height = width / aspectRatio
+            let renderer = ImageRenderer(
+                content: MemoryCardPreviewSurface(
+                    presentationStyle: .classicWhite,
+                    logoMode: .appleMini,
+                    customLogoImagePath: nil,
+                    subjectAvatarLogoImagePath: nil,
+                    regionText: "时光记",
+                    timeText: "出生第 428 天",
+                    contextText: "2026年6月18日 · 横滨",
+                    memoryText: "你第一次追着风跑",
+                    filmMarkPreviewMode: .contentStrip,
+                    previewOrientation: orientation
+                )
+                .frame(width: width, height: height)
+            )
+            renderer.scale = 1
+
+            let image = try #require(renderer.cgImage)
+            #expect(image.width == Int(width))
+            #expect(abs(image.height - Int(height.rounded())) <= 1)
+        }
     }
 
     @Test("FM geometry preview never reveals more than the lower photo half")

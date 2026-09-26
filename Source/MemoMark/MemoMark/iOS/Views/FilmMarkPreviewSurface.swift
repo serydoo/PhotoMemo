@@ -13,6 +13,13 @@ enum FilmMarkPreviewMode: Equatable {
     /// geometry controls are open. The viewport shows its lower photo region
     /// so the calibration surface remains usable in landscape.
     case geometry
+
+    /// Complete orientation-matched photo canvas used by the production
+    /// Configuration Center preview. Optional guides remain an FM-only aid.
+    case fullPhotoCanvas(
+        orientation: ConfigurationPreviewBackground.Orientation,
+        showsGuides: Bool
+    )
 }
 
 /// Presentation-only geometry for the FM calibration viewport.
@@ -23,7 +30,18 @@ enum FilmMarkPreviewMode: Equatable {
 /// export, or durable FilmMark configuration.
 enum FilmMarkPreviewGeometrySpec {
 
-    static let canvasSize = CGSize(width: 1_200, height: 675)
+    static let landscapeCanvasSize = CGSize(width: 1_200, height: 675)
+
+    static func canvasSize(
+        for orientation: ConfigurationPreviewBackground.Orientation
+    ) -> CGSize {
+        switch orientation {
+        case .landscape:
+            CGSize(width: 1_200, height: 675)
+        case .portrait:
+            CGSize(width: 675, height: 1_200)
+        }
+    }
 
     /// Never reveal more than the lower half of the sample photograph. The
     /// inner canvas remains bottom-aligned, so the upper half is clipped
@@ -85,12 +103,12 @@ struct FilmMarkPreviewSurface: View {
     let configuration: FilmMarkConfiguration
     var mode: FilmMarkPreviewMode = .contentStrip
 
-    /// The background asset is 1600×900, while this virtual layout canvas is
-    /// deliberately smaller. Its ratio is the truth the Layout Engine needs;
-    /// rendering more pixels would only add transient raster work on every
-    /// nudge or size change in the Configuration Center.
+    /// The existing calibration view uses a stable 16:9 virtual canvas.
+    /// Rendering more pixels would only add transient raster work on every
+    /// nudge or size change in the Configuration Center. Full-photo mode
+    /// resolves a separate orientation-matched canvas below.
     private var geometryCanvasSize: CGSize {
-        FilmMarkPreviewGeometrySpec.canvasSize
+        FilmMarkPreviewGeometrySpec.landscapeCanvasSize
     }
 
     var body: some View {
@@ -100,6 +118,11 @@ struct FilmMarkPreviewSurface: View {
                 contentStrip
             case .geometry:
                 geometryCalibration
+            case .fullPhotoCanvas(let orientation, let showsGuides):
+                fullPhotoCanvas(
+                    orientation: orientation,
+                    showsGuides: showsGuides
+                )
             }
         }
         .animation(
@@ -237,6 +260,94 @@ struct FilmMarkPreviewSurface: View {
             )
         )
         .accessibilityValue(content.primaryOutput)
+    }
+
+    private func fullPhotoCanvas(
+        orientation: ConfigurationPreviewBackground.Orientation,
+        showsGuides: Bool
+    ) -> some View {
+        let layoutCanvasSize = FilmMarkPreviewGeometrySpec.canvasSize(
+            for: orientation
+        )
+
+        let presentation = FilmMarkPresentationResolver.resolve(
+            content: content,
+            configuration: configuration,
+            canvasSize: layoutCanvasSize
+        )
+
+        return GeometryReader { geometry in
+            let displaySize = geometry.size
+            ZStack(alignment: .topLeading) {
+                photoPreviewBackground(
+                    orientation: orientation,
+                    size: displaySize
+                )
+
+                FilmMarkTextLayer(
+                    presentation: presentation,
+                    displaySize: displaySize
+                )
+
+                if showsGuides {
+                    FilmMarkPreviewPlacementGuide(
+                        layout: presentation.layout,
+                        displaySize: displaySize
+                    )
+                }
+
+                if presentation.content.primaryOutput.isEmpty {
+                    emptyContentLabel
+                        .frame(
+                            width: displaySize.width,
+                            height: displaySize.height,
+                            alignment: .center
+                        )
+                }
+            }
+            .frame(width: displaySize.width, height: displaySize.height)
+            .clipped()
+        }
+        .aspectRatio(
+            ConfigurationPreviewBackground.aspectRatio(for: orientation),
+            contentMode: .fit
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            filmMarkLocalized(
+                "filmMark.preview.photo.accessibility",
+                fallback: showsGuides
+                    ? "FilmMark 完整位置与字号校准预览"
+                    : "FilmMark 完整照片预览"
+            )
+        )
+        .accessibilityValue(content.primaryOutput)
+    }
+
+    private func photoPreviewBackground(
+        orientation: ConfigurationPreviewBackground.Orientation,
+        size: CGSize
+    ) -> some View {
+        Image(
+            ConfigurationPreviewBackground.filmMark.assetName(
+                forOrientation: orientation
+            )
+        )
+        .resizable()
+        .scaledToFill()
+        .frame(width: size.width, height: size.height)
+        .overlay {
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.06),
+                    Color.black.opacity(0.28)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .clipped()
+        .accessibilityHidden(true)
     }
 
     private var compactContentAlignment: Alignment {

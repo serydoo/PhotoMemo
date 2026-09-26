@@ -1820,3 +1820,11 @@
 "output.error.photo_library.album_create_failed" = "时光记无法创建目标相册。";
 "output.error.photo_library.asset_save_failed" = "照片已生成，但无法写入系统相册。";
 "output.error.photo_library.readback_pending" = "照片仍在写入系统相册，请稍后重试。";
+"configuration.preview.orientation.landscape" = "横图";
+"configuration.preview.orientation.portrait" = "竖图";
+"configuration.preview.orientation.switch_to_portrait" = "切换为竖图";
+"configuration.preview.orientation.switch_to_landscape" = "切换为横图";
+"configuration.preview.zoom.fit" = "按比例适应预览窗口";
+"configuration.preview.zoom.expand" = "放大查看完整图片";
+"configuration.preview.zoom.hint" = "只改变预览显示，不改变输出内容或预设";
+"filmMark.preview.photo.accessibility" = "FilmMark 完整照片预览";

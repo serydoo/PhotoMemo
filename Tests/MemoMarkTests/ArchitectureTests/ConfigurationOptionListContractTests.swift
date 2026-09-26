@@ -67,6 +67,54 @@ struct ConfigurationOptionListContractTests {
         #expect(section.contains("selection: $presentationStyle"))
     }
 
+    @Test("preview orientation switches use accessible edge buttons, not horizontal swipes")
+    func previewOrientationSwitchesUseAccessibleEdgeButtons() throws {
+        let previewSection = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardPreviewSection.swift"
+        )
+
+        #expect(previewSection.contains("orientationArrowButton(systemImage: \"chevron.left\")"))
+        #expect(previewSection.contains("orientationArrowButton(systemImage: \"chevron.right\")"))
+        #expect(previewSection.contains(".frame(width: 44, height: 44)"))
+        #expect(previewSection.contains("alignment: .topTrailing"))
+        #expect(!previewSection.contains(".frame(width: 52, height: 68)"))
+        #expect(!previewSection.contains("alignment: .bottomTrailing"))
+        #expect(previewSection.contains("setOrientation(alternateOrientation)"))
+        #expect(previewSection.contains("private var previewExpandGesture: some Gesture"))
+        #expect(previewSection.contains(".highPriorityGesture(previewExpandGesture)"))
+        #expect(previewSection.contains("@State\n    private var isExpanded = false"))
+        #expect(!previewSection.contains("@AppStorage(ConfigurationPreviewPreferenceKey.isExpanded)"))
+        #expect(!previewSection.contains("predictedEndTranslation.width"))
+        #expect(!previewSection.contains("swipeOffset"))
+        #expect(!previewSection.contains("finishSwipe("))
+        #expect(!previewSection.contains("horizontalSwipe"))
+        #expect(previewSection.contains("ConfigurationPreviewViewportSpec.viewportAspectRatio("))
+        #expect(previewSection.contains(".accessibilityLabel("))
+    }
+
+    @Test("DEBUG preview review follows the production orientation and canvas contract")
+    func debugPreviewReviewFollowsProductionOrientationAndCanvasContract() throws {
+        let reviewSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/ConfigurationPreviewReviewView.swift"
+        )
+
+        #expect(reviewSource.contains("orientationArrowButton(systemImage: \"chevron.left\")"))
+        #expect(reviewSource.contains("orientationArrowButton(systemImage: \"chevron.right\")"))
+        #expect(reviewSource.contains("ConfigurationPreviewViewportSpec.canvasAspectRatio("))
+        #expect(!reviewSource.contains("horizontalSwipe"))
+        #expect(!reviewSource.contains("左右滑动查看"))
+    }
+
+    @Test("Classic White portrait preview uses shared trailing right-text alignment")
+    func classicWhitePortraitPreviewUsesSharedTrailingRightTextAlignment() throws {
+        let previewSurface = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardPreviewSurface.swift"
+        )
+
+        #expect(previewSurface.contains("alignment: spec.rightTextAlignment,"))
+        #expect(previewSurface.contains(".multilineTextAlignment(alignment.textAlignment)"))
+    }
+
     @Test("configuration controls use shared helper typography and adaptive choices")
     func configurationControlsUseSharedHelperTypographyAndAdaptiveChoices() throws {
         let options = try sourceText(
@@ -361,12 +409,19 @@ struct ConfigurationOptionListContractTests {
         #expect(previewCardSource.contains("minimalPreviewPhoto"))
         #expect(!previewCardSource.contains("minimalLandscapeSlice"))
         #expect(!previewCardSource.contains("Path { path in"))
-        #expect(previewCardSource.contains(".aspectRatio(compactPreviewAspectRatio"))
+        #expect(previewCardSource.contains(".aspectRatio(classicPreviewAspectRatio"))
+        #expect(previewCardSource.contains("resolvedFilmMarkPreviewMode"))
+        #expect(previewCardSource.contains("case .fullPhotoCanvas(_, let showsGuides)"))
         #expect(backgroundSource.contains("MinimalPreviewBackgroundPortrait"))
         #expect(backgroundSource.contains("MinimalPreviewBackgroundLandscape"))
         #expect(backgroundSource.contains("FilmMarkPreviewBackground"))
         #expect(backgroundSource.contains("case (.filmMark, _):"))
         #expect(previewSectionSource.contains("isFilmMarkGeometryExpanded"))
+        #expect(previewSectionSource.contains("@AppStorage(ConfigurationPreviewPreferenceKey.orientation)"))
+        #expect(previewSectionSource.contains("@State\n    private var isExpanded = false"))
+        #expect(!previewSectionSource.contains("ConfigurationPreviewPreferenceKey.isExpanded"))
+        #expect(previewSectionSource.contains(".highPriorityGesture(previewExpandGesture)"))
+        #expect(!previewSectionSource.contains("previewDragGesture"))
         #expect(rootPresentationSource.contains("var isFilmMarkGeometryExpanded = false"))
         #expect(rootPresentationSource.contains("filmMarkGeometryScrollRequest"))
         #expect(pagesSource.contains("isFilmMarkGeometryExpanded:"))
@@ -440,6 +495,7 @@ struct ConfigurationOptionListContractTests {
         #expect(preview.contains("filmMark.preview.empty"))
         #expect(preview.contains("filmMark.preview.geometry_note"))
         #expect(preview.contains("filmMark.preview.content.accessibility"))
+        #expect(preview.contains("filmMark.preview.photo.accessibility"))
         #expect(editor.contains("filmMarkPreviewText"))
         #expect(editor.contains("filmMarkContentDraft"))
         #expect(!editor.contains("editorDraftState.active[.slotA]"))

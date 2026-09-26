@@ -1,5 +1,32 @@
 # MemoMark Current Status
 
+## 2026-09-26 预览交互与竖图 viewport 契约校正
+
+- 依据本轮预览机制审查，当前生产 Configuration Center 预览的横竖图切换事实统一为左右 edge buttons；预览区不再以横向 swipe、跟手位移或 predicted-end 位移作为方向切换契约。竖向拖动仍只承担竖图 compact/full inspection 的展开动作，不改变方向切换事实。
+- `orientation` 继续作为 app-local 的 `@AppStorage` 界面偏好；`isExpanded` 改为预览视图拥有的瞬时 `@State`，不再跨页面重启保存“完整竖图展开”状态。两者都不进入 Preset、输出配置、FilmMark 内容、App Group 或处理快照。
+- Reduce Motion 下移除方向和展开状态的隐式/显式过渡动画；普通模式保留可中断的系统弹簧。VoiceOver 仍通过方向值、方向切换动作和左右 edge buttons 提供可操作入口。
+- 竖图 compact viewport 的 `portraitFitVisibleFraction = 0.5` 现在按实际画布高度计算，viewport 公式会抵消 `portraitFitScale`，不再把约 `64.6%` 的画布错误地命名为“一半”。DEBUG 评审页的 Classic White 外层比例也改为完整照片加 information bar 的 canvas ratio。
+- FilmMark 继续沿用 `Resolver -> ResolvedPresentation -> RasterRenderer -> Preview/Export`；本轮只收紧 Preview 的 viewport/inspection state 和评审表面，不把 layout truth 或业务含义移入预览，也未修改 Renderer、Export、PhotoKit、原图或持久化配置。
+- `validate_codex_governance.py`、`git diff --check`、`previewPreferencesRemainAppLocalUIState`、`productionPreviewsSelectSharedAssetsAndCanvasRatios`、`previewOrientationSwitchesUseAccessibleEdgeButtons` 与 `debugPreviewReviewFollowsProductionOrientationAndCanvasContract` 均通过；明确的 `generic/platform=iOS` signed Debug build 通过，产物为 `2.3.3 (111)` / `com.serydoo.PhotoMemo.iOS`，`codesign --verify --deep --strict` 通过。尝试运行两组完整 preview suites 时，Xcode Beta 在 worker materialization 阶段卡住并被中断，不能把该 suite 记为全量通过。配对 iPhone 17 Pro Max 当前为 `unavailable`，因此没有安装或启动；Reduce Motion、VoiceOver、Dynamic Type、视觉构图和长时间操作仍属于独立人工验收，不能由编译或单项测试替代。未执行 Git commit/push、TestFlight 或 App Store Connect 操作。
+
+## 2026-09-26 经典白竖版右侧信息间距校正
+
+- 根据 iPhone 17 Pro Max 截图确认竖版经典白右侧簇与调整前稳定布局不一致：divider 到右侧文字的空隙从旧 Renderer 的 `.026` 画布宽度减至 `.009`，且两行右侧文字从 leading 改为 trailing；Landscape 保持 leading，因此横竖版出现对齐差异。
+- 竖版现在以真实 Footer 的边缘间距为准：右侧两行 leading 对齐；divider 右边缘到文字起点固定 `.026`，Logo 槽右边缘到 divider 左边缘固定 `.015`。随着右侧较宽一行的测量宽度变化，Logo 槽、divider 和文字作为整体沿右边缘锚点移动。
+- 配置预览将 Logo 放入同一 trailing-aligned 槽，并与 Renderer 共用右侧测量和 divider 几何；横版、配置/预设数据、时间锚点、其他输出设置均未改变。
+- `ClassicWhiteRendererLayoutTests` 与 `RendererConstantsTests` 聚焦测试通过，含短文案/满宽文案、左右组间隙及固定内部间距。Xcode Beta 编译测试时仍打印退出码为 0 但无后续输出诊断和现有弃用警告，测试最终退出码 0。iOS 签名构建成功，代码签名校验通过，版本 `2.3.3 (111)` 已覆盖安装到配对 iPhone 17 Pro Max；启动请求被 iOS 以 `Locked` 拒绝，需设备解锁后再启动并进行实机视觉验收。没有卸载应用或清除本地数据。
+
+## 2026-09-24 配置中心图片预览接入真实编辑页
+
+- 按产品 owner 已确认的预览方向，将 DEBUG 评审页上的横竖图照片构图接入现有 iOS Configuration Center 编辑预览：经典白保留完整信息条；极简与 FilmMark 继续绘制各自真实输出，只更换共同的中秋预览照片背景，不改变 Renderer / Layout Engine / Export 输入。
+- 横竖图通过预览区左右滑动切换，另一个方向以低对比度叠层提示；角落按钮切换按窗口适配/完整画布。竖图适配状态底部对齐展示约一半原图，顶部提示仍有画面延伸；展开后优先保持预览可读宽度并自然推移下方编辑区。FilmMark 位置与字号控制仍仅属于 FilmMark。
+- 方向与展开状态由 app-local `UserDefaults.standard` 界面偏好保存，共用跨三种风格的键；不写入预设、输出配置、FilmMark 内容、App Group 或处理快照。新增四语辅助功能标签。
+- `FilmMarkPresentationSpecificationTests` 的 25 项定向测试通过，覆盖样式共享背景、方向比例、适配画布、偏好 key 与实际 SwiftUI 表面渲染；iOS `MemoMarkiOS` simulator build 通过。随后在 owner 指定的本机 Baguette `iPhone 17 Pro / iOS 26.5` 中安装并打开正常配置中心，已目视确认三种样式共用照片、横竖切换、竖图半幅/完整预览和编辑区随布局变化。Baguette 仅为快速视觉迭代证据，不替代配对 iPhone 17 Pro Max 的人工验收。
+- 最终 focused `FilmMarkPresentationSpecificationTests`、`CrossTargetLocalizationTests` 与 `ConfigurationOptionListContractTests` 均通过；四语无障碍文案键齐备，方向和放大状态仍只落在标准 `UserDefaults`。Baguette 真机式触控已确认横/竖滑动、完整/半幅切换、样式切换和重启后偏好保持；尚未完成实体设备的长时间操作、Reduce Motion / VoiceOver 与视力/字号人工验收。本轮未改预设/输出 schema，未执行 Git commit/push、TestFlight 上传或 App Store Connect 操作。
+- 按 owner 对第一版的实机式视觉反馈再收敛横竖切换：拖动时按手指位移同步推动当前卡和背后方向卡，依据松手位移/预测位移完成同一路径接位，回弹使用可中断弹簧；方向改变时外层窗口和下方编辑区也参与轻量过渡。fit 状态横竖卡片均缩至可见边缘叠层，放大状态仍用完整可读宽度。
+- 经典白照片与信息条改为上下相接的独立区域：横/竖照片画布保持其源宽高比，底栏高度继续取对应经典白 renderer spec，不再将底栏覆盖于照片或把两者塞进照片单独比例。Baguette 中确认横图照片约为 16:9，底栏完整追加；横竖拖动中能观察两张方向卡交错，稳定落位无按钮切换。
+- 最新 `FilmMarkPresentationSpecificationTests` 25 项通过；指定 Baguette iPhone 17 Pro / iOS 26.5 的 `MemoMarkiOS` Debug 构建、覆盖安装与启动成功，最终界面确认经典白完整横图及底栏真实比例、适配竖图露出底部成像区与后卡边缘。该结果仍是预览几何/交互的模拟器辅助检查；配对实体 iPhone 17 Pro Max、VoiceOver、Reduce Motion、Dynamic Type 与长时间手势验收未完成。
+
 ## 2026-09-23 首页与配置中心视觉层级收口
 
 - 按产品 owner 对首页与 Configuration Center 的补充决策完成一轮行为保持的视觉优化：不重构预设架构，不改变真实预览或保存按钮；首页预设行从重复显示名称改为表达“锚点类型 · 输出风格”，选中态只保留“当前使用”，避免把保存时间误当成下一次记录的核心信息。

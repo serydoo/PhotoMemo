@@ -122,17 +122,30 @@ enum RendererConstants {
         static let portrait = CompactInformationBarSpec(
             barHeightToWidth: 0.1660,
             referencePhotoHeightToWidth: 8064.0 / 4536.0,
-            leftX: 0.045,
-            leftWidth: 0.364,
-            logoCenterX: 0.473,
+            leftX:
+                ClassicWhitePortraitLayoutSpecification
+                .leftTextOriginX,
+            leftWidth:
+                ClassicWhitePortraitLayoutSpecification
+                .leftTextWidth,
+            logoCenterX:
+                ClassicWhitePortraitLayoutSpecification
+                .logoCenterX,
             logoSizeToBarHeight: 0.410,
             customLogoScale: 1.360,
-            dividerCenterX: 0.523,
+            dividerCenterX:
+                ClassicWhitePortraitLayoutSpecification
+                .dividerCenterX,
             dividerTopY: 0.264,
             dividerHeight: 0.465,
             dividerWidthToBarHeight: 0.022,
-            rightX: 0.549,
-            rightWidth: 0.406,
+            rightX:
+                ClassicWhitePortraitLayoutSpecification
+                .rightTextOriginX,
+            rightWidth:
+                ClassicWhitePortraitLayoutSpecification
+                .rightTextWidth,
+            rightTextAlignment: .leading,
             primaryFontToBarHeight: 0.190,
             rightPrimaryFontToBarHeight: 0.154,
             secondaryFontToBarHeight: 0.142,
@@ -158,6 +171,7 @@ enum RendererConstants {
             dividerWidthToBarHeight: 0.022,
             rightX: 0.696,
             rightWidth: 0.268,
+            rightTextAlignment: .leading,
             primaryFontToBarHeight: 0.190,
             rightPrimaryFontToBarHeight: 0.190,
             secondaryFontToBarHeight: 0.142,
@@ -219,6 +233,32 @@ enum CompactInformationBarOrientation: Equatable {
     case landscape
 }
 
+enum CompactInformationBarTextAlignment: Equatable {
+    case leading
+    case trailing
+
+    var horizontalAlignment: HorizontalAlignment {
+        switch self {
+        case .leading: .leading
+        case .trailing: .trailing
+        }
+    }
+
+    var textAlignment: TextAlignment {
+        switch self {
+        case .leading: .leading
+        case .trailing: .trailing
+        }
+    }
+
+    var alignment: Alignment {
+        switch self {
+        case .leading: .leading
+        case .trailing: .trailing
+        }
+    }
+}
+
 struct CompactInformationBarSpec: Equatable {
     let barHeightToWidth: CGFloat
     let referencePhotoHeightToWidth: CGFloat
@@ -233,6 +273,7 @@ struct CompactInformationBarSpec: Equatable {
     let dividerWidthToBarHeight: CGFloat
     let rightX: CGFloat
     let rightWidth: CGFloat
+    let rightTextAlignment: CompactInformationBarTextAlignment
     let primaryFontToBarHeight: CGFloat
     let rightPrimaryFontToBarHeight: CGFloat
     let secondaryFontToBarHeight: CGFloat

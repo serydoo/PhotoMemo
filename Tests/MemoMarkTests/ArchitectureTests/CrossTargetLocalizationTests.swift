@@ -118,7 +118,15 @@ struct CrossTargetLocalizationTests {
         "accessibility.delete_avatar",
         "accessibility.anchor_date",
         "accessibility.anchor_actions",
-        "accessibility.clear_format"
+        "accessibility.clear_format",
+        "configuration.preview.orientation.landscape",
+        "configuration.preview.orientation.portrait",
+        "configuration.preview.orientation.switch_to_portrait",
+        "configuration.preview.orientation.switch_to_landscape",
+        "configuration.preview.zoom.fit",
+        "configuration.preview.zoom.expand",
+        "configuration.preview.zoom.hint",
+        "filmMark.preview.photo.accessibility"
     ]
 
     @Test("Share Extension UI no longer branches on bilingual literals")

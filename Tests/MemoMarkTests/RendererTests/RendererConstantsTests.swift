@@ -70,13 +70,27 @@ struct RendererConstantsTests {
         let landscape =
             RendererConstants.CompactInformationBar.landscape
 
-        #expect(portrait.leftX == 0.045)
+        #expect(portrait.leftX == 0.062)
         #expect(portrait.rightX == 0.549)
-        #expect(portrait.logoCenterX == 0.473)
-        #expect(portrait.dividerCenterX == 0.523)
+        #expect(portrait.leftWidth == 0.364)
+        #expect(portrait.rightWidth == 0.406)
+        #expect(portrait.rightTextAlignment == .leading)
+        #expect(
+            portrait.leftX
+            >= ClassicWhitePortraitLayoutSpecification
+                .minimumCanvasEdgeInset
+        )
+        #expect(
+            abs(
+                1 - (portrait.rightX + portrait.rightWidth)
+                - ClassicWhitePortraitLayoutSpecification
+                    .minimumCanvasEdgeInset
+            ) < 0.000_001
+        )
 
         #expect(landscape.leftX == 0.035)
         #expect(landscape.rightX == 0.696)
+        #expect(landscape.rightTextAlignment == .leading)
         #expect(landscape.logoCenterX == 0.636)
         #expect(landscape.dividerCenterX == 0.675)
     }
