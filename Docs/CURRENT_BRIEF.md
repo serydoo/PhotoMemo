@@ -1,6 +1,6 @@
 # MemoMark Current Brief
 
-Last updated: 2026-09-23
+Last updated: 2026-09-27
 
 This is a compact routing brief for a new Codex session. It is not a
 replacement for the project constitution, accepted specifications, contracts,
@@ -27,10 +27,10 @@ follow the linked source-of-truth document.
 ## Current Candidate
 
 - Project: `Source/MemoMark/MemoMark.xcodeproj`
-- Marketing version: `2.3.3`
-- Build: `111`
+- Marketing version: `2.3.4`
+- Build: `115`
 - Release status: `Version Locked; Release Evidence Open`
-- Release scope starts at 2026-09-07 `2.3.0 (105)`; no independently verified `2.3.1` release candidate is invented.
+- Release scope starts after the `2.3.3 (111)` release commit `2a9dfef1`; see `Docs/07_Releases/2026-09-27-2.3.4-sync-manifest.md` for the exact source and TestFlight evidence.
 - Commerce: `MemoMark Commerce v1.1` — historical lifetime and activation-code
   entitlements preserved; new users use MemoMark+ monthly or annual subscription;
   all built-in memory expression styles are included in the subscription.
@@ -41,14 +41,15 @@ follow the linked source-of-truth document.
   and presentation facade. Startup-only receipt reconciliation remains an
   isolated pre-actor Bootstrap Adapter.
 
-The signed 111 package has been installed over the existing app container on
+The earlier signed 111 package has been installed over the existing app container on
 the paired physical iPhone 17 Pro Max, read back as `2.3.3 (111)`, and launched
 successfully without clearing data. The scoped FilmMark full-path initial
 acceptance, together with `TX-001` and `BP-001`, is closed for this version by
 the product-owner decision recorded above. This does not imply StoreKit
 sandbox acceptance, App Store Connect submission, or a global/permanent
 production certification; unrelated app-wide visual or manual acceptance still
-follows its own evidence boundary.
+follows its own evidence boundary. It is historical evidence and does not certify
+the current 115 candidate.
 
 ## Frozen Boundaries
 

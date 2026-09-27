@@ -92,6 +92,8 @@ nonisolated enum ProductionDiagnosticErrorCode:
         "processing.build.failed"
     case processingContentValidationFailed =
         "processing.contentValidation.failed"
+    case processingFilmMarkLayoutOverflow =
+        "processing.filmMark.layoutOverflow"
     case processingRenderFailed =
         "processing.render.failed"
     case processingExportFailed =
@@ -534,11 +536,21 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
 
 #if !MEMOMARK_SHARE_EXTENSION
         let contentValidationCode:
-            ProductionDiagnosticErrorCode? =
-            (error as? ProductionConfigurationContractError)
-                == .emptyResolvedContent
-            ? .processingContentValidationFailed
-            : nil
+            ProductionDiagnosticErrorCode? = {
+                guard let contractError =
+                    error as? ProductionConfigurationContractError
+                else {
+                    return nil
+                }
+                switch contractError {
+                case .emptyResolvedContent:
+                    return .processingContentValidationFailed
+                case .filmMarkContentOverflow:
+                    return .processingFilmMarkLayoutOverflow
+                default:
+                    return nil
+                }
+            }()
 #else
         let contentValidationCode:
             ProductionDiagnosticErrorCode? = nil
@@ -1074,6 +1086,17 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
                     fallback: "请检查当前预设使用的内容，或选择包含这些信息的照片后重试。"
                 )
             )
+        case .processingFilmMarkLayoutOverflow:
+            return (
+                language.localized(
+                    key: "Batch.FilmMarkOverflow.Failed.Title",
+                    fallback: "FilmMark 文字无法完整放入这张照片。"
+                ),
+                language.localized(
+                    key: "Batch.FilmMarkOverflow.Failed.Recovery",
+                    fallback: "请缩短内容、调小字号或调整位置，然后重新处理。"
+                )
+            )
         case .processingRenderFailed:
             return (
                 "回忆卡片绘制失败。",
@@ -1289,6 +1312,17 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
                 language.localized(
                     key: "Batch.ContentValidation.Failed.Recovery",
                     fallback: "Check the current preset content, or choose a photo that contains the required information and retry."
+                )
+            )
+        case .processingFilmMarkLayoutOverflow:
+            return (
+                language.localized(
+                    key: "Batch.FilmMarkOverflow.Failed.Title",
+                    fallback: "FilmMark text does not fit within this photo."
+                ),
+                language.localized(
+                    key: "Batch.FilmMarkOverflow.Failed.Recovery",
+                    fallback: "Shorten the text, choose a smaller size, or adjust its position before processing again."
                 )
             )
         case .processingRenderFailed:

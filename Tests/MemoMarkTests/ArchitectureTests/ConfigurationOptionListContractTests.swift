@@ -1319,27 +1319,26 @@ struct ConfigurationOptionListContractTests {
         #expect(!sheetSource.contains("minHeight: ConfigurationUI.minimumInteractiveHeight"))
     }
 
-    @Test("card content sheet uses the shared compact title-to-content rhythm")
+    @Test("card content inspector uses the shared compact title-to-content rhythm")
     func cardContentSheetUsesCompactTitleToContentRhythm() throws {
         let editorSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
         )
         let entryRowSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/IOSCompactEntryRow.swift"
         )
 
         #expect(editorSource.contains("configuration.card_editor.title"))
-        #expect(editorSource.contains("MemoryCardEditorOverlay"))
-        #expect(editorSource.contains("contentEditorTopBoundaryFraction"))
-        #expect(editorSource.contains("contentEditorMinimumTopBoundary"))
+        #expect(editorSource.contains("struct CardContentInspectorSurface"))
+        #expect(editorSource.contains("editorContent"))
+        #expect(!editorSource.contains("Color.black"))
         #expect(!editorSource.contains(".presentationDetents"))
         #expect(
             editorSource.contains(
                 "configuration.card_editor.subtitle"
             )
         )
-        #expect(editorSource.contains(".padding(.top, 8)"))
-        #expect(editorSource.contains(".padding(.bottom, 10)"))
+        #expect(editorSource.contains(".padding(.vertical, 8)"))
         #expect(!editorSource.contains(".padding(.top, 16)"))
         #expect(entryRowSource.contains("dynamicTypeSize.isAccessibilitySize"))
         #expect(entryRowSource.contains("horizontalDisclosureLabel"))
@@ -1369,7 +1368,7 @@ struct ConfigurationOptionListContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/AdvancedModulesSheet.swift"
         )
         let cardSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
         )
 
         #expect(
@@ -1408,9 +1407,8 @@ struct ConfigurationOptionListContractTests {
                 "决定照片中的时间和地点怎样呈现。"
             )
         )
-        #expect(cardSource.contains("MemoryCardEditorOverlay"))
-        #expect(cardSource.contains("keyboardWillChangeFrameNotification"))
-        #expect(cardSource.contains(".ignoresSafeArea(.keyboard)"))
+        #expect(cardSource.contains("CardContentInspectorSurface"))
+        #expect(cardSource.contains("ToolbarItemGroup(placement: .keyboard)"))
         #expect(
             cardSource.contains(
                 "组合文字、照片信息与记忆表达。"
@@ -1503,7 +1501,7 @@ struct ConfigurationOptionListContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/AdvancedModulesSheet.swift"
         )
         let editorSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
         )
         let entryRowSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/IOSCompactEntryRow.swift"
@@ -1563,9 +1561,9 @@ struct ConfigurationOptionListContractTests {
                 "ConfigurationUI.compactRowVerticalPadding"
             )
         )
-        #expect(editorSource.contains("MemoryCardEditorOverlay"))
-        #expect(editorSource.contains("contentEditorMinimumTopBoundary"))
-        #expect(editorSource.contains(".safeAreaPadding(.bottom"))
+        #expect(editorSource.contains("CardContentInspectorSurface"))
+        #expect(editorSource.contains("ConfigurationUI.contentColumnPadding"))
+        #expect(editorSource.contains(".frame(maxWidth: .infinity, maxHeight: .infinity)"))
         #expect(!editorSource.contains(".presentationContentInteraction(.scrolls)"))
         #expect(
             entryRowSource.contains(
@@ -1604,7 +1602,7 @@ struct ConfigurationOptionListContractTests {
         #expect(page.contains("EmptyView()"))
         #expect(
             page.contains(
-                ".toolbar(usesToolbarConfigurationActions ? .visible : .hidden"
+                ".toolbar(usesToolbarConfigurationActions && !isEditingCardContent ? .visible : .hidden"
             )
         )
         #expect(toolbar.contains("Menu"))

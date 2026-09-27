@@ -541,7 +541,7 @@ struct MemoryCardPreviewSurface: View {
                 text,
                 fontSize: fontSize,
                 tracking: tracking,
-                weight: isRegular ? [] : .traitBold
+                weight: isRegular ? .regular : .semibold
             ) / max(width, 1)
         }
 

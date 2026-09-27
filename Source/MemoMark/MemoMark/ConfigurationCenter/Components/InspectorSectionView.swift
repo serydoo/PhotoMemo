@@ -33,11 +33,6 @@ enum ConfigurationUI {
         MemoMarkDesignTokens.Layout.configurationSheetCompactHeight
     static let contentSheetFraction =
         MemoMarkDesignTokens.Layout.configurationSheetContentFraction
-    /// Stable window-relative boundary for the card editor overlay. The
-    /// editor must not follow the scrolling preview's global frame.
-    static let contentEditorTopBoundaryFraction: CGFloat = 0.16
-    static let contentEditorMinimumTopBoundary: CGFloat = 136
-    static let cardEditorDismissThreshold: CGFloat = 96
     #else
     static let cornerRadius: CGFloat = 12
     static let smallCornerRadius: CGFloat = 10
@@ -62,9 +57,6 @@ enum ConfigurationUI {
     static let sheetDividerInset = innerPanelPadding
     static let compactSheetHeight: CGFloat = 390
     static let contentSheetFraction: CGFloat = 0.58
-    static let contentEditorTopBoundaryFraction: CGFloat = 0.18
-    static let contentEditorMinimumTopBoundary: CGFloat = 148
-    static let cardEditorDismissThreshold: CGFloat = 96
     #endif
 
     #if os(iOS)

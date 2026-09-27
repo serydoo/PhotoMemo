@@ -45,10 +45,8 @@ struct RootPresentationState {
         MediaPickerPresentationState()
     var renamePresentation =
         ConfigurationRenamePresentationState()
-    var showsRegionContentSheet = false
-    /// Routes the shared editor presentation to FilmMark's independent
-    /// authored-output draft instead of a classic card-region buffer.
-    var isEditingFilmMarkContent = false
+    /// Transient inspector route; card drafts remain in the configuration session.
+    var isCardContentInspectorPresented = false
     var showsWelcomeInformation = false
     var showsMemoMarkPlus = false
     var showsHomeMemoMarkPlus = false

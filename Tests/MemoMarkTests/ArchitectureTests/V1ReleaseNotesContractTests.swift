@@ -52,16 +52,14 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("从 2.3.0 开始"))
-        #expect(simplifiedChinese.contains("经典白、极简与胶片时间"))
-        #expect(simplifiedChinese.contains("更丰富的自定义空间"))
-        #expect(simplifiedChinese.contains("重新整理了记忆对象的编辑与时间锚点"))
-        #expect(simplifiedChinese.contains("每次处理都会生成新的记忆照片，不覆盖原图"))
-        #expect(english.contains("Since 2.3.0"))
-        #expect(english.contains("Classic White, Minimal, and FilmMark"))
-        #expect(english.contains("more room to decide"))
-        #expect(english.contains("reorganized Memory Object editing and Time Anchors"))
-        #expect(english.contains("each process creates a new memory photo without replacing the original"))
+        #expect(simplifiedChinese.contains("卡片内容编辑与照片预览留在同一视野"))
+        #expect(simplifiedChinese.contains("键盘出现时，预览会留出查看内容的空间"))
+        #expect(simplifiedChinese.contains("文字超出安全范围"))
+        #expect(simplifiedChinese.contains("原图保持不变"))
+        #expect(english.contains("card content editing and the photo preview in the same view"))
+        #expect(english.contains("When the keyboard appears"))
+        #expect(english.contains("safe area"))
+        #expect(english.contains("original unchanged"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
     }
@@ -71,11 +69,14 @@ struct V1ReleaseNotesContractTests {
         let projectSource = try sourceText(
             "Source/MemoMark/MemoMark.xcodeproj/project.pbxproj"
         )
-        let releaseManifest = try sourceText(
-            "Docs/07_Releases/2026-09-22-2.3.3-sync-manifest.md"
+        let iOSInfoPlist = try sourceText(
+            "Source/MemoMark/MemoMarkiOS-Info.plist"
         )
-        #expect(releaseManifest.contains("当前 marketing version：`2.3.3`"))
-        #expect(releaseManifest.contains("当前 build number：`111`"))
+        let releaseManifest = try sourceText(
+            "Docs/07_Releases/2026-09-27-2.3.4-sync-manifest.md"
+        )
+        #expect(releaseManifest.contains("Marketing version：`2.3.4`"))
+        #expect(releaseManifest.contains("build：`115`"))
 
         #expect(!projectSource.contains("MARKETING_VERSION = 2.0.3;"))
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
@@ -107,8 +108,11 @@ struct V1ReleaseNotesContractTests {
                         .replacingOccurrences(of: ";", with: "")
                 }
         )
-        #expect(marketingVersions == ["2.3.3"])
-        #expect(projectBuilds == ["111"])
+        #expect(marketingVersions == ["2.3.4"])
+        #expect(projectBuilds == ["115"])
+        #expect(iOSInfoPlist.contains(
+            "<key>ITSAppUsesNonExemptEncryption</key>\n\t<false/>"
+        ))
     }
 
     @Test("next release drafts keep internal TestFlight and App Store boundaries distinct")

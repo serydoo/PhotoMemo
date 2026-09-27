@@ -644,7 +644,7 @@ struct ClassicWhiteCardRenderer: View {
                     frameInput.slot2,
                     fontSize: leftBottomFontSize,
                     tracking: layout.bottomTracking,
-                    weight: []
+                    weight: .regular
                 ) / max(width, 1)
             ],
             rightRowWidths: [
@@ -657,7 +657,7 @@ struct ClassicWhiteCardRenderer: View {
                     frameInput.slot3,
                     fontSize: rightBottomFontSize,
                     tracking: layout.bottomTracking,
-                    weight: []
+                    weight: .regular
                 ) / max(width, 1)
             ],
             dividerWidthRatio: max(

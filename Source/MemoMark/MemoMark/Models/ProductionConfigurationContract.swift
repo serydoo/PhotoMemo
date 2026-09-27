@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 struct ProductionConfigurationReference:
@@ -45,6 +46,7 @@ enum ProductionConfigurationContractError:
     case missingPrimaryAnchor
     case missingFilmMarkConfiguration
     case missingFilmMarkContent
+    case filmMarkContentOverflow
     case emptyResolvedContent
     case emptySemanticOutput(String)
     case emptyRendererOutput(String)
@@ -390,10 +392,32 @@ enum ProductionRenderHealthCheck {
         card: RecordCard,
         configuration: BatchConfigurationSnapshot
     ) throws -> [CardTextBlock] {
-        try ResolvedContentValidator.validate(
+        let blocks = try ResolvedContentValidator.validate(
             card: card,
             configuration: configuration
         )
+        guard card.presentationStyle == .filmMark,
+            let imageWidth = card.metadata.imageWidth,
+            imageWidth > 0,
+            let imageHeight = card.metadata.imageHeight,
+            imageHeight > 0 else {
+            return blocks
+        }
+
+        let outputSize = FilmMarkRenderer.outputPixelSize(
+            for: card,
+            fallbackSize: .zero
+        )
+        let presentation = FilmMarkPresentationResolver
+            .resolvedPresentation(
+                for: card,
+                canvasSize: outputSize
+            )
+        guard !presentation.layout.isContentOverflowingSafeArea else {
+            throw ProductionConfigurationContractError
+                .filmMarkContentOverflow
+        }
+        return blocks
     }
 }
 

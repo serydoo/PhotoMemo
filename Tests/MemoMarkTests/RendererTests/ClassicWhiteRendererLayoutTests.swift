@@ -1,5 +1,7 @@
 import CoreGraphics
+import CoreText
 import Foundation
+import AppKit
 import SwiftUI
 import Testing
 @testable import MemoMark
@@ -72,6 +74,35 @@ struct ClassicWhiteRendererLayoutTests {
         #expect(mixed > 0)
         #expect(chinese.isFinite)
         #expect(mixed.isFinite)
+    }
+
+    @Test("Portrait measurement uses the system Semibold font used by output")
+    func portraitMeasurementMatchesSystemSemibold() {
+        let text = "陪你走过每一个重要时刻 · MemoMark"
+        let fontSize: CGFloat = 18
+        let tracking: CGFloat = -0.12
+        let nativeFont = NSFont.systemFont(
+            ofSize: fontSize,
+            weight: .semibold
+        ) as CTFont
+        let referenceText = NSAttributedString(
+            string: text,
+            attributes: [
+                kCTFontAttributeName as NSAttributedString.Key: nativeFont,
+                kCTKernAttributeName as NSAttributedString.Key: tracking
+            ]
+        )
+        let referenceLine = CTLineCreateWithAttributedString(referenceText)
+        let expectedWidth = CGFloat(
+            CTLineGetTypographicBounds(referenceLine, nil, nil, nil)
+        )
+        let measuredWidth = ClassicWhitePortraitLayoutSpecification.measureTextWidth(
+            text,
+            fontSize: fontSize,
+            tracking: tracking
+        )
+
+        #expect(abs(measuredWidth - expectedWidth) < 0.01)
     }
 
     @Test("Measured short, asymmetric, and maximum mixed-script content stays within both outer bounds")

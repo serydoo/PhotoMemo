@@ -46,6 +46,15 @@ verifies the lifetime product.
 
 ## Build-104 interaction contract
 
+> Historical behavior for build 104. The Home photo-picker visibility clauses
+> below were superseded by the accepted 2026-09-23 beginner-guidance lifecycle:
+> the in-app picker and full beginner guide are shown before ten successful
+> picker entries, then both are hidden. A 24-hour transition hint may remain;
+> daily use continues through Apple Photos -> Share -> MemoMark. The counter
+> is still a discoverability signal, not a processing quota. Current source is
+> `HomePhotoPickerGuidancePolicy` and `HomePageSurface`; see the
+> `2.3.4 (115)` sync manifest for this release's scope.
+
 - The Home photo-picker entry remains visible.
 - After ten successful entries into the picker, a settings guide is shown for
   24 hours.

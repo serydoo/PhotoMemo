@@ -16,7 +16,7 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+RuntimeComposition.swift"
         )
         #expect(root.contains("SubjectPresentationModifier("))
-        #expect(root.contains("MemoryCardEditorPresentationModifier("))
+        #expect(!root.contains("MemoryCardEditorPresentationModifier("))
         #expect(root.contains("WelcomeAndSettingsPresentationModifier("))
         #expect(root.contains("RootChangeObservationModifier("))
         #expect((root + runtimeComposition).contains("ConfigurationDeletionRuntimeCoordinator"))
@@ -145,13 +145,13 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/WelcomePresentation.swift",
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkiOSBackgroundStatusSheet.swift",
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationCenterSidebarView.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
         ]
 
         for path in scrollPageExpectations {
             let source = try sourceText(path)
             if path ==
-                "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift" {
+                "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift" {
                 #expect(
                     source.contains("editorContent"),
                     "The card editor owns its fixed header and internal scroll surface."
@@ -424,6 +424,9 @@ struct IPhoneResponsiveLayoutContractTests {
         let root = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
         )
+        let editor = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Editor.swift"
+        )
 
         #expect(!cluster.contains("private var moduleToolbar"))
         #expect(!cluster.contains("onShowModules"))
@@ -433,8 +436,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(cluster.contains("ScrollViewReader"))
         #expect(cluster.contains("keyboardWillChangeFrameNotification"))
         #expect(cluster.contains("scrollTo(region, anchor: .center)"))
-        #expect(root.contains("focusedEditorRegion"))
-        #expect(root.contains("onToggleModuleLibrary"))
+        #expect(editor.contains("focusedEditorRegion"))
+        #expect(editor.contains("onToggleModuleLibrary"))
         #expect(!root.contains("showModuleLibrary(for: region)"))
         #expect(support.contains("onFocus()"))
         #expect(support.contains("ScrollView(.horizontal, showsIndicators: false)"))
@@ -446,7 +449,7 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card editor exposes a separate top module action")
     func cardEditorExposesASeparateTopModuleAction() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
         )
         let root = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
@@ -469,7 +472,7 @@ struct IPhoneResponsiveLayoutContractTests {
     @Test("card editor visual continuity preserves the stable interaction skeleton")
     func cardEditorVisualContinuityPreservesStableInteractionSkeleton() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
         )
         let cluster = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
@@ -483,9 +486,8 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(!modifier.contains("focusedRegionTitle"))
         #expect(modifier.contains("configuration.card_editor.subtitle"))
-        #expect(modifier.contains("Color.black"))
-        #expect(modifier.contains(".opacity(0.12)"))
-        #expect(modifier.contains("MemoryCardEditorOverlay"))
+        #expect(!modifier.contains("Color.black"))
+        #expect(modifier.contains("CardContentInspectorSurface"))
         #expect(modifier.contains("configuration.card_editor.done"))
         #expect(cluster.contains("focusedRegion"))
         #expect(!cluster.contains("private var currentEditingTask"))
@@ -511,11 +513,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(cluster.contains("ForEach(visibleRegions"))
         #expect(!cluster.contains("previewContent"))
         #expect(!cluster.contains("glassEffect"))
-        #expect(modifier.contains("contentEditorTopBoundaryFraction"))
-        #expect(modifier.contains("contentEditorMinimumTopBoundary"))
-        #expect(modifier.contains(".safeAreaPadding(.bottom"))
-        #expect(modifier.contains("keyboardWillChangeFrameNotification"))
-        #expect(modifier.contains(".ignoresSafeArea(.keyboard)"))
+        #expect(modifier.contains(".frame(maxWidth: .infinity, maxHeight: .infinity)"))
+        #expect(modifier.contains("ToolbarItemGroup(placement: .keyboard)"))
         #expect(!modifier.contains(".sheet(isPresented: $isModuleSheetPresented)"))
     }
 
@@ -800,34 +799,35 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!editorSource.contains("Color.accentColor.opacity(0.06)"))
     }
 
-    @Test("card editor surface covers the keyboard gap instead of exposing page controls")
+    @Test("card editor keeps keyboard dismissal in the inspector")
     func cardEditorSurfaceCoversKeyboardGap() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
         )
-        #expect(modifier.contains(".safeAreaPadding(.bottom, 12)"))
         #expect(modifier.contains("ToolbarItemGroup(placement: .keyboard)"))
         #expect(modifier.contains("keyboard.chevron.compact.down"))
-        #expect(modifier.contains("onDismissKeyboard()"))
+        #expect(modifier.contains("Button(action: onDismissKeyboard)"))
     }
 
-    @Test("card editor supports deliberate pull dismissal outside active text input")
+    @Test("card editor returns to options through an explicit Done action")
     func cardEditorSupportsDeliberatePullDismissal() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
+        )
+        let editor = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Editor.swift"
         )
 
         #expect(modifier.contains("configuration.card_editor.done"))
-        #expect(modifier.contains("DragGesture(minimumDistance: 12)"))
-        #expect(modifier.contains("keyboardBottomInset == 0"))
-        #expect(modifier.contains("cardEditorDismissThreshold"))
-        #expect(modifier.contains("onDismissEditor()"))
+        #expect(modifier.contains("action: onDone"))
+        #expect(editor.contains("resetCardEditorState()"))
+        #expect(editor.contains("isCardContentInspectorPresented = false"))
     }
 
     @Test("module candidates stay inline with the card editor instead of a half sheet")
     func moduleCandidatesStayInlineWithTheCardEditor() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
         )
         let cluster = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
@@ -875,26 +875,28 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(source.contains("contentShape(Rectangle())"))
     }
 
-    @Test("card editor owns the bounded viewport while the keyboard is visible")
+    @Test("card editor keeps a bounded preview while the keyboard is visible")
     func cardEditorKeepsTheSheetStableWhileTheKeyboardIsVisible() throws {
         let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
+        )
+        let preview = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardPreviewSection.swift"
+        )
+        let page = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
         )
 
-        #expect(modifier.contains("MemoryCardEditorOverlay"))
-        #expect(modifier.contains("contentEditorTopBoundaryFraction"))
-        #expect(modifier.contains("contentEditorMinimumTopBoundary"))
-        #expect(modifier.contains("let editorHeight = max("))
-        #expect(modifier.contains("safeAreaInsets.bottom"))
-        #expect(modifier.contains(".overlay"))
+        #expect(page.contains("editorContentOwnsScrolling"))
+        #expect(preview.contains("usesEditingViewport"))
+        #expect(preview.contains("keyboardWillShowNotification"))
+        #expect(preview.contains("keyboardWillHideNotification"))
         #expect(modifier.contains("ToolbarItemGroup(placement: .keyboard)"))
         #expect(modifier.contains("configuration.card_editor.title"))
         #expect(modifier.contains("configuration.card_editor.done"))
         #expect(modifier.contains("configuration.card_editor.dismiss_keyboard"))
         #expect(!modifier.contains("Text(\"卡片内容\")"))
         #expect(!modifier.contains("Button(\"完成\""))
-        #expect(modifier.contains("keyboardWillChangeFrameNotification"))
-        #expect(modifier.contains(".ignoresSafeArea(.keyboard)"))
         #expect(!modifier.contains(".presentationDetents"))
 
         let cluster = try sourceText(
@@ -905,16 +907,19 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(cluster.contains("ModuleLibrarySurface.height(for: dynamicTypeSize)"))
     }
 
-    @Test("card editor top boundary stays stable while content scrolls")
+    @Test("card editor keeps one preview and lets the editor own scrolling")
     func cardEditorTopBoundaryStaysStableWhileContentScrolls() throws {
-        let modifier = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+        let pages = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+        )
+        let page = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
         )
 
-        #expect(modifier.contains("fallbackTopBoundary"))
-        #expect(modifier.contains("proxy.size.height - bottomInset - fallbackTopBoundary"))
-        #expect(!modifier.contains("MemoryCardEditorPreviewFramePreferenceKey"))
-        #expect(!modifier.contains("previewFrame"))
+        #expect(pages.contains("previewSection"))
+        #expect(pages.contains("cardContentInspector"))
+        #expect(page.contains("if editorContentOwnsScrolling"))
+        #expect(page.contains("editorContent"))
     }
 
     @Test("card editor input surfaces protect IME and accessibility geometry")
@@ -1031,7 +1036,7 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
         )
 
-        #expect(configurationPageSource.contains("pageSubtitle: interfaceLanguage.localized("))
+        #expect(configurationPageSource.contains("pageSubtitle: isEditingCardContent ? nil : interfaceLanguage.localized("))
         #expect(configurationPageSource.contains("key: \"configuration.page.subtitle\""))
         #expect(configurationPageSource.contains("fallback: \"决定这段记忆围绕哪个重要时刻、如何呈现，以及保存到哪里。\""))
 
@@ -1048,8 +1053,9 @@ struct IPhoneResponsiveLayoutContractTests {
             supportSource[previewStart..<previewEnd]
         )
 
-        #expect(previewBody.contains(".aspectRatio(compactPreviewAspectRatio"))
-        #expect(previewBody.contains(".compactPreview.imageSliceHeightToWidth"))
+        #expect(previewBody.contains(".aspectRatio(classicPreviewAspectRatio"))
+        #expect(previewBody.contains("classicPhotoPreview("))
+        #expect(previewBody.contains("minimalPreviewCard(size: proxy.size)"))
         #expect(previewBody.contains(".frame(maxWidth: .infinity)"))
         #expect(!previewBody.contains(".compactPreview.totalHeightToWidth"))
         #expect(previewBody.contains("height: size.height"))

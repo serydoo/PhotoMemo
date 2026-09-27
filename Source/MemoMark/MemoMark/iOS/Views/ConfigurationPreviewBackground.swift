@@ -74,6 +74,12 @@ enum ConfigurationPreviewViewportSpec {
     static let alternateCardPeekScale: CGFloat = 0.94
     static let alternateCardPeekOpacity: CGFloat = 0.82
     static let alternateCardPeekOffset: CGFloat = 48
+    /// The keyboard leaves room for both a readable card detail and the editor.
+    static let editingViewportMinimumAspectRatio: CGFloat = 2.4
+
+    static func editingViewportAspectRatio(_ restingAspectRatio: CGFloat) -> CGFloat {
+        max(restingAspectRatio, editingViewportMinimumAspectRatio)
+    }
 
     static func canvasAspectRatio(
         for presentationStyle: RecordCardPresentationStyle,

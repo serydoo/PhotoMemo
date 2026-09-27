@@ -143,7 +143,7 @@ struct FilmMarkPresentationSpecificationTests {
                     for: .portrait,
                     isExpanded: false
                 ) - (
-                    1.125
+                    ConfigurationPreviewBackground.portraitAspectRatio
                         / (
                             ConfigurationPreviewViewportSpec.portraitFitScale
                                 * ConfigurationPreviewViewportSpec
@@ -261,6 +261,68 @@ struct FilmMarkPresentationSpecificationTests {
             #expect(abs(image.height - Int(displayHeight.rounded())) <= 1)
             #expect(canvasSize.width > 0 && canvasSize.height > 0)
         }
+    }
+
+    @Test("FilmMark calibration previews expose accessible Layout overflow feedback")
+    func calibrationPreviewsExposeAccessibleLayoutOverflowFeedback() throws {
+        let source = try Self.source(
+            at: "Source/MemoMark/MemoMark/iOS/Views/FilmMarkPreviewSurface.swift"
+        )
+        let usageCount = source.components(
+            separatedBy: "overflowNotice(for: presentation)"
+        ).count - 1
+        let noticeRange = try #require(
+            source.range(of: "private func overflowNotice(")
+        )
+        let noticeSource = source[noticeRange.lowerBound...]
+
+        #expect(usageCount == 2)
+        #expect(
+            noticeSource.contains(
+                "presentation.layout.isContentOverflowingSafeArea"
+            )
+        )
+        #expect(
+            noticeSource.contains("filmMark.preview.overflow.title")
+        )
+        #expect(
+            noticeSource.contains("filmMark.preview.overflow.recovery")
+        )
+        #expect(
+            noticeSource.contains(".accessibilityElement(children: .combine)")
+        )
+        #expect(
+            source.contains(
+                ".accessibilityValue(accessibilityValue(for: presentation))"
+            )
+        )
+    }
+
+    @Test("FilmMark full-photo calibration does not shade the source photo")
+    func fullPhotoCalibrationPreservesSourcePhotoBrightness() throws {
+        let source = try Self.source(
+            at: "Source/MemoMark/MemoMark/iOS/Views/FilmMarkPreviewSurface.swift"
+        )
+        let backgroundRange = try #require(
+            source.range(of: "private func photoPreviewBackground(")
+        )
+        let endRange = try #require(
+            source.range(
+                of: "private var compactContentAlignment",
+                range: backgroundRange.upperBound..<source.endIndex
+            )
+        )
+        let backgroundSource = source[
+            backgroundRange.lowerBound..<endRange.lowerBound
+        ]
+
+        #expect(
+            backgroundSource.contains(
+                "ConfigurationPreviewBackground.filmMark.assetName("
+            )
+        )
+        #expect(!backgroundSource.contains("LinearGradient"))
+        #expect(!backgroundSource.contains(".overlay {"))
     }
 
     @MainActor

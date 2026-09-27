@@ -741,25 +741,6 @@ struct MemoMarkConfigurationCenterView: View {
             .memoMarkSheet(.browser)
         }
         .modifier(
-            MemoryCardEditorPresentationModifier(
-                showsRegionContentSheet:
-                    $rootPresentationState.showsRegionContentSheet,
-                editorContent: presentedEditorCluster,
-                onDismissKeyboard: dismissKeyboard,
-                onToggleModuleLibrary:
-                    toggleModuleLibraryFromToolbar,
-                canToggleModuleLibrary:
-                    editorInteractionState.focusedEditorRegion != nil
-                    || editorInteractionState.activeModuleRegion != nil,
-                isModuleLibraryPresented:
-                    editorInteractionState.activeModuleRegion != nil,
-                onDismissEditor: {
-                    rootPresentationState.isEditingFilmMarkContent = false
-                    resetCardEditorState()
-                }
-            )
-        )
-        .modifier(
             SubjectPresentationModifier(
                 session: session,
                 commerceStore: commerceStore,

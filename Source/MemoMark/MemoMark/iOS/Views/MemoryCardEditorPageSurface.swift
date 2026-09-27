@@ -25,10 +25,11 @@ struct MemoryCardEditorPageSurface<
 
     let previewPinProgress: CGFloat
     let editorRevealProgress: CGFloat
-    let pageTitle: String
-    let pageSubtitle: String
+    let pageTitle: String?
+    let pageSubtitle: String?
     let previewWidthPolicy: ConfigurationPreviewWidthPolicy
     let editorScrollRequest: ConfigurationEditorScrollRequest?
+    let editorContentOwnsScrolling: Bool
     let onDismissKeyboard: () -> Void
     @ViewBuilder var previewContent: PreviewContent
     @ViewBuilder var editorContent: EditorContent
@@ -37,10 +38,11 @@ struct MemoryCardEditorPageSurface<
     init(
         previewPinProgress: CGFloat,
         editorRevealProgress: CGFloat,
-        pageTitle: String,
-        pageSubtitle: String,
+        pageTitle: String?,
+        pageSubtitle: String?,
         previewWidthPolicy: ConfigurationPreviewWidthPolicy = .readable,
         editorScrollRequest: ConfigurationEditorScrollRequest? = nil,
+        editorContentOwnsScrolling: Bool = false,
         onDismissKeyboard: @escaping () -> Void,
         @ViewBuilder previewContent: () -> PreviewContent,
         @ViewBuilder editorContent: () -> EditorContent,
@@ -52,6 +54,7 @@ struct MemoryCardEditorPageSurface<
         self.pageSubtitle = pageSubtitle
         self.previewWidthPolicy = previewWidthPolicy
         self.editorScrollRequest = editorScrollRequest
+        self.editorContentOwnsScrolling = editorContentOwnsScrolling
         self.onDismissKeyboard = onDismissKeyboard
         self.previewContent = previewContent()
         self.editorContent = editorContent()
@@ -96,7 +99,7 @@ struct MemoryCardEditorPageSurface<
             previewPane
                 .zIndex(1)
 
-            editorScrollView
+            editorPane
         }
     }
 
@@ -113,7 +116,7 @@ struct MemoryCardEditorPageSurface<
                 .fill(ConfigurationUI.faintHairline)
                 .frame(width: 0.5)
 
-            editorScrollView
+            editorPane
                 .frame(
                     maxWidth: .infinity,
                     maxHeight: .infinity
@@ -152,10 +155,12 @@ struct MemoryCardEditorPageSurface<
 
     private var previewPaneCore: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ConfigurationPageHeader(
-                pageTitle,
-                subtitle: pageSubtitle
-            )
+            if let pageTitle, let pageSubtitle {
+                ConfigurationPageHeader(
+                    pageTitle,
+                    subtitle: pageSubtitle
+                )
+            }
 
             previewContent
                 .frame(
@@ -213,6 +218,16 @@ struct MemoryCardEditorPageSurface<
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var editorPane: some View {
+        if editorContentOwnsScrolling {
+            editorContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            editorScrollView
         }
     }
 

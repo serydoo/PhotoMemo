@@ -24,6 +24,7 @@ struct ConfigurationPageSurface<
     let configurationStatus: ConfigurationPersistenceStatus
     let isSavingConfiguration: Bool
     let isSelectedProcessingDefault: Bool
+    let isEditingCardContent: Bool
     let previewWidthPolicy: ConfigurationPreviewWidthPolicy
     let editorScrollRequest: ConfigurationEditorScrollRequest?
     let onDismissKeyboard: () -> Void
@@ -42,6 +43,7 @@ struct ConfigurationPageSurface<
         configurationStatus: ConfigurationPersistenceStatus,
         isSavingConfiguration: Bool,
         isSelectedProcessingDefault: Bool,
+        isEditingCardContent: Bool = false,
         previewWidthPolicy: ConfigurationPreviewWidthPolicy = .readable,
         editorScrollRequest: ConfigurationEditorScrollRequest? = nil,
         onDismissKeyboard: @escaping () -> Void,
@@ -58,6 +60,7 @@ struct ConfigurationPageSurface<
         self.configurationStatus = configurationStatus
         self.isSavingConfiguration = isSavingConfiguration
         self.isSelectedProcessingDefault = isSelectedProcessingDefault
+        self.isEditingCardContent = isEditingCardContent
         self.previewWidthPolicy = previewWidthPolicy
         self.editorScrollRequest = editorScrollRequest
         self.onDismissKeyboard = onDismissKeyboard
@@ -74,23 +77,24 @@ struct ConfigurationPageSurface<
         MemoryCardEditorPageSurface(
             previewPinProgress: previewPinProgress,
             editorRevealProgress: editorRevealProgress,
-            pageTitle: interfaceLanguage.localized(
+            pageTitle: isEditingCardContent ? nil : interfaceLanguage.localized(
                 key: "configuration.page.title",
                 fallback: "记忆配置"
             ),
-            pageSubtitle: interfaceLanguage.localized(
+            pageSubtitle: isEditingCardContent ? nil : interfaceLanguage.localized(
                 key: "configuration.page.subtitle",
                 fallback: "决定这段记忆围绕哪个重要时刻、如何呈现，以及保存到哪里。"
             ),
             previewWidthPolicy: previewWidthPolicy,
             editorScrollRequest: editorScrollRequest,
+            editorContentOwnsScrolling: isEditingCardContent,
             onDismissKeyboard: onDismissKeyboard
         ) {
             previewContent
         } editorContent: {
             editorContent
         } accessoryContent: {
-            if usesToolbarConfigurationActions {
+            if usesToolbarConfigurationActions || isEditingCardContent {
                 EmptyView()
             } else {
                 ConfigurationActionFooter(
@@ -106,9 +110,9 @@ struct ConfigurationPageSurface<
             }
         }
         .navigationTitle("")
-        .toolbar(usesToolbarConfigurationActions ? .visible : .hidden, for: .navigationBar)
+        .toolbar(usesToolbarConfigurationActions && !isEditingCardContent ? .visible : .hidden, for: .navigationBar)
         .toolbar {
-            if usesToolbarConfigurationActions {
+            if usesToolbarConfigurationActions && !isEditingCardContent {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     ConfigurationActionToolbar(
                         configurationStatus: configurationStatus,

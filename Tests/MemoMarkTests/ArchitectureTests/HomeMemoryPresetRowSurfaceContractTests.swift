@@ -44,10 +44,20 @@ struct HomeMemoryPresetRowSurfaceContractTests {
         #expect(rowSource.contains("let subjectTitle: String"))
         #expect(rowSource.contains("private var horizontalPresetMetadata"))
         #expect(rowSource.contains("Text(\"·\")"))
+        #expect(rowSource.contains("HomeProjection.savedStatusValue("))
+        #expect(rowSource.contains("savedAt: preset.savedAt"))
         #expect(rowSource.contains("presetAccessibilityLabel"))
         #expect(rowSource.contains(".accessibilityLabel(presetAccessibilityLabel)"))
         #expect(rowSource.contains("home.preset.accessibility_format"))
+        #expect(
+            rowSource.contains(
+                "presetSavedStatus,\n            localizedLogoTitle,\n            presetSelectionStatus"
+            )
+        )
         #expect(rowSource.contains("verticalPresetTextContent"))
+        #expect(rowSource.contains("private var selectedRowHighlight"))
+        #expect(rowSource.contains("RoundedRectangle(cornerRadius: 14"))
+        #expect(!rowSource.contains("Text(presetSelectionStatus)"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

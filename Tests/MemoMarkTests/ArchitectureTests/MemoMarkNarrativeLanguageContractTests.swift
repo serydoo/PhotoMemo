@@ -64,7 +64,7 @@ struct MemoMarkNarrativeLanguageContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/WelcomePresentation.swift"
         )
         let regionContent = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPresentationModifier.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
         )
         let subjectEditor = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift"

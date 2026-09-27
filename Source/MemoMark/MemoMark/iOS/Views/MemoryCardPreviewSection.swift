@@ -1,5 +1,6 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
+import UIKit
 
 struct MemoryCardPreviewSection: View {
 
@@ -14,6 +15,9 @@ struct MemoryCardPreviewSection: View {
     @State
     private var isExpanded = false
 
+    @State
+    private var isKeyboardVisible = false
+
     let presentationStyle: RecordCardPresentationStyle
     let logoMode: ConfigurationLogoMode
     let customLogoImagePath: String?
@@ -25,7 +29,26 @@ struct MemoryCardPreviewSection: View {
     let filmMarkOutputText: String
     let filmMarkConfiguration: FilmMarkConfiguration
     let isFilmMarkGeometryExpanded: Bool
+    let isEditingCardContent: Bool
     let onTap: (() -> Void)?
+
+    private var usesEditingViewport: Bool {
+        isEditingCardContent && isKeyboardVisible && !isExpanded
+    }
+
+    private var viewportAspectRatio: CGFloat {
+        let restingAspectRatio = ConfigurationPreviewViewportSpec.viewportAspectRatio(
+            canvasAspectRatio: ConfigurationPreviewViewportSpec.canvasAspectRatio(
+                for: presentationStyle,
+                orientation: orientation
+            ),
+            for: orientation,
+            isExpanded: isExpanded
+        )
+        return usesEditingViewport
+            ? ConfigurationPreviewViewportSpec.editingViewportAspectRatio(restingAspectRatio)
+            : restingAspectRatio
+    }
 
     private var orientation: ConfigurationPreviewBackground.Orientation {
         ConfigurationPreviewBackground.Orientation(rawValue: storedOrientation)
@@ -56,11 +79,6 @@ struct MemoryCardPreviewSection: View {
                 for: presentationStyle,
                 orientation: alternateOrientation
             )
-            let viewportAspectRatio = ConfigurationPreviewViewportSpec.viewportAspectRatio(
-                canvasAspectRatio: activeCanvasAspectRatio,
-                for: orientation,
-                isExpanded: isExpanded
-            )
             let viewportHeight = width
                 / viewportAspectRatio
             let activeCanvasWidth = ConfigurationPreviewViewportSpec.canvasWidth(
@@ -88,7 +106,9 @@ struct MemoryCardPreviewSection: View {
                         y: canvasCenterY(
                             canvasHeight: alternateCanvasHeight,
                             viewportHeight: viewportHeight,
-                            orientation: alternateOrientation
+                            orientation: alternateOrientation,
+                            alignsToContent: usesEditingViewport,
+                            contentFraction: 0.9
                         ) + 8
                     )
                     .accessibilityHidden(true)
@@ -100,7 +120,11 @@ struct MemoryCardPreviewSection: View {
                         y: canvasCenterY(
                             canvasHeight: activeCanvasHeight,
                             viewportHeight: viewportHeight,
-                            orientation: orientation
+                            orientation: orientation,
+                            alignsToContent: usesEditingViewport,
+                            contentFraction: usesEditingViewport
+                                ? contentFraction(for: orientation)
+                                : 0.9
                         )
                     )
                     .contentShape(Rectangle())
@@ -203,17 +227,7 @@ struct MemoryCardPreviewSection: View {
             )
             .accessibilityIdentifier("configuration.preview.production")
         }
-        .aspectRatio(
-            ConfigurationPreviewViewportSpec.viewportAspectRatio(
-                canvasAspectRatio: ConfigurationPreviewViewportSpec.canvasAspectRatio(
-                    for: presentationStyle,
-                    orientation: orientation
-                ),
-                for: orientation,
-                isExpanded: isExpanded
-            ),
-            contentMode: .fit
-        )
+        .aspectRatio(viewportAspectRatio, contentMode: .fit)
         .animation(
             reduceMotion
                 ? nil
@@ -229,6 +243,21 @@ struct MemoryCardPreviewSection: View {
         // itself to the remaining viewport and making the photo unreadably thin.
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity)
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIResponder.keyboardWillShowNotification
+        )) { _ in
+            guard isEditingCardContent else { return }
+            isExpanded = false
+            isKeyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIResponder.keyboardWillHideNotification
+        )) { _ in
+            isKeyboardVisible = false
+        }
+        .onChange(of: isEditingCardContent) { _, isEditing in
+            if !isEditing { isKeyboardVisible = false }
+        }
     }
 
     @ViewBuilder
@@ -254,12 +283,43 @@ struct MemoryCardPreviewSection: View {
     private func canvasCenterY(
         canvasHeight: CGFloat,
         viewportHeight: CGFloat,
-        orientation canvasOrientation: ConfigurationPreviewBackground.Orientation
+        orientation canvasOrientation: ConfigurationPreviewBackground.Orientation,
+        alignsToContent: Bool,
+        contentFraction: CGFloat
     ) -> CGFloat {
+        if alignsToContent {
+            let top = min(
+                0,
+                max(
+                    viewportHeight - canvasHeight,
+                    viewportHeight * 0.55 - canvasHeight * contentFraction
+                )
+            )
+            return top + canvasHeight / 2
+        }
         guard canvasOrientation == .portrait, !isExpanded else {
             return viewportHeight / 2
         }
         return viewportHeight - canvasHeight / 2
+    }
+
+    private func contentFraction(
+        for canvasOrientation: ConfigurationPreviewBackground.Orientation
+    ) -> CGFloat {
+        guard presentationStyle == .filmMark,
+              !filmMarkOutputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            return 0.9
+        }
+        let canvasSize = FilmMarkPreviewGeometrySpec.canvasSize(for: canvasOrientation)
+        let presentation = FilmMarkPresentationResolver.resolve(
+            content: FilmMarkContentProjection(primaryOutput: filmMarkOutputText),
+            configuration: filmMarkConfiguration,
+            canvasSize: canvasSize
+        )
+        return canvasSize.height > 0
+            ? min(max(presentation.layout.substrateFrame.midY / canvasSize.height, 0), 1)
+            : 0.9
     }
 
     private var previewExpandGesture: some Gesture {
@@ -305,6 +365,9 @@ struct MemoryCardPreviewSection: View {
     }
 
     private func toggleExpanded() {
+        if isKeyboardVisible {
+            onTap?()
+        }
         setExpanded(!isExpanded)
     }
 

@@ -164,6 +164,50 @@ struct ProductionDiagnosticsTests {
         #expect(!failure.userMessage.contains("EXIF"))
     }
 
+    @Test("FilmMark layout overflow maps to actionable localized guidance")
+    func filmMarkLayoutOverflowUsesActionableGuidance() {
+        let chineseFailure = ProductionDiagnosticFailureClassifier
+            .processing(
+                phase: BatchTaskPhase.metadataReady.rawValue,
+                classification: "processingFailure",
+                operationID: UUID(),
+                error: ProductionConfigurationContractError
+                    .filmMarkContentOverflow
+            )
+        let englishFailure = ProductionDiagnosticFailureClassifier
+            .processing(
+                phase: BatchTaskPhase.metadataReady.rawValue,
+                classification: "processingFailure",
+                operationID: UUID(),
+                error: ProductionConfigurationContractError
+                    .filmMarkContentOverflow,
+                language: .english
+            )
+
+        #expect(
+            chineseFailure.code == .processingFilmMarkLayoutOverflow
+        )
+        #expect(
+            chineseFailure.userMessage.contains(
+                "FilmMark 文字无法完整放入这张照片"
+            )
+        )
+        #expect(
+            chineseFailure.userMessage.contains("调小字号或调整位置")
+        )
+        #expect(
+            englishFailure.code == .processingFilmMarkLayoutOverflow
+        )
+        #expect(
+            englishFailure.userMessage.contains(
+                "FilmMark text does not fit within this photo."
+            )
+        )
+        #expect(
+            englishFailure.userMessage.contains("choose a smaller size")
+        )
+    }
+
     @Test("Content validation guidance uses the explicit diagnostic language")
     func contentValidationGuidanceUsesExplicitLanguage() {
         let failure = ProductionDiagnosticFailureClassifier

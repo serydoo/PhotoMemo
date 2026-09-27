@@ -6,7 +6,7 @@ import UIKit
 extension MemoMarkConfigurationCenterView {
     @ViewBuilder
     var presentedEditorCluster: some View {
-        if rootPresentationState.isEditingFilmMarkContent {
+        if presentationStyle == .filmMark {
             filmMarkEditorCluster
         } else {
             editorCluster
@@ -43,8 +43,28 @@ extension MemoMarkConfigurationCenterView {
                 rootConfigurationProjectionState.filmMarkConfiguration,
             isFilmMarkGeometryExpanded:
                 rootPresentationState.isFilmMarkGeometryExpanded,
+            isEditingCardContent:
+                rootPresentationState.isCardContentInspectorPresented,
             onTap: dismissKeyboard
         )
+    }
+
+    var cardContentInspector: some View {
+        CardContentInspectorSurface(
+            onDismissKeyboard: dismissKeyboard,
+            onToggleModuleLibrary: toggleModuleLibraryFromToolbar,
+            canToggleModuleLibrary:
+                editorInteractionState.focusedEditorRegion != nil
+                || editorInteractionState.activeModuleRegion != nil,
+            isModuleLibraryPresented:
+                editorInteractionState.activeModuleRegion != nil,
+            onDone: {
+                resetCardEditorState()
+                rootPresentationState.isCardContentInspectorPresented = false
+            }
+        ) {
+            presentedEditorCluster
+        }
     }
 
     var editorCluster: some View {

@@ -1,5 +1,42 @@
 # MemoMark Current Status
 
+## 2026-09-27 2.3.4（115）版本整理与 TestFlight 交付
+
+- 本轮由产品负责人明确授权 GitHub 同步与 TestFlight 发布；marketing version 顺延为 `2.3.4`，构建号指定 `115`。范围从 `2a9dfef1` 的 `2.3.3 (111)` 发布提交之后开始，合并近期已提交的首页/预览改进与当前本地已实现的卡片内容同屏编辑、预览校准、FilmMark 溢出反馈及四语/契约维护。
+- 已建立独立的 [2.3.4（115）同步清单](07_Releases/2026-09-27-2.3.4-sync-manifest.md)和面向应用内、App Store 文案及 TestFlight 测试者的四份同源材料。GitHub、Cloud 归档上传、TestFlight 合规与测试组分发、实体设备逐屏验收和正式 App Store 版分别留证；未完成项不得写成已发布。
+- 发布检查：四语 `.strings` 与 iOS `Info.plist` 格式、`git diff --check`、治理脚本、聚焦 61/61、完整 `MemoMarkTests` 1931 passed / 0 failed / 1 skipped 均通过。完整结果包 `/tmp/MemoMark115FullFinal.xcresult` 有两条既有 `FixtureExportReadbackTests` QoS 警告。iPhoneOS 签名 Debug 构建、严格签名校验与包内 `2.3.4 (115)` 读回通过；iOS `Info.plist` 的非豁免加密字段为 `false`。配对 iPhone 17 Pro Max 此时不可用，115 覆盖安装、启动与人工逐屏验收尚未完成。
+
+## 2026-09-27 卡片内容编辑与实时预览同屏收口
+
+- 根据 iPhone 17 Pro Max 截图，旧卡片内容浮层在普通和键盘状态下遮盖真实预览。本轮将卡片内容改为 Configuration Center 页内检查器：预览保留原来的组合卡片和横竖/展开操作，编辑区复用四区域或 FilmMark TextKit 草稿与模块插入；“完成”只返回配置选项，不隐式保存预设。
+- 键盘出现时收紧同一卡片的可见窗口；Classic White/Minimal 对准内容所在底部，FilmMark 用现有 Layout Engine 解析出的文字位置调整窗口。键盘收起后恢复原预览范围，配置保存操作只在配置选项状态显示。删除旧遮罩与专用手势边界，并同步更新相应 source contract。
+- 验证：`ConfigurationOptionListContractTests`、`IPhoneResponsiveLayoutContractTests`、`RootPresentationStateContractTests`、`MemoMarkNarrativeLanguageContractTests` 合计 104/104 通过；iPhone 目标签名构建、`codesign --verify --deep --strict`、治理脚本与 `git diff --check` 均通过。`com.serydoo.PhotoMemo.iOS` 2.3.3 (111) 已覆盖安装到配对实体 iPhone 17 Pro Max，设备 apps 清单确认版本，未卸载或清除数据。启动请求被 iOS 以 `Locked` 拒绝，等待重新解锁后重试；实机编辑视觉、中文键盘、VoiceOver、Dynamic Type 和 FilmMark 边界内容仍待用户验收。
+
+## 2026-09-26 近期界面优化统一视觉与无障碍收口
+
+- 将近期首页预设行、Configuration Center 方向预览、Classic White 竖图和 FilmMark overflow 修改纳入同一轮审查；保留 `Library -> Interactive Memory Card -> Object Inspector`、本地预览状态边界和 Apple Photos 处理链路，不新增平行视觉 token。
+- FilmMark 全照片校准预览移除仅展示层的暗色渐变，让参考照片亮度与实际输出一致；不改 FilmMark 内容条或正式输出底图。
+- Classic White Layout Engine 改用平台系统 Semibold/Regular 字体计算字宽，与对应 SwiftUI 行文字重一致。Renderer 仍只消费解析后的共享几何。
+- 首页预设行把可见 Logo 标识类型加入合并后的 VoiceOver 标签，四语本地化格式及 source contract 已更新。最近选中态的浅蓝底、描边、勾选组合保持不变，等待真机视觉比较后再决定是否收敛。
+- 验证：`ClassicWhiteRendererLayoutTests` 11/11 通过；`HomeMemoryPresetRowSurfaceContractTests` 与 `LocalizationResourceParityTests` 合计 14/14 通过；`FilmMarkPresentationSpecificationTests` 26/27，唯一失败是既有 `productionPreviewsSelectSharedAssetsAndCanvasRatios` viewport-ratio 断言（绝对差 1.2784），本轮新增全照片亮度与 FilmMark overflow 断言通过。当前工作树 generic iOS Debug build 通过。
+- 本轮未安装或导航设备；配对 iPhone 17 Pro Max 显示锁屏，未解锁。真实页面视觉、VoiceOver 遍历、Dynamic Type、深浅色和高对比度验收仍未完成。预览方向按钮与画布自定义无障碍 action 是否重复，保留到实机 VoiceOver 核对后决定。
+
+## 2026-09-26 首页预设选中态去文字化与蓝色外侧高亮
+
+- 根据 iPhone 17 Pro Max 实机截图，预设行在选中项多出“当前使用”文字后产生额外换行和行高堆叠；本轮移除该可见文字，保留完整的记忆对象、Renderer 类型和最后保存时间信息。
+- 选中项现在使用轻量蓝色外侧圆角描边与极浅蓝底色，并保留右侧蓝色勾选圆；未选中项保持无底色、空心圆。选中态不再依赖文字或颜色单一信号，VoiceOver 仍朗读当前/未使用状态。
+- 选中态只属于 `HomeMemoryPresetRow` 的 presentation state projection，不改变 `selectedMemoryPresetID`、预设持久化、配置选择回调或 Renderer/Export 链路；小屏和 Dynamic Type 仍通过现有横向/纵向 adaptive surface 处理。
+- `git diff --check` 通过；`MemoMarkiOS` iPhoneOS Debug 签名构建、`codesign --verify --deep --strict`、指定 iPhone 17 Pro Max 覆盖安装与启动均成功。Xcode Beta focused macOS test runner 仍在既有 `GeocoderService.swift` 弃用诊断处异常中止，未将测试记为通过；蓝色描边厚度、对比度、小屏密度和 VoiceOver 仍待用户人工验收。
+- 本轮未执行 Git commit/push、TestFlight 或 App Store Connect 操作；`Docs/Outreach/` 与 `Research/` 本地材料保持原样。
+
+## 2026-09-26 首页预设主体优先与保存时间恢复
+
+- 在预设名称下将信息顺序收敛为“记忆对象 · Renderer 类型 · 最后保存时间 · 当前选择状态”：主体先于表达方式，符合首页先回答“围绕谁展开”再回答“如何呈现”的产品语义。
+- 恢复使用每个 `MemoryPreset.savedAt` 的本地化时间投影；没有新增模型字段或改变配置持久化。选中项继续显示“当前使用”并保留右侧勾选标记，未选中项以空心圆表达状态，VoiceOver 补充“未使用”。空间不足和 Dynamic Type 辅助功能字号继续回落到纵向布局。
+- 四语资源补充未选中状态并扩展预设整行无障碍标签；`HomeMemoryPresetRowSurfaceContractTests` 增加 saved-at 表面契约。`git diff --check` 通过。
+- `MemoMarkiOS` iPhoneOS Debug 签名构建、`codesign --verify --deep --strict`、指定 iPhone 17 Pro Max 覆盖安装与启动均成功，未卸载应用或清除容器数据。Xcode Beta focused macOS test runner 仍在既有 `GeocoderService.swift` 弃用诊断处异常中止，未将该次测试记为通过；设备启动不替代主体优先顺序、Dynamic Type、VoiceOver 和视觉密度的人工验收。
+- 本轮未执行 Git commit/push、TestFlight 或 App Store Connect 操作；`Docs/Outreach/` 与 `Research/` 本地材料保持原样。
+
 ## 2026-09-26 首页预设记忆对象信息层级收口
 
 - 按首页真实信息密度收敛“我的预设”行：第一行保留用户自定义预设名称，第二行在普通字号下横向展示“锚点/样式 · 记忆对象 · 当前使用”，未选中项不重复显示状态；空间不足或 Dynamic Type 辅助功能字号下回落为纵向信息布局。

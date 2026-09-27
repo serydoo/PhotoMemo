@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.4 (115) Card Content Live Preview And Preview Fidelity - 2026-09-27
+
+- Moved Card Content editing into the Configuration Center inspector so the real Memory Card preview remains visible while typing or inserting photo information. Keyboard presentation keeps the relevant card area in view, and Done returns to configuration options without implicitly saving.
+- Refined landscape, portrait, and full-canvas preview inspection. Removed a FilmMark photo-only dark gradient and aligned Classic White portrait text measurement with its rendered font weight.
+- Added clear FilmMark long-content feedback in preview and a dedicated production preflight failure before raster export, using Layout-owned overflow truth.
+- Made the Home preset row's Memory Object and selection state easier to read, while retaining the intended beginner-only in-app photo-picker guidance. Updated the relevant four-language accessibility and release copy.
+- Raised all project build settings to `115` and marketing version settings to `2.3.4`. The GitHub, Xcode Cloud, TestFlight, physical-device, and App Store states are tracked independently in the [sync manifest](Docs/07_Releases/2026-09-27-2.3.4-sync-manifest.md).
+
 ## 2.3.3 (111) FilmMark Expression Expansion And Memory Object Refinement - 2026-09-23
 
 - Consolidated the user-facing and internal release materials from the 2.3.0

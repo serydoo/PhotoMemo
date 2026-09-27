@@ -1,6 +1,11 @@
 import CoreGraphics
 import CoreText
 import Foundation
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 struct ClassicWhitePortraitResolvedLayout: Equatable {
     let leftTextOriginX: CGFloat
@@ -17,6 +22,11 @@ struct ClassicWhitePortraitResolvedLayout: Equatable {
 /// Shared portrait information-bar geometry consumed by Classic White preview
 /// and output. All horizontal values are normalized to the canvas width.
 enum ClassicWhitePortraitLayoutSpecification {
+
+    enum TextWeight {
+        case regular
+        case semibold
+    }
 
     static let minimumCanvasEdgeInset: CGFloat = 0.045
     static let minimumGroupGap: CGFloat = 0.014
@@ -50,21 +60,40 @@ enum ClassicWhitePortraitLayoutSpecification {
         _ text: String,
         fontSize: CGFloat,
         tracking: CGFloat,
-        weight: CTFontSymbolicTraits = .traitBold
+        weight: TextWeight = .semibold
     ) -> CGFloat {
         let size = max(fontSize, 1)
-        let baseFont = CTFontCreateUIFontForLanguage(
-            .system,
-            size,
-            nil
-        ) ?? CTFontCreateWithName("HelveticaNeue" as CFString, size, nil)
-        let font = CTFontCreateCopyWithSymbolicTraits(
-            baseFont,
-            size,
-            nil,
-            weight,
-            weight
-        ) ?? baseFont
+        let font: CTFont
+        switch weight {
+        case .regular:
+            #if canImport(UIKit)
+            font = CTFontCreateWithName(
+                UIFont.systemFont(ofSize: size, weight: .regular).fontName as CFString,
+                size,
+                nil
+            )
+            #elseif canImport(AppKit)
+            font = CTFontCreateWithName(
+                NSFont.systemFont(ofSize: size, weight: .regular).fontName as CFString,
+                size,
+                nil
+            )
+            #endif
+        case .semibold:
+            #if canImport(UIKit)
+            font = CTFontCreateWithName(
+                UIFont.systemFont(ofSize: size, weight: .semibold).fontName as CFString,
+                size,
+                nil
+            )
+            #elseif canImport(AppKit)
+            font = CTFontCreateWithName(
+                NSFont.systemFont(ofSize: size, weight: .semibold).fontName as CFString,
+                size,
+                nil
+            )
+            #endif
+        }
         let attributed = NSAttributedString(
             string: text.isEmpty ? " " : text,
             attributes: [

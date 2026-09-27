@@ -20,7 +20,7 @@ struct RootPresentationStateContractTests {
             "configurationDisclosureState",
             "mediaPickerPresentation",
             "renamePresentation",
-            "showsRegionContentSheet",
+            "isCardContentInspectorPresented",
             "showsWelcomeInformation",
             "showsMemoMarkPlus",
             "showsHomeMemoMarkPlus",

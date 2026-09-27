@@ -245,6 +245,10 @@ struct FilmMarkPreviewSurface: View {
                     height: geometry.size.height,
                     alignment: .top
                 )
+                .overlay(alignment: .topLeading) {
+                    overflowNotice(for: presentation)
+                        .padding(8)
+                }
             }
             .frame(
                 height: FilmMarkPreviewGeometrySpec
@@ -259,7 +263,7 @@ struct FilmMarkPreviewSurface: View {
                 fallback: "FilmMark 位置与字号完整预览"
             )
         )
-        .accessibilityValue(content.primaryOutput)
+        .accessibilityValue(accessibilityValue(for: presentation))
     }
 
     private func fullPhotoCanvas(
@@ -307,6 +311,10 @@ struct FilmMarkPreviewSurface: View {
             }
             .frame(width: displaySize.width, height: displaySize.height)
             .clipped()
+            .overlay(alignment: .topLeading) {
+                overflowNotice(for: presentation)
+                    .padding(8)
+            }
         }
         .aspectRatio(
             ConfigurationPreviewBackground.aspectRatio(for: orientation),
@@ -321,7 +329,71 @@ struct FilmMarkPreviewSurface: View {
                     : "FilmMark 完整照片预览"
             )
         )
-        .accessibilityValue(content.primaryOutput)
+        .accessibilityValue(accessibilityValue(for: presentation))
+    }
+
+    @ViewBuilder
+    private func overflowNotice(
+        for presentation: FilmMarkResolvedPresentation
+    ) -> some View {
+        if presentation.layout.isContentOverflowingSafeArea {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .symbolRenderingMode(.hierarchical)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(
+                        filmMarkLocalized(
+                            "filmMark.preview.overflow.title",
+                            fallback: "FilmMark 文字无法完整放入照片。"
+                        )
+                    )
+                    .font(.caption.weight(.semibold))
+
+                    Text(
+                        filmMarkLocalized(
+                            "filmMark.preview.overflow.recovery",
+                            fallback: "缩短内容、调小字号或调整位置后，可以继续处理。"
+                        )
+                    )
+                    .font(.caption2)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .foregroundStyle(.primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+            .background(
+                .regularMaterial,
+                in: RoundedRectangle(
+                    cornerRadius: 10,
+                    style: .continuous
+                )
+            )
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    private func accessibilityValue(
+        for presentation: FilmMarkResolvedPresentation
+    ) -> String {
+        var values = [content.primaryOutput]
+        if presentation.layout.isContentOverflowingSafeArea {
+            values.append(
+                filmMarkLocalized(
+                    "filmMark.preview.overflow.title",
+                    fallback: "FilmMark 文字无法完整放入照片。"
+                )
+            )
+            values.append(
+                filmMarkLocalized(
+                    "filmMark.preview.overflow.recovery",
+                    fallback: "缩短内容、调小字号或调整位置后，可以继续处理。"
+                )
+            )
+        }
+        return values.filter { !$0.isEmpty }
+            .joined(separator: " ")
     }
 
     private func photoPreviewBackground(
@@ -336,16 +408,6 @@ struct FilmMarkPreviewSurface: View {
         .resizable()
         .scaledToFill()
         .frame(width: size.width, height: size.height)
-        .overlay {
-            LinearGradient(
-                colors: [
-                    Color.black.opacity(0.06),
-                    Color.black.opacity(0.28)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
         .clipped()
         .accessibilityHidden(true)
     }

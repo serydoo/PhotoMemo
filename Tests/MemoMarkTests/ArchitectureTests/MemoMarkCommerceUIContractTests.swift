@@ -212,7 +212,7 @@ struct MemoMarkCommerceUIContractTests {
         )
     }
 
-    @Test("Home keeps the photo picker discoverable and guides first use")
+    @Test("Home shows the photo picker only during beginner guidance")
     func homePhotoPickerGuidanceIsTimeBound() throws {
         let homeSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
@@ -225,8 +225,10 @@ struct MemoMarkCommerceUIContractTests {
         #expect(homeSource.contains("photoPickerGuidanceStartedAt"))
         #expect(homeSource.contains("onOpenSettingsWorkflowGuide"))
         #expect(homeSource.contains("HomePhotoPickerGuidancePolicy"))
-        #expect(homeSource.contains("private var shouldShowInAppPhotoPicker"))
-        #expect(homeSource.contains("        true"))
+        #expect(homeSource.contains("if shouldShowInAppPhotoPicker"))
+        #expect(homeSource.contains(
+            "private var shouldShowInAppPhotoPicker: Bool {\n        shouldShowBeginnerGuidance\n    }"
+        ))
         #expect(pagesSource.contains("showsSettingsWorkflowGuide"))
     }
 

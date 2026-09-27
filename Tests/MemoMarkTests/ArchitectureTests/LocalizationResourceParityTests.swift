@@ -39,6 +39,53 @@ struct LocalizationResourceParityTests {
         }
     }
 
+    @Test("FilmMark overflow guidance is present in all supported languages")
+    func filmMarkOverflowGuidanceIsLocalized() throws {
+        let keys = [
+            "filmMark.preview.overflow.title",
+            "filmMark.preview.overflow.recovery",
+            "Batch.FilmMarkOverflow.Failed.Title",
+            "Batch.FilmMarkOverflow.Failed.Recovery"
+        ]
+        let resources = try languageCodes.map { code in
+            (
+                code: code,
+                entries: parseResource(
+                    try sourceText(
+                        "Source/MemoMark/MemoMark/\(code).lproj/Localizable.strings"
+                    )
+                ).entries
+            )
+        }
+        let english = try #require(
+            resources.first(where: { $0.code == "en" })?.entries
+        )
+
+        for resource in resources {
+            for key in keys {
+                let value = try #require(resource.entries[key])
+                #expect(!value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                if resource.code != "en" {
+                    #expect(value != english[key])
+                }
+            }
+        }
+    }
+
+    @Test("Home preset accessibility format names the visible logo mark")
+    func homePresetAccessibilityFormatIncludesLogoMark() throws {
+        for code in languageCodes {
+            let entries = parseResource(
+                try sourceText(
+                    "Source/MemoMark/MemoMark/\(code).lproj/Localizable.strings"
+                )
+            ).entries
+            let format = try #require(entries["home.preset.accessibility_format"])
+
+            #expect(format.components(separatedBy: "%@").count - 1 == 6)
+        }
+    }
+
     @Test("Each language bundle can resolve a Localizable.strings value")
     func eachLanguageBundleResolvesAString() throws {
         let key = "输出语言"

@@ -796,7 +796,10 @@ struct ProductionConfigurationContractTests {
             presentationStyle: .filmMark,
             filmMarkConfiguration: .default,
             filmMarkContent: authoredContent,
-            metadata: PhotoMetadata(),
+            metadata: PhotoMetadata(
+                imageWidth: 4_032,
+                imageHeight: 3_024
+            ),
             context: MetadataContext()
         )
 
@@ -808,6 +811,61 @@ struct ProductionConfigurationContractTests {
         #expect(blocks.count == 1)
         #expect(blocks.first?.value == "独立 FM 内容")
         #expect(blocks.first?.value != "旧模板内容")
+    }
+
+    @Test("FM render health rejects text that overflows the source photo canvas")
+    func filmMarkRenderHealthRejectsSourceCanvasOverflow() throws {
+        let authoredContent = FilmMarkContentSchemaV2(
+            primaryOutputItems: [
+                .init(
+                    type: .text,
+                    name: "FM",
+                    value: String(repeating: "FilmMark memory ", count: 500)
+                )
+            ]
+        )
+        let configuration = BatchConfigurationSnapshot(
+            template: .classicWhite,
+            badge: nil,
+            anchor: nil,
+            presentationRouteRawValue:
+                RecordCardPresentationStyle.filmMark.rawValue,
+            filmMarkConfiguration: .default,
+            filmMarkContent: authoredContent,
+            shouldWritePhotoDescription: false,
+            photoDescriptionOverride: "",
+            selectedAlbumIdentifier: ""
+        )
+        let card = RecordCard(
+            template: .classicWhite,
+            presentationStyle: .filmMark,
+            filmMarkConfiguration: .default,
+            filmMarkContent: authoredContent,
+            metadata: PhotoMetadata(
+                imageWidth: 4_032,
+                imageHeight: 3_024
+            ),
+            context: MetadataContext()
+        )
+
+        let presentation = FilmMarkPresentationResolver.resolvedPresentation(
+            for: card,
+            canvasSize: FilmMarkRenderer.outputPixelSize(
+                for: card,
+                fallbackSize: .zero
+            )
+        )
+        #expect(presentation.layout.isContentOverflowingSafeArea)
+
+        #expect(
+            throws: ProductionConfigurationContractError
+                .filmMarkContentOverflow
+        ) {
+            _ = try ProductionRenderHealthCheck.validate(
+                card: card,
+                configuration: configuration
+            )
+        }
     }
 
     @Test("empty resolved content is rejected even without a memory-summary token")

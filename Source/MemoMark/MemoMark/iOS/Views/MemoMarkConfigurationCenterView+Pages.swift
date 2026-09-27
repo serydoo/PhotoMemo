@@ -201,6 +201,8 @@ extension MemoMarkConfigurationCenterView {
             isSavingConfiguration: isSavingConfiguration,
             isSelectedProcessingDefault:
                 session.selectedMemoryPresetIsProcessingDefault,
+            isEditingCardContent:
+                rootPresentationState.isCardContentInspectorPresented,
             previewWidthPolicy:
                 presentationStyle == .minimal
                 ? .fullWidthInCompactLandscape
@@ -225,7 +227,11 @@ extension MemoMarkConfigurationCenterView {
             previewSection
                 .background(offsetReader(for: .preview))
         } editorContent: {
-            configurationOptionList
+            if rootPresentationState.isCardContentInspectorPresented {
+                cardContentInspector
+            } else {
+                configurationOptionList
+            }
         }
         .onChange(of: rootPresentationState.isFilmMarkGeometryExpanded) {
             _, isExpanded in
@@ -373,14 +379,12 @@ extension MemoMarkConfigurationCenterView {
             configurationStatus:
                 activeConfigurationStatus,
             onOpenRegionContent: {
-                rootPresentationState.isEditingFilmMarkContent =
-                    presentationStyle == .filmMark
-                if rootPresentationState.isEditingFilmMarkContent,
+                if presentationStyle == .filmMark,
                    filmMarkContentDraft.items.isEmpty {
                     filmMarkContentDraft = defaultFilmMarkPrimaryOutputDraft()
                 }
                 resetCardEditorState()
-                rootPresentationState.showsRegionContentSheet = true
+                rootPresentationState.isCardContentInspectorPresented = true
             },
             onOpenAdvancedModules: nil,
             onOpenFilmMarkDetails: nil

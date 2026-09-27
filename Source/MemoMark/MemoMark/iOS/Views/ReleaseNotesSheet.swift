@@ -16,16 +16,16 @@ struct ReleaseNotesSheet: View {
                 id: "time-expression",
                 title: localized(
                     "settings.release_notes.time_expression.title",
-                    fallback: "配置中心更连贯"
+                    fallback: "边写边看这张记忆卡"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.time_expression.item_one",
-                        fallback: "切换记忆对象、配置和编辑页面时，当前卡片内容会继续跟随正在处理的记忆。"
+                        fallback: "编辑卡片内容时，照片预览会留在同一页面，文字和信息的变化可以随时查看。"
                     ),
                     localized(
                         "settings.release_notes.time_expression.item_two",
-                        fallback: "卡片编辑与输出设置的状态边界更清楚，减少旧页面状态覆盖当前编辑的机会。"
+                        fallback: "键盘出现时，预览会留出查看内容的空间；完成编辑后仍可继续调整配置。"
                     )
                 ]
             ),
@@ -33,16 +33,16 @@ struct ReleaseNotesSheet: View {
                 id: "configuration",
                 title: localized(
                     "settings.release_notes.configuration.title",
-                    fallback: "切换与恢复更稳定"
+                    fallback: "预览更贴近最终照片"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.configuration.item_one",
-                        fallback: "重新进入配置中心或切换记忆对象后，预览、对象信息和配置选择会保持在同一上下文。"
+                        fallback: "横竖照片都可以在配置中心查看，也可以展开检查完整画面。"
                     ),
                     localized(
                         "settings.release_notes.configuration.item_two",
-                        fallback: "相册选项等异步内容只会应用到仍然对应的记忆对象和配置，避免过期结果混入当前页面。"
+                        fallback: "胶片时间的文字超出安全范围时，预览会提示调整内容或字号。"
                     )
                 ]
             ),
@@ -50,12 +50,12 @@ struct ReleaseNotesSheet: View {
                 id: "saving",
                 title: localized(
                     "settings.release_notes.saving.title",
-                    fallback: "本地记忆继续由你掌握"
+                    fallback: "记录仍由你掌握"
                 ),
                 bullets: [
                     localized(
                         "settings.release_notes.saving.item_one",
-                        fallback: "这次更新集中整理配置中心的状态边界，不新增云端处理，也不改变 Apple Photos 的使用方式。"
+                        fallback: "首页更清楚地呈现当前预设围绕的记忆对象；熟悉分享流程后，新手选图引导会自然收起。"
                     ),
                     localized(
                         "settings.release_notes.saving.item_two",
@@ -75,7 +75,7 @@ struct ReleaseNotesSheet: View {
                             Text(
                                 localized(
                                     "settings.release_notes.header",
-                                    fallback: "这次更新主要完善了配置中心在切换与恢复时的状态连续性。"
+                                    fallback: "这次更新让卡片内容编辑与照片预览留在同一视野里。"
                                 )
                             )
                             .font(.subheadline.weight(.semibold))
@@ -93,7 +93,7 @@ struct ReleaseNotesSheet: View {
                             Text(
                                 localized(
                                     "settings.release_notes.positioning",
-                                    fallback: "建议更新，获得更连贯的配置中心、卡片编辑和本地处理体验。"
+                                    fallback: "在写下记忆的同时，看见它将如何呈现在照片上。"
                                 )
                             )
                             .font(.caption)
@@ -129,7 +129,7 @@ struct ReleaseNotesSheet: View {
                     Text(
                         localized(
                             "settings.release_notes.closing",
-                            fallback: "感谢每一条反馈。照片仍然只属于你的设备和生活。"
+                            fallback: "感谢你的反馈。让每张照片都能留下属于你的表达。"
                         )
                     )
                     .font(.caption)

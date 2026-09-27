@@ -34,6 +34,27 @@ struct HomeMemoryPresetRow: View {
         adaptivePresetRowContent
             .padding(.horizontal, ConfigurationUI.innerPanelPadding)
             .padding(.vertical, ConfigurationUI.compactRowVerticalPadding)
+            .background(selectedRowHighlight)
+            .overlay(selectedRowHighlightBorder)
+    }
+
+    @ViewBuilder
+    private var selectedRowHighlight: some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.accentColor.opacity(0.06))
+                .padding(.horizontal, 4)
+        }
+    }
+
+    @ViewBuilder
+    private var selectedRowHighlightBorder: some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.accentColor.opacity(0.34), lineWidth: 1.5)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+        }
     }
 
     @ViewBuilder
@@ -78,15 +99,15 @@ struct HomeMemoryPresetRow: View {
     private var verticalPresetTextContent: some View {
         VStack(alignment: .leading, spacing: 4) {
             presetTitleText
-            Text(presetDescriptor)
+            Text(subjectTitle)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
-            Text(subjectTitle)
+            Text(presetDescriptor)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
-            Text(presetDetail)
+            Text(presetSavedStatus)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
@@ -103,15 +124,13 @@ struct HomeMemoryPresetRow: View {
 
     private var horizontalPresetMetadata: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(subjectTitle)
+            Text("·")
+                .accessibilityHidden(true)
             Text(presetDescriptor)
             Text("·")
                 .accessibilityHidden(true)
-            Text(subjectTitle)
-            if isSelected {
-                Text("·")
-                    .accessibilityHidden(true)
-                Text(presetDetail)
-            }
+            Text(presetSavedStatus)
         }
         .font(.caption.weight(.medium))
         .foregroundStyle(.secondary)
@@ -126,11 +145,19 @@ struct HomeMemoryPresetRow: View {
             .frame(width: 26, height: 30)
     }
 
-    private var presetDetail: String {
-        if isSelected {
-            return localized("home.preset.active")
-        }
-        return preset.summary
+    private var presetSavedStatus: String {
+        HomeProjection.savedStatusValue(
+            savedAt: preset.savedAt,
+            language: interfaceLanguage
+        )
+    }
+
+    private var presetSelectionStatus: String {
+        localized(
+            isSelected
+                ? "home.preset.active"
+                : "home.preset.not_active"
+        )
     }
 
     private var presetAccessibilityLabel: String {
@@ -138,9 +165,11 @@ struct HomeMemoryPresetRow: View {
             format: localized("home.preset.accessibility_format"),
             locale: interfaceLanguage.locale,
             preset.title,
-            presetDescriptor,
             subjectTitle,
-            presetDetail
+            presetDescriptor,
+            presetSavedStatus,
+            localizedLogoTitle,
+            presetSelectionStatus
         )
     }
 
