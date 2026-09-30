@@ -1052,7 +1052,7 @@ struct ConfigurationOptionListContractTests {
             )
         )
         #expect(!optionListSource.contains("预览与内容编辑会一起变化"))
-        #expect(optionListSource.contains("RecordCardPresentationStyle.allCases"))
+        #expect(optionListSource.contains("RecordCardPresentationStyle.selectableStyles"))
         #expect(optionListSource.contains("private var presentationStyleSectionHeader"))
         #expect(optionListSource.contains("private var presentationStyleSectionHeader"))
         #expect(

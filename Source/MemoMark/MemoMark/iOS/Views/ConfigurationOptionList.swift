@@ -334,7 +334,7 @@ struct ConfigurationOptionList: View {
             localized("卡片样式"),
             selection: $presentationStyle
         ) {
-            ForEach(RecordCardPresentationStyle.allCases, id: \.self) { style in
+            ForEach(RecordCardPresentationStyle.selectableStyles, id: \.self) { style in
                 Text(localized(title(for: style)))
                     .tag(style)
             }
@@ -357,6 +357,8 @@ struct ConfigurationOptionList: View {
             )
         case .minimal:
             localized("极简")
+        case .glassCard:
+            localized("玻璃卡片")
         case .filmMark:
             localized("胶片时间")
         }

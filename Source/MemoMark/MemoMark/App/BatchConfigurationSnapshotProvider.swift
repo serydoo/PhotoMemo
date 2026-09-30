@@ -179,9 +179,9 @@ struct BatchConfigurationSnapshotProvider {
         if defaults.object(forKey: Self.frozenShareSnapshotStorageKey) != nil {
             guard let data = defaults.data(forKey: Self.frozenShareSnapshotStorageKey),
                   let snapshot = try? JSONDecoder().decode(BatchConfigurationSnapshot.self, from: data),
-                  snapshot.presentationRouteRawValue == "filmMark",
-                  snapshot.filmMarkConfiguration != nil,
-                  snapshot.filmMarkContent != nil,
+                  let route = snapshot.presentationRouteRawValue,
+                  ["filmMark", "glassCard"].contains(route),
+                  (route != "filmMark" || (snapshot.filmMarkConfiguration != nil && snapshot.filmMarkContent != nil)),
                   snapshot.configurationID != nil,
                   snapshot.configurationRevision != nil else {
                 return .init(isReady: false, presetTitle: nil)

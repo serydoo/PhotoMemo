@@ -1832,3 +1832,13 @@
 "configuration.preview.zoom.expand" = "Inspect full photo";
 "configuration.preview.zoom.hint" = "Changes only the preview, not the output or preset.";
 "filmMark.preview.photo.accessibility" = "FilmMark full photo preview";
+
+/* GlassCard integration */
+"玻璃卡片" = "Glass Card";
+"四处内容，透过玻璃卡片留住照片与回忆。" = "Four areas hold the details and memories of your photo on a translucent card.";
+"configuration.output.metadata.note.glass_card" = "Available EXIF and capture information are retained where possible. Glass Card places four content areas inside the photo canvas. The original photo stays unchanged.";
+
+"Batch.GlassCardOverflow.Failed.Title" = "Glass Card content does not fit within this photo.";
+"Batch.GlassCardOverflow.Failed.Recovery" = "Shorten the content in the affected area and process again.";
+"GlassCard.Preview.Empty" = "Add card content";
+"GlassCard.Preview.Overflow" = "Content is too long. Shorten the affected area.";

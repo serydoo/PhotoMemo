@@ -94,6 +94,7 @@ nonisolated enum ProductionDiagnosticErrorCode:
         "processing.contentValidation.failed"
     case processingFilmMarkLayoutOverflow =
         "processing.filmMark.layoutOverflow"
+    case processingGlassCardLayoutOverflow = "processing.glassCard.layoutOverflow"
     case processingRenderFailed =
         "processing.render.failed"
     case processingExportFailed =
@@ -545,6 +546,8 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
                 switch contractError {
                 case .emptyResolvedContent:
                     return .processingContentValidationFailed
+                case .glassCardContentOverflow:
+                    return .processingGlassCardLayoutOverflow
                 case .filmMarkContentOverflow:
                     return .processingFilmMarkLayoutOverflow
                 default:
@@ -1097,6 +1100,11 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
                     fallback: "请缩短内容、调小字号或调整位置，然后重新处理。"
                 )
             )
+        case .processingGlassCardLayoutOverflow:
+            return (
+                language.localized(key: "Batch.GlassCardOverflow.Failed.Title", fallback: "玻璃卡片内容无法完整放入这张照片。"),
+                language.localized(key: "Batch.GlassCardOverflow.Failed.Recovery", fallback: "请缩短对应区域的内容，然后重新处理。")
+            )
         case .processingRenderFailed:
             return (
                 "回忆卡片绘制失败。",
@@ -1324,6 +1332,11 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
                     key: "Batch.FilmMarkOverflow.Failed.Recovery",
                     fallback: "Shorten the text, choose a smaller size, or adjust its position before processing again."
                 )
+            )
+        case .processingGlassCardLayoutOverflow:
+            return (
+                language.localized(key: "Batch.GlassCardOverflow.Failed.Title", fallback: "Glass Card content does not fit within this photo."),
+                language.localized(key: "Batch.GlassCardOverflow.Failed.Recovery", fallback: "Shorten the content in the affected area and process again.")
             )
         case .processingRenderFailed:
             return (

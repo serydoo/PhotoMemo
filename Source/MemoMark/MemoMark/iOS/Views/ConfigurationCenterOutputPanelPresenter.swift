@@ -59,6 +59,9 @@ enum ConfigurationCenterOutputPanelPresenter {
         case .classicWhite:
             key = "configuration.output.metadata.note.classic_white"
             fallback = "尽可能保留可用的 EXIF 与拍摄信息；基础白会增加白色信息栏，输出画布尺寸会随之调整。RAW 等源格式会生成新的照片结果，原始照片不被修改。"
+        case .glassCard:
+            key = "configuration.output.metadata.note.glass_card"
+            fallback = "尽可能保留可用的 EXIF 与拍摄信息；玻璃卡片在原照片画布内呈现四处内容。原始照片不被修改。"
         case .minimal:
             key = "configuration.output.metadata.note.minimal"
             fallback = "尽可能保留可用的 EXIF 与拍摄信息；极简样式在原照片画布内叠加信息，不增加底部白边。RAW 等源格式会生成新的照片结果，原始照片不被修改。"

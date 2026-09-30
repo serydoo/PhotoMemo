@@ -16,6 +16,8 @@ struct RecordCardPresentationPlanner {
                 for: card.metadata,
                 fallbackSize: fallbackSize
             )
+        case .glassCard:
+            return GlassCardProductionRenderer.outputPixelSize(for: card.metadata, fallbackSize: fallbackSize)
         case .minimal:
             return MinimalRenderer.outputPixelSize(
                 for: card.metadata,
@@ -36,6 +38,8 @@ struct RecordCardPresentationPlanner {
         switch card.presentationStyle {
         case .classicWhite:
             return AnyView(ClassicWhiteCardRenderer(image: image, card: card))
+        case .glassCard:
+            return AnyView(GlassCardCardRenderer(image: image, card: card))
         case .minimal:
             return AnyView(MinimalCardRenderer(image: image, card: card))
         case .filmMark:
@@ -71,6 +75,8 @@ struct RecordCardPresentationPlanner {
                 for: card,
                 canvasSize: canvasSize
             )
+        case .glassCard:
+            return try glassCardArtifact(for: card, canvasSize: canvasSize)
         case .minimal:
             return try minimalArtifact(
                 for: card,
@@ -97,6 +103,29 @@ struct RecordCardPresentationPlanner {
         return try minimalArtifact(
             for: card,
             canvasSize: canvasSize
+        )
+    }
+
+    @MainActor
+    private func glassCardArtifact(for card: RecordCard, canvasSize: CGSize) throws -> PresentationArtifact {
+        let plan = GlassCardProductionRenderer.resolve(card: card, canvasSize: canvasSize)
+        guard !plan.isEmpty else { throw ProductionConfigurationContractError.emptyResolvedContent }
+        guard !plan.isContentOverflowing else { throw ProductionConfigurationContractError.glassCardContentOverflow }
+        let layerFrame = plan.overlayFrame
+        let renderer = ImageRenderer(content:
+            GlassCardOverlayLayer(presentation: plan, badge: card.badge)
+                .offset(y: -layerFrame.minY)
+                .frame(width: layerFrame.width, height: layerFrame.height, alignment: .topLeading)
+                .clipped()
+        )
+        renderer.scale = 1
+        renderer.proposedSize = .init(layerFrame.size)
+        renderer.isOpaque = false
+        guard let overlay = renderer.cgImage else { throw RecordCardExportError.renderFailed }
+        return try PresentationArtifact(
+            canvasSize: canvasSize, photoFrame: CGRect(origin: .zero, size: canvasSize),
+            layers: [.init(frame: plan.artifactOverlayFrame, image: overlay, zIndex: 100)],
+            canvasBackground: .transparent
         )
     }
 

@@ -7,6 +7,38 @@ import Testing
 @Suite("Production configuration contract")
 struct ProductionConfigurationContractTests {
 
+    @Test("GlassCard independent content survives production and frozen Share snapshots")
+    @MainActor
+    func glassCardProductionAndShareSnapshots() throws {
+        let fixture = try Self.makeFixture()
+        var aggregate = fixture.aggregate
+        var template = Template.classicWhite
+        template.leftTopArea.items = [.init(type: .text, name: "", value: "独立玻璃内容")]
+        aggregate.subjects[0].configurations[0].presentation.route = .glassCard
+        aggregate.subjects[0].configurations[0].editor.templatesByPresentationStyle[.glassCard] = template
+        let snapshot = try ProductionConfigurationSnapshotFactory.resolve(
+            reference: .init(configurationID: fixture.configuration.id, revision: fixture.configuration.revision),
+            from: aggregate
+        )
+        #expect(snapshot.presentationRouteRawValue == "glassCard")
+        #expect(snapshot.template.leftTopArea.items.first?.value == "独立玻璃内容")
+        #expect(snapshot.filmMarkContent == nil)
+        try ProductionConfigurationSnapshotContract.validate(snapshot)
+
+        let suite = "GlassCard.ShareReadiness.\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let service = ConfigurationProjectionService(
+            legacyStore: LegacySettingsStore(defaults: defaults),
+            snapshotProvider: BatchConfigurationSnapshotProvider(defaults: defaults)
+        )
+        _ = try service.projectAndPersist(aggregate)
+        let frozen = SharedBatchConfigurationSnapshotService(defaults: defaults).loadSnapshot()
+        #expect(frozen.presentationRouteRawValue == "glassCard")
+        #expect(frozen.template.leftTopArea.items.first?.value == "独立玻璃内容")
+        #expect(BatchConfigurationSnapshotProvider(defaults: defaults).loadConfigurationReadiness().isReady)
+    }
+
     @Test("Open resolves editor context without changing the active configuration")
     func openResolvesEditorContextWithoutChangingActiveConfiguration() throws {
         let fixture = try Self.makeFixture()

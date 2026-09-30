@@ -5,6 +5,18 @@ import Testing
 @Suite("Production diagnostics")
 struct ProductionDiagnosticsTests {
 
+    @Test("GlassCard overflow explains recovery without suggesting unsupported controls")
+    func glassCardOverflowGuidance() {
+        let failure = ProductionDiagnosticFailureClassifier.processing(
+            phase: BatchTaskPhase.metadataReady.rawValue, classification: "processingFailure",
+            operationID: UUID(), error: ProductionConfigurationContractError.glassCardContentOverflow,
+            language: .english
+        )
+        #expect(failure.code == .processingGlassCardLayoutOverflow)
+        #expect(failure.userMessage.contains("Glass Card"))
+        #expect(failure.userMessage.contains("Shorten"))
+    }
+
     @Test("Support identifiers are stable and operation scoped")
     func supportIdentifierIsStable() {
         let operationID = UUID(

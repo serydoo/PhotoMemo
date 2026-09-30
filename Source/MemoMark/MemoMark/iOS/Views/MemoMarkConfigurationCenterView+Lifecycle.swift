@@ -361,6 +361,8 @@ extension MemoMarkConfigurationCenterView {
             return TemplatePreset.classicWhite.displayName(
                 for: .interfaceStored
             )
+        case .glassCard:
+            return MemoMarkLanguage.interfaceStored.localized(key: "玻璃卡片", fallback: "玻璃卡片")
         case .minimal:
             return MemoMarkLanguage.interfaceStored.localized(
                 key: "极简",

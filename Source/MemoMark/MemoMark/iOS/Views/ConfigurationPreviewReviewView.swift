@@ -146,7 +146,7 @@ struct ConfigurationPreviewReviewView: View {
                 for: .classicWhite,
                 orientation: orientation
             )
-        case .minimal:
+        case .minimal, .glassCard:
             ConfigurationPreviewBackground.aspectRatio(for: orientation)
         case .filmMark:
             ConfigurationPreviewBackground.aspectRatio(for: orientation)
@@ -176,6 +176,8 @@ struct ConfigurationPreviewReviewView: View {
             "经典白"
         case .minimal:
             "极简"
+        case .glassCard:
+            "GlassCard"
         case .filmMark:
             "FilmMark"
         }

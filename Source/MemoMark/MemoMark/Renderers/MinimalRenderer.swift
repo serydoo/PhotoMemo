@@ -222,7 +222,9 @@ private struct MinimalInformationBar: View {
                 .allowsTightening(true)
                 .minimumScaleFactor(0.78)
         }
-        .fixedSize(horizontal: true, vertical: false)
+        // Keep short copy content-sized, while allowing long copy to accept the
+        // Layout Engine's bounded width before HStack resolves its ideal width.
+        .fixedSize(horizontal: false, vertical: true)
         .padding(
             .trailing,
             height * layout.capsuleHorizontalPaddingToBarHeight

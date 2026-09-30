@@ -1834,3 +1834,13 @@
 "configuration.preview.zoom.expand" = "放大查看完整图片";
 "configuration.preview.zoom.hint" = "只改变预览显示，不改变输出内容或预设";
 "filmMark.preview.photo.accessibility" = "FilmMark 完整照片预览";
+
+/* GlassCard integration */
+"玻璃卡片" = "玻璃卡片";
+"四处内容，透过玻璃卡片留住照片与回忆。" = "四处内容，透过玻璃卡片留住照片与回忆。";
+"configuration.output.metadata.note.glass_card" = "尽可能保留可用的 EXIF 与拍摄信息；玻璃卡片在原照片画布内呈现四处内容。原始照片不被修改。";
+
+"Batch.GlassCardOverflow.Failed.Title" = "玻璃卡片内容无法完整放入这张照片。";
+"Batch.GlassCardOverflow.Failed.Recovery" = "请缩短对应区域的内容，然后重新处理。";
+"GlassCard.Preview.Empty" = "请填写卡片内容";
+"GlassCard.Preview.Overflow" = "内容过长，请缩短对应区域的内容";

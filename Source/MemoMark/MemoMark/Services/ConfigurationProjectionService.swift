@@ -181,7 +181,7 @@ struct ConfigurationProjectionService {
             selectedMemoryPresetID: activeConfigurationID
         )
         var frozenShareSnapshot: BatchConfigurationSnapshot?
-        if activeConfiguration.presentation.route == .filmMark {
+        if [.filmMark, .glassCard].contains(activeConfiguration.presentation.route) {
             frozenShareSnapshot = try ProductionConfigurationSnapshotFactory.resolve(
                 reference: .init(configurationID: activeConfigurationID, revision: activeConfiguration.revision),
                 from: aggregate

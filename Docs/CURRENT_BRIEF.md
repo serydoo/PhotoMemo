@@ -1,6 +1,6 @@
 # MemoMark Current Brief
 
-Last updated: 2026-09-27
+Last updated: 2026-09-30
 
 This is a compact routing brief for a new Codex session. It is not a
 replacement for the project constitution, accepted specifications, contracts,
@@ -8,6 +8,10 @@ audits, certification records, or release manifests. When a decision matters,
 follow the linked source-of-truth document.
 
 ## Current Product Stage
+
+- GlassCard full integration baseline (2026-09-30): main working tree now registers the fourth style, independent four-position templates, unified preview/artifact, still/Live Photo pipeline entry, and frozen Share transport. Final macOS regression passed 1947 tests (1 skipped), iOS simulator and signed iPhone Debug builds passed; overwrite installation succeeded, initial CLI launch was blocked by the lock screen, and the owner subsequently confirmed preliminary functionality passed. Release style selection remains gated; detailed media, appearance and accessibility acceptance remain open. See `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Full-Integration-Delivery-2026-09-30.md`. This supersedes the earlier foundation-only integration state.
+
+- GlassCard developer foundation integrated into the main working tree (uncommitted), with DEBUG-only renderer/bridge/review entry; no production style registration. See `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Development-Foundation-Integration-2026-09-30.md` for the review, pending evidence, and next gates. Minimal owner-confirmed integration remains preserved.
 
 - Stage: `V4 Expression Style System`
 - Subphase: `V4.0 Research And Product Definition`

@@ -357,6 +357,8 @@ struct MemoMarkConfigurationCenterView: View {
             TemplatePreset.classicWhite.displayName(
                 for: .interfaceStored
             )
+        case .glassCard:
+            MemoMarkLanguage.interfaceStored.localized(key: "玻璃卡片", fallback: "玻璃卡片")
         case .minimal:
             MemoMarkLanguage.interfaceStored.localized(
                 key: "极简",
@@ -376,6 +378,11 @@ struct MemoMarkConfigurationCenterView: View {
             MemoMarkLanguage.interfaceStored.localized(
                 key: "四处内容，适合完整记录照片信息。",
                 fallback: "四处内容，适合完整记录照片信息。"
+            )
+        case .glassCard:
+            MemoMarkLanguage.interfaceStored.localized(
+                key: "四处内容，透过玻璃卡片留住照片与回忆。",
+                fallback: "四处内容，透过玻璃卡片留住照片与回忆。"
             )
         case .minimal:
             MemoMarkLanguage.interfaceStored.localized(

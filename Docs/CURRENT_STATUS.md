@@ -1,5 +1,12 @@
 # MemoMark Current Status
 
+## 2026-09-29 Minimal width-negotiation fix: iPhone preliminary check
+
+- Applied the bounded-width Minimal correction locally on `main`: the production Renderer and Configuration Center preview now negotiate the parent width, and the preview aligns multi-line content to the leading edge. The focused `MinimalRendererLayoutTests` passed 14/14 before device delivery; this is a scoped layout fix, not a material or saved-configuration change.
+- Built the signed `MemoMarkiOS` Debug app from the current `main` worktree as `2.3.4 (115)`, including `MemoMarkShareExtension` and `MemoMarkWidgetExtension`. `codesign --verify --deep --strict` passed. Installed over the existing app on paired iPhone 17 Pro Max `863C2747-6742-5E93-B715-6F89DBF90B31` without uninstalling or clearing its data. Device app inventory confirms `2.3.4 (115)`; process readback found `MemoMarkiOS` running.
+- Owner-reported preliminary device acceptance: Apple Photos saving succeeded and Live Photo behavior showed no abnormality. This is user-reported manual evidence; no independent Photos asset/metadata readback was captured in this pass. Accessibility and VoiceOver are intentionally deferred to the final unified acceptance round.
+- Build artifact: `/tmp/MemoMarkMinimalPhysicalDelivery/Build/Products/Debug-iphoneos/MemoMarkiOS.app`. The source patch and test remain local and uncommitted. This is not a new TestFlight or App Store release.
+
 ## 2026-09-27 2.3.4（115）版本整理与 TestFlight 交付
 
 - 本轮由产品负责人明确授权 GitHub 同步与 TestFlight 发布；marketing version 顺延为 `2.3.4`，构建号指定 `115`。范围从 `2a9dfef1` 的 `2.3.3 (111)` 发布提交之后开始，合并近期已提交的首页/预览改进与当前本地已实现的卡片内容同屏编辑、预览校准、FilmMark 溢出反馈及四语/契约维护。
@@ -29922,3 +29929,18 @@ App Store, TestFlight, or device data. The final source-checkpoint decision is
 conditional on the focused test/build evidence and on the product owner
 confirming the intended changed-file scope; no staging, commit, or push is
 performed by this record.
+
+
+### 2026-09-30 — GlassCard 开发基础回流
+
+已将 GlassCard 位置投影、固定锚点 Layout、文字适配、材质研究配方、DEBUG renderer/桥接/研究页及定向测试接入 main 工作区，尚未提交或推送；保留已正式回流但未提交的 Minimal 改动。main 7/7 定向测试与 Debug/Release 模拟器构建通过；本地模拟器确认短文 1080×1440 合成与长文拒绝导出。未注册生产样式、未改生产 Photos/Live Photo 路径、未部署实体设备。详细范围与后续验收见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Development-Foundation-Integration-2026-09-30.md`。
+
+
+### 2026-09-30 — GlassCard 完整功能联调基础
+
+在用户授权下，main 工作区接通第四样式、独立四区域模板、统一 preview/artifact、静态导出与既有 Live Photo pipeline 入口、生产及 Share 冻结快照。最终全量回归 1947 通过、1 跳过；模拟器及真机 Debug 构建与签名通过，iPhone 17 Pro Max 已覆盖安装。首次 CLI 启动受锁屏阻止，此后用户确认初步功能测试通过。Release 新样式选择入口暂时关闭；逐项媒体、外观与无障碍验收继续单独记录。详见 `GlassCard-Full-Integration-Delivery-2026-09-30.md`。
+
+
+### 2026-09-30 — Minimal / GlassCard 主线源码备份
+
+用户授权将已回流 main 工作区的 Minimal 与 GlassCard 功能基线整理为正式提交并同步 origin/main。提交范围限于功能源码、测试、集成文档及相关状态记录；推广、发布文案、其他研究与 config 未纳入本次提交。沿用此前全量 1947 通过、1 跳过、0 失败及构建证据；用户确认初步功能正常。本轮仅整理提交与同步，没有更改渲染行为或进行 App Store 发布。远端结果另行核对记录。

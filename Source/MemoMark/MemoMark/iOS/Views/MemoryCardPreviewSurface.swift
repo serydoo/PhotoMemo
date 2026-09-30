@@ -85,6 +85,31 @@ struct MemoryCardPreviewSurface: View {
                         }
                     }
                 }
+        case .glassCard:
+            Color.clear
+                .aspectRatio(ConfigurationPreviewBackground.aspectRatio(for: previewOrientation ?? .landscape), contentMode: .fit)
+                .overlay {
+                    GeometryReader { proxy in
+                        let plan = GlassCardResolvedPresentation.resolve(
+                            content: GlassCardContentProjection(
+                                leftTop: regionText, leftBottom: timeText,
+                                rightTop: contextText, rightBottom: memoryText
+                            ), canvasSize: proxy.size
+                        )
+                        ZStack {
+                            minimalPreviewPhoto(width: proxy.size.width, height: proxy.size.height)
+                            GlassCardOverlayLayer(presentation: plan, badge: glassCardPreviewBadge)
+                            if plan.isEmpty || plan.isContentOverflowing {
+                                Text(MemoMarkLanguage.interfaceStored.localized(
+                                    key: plan.isEmpty ? "GlassCard.Preview.Empty" : "GlassCard.Preview.Overflow",
+                                    fallback: plan.isEmpty ? "请填写卡片内容" : "内容过长，请缩短对应区域的内容"
+                                ))
+                                .font(.footnote).foregroundStyle(.primary)
+                                .padding(8).background(.regularMaterial, in: Capsule())
+                            }
+                        }
+                    }
+                }
         case .minimal:
             Color.clear
                 .aspectRatio(
@@ -107,6 +132,17 @@ struct MemoryCardPreviewSurface: View {
             )
             .frame(maxWidth: .infinity)
         }
+    }
+
+    private var glassCardPreviewBadge: Badge {
+        let path: String?
+        switch logoMode {
+        case .appleMini: return .appleClassic
+        case .customUpload: path = customLogoImagePath
+        case .subjectAvatar: path = subjectAvatarLogoImagePath
+        }
+        guard let path else { return .appleClassic }
+        return Badge(name: "", type: .customUpload, imagePath: path)
     }
 
     private var resolvedFilmMarkPreviewMode: FilmMarkPreviewMode {
@@ -207,10 +243,13 @@ struct MemoryCardPreviewSurface: View {
                 .monospacedDigit()
                 .foregroundStyle(MinimalRenderer.foreground)
                 .lineLimit(layout.textLineLimit)
+                .multilineTextAlignment(.leading)
                 .allowsTightening(true)
                 .minimumScaleFactor(0.78)
         }
-        .fixedSize(horizontal: true, vertical: false)
+        // Match production width negotiation: short copy stays compact, and
+        // bounded long copy can wrap or follow the landscape truncation policy.
+        .fixedSize(horizontal: false, vertical: true)
         .padding(
             .trailing,
             height * layout.capsuleHorizontalPaddingToBarHeight

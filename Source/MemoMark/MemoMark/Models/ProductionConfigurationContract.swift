@@ -47,6 +47,7 @@ enum ProductionConfigurationContractError:
     case missingFilmMarkConfiguration
     case missingFilmMarkContent
     case filmMarkContentOverflow
+    case glassCardContentOverflow
     case emptyResolvedContent
     case emptySemanticOutput(String)
     case emptyRendererOutput(String)
@@ -396,6 +397,18 @@ enum ProductionRenderHealthCheck {
             card: card,
             configuration: configuration
         )
+        if card.presentationStyle == .glassCard,
+           let width = card.metadata.imageWidth, width > 0,
+           let height = card.metadata.imageHeight, height > 0 {
+            let canvas = GlassCardProductionRenderer.outputPixelSize(for: card.metadata, fallbackSize: .zero)
+            let plan = GlassCardProductionRenderer.resolve(card: card, canvasSize: canvas)
+            guard !plan.isEmpty else {
+                throw ProductionConfigurationContractError.emptyResolvedContent
+            }
+            guard !plan.isContentOverflowing else {
+                throw ProductionConfigurationContractError.glassCardContentOverflow
+            }
+        }
         guard card.presentationStyle == .filmMark,
             let imageWidth = card.metadata.imageWidth,
             imageWidth > 0,

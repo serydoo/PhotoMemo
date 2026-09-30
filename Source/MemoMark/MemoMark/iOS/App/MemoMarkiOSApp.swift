@@ -11,8 +11,14 @@ struct MemoMarkiOSApp: App {
     @State
     private var showsConfigurationPreviewReview = false
 
+    @State
+    private var showsGlassCardPrototypeReview = false
+
     init() {
 #if DEBUG
+        _showsGlassCardPrototypeReview = State(
+            initialValue: ProcessInfo.processInfo.arguments.contains("--glasscard-prototype-review")
+        )
         _showsConfigurationPreviewReview = State(
             initialValue: ProcessInfo.processInfo.arguments.contains(
                 "--configuration-preview-review"
@@ -26,7 +32,15 @@ struct MemoMarkiOSApp: App {
     var body: some Scene {
 
         WindowGroup {
-            if showsConfigurationPreviewReview {
+            if showsGlassCardPrototypeReview {
+#if DEBUG
+                GlassCardPrototypeReviewView {
+                    showsGlassCardPrototypeReview = false
+                }
+#else
+                MemoMarkiOSHomeView(runtime: runtime)
+#endif
+            } else if showsConfigurationPreviewReview {
 #if DEBUG
                 ConfigurationPreviewReviewView {
                     showsConfigurationPreviewReview = false

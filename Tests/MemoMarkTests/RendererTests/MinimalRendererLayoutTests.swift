@@ -225,6 +225,38 @@ struct MinimalRendererLayoutTests {
         #expect(artifact.layers[0].image.height == Int(expectedLayerFrame.height))
     }
 
+    @Test("Minimal long copy stays inside the bounded artifact instead of clipping at the leading edge")
+    @MainActor
+    func longCopyKeepsLeadingInset() throws {
+        for canvasSize in [
+            CGSize(width: 640, height: 360),
+            CGSize(width: 360, height: 640)
+        ] {
+            var template = Template.classicWhite
+            template.leftTopArea.items = [.title]
+
+            let card = RecordCard(
+                template: template,
+                presentationStyle: .minimal,
+                metadata: PhotoMetadata(
+                    imageWidth: Int(canvasSize.width),
+                    imageHeight: Int(canvasSize.height)
+                ),
+                context: MetadataContext(),
+                title: "那天我们第一次一起沿着长长的海岸线慢慢走到夕阳落下以后"
+            )
+            let artifact = try #require(
+                try RecordCardPresentationPlanner().floatingArtifact(
+                    for: card,
+                    canvasSize: canvasSize
+                )
+            )
+            let layer = try #require(artifact.layers.first)
+
+            #expect(try leftCenterAlpha(in: layer.image) == 0)
+        }
+    }
+
     @Test("Minimal floating artifact remains encoder-safe for odd Live Photo still sizes")
     @MainActor
     func createsEncoderSafeFloatingArtifactForOddLivePhotoStillSize() throws {
@@ -252,6 +284,28 @@ struct MinimalRendererLayoutTests {
         #expect(artifact.layers[0].frame.width < artifact.canvasSize.width)
         #expect(artifact.layers[0].frame.height < artifact.canvasSize.height)
         _ = try artifact.validatedForEncoder()
+    }
+
+    private func leftCenterAlpha(in image: CGImage) throws -> UInt8 {
+        let bytesPerRow = image.width * 4
+        var pixels = [UInt8](repeating: 0, count: bytesPerRow * image.height)
+        guard let context = CGContext(
+            data: &pixels,
+            width: image.width,
+            height: image.height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            throw ImageEdgeAssertionError.contextUnavailable
+        }
+        context.draw(
+            image,
+            in: CGRect(x: 0, y: 0, width: image.width, height: image.height)
+        )
+        let y = max(min(image.height / 2, image.height - 1), 0)
+        return pixels[(y * image.width) * 4 + 3]
     }
 
 }

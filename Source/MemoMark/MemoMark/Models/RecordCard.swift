@@ -9,6 +9,16 @@ enum RecordCardPresentationStyle:
     case classicWhite
     case minimal
     case filmMark
+    case glassCard
+
+    /// DEBUG integration exposes GlassCard while production acceptance remains open.
+    static var selectableStyles: [Self] {
+#if DEBUG
+        allCases
+#else
+        allCases.filter { $0 != .glassCard }
+#endif
+    }
 
     /// Only these styles are backed by the legacy template dictionary. FM
     /// keeps its presentation payload in `Presentation.filmMark`, so adding
@@ -16,7 +26,8 @@ enum RecordCardPresentationStyle:
     /// shape.
     static let legacyTemplateBackedStyles: [Self] = [
         .classicWhite,
-        .minimal
+        .minimal,
+        .glassCard
     ]
 
     /// The content contract is the single source of truth for the editable
@@ -26,7 +37,7 @@ enum RecordCardPresentationStyle:
     /// make the same decision without sharing slot state implicitly.
     nonisolated var contentContract: PresentationStyleContentContract {
         switch self {
-        case .classicWhite:
+        case .classicWhite, .glassCard:
             return PresentationStyleContentContract(
                 semanticProjections: [
                     .init(role: .recorder, textArea: .leftTop),

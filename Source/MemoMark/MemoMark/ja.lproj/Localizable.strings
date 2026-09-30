@@ -1832,3 +1832,13 @@
 "configuration.preview.zoom.expand" = "写真全体を拡大して確認";
 "configuration.preview.zoom.hint" = "プレビューのみを変更し、出力やプリセットには影響しません。";
 "filmMark.preview.photo.accessibility" = "FilmMark の写真全体プレビュー";
+
+/* GlassCard integration */
+"玻璃卡片" = "ガラスカード";
+"四处内容，透过玻璃卡片留住照片与回忆。" = "半透明のカードに、写真の情報と思い出を4つの領域で残します。";
+"configuration.output.metadata.note.glass_card" = "利用可能なEXIFと撮影情報を可能な限り保持します。ガラスカードは写真内に4つの領域を表示します。元の写真は変更されません。";
+
+"Batch.GlassCardOverflow.Failed.Title" = "ガラスカードの内容が写真内に収まりません。";
+"Batch.GlassCardOverflow.Failed.Recovery" = "該当する領域の内容を短くして、もう一度処理してください。";
+"GlassCard.Preview.Empty" = "カードの内容を入力してください";
+"GlassCard.Preview.Overflow" = "内容が長すぎます。該当する領域を短くしてください。";

@@ -1832,3 +1832,13 @@
 "configuration.preview.zoom.expand" = "사진 전체 확대해서 보기";
 "configuration.preview.zoom.hint" = "미리보기만 바꾸며 출력이나 프리셋에는 영향을 주지 않습니다.";
 "filmMark.preview.photo.accessibility" = "FilmMark 전체 사진 미리보기";
+
+/* GlassCard integration */
+"玻璃卡片" = "글라스 카드";
+"四处内容，透过玻璃卡片留住照片与回忆。" = "반투명 카드의 네 영역에 사진의 정보와 추억을 담아요.";
+"configuration.output.metadata.note.glass_card" = "사용 가능한 EXIF 및 촬영 정보를 가능한 한 유지합니다. 글라스 카드는 사진 안에 네 개의 콘텐츠 영역을 표시합니다. 원본 사진은 변경되지 않습니다.";
+
+"Batch.GlassCardOverflow.Failed.Title" = "글라스 카드의 내용이 사진 안에 들어가지 않아요.";
+"Batch.GlassCardOverflow.Failed.Recovery" = "해당 영역의 내용을 줄인 후 다시 처리해 주세요.";
+"GlassCard.Preview.Empty" = "카드 내용을 입력해 주세요";
+"GlassCard.Preview.Overflow" = "내용이 너무 길어요. 해당 영역의 내용을 줄여 주세요.";

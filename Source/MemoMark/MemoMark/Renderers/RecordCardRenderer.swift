@@ -7,6 +7,7 @@ struct RecordCardRenderer: View {
         case classicWhite
         case minimal
         case filmMark
+        case glassCard
     }
 
     let image: Image
@@ -21,6 +22,8 @@ struct RecordCardRenderer: View {
                 image: image,
                 card: card
             )
+        case .glassCard:
+            GlassCardCardRenderer(image: image, card: card)
         case .minimal:
             MinimalCardRenderer(
                 image: image,
@@ -56,6 +59,7 @@ struct RecordCardRenderer: View {
         case .classicWhite: .classicWhite
         case .minimal: .minimal
         case .filmMark: .filmMark
+        case .glassCard: .glassCard
         }
     }
 
