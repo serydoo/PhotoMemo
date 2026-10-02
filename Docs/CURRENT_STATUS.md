@@ -29960,3 +29960,5 @@ Final delivery closure: main4392f3e1 native integration, b447f11a Unicode fix,28
 116本地/tmp源码镜像聚焦28测试／31执行、全量1961通过／1既有跳过（2002通过执行）；有2条既有导出读回QoS警告。首轮原生预览精确像素对照失败，隔离／同组／全量复测通过，保留原断言并添加PNG诊断，记录观察项。iOS Debug签名构建、签名校验及App／Share／Widget包内版本通过；iPhone17ProMax覆盖安装成功，启动被设备锁屏阻止，人工验收未完成。未冻结研究／私人媒体／config／无关Outreach和旧商店草稿保留本地。远端同步结果执行后追加。
 
 116 iOS Release未签名构建及App／Share／Widget包内版本通过。修改的Source／Tests与全量测试镜像哈希一致。首页修复提交6699986；本次发布整理提交与GitHub远端结果在执行后确认。
+
+116 GitHub同步已完成：origin/main由8828dd34推进至f93ddfef84473cdd549fca1a9d52bef1b557a719，ls-remote与本地HEAD一致。首页修复6699986和116版本／四语／四套材料均已入库；仅追加同步结果文档。Source／Tests无残留修改，未冻结研究、私人资产、config和无关文档保留。未执行TestFlight上传或App Store提交；116启动仍因锁屏待验证，Release Evidence Open。
