@@ -14,8 +14,11 @@ struct MemoMarkiOSApp: App {
     @State
     private var showsGlassCardPrototypeReview = false
 
+    @State private var showsNativeMaterialStudy = false
+
     init() {
 #if DEBUG
+        _showsNativeMaterialStudy = State(initialValue:ProcessInfo.processInfo.arguments.contains("--glasscard-native-material-study"))
         _showsGlassCardPrototypeReview = State(
             initialValue: ProcessInfo.processInfo.arguments.contains("--glasscard-prototype-review")
         )
@@ -32,7 +35,13 @@ struct MemoMarkiOSApp: App {
     var body: some Scene {
 
         WindowGroup {
-            if showsGlassCardPrototypeReview {
+            if showsNativeMaterialStudy {
+#if DEBUG
+                GlassCardNativeMaterialStudyView { showsNativeMaterialStudy = false }
+#else
+                MemoMarkiOSHomeView(runtime:runtime)
+#endif
+            } else if showsGlassCardPrototypeReview {
 #if DEBUG
                 GlassCardPrototypeReviewView {
                     showsGlassCardPrototypeReview = false
