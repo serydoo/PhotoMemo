@@ -62,10 +62,7 @@ struct HomeMemoryPresetRow: View {
         if dynamicTypeSize.isAccessibilitySize {
             verticalPresetRowContent
         } else {
-            ViewThatFits(in: .horizontal) {
-                horizontalPresetRowContent
-                verticalPresetRowContent
-            }
+            horizontalPresetRowContent
         }
     }
 
@@ -123,19 +120,12 @@ struct HomeMemoryPresetRow: View {
     }
 
     private var horizontalPresetMetadata: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(subjectTitle)
-            Text("·")
-                .accessibilityHidden(true)
-            Text(presetDescriptor)
-            Text("·")
-                .accessibilityHidden(true)
-            Text(presetSavedStatus)
-        }
-        .font(.caption.weight(.medium))
-        .foregroundStyle(.secondary)
-        .lineLimit(1)
-        .fixedSize(horizontal: true, vertical: false)
+        Text("\(subjectTitle) · \(presetDescriptor) · \(presetSavedStatus)")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .allowsTightening(true)
     }
 
     private var presetSelectionMark: some View {
