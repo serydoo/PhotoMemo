@@ -8,6 +8,64 @@ import Testing
 @Suite("Live Photo video composition service")
 struct LivePhotoVideoCompositionServiceTests {
 
+    @Test("Paired export retains noncentral still time without stale transform metadata", arguments: [false, true])
+    func pairedExportRetainsTimedStillMarker(nativeMaterial: Bool) async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("TimedStill-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let source = folder.appendingPathComponent("source.mov")
+        let markerTime = CMTime(value: 420, timescale: 600)
+        try await makeSampleVideo(at: source, size: CGSize(width: 80, height: 60),
+            frameColors: [.red, .red, .green, .green], framesPerSecond: 2, stillImageTime: markerTime)
+        let sourceGroups = try await timedMetadataGroups(at: source)
+        #expect(sourceGroups.contains { $0.items.contains { $0.identifier?.rawValue.hasSuffix("still-image-time") == true } })
+        let canvas = CGSize(width: 160, height: 120)
+        let artifact = try PresentationArtifact(canvasSize: canvas, photoFrame: CGRect(origin: .zero, size: canvas),
+            layers: [.init(frame: CGRect(x: 8, y: 8, width: 2, height: 2),
+                image: try makeSolidColorImage(color: .red, size: CGSize(width: 2, height: 2)))], canvasBackground: .transparent,
+            backdropMaterial: nativeMaterial ? .init(frame: CGRect(x: 8, y: 8, width: 144, height: 24),
+                renderFrame: CGRect(x: 0, y: 0, width: 160, height: 50), cornerRadius: 12) : nil)
+        let geometry = CanonicalGeometry(facts: .init(rawPixelSize: CGSize(width: 80, height: 60),
+            displaySize: CGSize(width: 80, height: 60), orientation: .up),
+            canvas: .init(canvasSize: canvas, photoFrame: artifact.photoFrame, footerFrame: artifact.footerFrame))
+        let identity = try LivePhotoPairingIdentityPlanner().plan()
+        let paired = try await LivePhotoVideoCompositionService().composePairedVideo(sourceVideoURL: source,
+            geometry: geometry, overlay: artifact, outputURL: folder.appendingPathComponent("paired.mov"), pairingIdentityPlan: identity)
+        let groups = try await timedMetadataGroups(at: paired)
+        let marker = try #require(groups.first { $0.items.contains { $0.identifier?.rawValue.hasSuffix("still-image-time") == true } })
+        #expect(CMTimeCompare(marker.timeRange.start, markerTime) == 0)
+        #expect(CMTimeCompare(marker.timeRange.duration, CMTime(value: 1, timescale: 600)) == 0)
+        let item = try #require(marker.items.first)
+        #expect(try await item.load(.numberValue)?.intValue == -1)
+        #expect(groups.flatMap(\.items).allSatisfy { $0.identifier?.rawValue.hasSuffix("still-image-time") == true })
+        let generic = try await LivePhotoVideoCompositionService().composeVideo(sourceVideoURL: source,
+            overlay: artifact, outputURL: folder.appendingPathComponent("generic.mov"))
+        #expect(try await timedMetadataGroups(at: generic).isEmpty)
+    }
+
+    @Test("Conflicting still points fail instead of guessing a keyframe")
+    func conflictingStillMarkersFailClosed() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("ConflictingStill-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let source = folder.appendingPathComponent("source.mov")
+        try await makeSampleVideo(at: source, size: CGSize(width: 80, height: 60),
+            frameColors: [.red, .green], framesPerSecond: 2,
+            stillImageTime: CMTime(value: 120, timescale: 600), stillMarkerCount: 2)
+        await #expect(throws: LivePhotoVideoCompositionError.sourceVideoUnreadable) {
+            try await LivePhotoStillImageTimeMetadata.samples(in: source)
+        }
+    }
+
+    @Test("Cancelled marker extraction stops before opening a source")
+    func cancelledStillMarkerExtractionStops() async throws {
+        let operation = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await LivePhotoStillImageTimeMetadata.samples(in: URL(fileURLWithPath: "/missing-source.mov"))
+        }
+        await #expect(throws: CancellationError.self) { try await operation.value }
+    }
+
     @Test("Native backdrop follows motion and preserves canonical output geometry and foreground")
     func nativeBackdropSamplesEveryFrame() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("NativeBackdropVideo-\(UUID().uuidString)")
@@ -708,7 +766,9 @@ private extension LivePhotoVideoCompositionServiceTests {
         framesPerSecond: Int32,
         metadata: [AVMetadataItem] = [],
         preferredTransform: CGAffineTransform = .identity,
-        topHalfBlue: Bool = false
+        topHalfBlue: Bool = false,
+        stillImageTime: CMTime? = nil,
+        stillMarkerCount: Int = 1
     ) async throws {
         try? FileManager.default.removeItem(
             at: url
@@ -757,8 +817,43 @@ private extension LivePhotoVideoCompositionServiceTests {
         }
 
         writer.add(input)
+        var timedInput: AVAssetWriterInput?
+        var timedAdaptor: AVAssetWriterInputMetadataAdaptor?
+        if stillImageTime != nil {
+            let specifications = [
+                [kCMMetadataFormatDescriptionMetadataSpecificationKey_Identifier as String: "mdta/com.apple.quicktime.still-image-time",
+                 kCMMetadataFormatDescriptionMetadataSpecificationKey_DataType as String: kCMMetadataBaseDataType_SInt8 as String],
+                [kCMMetadataFormatDescriptionMetadataSpecificationKey_Identifier as String: "mdta/com.apple.quicktime.video-orientation",
+                 kCMMetadataFormatDescriptionMetadataSpecificationKey_DataType as String: kCMMetadataBaseDataType_UTF8 as String]
+            ]
+            var description: CMFormatDescription?
+            #expect(CMMetadataFormatDescriptionCreateWithMetadataSpecifications(allocator: kCFAllocatorDefault,
+                metadataType: kCMMetadataFormatType_Boxed, metadataSpecifications: specifications as CFArray,
+                formatDescriptionOut: &description) == noErr)
+            let metadataInput = AVAssetWriterInput(mediaType: .metadata, outputSettings: nil, sourceFormatHint: description)
+            #expect(writer.canAdd(metadataInput))
+            writer.add(metadataInput)
+            timedInput = metadataInput
+            timedAdaptor = AVAssetWriterInputMetadataAdaptor(assetWriterInput: metadataInput)
+        }
         #expect(writer.startWriting())
         writer.startSession(atSourceTime: .zero)
+        if let stillImageTime, let timedAdaptor, let timedInput {
+            let marker = AVMutableMetadataItem()
+            marker.identifier = AVMetadataIdentifier(rawValue: "mdta/com.apple.quicktime.still-image-time")
+            marker.dataType = kCMMetadataBaseDataType_SInt8 as String
+            marker.value = NSNumber(value: Int8(-1))
+            let stale = AVMutableMetadataItem()
+            stale.identifier = AVMetadataIdentifier(rawValue: "mdta/com.apple.quicktime.video-orientation")
+            stale.dataType = kCMMetadataBaseDataType_UTF8 as String
+            stale.value = "stale-orientation" as NSString
+            for index in 0..<stillMarkerCount {
+                #expect(timedAdaptor.append(AVTimedMetadataGroup(items: [marker, stale],
+                    timeRange: CMTimeRange(start: CMTimeAdd(stillImageTime, CMTime(value: Int64(index * 60), timescale: 600)),
+                        duration: CMTime(value: 1, timescale: 600)))))
+            }
+            timedInput.markAsFinished()
+        }
 
         let frameDuration =
             CMTime(
@@ -803,6 +898,21 @@ private extension LivePhotoVideoCompositionServiceTests {
         }
 
         #expect(writer.status == .completed)
+    }
+
+    func timedMetadataGroups(at url: URL) async throws -> [AVTimedMetadataGroup] {
+        let asset = AVURLAsset(url: url)
+        var groups: [AVTimedMetadataGroup] = []
+        for track in try await asset.loadTracks(withMediaType: .metadata) {
+            let reader = try AVAssetReader(asset: asset)
+            let output = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
+            reader.add(output)
+            let adaptor = AVAssetReaderOutputMetadataAdaptor(assetReaderTrackOutput: output)
+            #expect(reader.startReading())
+            while let group = adaptor.nextTimedMetadataGroup() { groups.append(group) }
+            #expect(reader.status == .completed)
+        }
+        return groups
     }
 
     func quickTimeMetadataItem(

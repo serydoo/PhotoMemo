@@ -223,17 +223,20 @@ final class LivePhotoVideoCompositionService:
 
         try? FileManager.default.removeItem(at: outputURL)
 
+        let stillSamples = requiresPairingIdentity
+            ? try await LivePhotoStillImageTimeMetadata.samples(in: sourceVideoURL) : []
+        let sidecarURL = outputFolder.appendingPathComponent(".still-time-\(UUID().uuidString).mov")
+        defer { try? FileManager.default.removeItem(at: sidecarURL) }
+        let exportComposition = try await LivePhotoStillImageTimeMetadata.adding(stillSamples,
+            to: preparedInput.composition, sidecarURL: sidecarURL)
+
         let presetName =
             await preferredExportPresetName(
-                for:
-                    preparedInput
-                    .composition
+                for: exportComposition
             )
 
         guard let exportSession = AVAssetExportSession(
-            asset:
-                preparedInput
-                .composition,
+            asset: exportComposition,
             presetName: presetName
         ) else {
             throw LivePhotoVideoCompositionError.exportSessionUnavailable
@@ -261,6 +264,14 @@ final class LivePhotoVideoCompositionService:
             as: .mov
         )
 
+        if requiresPairingIdentity {
+            do {
+                try await LivePhotoStillImageTimeMetadata.verify(stillSamples, in: outputURL)
+            } catch {
+                try? FileManager.default.removeItem(at: outputURL)
+                throw error
+            }
+        }
         return outputURL
     }
 }

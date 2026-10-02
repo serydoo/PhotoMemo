@@ -1,5 +1,12 @@
 # MemoMark Current Status
 
+## 2026-10-02 LP-TIME-001 source keyframe timing closure
+
+- Owner authorized immediate correction and prior scoped sync/device acceptance. Paired media composition now selects still-image-time only, retains exact source CMTime start/duration and Int8 value through a native metadata-only track, and verifies exported timing before success. Stale source orientation/transform tracks are excluded; generic video and markerless compatibility remain intact. No Layout/configuration/durable-data change or original edit.
+- Red integration reproduced missing noncentral0.700s marker in both plain/native paths. Green focused14 tests/15 executions,0 failures; full1968 passed tests/2011 passed executions,1 existing disabled test,0 failures,2 existing fixture QoS warnings. Current848 Swift/project/plist/build-input files match the temporary test-source mirror. Result:/tmp/MemoMarkTimedStillFull20261002.xcresult.
+- Signed2.3.5(116) installed/launched on paired iPhone17ProMax. Two approved7027/7033 fixtures saved as new Photos assets and decoded locally without network; generated and readback MOV retain1.400s/1.405s markers,value-1, exact intervals verified on device. Four Photos resources match output bytes, four input hashes unchanged, matching pair IDs/video moments/nonzero audio verified. Normal launch restored. Scoped evidence:Docs/03_Engineering/2026-10-02-live-photo-keyframe-time-closure.md; private artifacts outside Git.
+- LP-TIME-001 is closed by superseding evidence. Release authoring, manual playback/audio/cover transitions, supplied5890/5901 same-canvas/custom-avatar visual acceptance, HDR/P3/gain-map, landscape/multilingual visual freeze, performance and accessibility remain open. Version and Store/TestFlight state unchanged; unrelated dirty work preserved.
+
 ## 2026-10-02 GlassCard authorized source checkpoint and unlocked device acceptance
 
 - GitHub source sync completed: main `181bf1d6` pushed to origin/main; ls-remote exactly matched `181bf1d6079aabdd81de26d2f950e1166587761c`. Six Source/Tests changes and scoped text records committed; private media and unrelated dirty research/Outreach/status chronicle retained locally. No TestFlight upload or App Store submission.

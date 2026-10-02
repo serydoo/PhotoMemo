@@ -168,6 +168,12 @@ struct GlassCardNativeMaterialStudyView: View {
                     else { continuation.resume() }
                 }
             }
+            if resource.type == .pairedVideo {
+                let sourceURL = root.appendingPathComponent("Inputs/" + name + ".mov")
+                let expected = try await LivePhotoStillImageTimeMetadata.samples(in: sourceURL)
+                guard !expected.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
+                try await LivePhotoStillImageTimeMetadata.verify(expected, in: url)
+            }
             rows.append(["type": resource.type.rawValue, "uti": resource.uniformTypeIdentifier,
                          "file": url.lastPathComponent])
         }
@@ -182,7 +188,7 @@ struct GlassCardNativeMaterialStudyView: View {
                 }
         }
         guard decodes else { throw CocoaError(.fileReadCorruptFile) }
-        return ["isLivePhoto": true, "localLivePhotoDecoded": decodes,
+        return ["isLivePhoto": true, "localLivePhotoDecoded": decodes, "timedStillMarkerMatchesSource": true,
                 "networkAccessAllowed": false, "resources": rows]
     }
 
