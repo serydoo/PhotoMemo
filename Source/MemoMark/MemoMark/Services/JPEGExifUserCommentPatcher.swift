@@ -1,18 +1,18 @@
 import Foundation
 import UniformTypeIdentifiers
 
-struct JPEGExifUserCommentPatcher {
+nonisolated struct JPEGExifUserCommentPatcher {
 
     static func patchIfNeeded(
         at url: URL,
         outputType: UTType,
         exportDescription: String
-    ) {
+    ) -> Bool {
 
         guard
             outputType.conforms(to: .jpeg),
             !exportDescription.isEmpty,
-            !exportDescription.canBeConverted(to: .ascii),
+            exportDescription.unicodeScalars.contains(where: { $0.value > 0x7F }),
             var fileData =
                 try? Data(contentsOf: url),
             let location =
@@ -20,7 +20,7 @@ struct JPEGExifUserCommentPatcher {
                     in: fileData
                 )
         else {
-            return
+            return false
         }
 
         let encodedComment =
@@ -32,7 +32,7 @@ struct JPEGExifUserCommentPatcher {
             encodedComment.count
             <= location.dataRange.count
         else {
-            return
+            return false
         }
 
         var replacement =
@@ -65,10 +65,12 @@ struct JPEGExifUserCommentPatcher {
                 )
         )
 
-        try? fileData.write(
-            to: url,
-            options: .atomic
-        )
+        do {
+            try fileData.write(to: url, options: .atomic)
+            return true
+        } catch {
+            return false
+        }
     }
 
     private static func exifUnicodeUserCommentData(

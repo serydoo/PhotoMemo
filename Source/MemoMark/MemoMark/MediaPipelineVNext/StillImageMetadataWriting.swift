@@ -343,7 +343,7 @@ private extension ImageIOStillImageMetadataPropertyReviser {
 
 }
 
-struct ImageIOStillImageMetadataCleanup {
+nonisolated struct ImageIOStillImageMetadataCleanup {
 
     static let quickTimeMetadataKey:
         CFString =

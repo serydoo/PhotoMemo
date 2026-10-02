@@ -2,7 +2,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-final class MetadataPreservingImageWriter {
+nonisolated final class MetadataPreservingImageWriter {
 
     func write(
         cgImage: CGImage,
@@ -49,12 +49,18 @@ final class MetadataPreservingImageWriter {
             throw RecordCardExportError.writeFailed
         }
 
-        JPEGExifUserCommentPatcher.patchIfNeeded(
+        let patched = JPEGExifUserCommentPatcher.patchIfNeeded(
             at: url,
             outputType: type,
             exportDescription:
                 exportDescription
         )
+
+        if type.conforms(to: .jpeg),
+           exportDescription.unicodeScalars.contains(where: { $0.value > 0x7F }),
+           !patched {
+            throw RecordCardExportError.writeFailed
+        }
 
         applyFileDates(
             to: url,
@@ -111,9 +117,14 @@ final class MetadataPreservingImageWriter {
         ] = pixelHeight
 
         if !exportDescription.isEmpty {
+            // Reserve enough UTF-16 storage for the in-place JPEG Unicode patch.
+            // The writer reports failure if that patch cannot replace this placeholder.
             exif[
                 "UserComment" as CFString
-            ] = exportDescription
+            ] = outputType.conforms(to: .jpeg)
+                && exportDescription.unicodeScalars.contains(where: { $0.value > 0x7F })
+                ? String(repeating: "\u{FFFD}", count: exportDescription.utf16.count)
+                : exportDescription
         }
 
         properties[
