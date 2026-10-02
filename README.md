@@ -5,7 +5,7 @@
 MemoMark（时光记）是一款为 Apple Photos 设计的本地优先照片记忆工具。
 它不会替代系统相册，也不会修改你的原始照片。MemoMark 读取照片已有的拍摄时间、地点、设备和拍摄信息，再结合你设定的重要日期，为照片生成一份新的记忆版本。
 
-当前源码候选版本：**MemoMark 2.3.5（构建116）**。本轮细化极简长文字与首页预设，接通GlassCard原生玻璃的共享预览、静态与Live Photo开发验证路径；Release新增选择入口仍关闭，HDR／广色域与更多设备验收继续推进。照片本地处理，原图不变。详见[更新说明](Docs/07_Releases/2026-10-02-2.3.5-release-notes.md)和[同步清单](Docs/07_Releases/2026-10-02-2.3.5-sync-manifest.md)。既有MemoMark Commerce v1.1及历史权益保持不变。
+当前源码候选版本：**MemoMark 2.3.5（构建116）**。本轮细化极简长文字与首页预设，接通GlassCard原生玻璃的共享预览、静态与Live Photo开发验证路径；Release新增选择入口仍关闭，HDR／广色域与更多设备验收继续推进。照片本地处理，原图不变。详见[更新说明](Docs/07_Releases/2026-10-02-2.3.5-release-notes.md)和[同步清单](Docs/07_Releases/2026-10-02-2.3.5-sync-manifest.md)。既有MemoMark Commerce v1.1及历史权益保持不变。 本轮外观修正与真机自动验证另见[验证记录](Docs/03_Engineering/2026-10-02-glasscard-appearance-verification-closure.md)：Photos保存、资源回读和解码已通过；关键帧时间保留问题LP-TIME-001仍待修复。
 
 例如，一张普通的宝宝照片，除了拍摄日期，还可以留下：
 

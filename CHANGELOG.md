@@ -2,6 +2,8 @@
 
 ## 2.3.5 (116) Native GlassCard Foundation And Preset Refinement - 2026-10-02
 
+- Follow-up source checkpoint corrects Configuration Center native material parity and shared preview composition, and refines GlassCard mark/local spacing in Layout. Physical Photos save/resource/decode checks pass; timed still-keyframe metadata loss LP-TIME-001 remains open. See the [verification record](Docs/03_Engineering/2026-10-02-glasscard-appearance-verification-closure.md). Release authoring stays closed.
+
 - Scope starts after the owner-designated 2.3.4 (115) source baseline45466834. Stabilized Minimal long-copy width without changing its single primaryOutput philosophy.
 - Integrated independent GlassCard content/Layout/artifacts, native regular dark glass on iOS/macOS26+, shared preview/still output and source-dependent Live Photo frame composition. Release authoring remains gated; older systems retain the fixed-alpha fallback.
 - Corrected video color-conformance responsibility, preserved existing pairing/audio/Photos services and fixed Unicode JPEG descriptions. Existing physical-device evidence covers two real pairs; HDR/P3 and broad manual certification remain separate.

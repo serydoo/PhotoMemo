@@ -33,18 +33,35 @@ struct GlassCardCardRenderer: View {
                 for: card.metadata, fallbackSize: proxy.size
             )
             let plan = GlassCardProductionRenderer.resolve(card: card, canvasSize: canvasSize)
-            ZStack(alignment: .topLeading) {
-                if GlassCardProductionRenderer.usesNativeMaterial {
-                    NativeBackdropMaterialCanvas(image: image, canvasSize: canvasSize, material: GlassCardProductionRenderer.backdropMaterial(for: plan))
-                } else {
-                    image.resizable().scaledToFill().frame(width: canvasSize.width, height: canvasSize.height).clipped()
-                }
-                GlassCardOverlayLayer(presentation: plan, badge: card.badge)
-            }
+            GlassCardResolvedCanvas(image: image, presentation: plan, badge: card.badge)
             .frame(width: canvasSize.width, height: canvasSize.height, alignment: .topLeading)
             .scaleEffect(proxy.size.width / canvasSize.width, anchor: .topLeading)
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
         }
+    }
+}
+
+/// One output-sized source/material/foreground composition for both preview consumers.
+struct GlassCardResolvedCanvas: View {
+    let image: Image
+    let presentation: GlassCardResolvedPresentation
+    let badge: Badge?
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Group {
+                if GlassCardProductionRenderer.usesNativeMaterial {
+                    NativeBackdropMaterialCanvas(image: image, canvasSize: presentation.canvasSize,
+                        material: GlassCardProductionRenderer.backdropMaterial(for: presentation))
+                } else {
+                    image.resizable().scaledToFill()
+                        .frame(width: presentation.canvasSize.width, height: presentation.canvasSize.height).clipped()
+                }
+            }
+            .accessibilityHidden(true)
+            GlassCardOverlayLayer(presentation: presentation, badge: badge)
+        }
+        .frame(width: presentation.canvasSize.width, height: presentation.canvasSize.height, alignment: .topLeading)
     }
 }
 

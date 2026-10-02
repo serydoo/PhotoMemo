@@ -82,12 +82,32 @@ struct GlassCardRendererPrototypeTests {
             #expect(geometry.rightTopFrame.minX == geometry.rightBottomFrame.minX)
             #expect(geometry.rightTopFrame.width == geometry.rightBottomFrame.width)
             #expect(abs(geometry.badgeFrame.midX - panel.width * layout.badgeCenterXToPanelWidth) < 0.001)
-            #expect(abs(geometry.dividerFrame.midX - panel.width * layout.dividerCenterXToPanelWidth) < 0.001)
             #expect(geometry.leftTopFrame.maxX < geometry.badgeFrame.minX)
             #expect(geometry.badgeFrame.maxX < geometry.dividerFrame.minX)
             #expect(geometry.dividerFrame.maxX < geometry.rightTopFrame.minX)
             #expect(geometry.leftTopFrame.minY < geometry.leftBottomFrame.minY)
             #expect(geometry.rightTopFrame.minY < geometry.rightBottomFrame.minY)
+        }
+    }
+
+    @Test("Badge, divider and right text retain local spacing across photo aspect ratios")
+    func localGroupSpacing() {
+        for aspect in [9.0 / 16, 3.0 / 4, 1, 4.0 / 3, 16.0 / 9, 3] {
+            let canvas = CGSize(width: 1080 * aspect, height: 1080)
+            let geometry = GlassCardLayoutSpecification.resolvedGeometry(canvasSize: canvas)
+            let height = geometry.panelFrame.height
+            #expect(abs((geometry.dividerFrame.minX - geometry.badgeFrame.maxX) / height - 0.12) < 0.001)
+            #expect(abs((geometry.rightTopFrame.minX - geometry.dividerFrame.maxX) / height - 0.12) < 0.001)
+            #expect(geometry.rightTopFrame.width >= geometry.panelFrame.width * 0.39 - height * 0.46)
+        }
+    }
+
+    @Test("GlassCard mark matches the measured visible reference proportion")
+    func measuredMarkSize() {
+        for canvas in [CGSize(width: 1080, height: 1440), CGSize(width: 1920, height: 1080)] {
+            let geometry = GlassCardLayoutSpecification.resolvedGeometry(canvasSize: canvas)
+            #expect(abs(geometry.badgeFrame.height / geometry.panelFrame.height - 0.40) < 0.001)
+            #expect(geometry.badgeFrame.midY == geometry.panelFrame.height / 2)
         }
     }
 
@@ -114,6 +134,29 @@ struct GlassCardRendererPrototypeTests {
         #expect(resolve("第一行\n第二行").outcome == .overflow)
         #expect(resolve("Rui").pointSize == 18)
         #expect(resolve(String(repeating: "回忆🌅", count: 40)).pointSize >= 18 * 0.72)
+    }
+
+    @Test("Four-language slots preserve copy and report long content in both orientations")
+    func multilingualSlotMatrix() {
+        for canvas in [CGSize(width: 1080, height: 1920), CGSize(width: 1920, height: 1080)] {
+            for text in ["相伴365天", "Our first walk", "大切な思い出", "함께한 추억"] {
+                let short = GlassCardResolvedPresentation.resolve(
+                    content: .init(leftTop: text, leftBottom: text, rightTop: text, rightBottom: text),
+                    canvasSize: canvas)
+                #expect(!short.isContentOverflowing)
+                #expect(short.slots.allSatisfy { $0.text == text })
+                let longText = String(repeating: text, count: 100)
+                let long = GlassCardResolvedPresentation.resolve(
+                    content: .init(leftTop: longText, leftBottom: longText, rightTop: longText, rightBottom: longText),
+                    canvasSize: canvas)
+                #expect(long.slots.allSatisfy { $0.text == longText && $0.fit.outcome == .overflow })
+                let emptyRight = GlassCardResolvedPresentation.resolve(
+                    content: .init(leftTop: text, leftBottom: "", rightTop: "", rightBottom: ""), canvasSize: canvas)
+                #expect(!emptyRight.isEmpty)
+                #expect(!emptyRight.isContentOverflowing)
+                #expect(emptyRight.geometry == short.geometry)
+            }
+        }
     }
 
     @Test("Glass Card projects four template positions without semantic aliases")

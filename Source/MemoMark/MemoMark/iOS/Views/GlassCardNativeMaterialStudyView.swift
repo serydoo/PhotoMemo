@@ -76,6 +76,7 @@ struct GlassCardNativeMaterialStudyView: View {
     @MainActor private func exportApprovedPairs(to root: URL) async throws {
         let inputs = root.appendingPathComponent("Inputs", isDirectory: true)
         var rows: [[String: Any]] = []
+        let runIdentifier = UUID().uuidString
         for name in ["IMG_7027", "IMG_7033"] {
             let still = inputs.appendingPathComponent(name + ".HEIC")
             let motion = inputs.appendingPathComponent(name + ".mov")
@@ -119,6 +120,7 @@ struct GlassCardNativeMaterialStudyView: View {
             let audio = try await asset.loadTracks(withMediaType: .audio)
             let elapsed = start.duration(to: .now)
             var savedIdentifier = ""
+            var photosReadback: [String: Any] = [:]
             let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
             if ProcessInfo.processInfo.arguments.contains("--glasscard-native-photos-study"),
                status == .authorized || status == .limited {
@@ -127,8 +129,9 @@ struct GlassCardNativeMaterialStudyView: View {
                         stillPhotoFileURL: outputStill, pairedVideoFileURL: outputMotion, captureDate: nil,
                         preferredAlbumIdentifier: nil, stillPhotoOriginalFilename: name + "-native.heic",
                         pairedVideoOriginalFilename: name + "-native.mov",
-                        idempotencyKey: "native-glass-device-certification-" + name + (fullResolution ? "-full" : "-1080")))
+                        idempotencyKey: "native-glass-device-certification-" + name + "-" + runIdentifier))
                 savedIdentifier = result.assetLocalIdentifier
+                photosReadback = try await verifySavedPair(identifier: savedIdentifier, name: name, root: root)
             }
             rows.append(["source": name, "still": outputStill.lastPathComponent, "motion": outputMotion.lastPathComponent,
                 "canvasWidth": Int(canvas.width), "canvasHeight": Int(canvas.height),
@@ -136,10 +139,51 @@ struct GlassCardNativeMaterialStudyView: View {
                 "duration": try await asset.load(.duration).seconds,
                 "seconds": Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18,
                 "savedToPhotos": !savedIdentifier.isEmpty, "photosAssetIdentifier": savedIdentifier,
-                "photosAuthorization": status.rawValue, "fullResolution": fullResolution])
+                "photosAuthorization": status.rawValue, "fullResolution": fullResolution,
+                "runIdentifier": runIdentifier, "photosReadback": photosReadback])
         }
         try JSONSerialization.data(withJSONObject: rows, options: [.prettyPrinted, .sortedKeys])
             .write(to: root.appendingPathComponent("real-pair-manifest.json"), options: .atomic)
+    }
+
+    /// Inspect only this run's saved assets. Cloud downloads are never requested.
+    @MainActor private func verifySavedPair(identifier: String, name: String, root: URL) async throws -> [String: Any] {
+        guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil).firstObject,
+              asset.mediaSubtypes.contains(.photoLive) else { throw CocoaError(.fileReadCorruptFile) }
+        let resources = PHAssetResource.assetResources(for: asset)
+        guard let photo = resources.first(where: { $0.type == .photo }),
+              let video = resources.first(where: { $0.type == .pairedVideo }) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        let directory = root.appendingPathComponent("Readback", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        var rows: [[String: Any]] = []
+        for (resource, suffix) in [(photo, "heic"), (video, "mov")] {
+            let url = directory.appendingPathComponent(name + "-" + UUID().uuidString + "." + suffix)
+            let options = PHAssetResourceRequestOptions()
+            options.isNetworkAccessAllowed = false
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+                PHAssetResourceManager.default().writeData(for: resource, toFile: url, options: options) { error in
+                    if let error { continuation.resume(throwing: error) }
+                    else { continuation.resume() }
+                }
+            }
+            rows.append(["type": resource.type.rawValue, "uti": resource.uniformTypeIdentifier,
+                         "file": url.lastPathComponent])
+        }
+        let options = PHLivePhotoRequestOptions()
+        options.deliveryMode = .highQualityFormat
+        options.isNetworkAccessAllowed = false
+        let decodes = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            PHImageManager.default().requestLivePhoto(for: asset, targetSize: CGSize(width: 256, height: 256),
+                contentMode: .aspectFit, options: options) { livePhoto, info in
+                    if info?[PHLivePhotoInfoIsDegradedKey] as? Bool == true { return }
+                    continuation.resume(returning: livePhoto != nil)
+                }
+        }
+        guard decodes else { throw CocoaError(.fileReadCorruptFile) }
+        return ["isLivePhoto": true, "localLivePhotoDecoded": decodes,
+                "networkAccessAllowed": false, "resources": rows]
     }
 
     @MainActor private func exportMotionControl(to root: URL) async throws {

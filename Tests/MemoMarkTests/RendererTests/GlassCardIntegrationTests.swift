@@ -128,7 +128,100 @@ struct GlassCardIntegrationTests {
         }
         let expectedPixels = try #require(expectedImage.dataProvider?.data)
         let actualPixels = try #require(actualImage.dataProvider?.data)
-        #expect((actualPixels as Data) == (expectedPixels as Data))
+        let actualData = actualPixels as Data
+        let expectedData = expectedPixels as Data
+        #expect(actualData.count == expectedData.count)
+        // Fractional mark dimensions can differ by one 8-bit rounding level
+        // across separate native SwiftUI raster hosts; glyph placement stays exact.
+        let differences = zip(actualData, expectedData).map { abs(Int($0) - Int($1)) }
+        #expect((differences.max() ?? 0) <= 1)
+        #expect(Double(differences.reduce(0, +)) / Double(differences.count) < 0.001)
+    }
+
+    @Test("Configuration Center preview includes the output material", arguments: ConfigurationPreviewBackground.Orientation.allCases)
+    @MainActor
+    func configurationPreviewIncludesMaterial(orientation: ConfigurationPreviewBackground.Orientation) throws {
+        let canvas = try #require(ConfigurationPreviewBackground.glassCardPixelSize(for: orientation))
+        let viewport = CGSize(width: 360, height: 360 * canvas.height / canvas.width)
+        let plan = GlassCardResolvedPresentation.resolve(
+            content: .init(leftTop: "此刻", leftBottom: "", rightTop: "", rightBottom: ""),
+            canvasSize: canvas
+        )
+        let image = Image(ConfigurationPreviewBackground.minimal.assetName(forOrientation: orientation))
+        let expected = ZStack(alignment: .topLeading) {
+            if GlassCardProductionRenderer.usesNativeMaterial {
+                NativeBackdropMaterialCanvas(image: image, canvasSize: canvas,
+                    material: GlassCardProductionRenderer.backdropMaterial(for: plan))
+            } else {
+                image.resizable().scaledToFill().frame(width: canvas.width, height: canvas.height).clipped()
+            }
+            GlassCardOverlayLayer(presentation: plan, badge: .appleClassic)
+        }.frame(width: canvas.width, height: canvas.height, alignment: .topLeading)
+            .scaleEffect(viewport.width / canvas.width, anchor: .topLeading)
+            .frame(width: viewport.width, height: viewport.height, alignment: .topLeading)
+        let actual = MemoryCardPreviewSurface(
+            presentationStyle: .glassCard, logoMode: .appleMini,
+            customLogoImagePath: nil, subjectAvatarLogoImagePath: nil,
+            regionText: "此刻", timeText: "", contextText: "", memoryText: "",
+            previewOrientation: orientation
+        ).frame(width: viewport.width, height: viewport.height)
+        let expectedRenderer = ImageRenderer(content: expected
+            .clipShape(RoundedRectangle(cornerRadius: ConfigurationUI.cornerRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: ConfigurationUI.cornerRadius, style: .continuous)
+                .stroke(ConfigurationUI.faintHairline))
+            .shadow(color: ConfigurationUI.cardShadow, radius: 8, y: 3))
+        let actualRenderer = ImageRenderer(content: actual)
+        expectedRenderer.scale = 1
+        actualRenderer.scale = 1
+        let expectedImage = try #require(expectedRenderer.cgImage)
+        let actualImage = try #require(actualRenderer.cgImage)
+        // Sample the interior away from text, badge and view border/shadow.
+        let panel = plan.geometry.panelFrame
+        let scale = viewport.width / canvas.width
+        let crop = CGRect(x: (panel.minX + panel.width * 0.8) * scale,
+                          y: (panel.minY + panel.height * 0.35) * scale,
+                          width: panel.width * 0.08 * scale, height: panel.height * 0.3 * scale).integral
+        let expectedCrop = try #require(expectedImage.cropping(to: crop))
+        let actualCrop = try #require(actualImage.cropping(to: crop))
+        func pixels(_ image: CGImage) throws -> [UInt8] {
+            var bytes = [UInt8](repeating: 0, count: image.width * image.height * 4)
+            let colorSpace = try #require(CGColorSpace(name: CGColorSpace.sRGB))
+            try bytes.withUnsafeMutableBytes { buffer in
+                let context = try #require(CGContext(
+                    data: buffer.baseAddress, width: image.width, height: image.height,
+                    bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                    space: colorSpace,
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                ))
+                context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            }
+            return bytes
+        }
+        let expectedBytes = try pixels(expectedCrop)
+        let actualBytes = try pixels(actualCrop)
+        for (name, output) in [("configuration-expected", expectedImage), ("configuration-actual", actualImage)] {
+            let data = NSMutableData()
+            let destination = try #require(CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil))
+            CGImageDestinationAddImage(destination, output, nil)
+            #expect(CGImageDestinationFinalize(destination))
+            Attachment.record(data as Data, named: name + "-" + String(describing: orientation) + ".png")
+        }
+        let differences = zip(expectedBytes, actualBytes).map { abs(Int($0) - Int($1)) }
+        // Separate SwiftUI hosting/clip paths introduce bounded 8-bit rounding.
+        // Keep a tight pixel bound, and prove omitted glass lies outside it.
+        let meanDifference = Double(differences.reduce(0, +)) / Double(differences.count)
+        #expect((differences.max() ?? 0) <= 3)
+        #expect(meanDifference < 0.5)
+        if GlassCardProductionRenderer.usesNativeMaterial {
+            let plainRenderer = ImageRenderer(content: image.resizable().scaledToFill()
+                .frame(width: viewport.width, height: viewport.height).clipped())
+            plainRenderer.scale = 1
+            let plainImage = try #require(plainRenderer.cgImage)
+            let plainCrop = try #require(plainImage.cropping(to: crop))
+            let plainBytes = try pixels(plainCrop)
+            let omittedDifference = zip(expectedBytes, plainBytes).reduce(0) { $0 + abs(Int($1.0) - Int($1.1)) }
+            #expect(Double(omittedDifference) / Double(plainBytes.count) > 3)
+        }
     }
 
     @Test("Incomplete content cannot produce a successful artifact")

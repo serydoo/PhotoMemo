@@ -99,15 +99,13 @@ struct MemoryCardPreviewSurface: View {
                                 ), canvasSize: canvasSize
                             )
                             ZStack(alignment: .topLeading) {
-                                Image(ConfigurationPreviewBackground.minimal.assetName(forOrientation: orientation))
-                                    .resizable().scaledToFill()
-                                    .frame(width: proxy.size.width, height: proxy.size.height)
-                                    .clipped().accessibilityHidden(true)
-                                // Keep the output-sized font and layout. Resizing the
-                                // viewport must not ask the font engine to fit again.
-                                GlassCardOverlayLayer(presentation: plan, badge: glassCardPreviewBadge)
-                                    .scaleEffect(proxy.size.width / canvasSize.width, anchor: .topLeading)
-                                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
+                                // Resolve and compose at output size before scaling the viewport.
+                                GlassCardResolvedCanvas(
+                                    image: Image(ConfigurationPreviewBackground.minimal.assetName(forOrientation: orientation)),
+                                    presentation: plan, badge: glassCardPreviewBadge
+                                )
+                                .scaleEffect(proxy.size.width / canvasSize.width, anchor: .topLeading)
+                                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
                                 if plan.isEmpty || plan.isContentOverflowing {
                                     Text(MemoMarkLanguage.interfaceStored.localized(
                                         key: plan.isEmpty ? "GlassCard.Preview.Empty" : "GlassCard.Preview.Overflow",

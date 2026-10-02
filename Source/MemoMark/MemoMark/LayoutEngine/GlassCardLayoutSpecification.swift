@@ -27,9 +27,7 @@ enum GlassCardLayoutSpecification {
         let primaryFontToPanelHeight: CGFloat
         let secondaryFontToPanelHeight: CGFloat
         let badgeCenterXToPanelWidth: CGFloat
-        let dividerCenterXToPanelWidth: CGFloat
         let leftColumnMaxXToPanelWidth: CGFloat
-        let rightColumnMinXToPanelWidth: CGFloat
         let leftPrimaryCenterYToPanelHeight: CGFloat
         let leftSecondaryCenterYToPanelHeight: CGFloat
         let rightPrimaryCenterYToPanelHeight: CGFloat
@@ -61,7 +59,8 @@ enum GlassCardLayoutSpecification {
         panelHeightToShortEdge: 0.130,
         cornerRadiusToPanelHeight: 0.50,
         logoZoneWidthToPanelHeight: 0.54,
-        logoSizeToPanelHeight: 0.54,
+        // Visible mark height is 56 px on the measured 140–142 px reference rails.
+        logoSizeToPanelHeight: 0.40,
         dividerHeightToPanelHeight: 0.58,
         dividerSpacingToPanelHeight: 0.12,
         leftPaddingToPanelHeight: 0.50,
@@ -72,9 +71,7 @@ enum GlassCardLayoutSpecification {
         primaryFontToPanelHeight: 0.165,
         secondaryFontToPanelHeight: 0.135,
         badgeCenterXToPanelWidth: 0.53,
-        dividerCenterXToPanelWidth: 0.57,
         leftColumnMaxXToPanelWidth: 0.43,
-        rightColumnMinXToPanelWidth: 0.61,
         leftPrimaryCenterYToPanelHeight: 0.364,
         leftSecondaryCenterYToPanelHeight: 0.713,
         rightPrimaryCenterYToPanelHeight: 0.386,
@@ -109,12 +106,16 @@ enum GlassCardLayoutSpecification {
         let width = max(panel.width, 1)
         let leftMinX = min(layout.leftPaddingToPanelHeight * height, width * layout.leftColumnMaxXToPanelWidth)
         let leftMaxX = width * layout.leftColumnMaxXToPanelWidth
-        let rightMinX = width * layout.rightColumnMinXToPanelWidth
-        let rightMaxX = max(width - layout.rightPaddingToPanelHeight * height, rightMinX)
         let badgeSize = height * layout.logoSizeToPanelHeight
         let badgeCenter = width * layout.badgeCenterXToPanelWidth
         let dividerWidth = height * 0.006
-        let dividerCenter = width * layout.dividerCenterXToPanelWidth
+        // Keep the mark group compact as the photo gets wider. The former
+        // independent 53%/57%/61% anchors stretched both neighboring gaps.
+        let neighboringGap = height * layout.dividerSpacingToPanelHeight
+        let dividerMinX = badgeCenter + badgeSize / 2 + neighboringGap
+        let dividerCenter = dividerMinX + dividerWidth / 2
+        let rightMinX = dividerMinX + dividerWidth + neighboringGap
+        let rightMaxX = max(width - layout.rightPaddingToPanelHeight * height, rightMinX)
         let dividerHeight = height * layout.dividerHeightToPanelHeight
 
         func rowFrame(centerY: CGFloat, height ratio: CGFloat, minX: CGFloat, maxX: CGFloat) -> CGRect {
