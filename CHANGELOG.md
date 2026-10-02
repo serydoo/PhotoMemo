@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.5 (116) Native GlassCard Foundation And Preset Refinement - 2026-10-02
+
+- Scope starts after the owner-designated 2.3.4 (115) source baseline45466834. Stabilized Minimal long-copy width without changing its single primaryOutput philosophy.
+- Integrated independent GlassCard content/Layout/artifacts, native regular dark glass on iOS/macOS26+, shared preview/still output and source-dependent Live Photo frame composition. Release authoring remains gated; older systems retain the fixed-alpha fallback.
+- Corrected video color-conformance responsibility, preserved existing pairing/audio/Photos services and fixed Unicode JPEG descriptions. Existing physical-device evidence covers two real pairs; HDR/P3 and broad manual certification remain separate.
+- Kept standard-size Home preset metadata on one line with bounded text scaling; accessibility sizes retain multiline reading and selected semantics.
+- Raised all target versions to2.3.5 (116), updated four-language in-app notes and [release materials](Docs/07_Releases/2026-10-02-2.3.5-sync-manifest.md). GitHub synchronization does not imply TestFlight/App Store delivery.
+
 ## 2.3.4 (115) Card Content Live Preview And Preview Fidelity - 2026-09-27
 
 - Moved Card Content editing into the Configuration Center inspector so the real Memory Card preview remains visible while typing or inserting photo information. Keyboard presentation keeps the relevant card area in view, and Done returns to configuration options without implicitly saving.

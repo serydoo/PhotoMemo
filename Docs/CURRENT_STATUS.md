@@ -29952,3 +29952,11 @@ Native regular dark SwiftUI material now feeds shared output-size preview and st
 Final Mac regression44 tests/52 parameterized executions passed with no runtime warnings (/tmp/MemoMarkNativeDeliveryRegression.xcresult). Signed iPhone 17 Pro Max build/install/launch passed. Both owner-provided real HEIC+MOV pairs composed at full still size and saved/read back as Live Photos, with matching new identities and one audio track each. Encoded motion2880x3840/3840x2880 follows existing export limits; still4284x5712/4032x3024. Private evidence remains outside Git at /Users/rui/Documents/Codex/2026-10-02/GlassCardNativeRealPairsFull. Manual Photos playback, HDR/P3 and whole-product certification remain open. See Docs/03_Engineering/2026-10-02-glasscard-native-material-delivery.md for scoped decision/review/evidence. No remote push/release implied.
 
 Final delivery closure: main4392f3e1 native integration, b447f11a Unicode fix,2855fd84 DEBUG harness; Release macOS build passed (/tmp/MemoMarkGlassCardRelease.log). Final signed iOS Debug overwrite-install/signature verification/normal launch passed. Remote push not performed. Manual Photos playback remains owner acceptance.
+
+### 2026-10-02 — 2.3.5（116）版本维护与GitHub同步准备
+
+负责人指定从2.3.4正式版至当前，采用115源码45466834为相邻基线；授权版本维护、四套更新材料和GitHub main同步，不授权TestFlight上传／ASC修改／审核提交。全目标版本2.3.5／116、四语应用内更新日志、商店草稿、TestFlight路径、同步总表、CHANGELOG、双语README与CURRENT_BRIEF已更新。重点明确GlassCard原生静态／逐帧动态能力、Release新增入口仍关闭，以及HDR／P3、Photos人工播放、更多设备／可读性／辅助功能／内存后续方向。首页单行与JPEG Unicode修复分别记录。
+
+116本地/tmp源码镜像聚焦28测试／31执行、全量1961通过／1既有跳过（2002通过执行）；有2条既有导出读回QoS警告。首轮原生预览精确像素对照失败，隔离／同组／全量复测通过，保留原断言并添加PNG诊断，记录观察项。iOS Debug签名构建、签名校验及App／Share／Widget包内版本通过；iPhone17ProMax覆盖安装成功，启动被设备锁屏阻止，人工验收未完成。未冻结研究／私人媒体／config／无关Outreach和旧商店草稿保留本地。远端同步结果执行后追加。
+
+116 iOS Release未签名构建及App／Share／Widget包内版本通过。修改的Source／Tests与全量测试镜像哈希一致。首页修复提交6699986；本次发布整理提交与GitHub远端结果在执行后确认。

@@ -2,6 +2,7 @@ import CoreGraphics
 import Foundation
 import ImageIO
 import SwiftUI
+import UniformTypeIdentifiers
 import Testing
 @testable import MemoMark
 
@@ -116,8 +117,17 @@ struct GlassCardIntegrationTests {
             .frame(width: viewport.width, height: viewport.height))
         expectedRenderer.scale = 1
         actualRenderer.scale = 1
-        let expectedPixels = try #require(expectedRenderer.cgImage?.dataProvider?.data)
-        let actualPixels = try #require(actualRenderer.cgImage?.dataProvider?.data)
+        let expectedImage = try #require(expectedRenderer.cgImage)
+        let actualImage = try #require(actualRenderer.cgImage)
+        for (name, image) in [("preview-expected", expectedImage), ("preview-actual", actualImage)] {
+            let data = NSMutableData()
+            let destination = try #require(CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil))
+            CGImageDestinationAddImage(destination, image, nil)
+            #expect(CGImageDestinationFinalize(destination))
+            Attachment.record(data as Data, named: name + ".png")
+        }
+        let expectedPixels = try #require(expectedImage.dataProvider?.data)
+        let actualPixels = try #require(actualImage.dataProvider?.data)
         #expect((actualPixels as Data) == (expectedPixels as Data))
     }
 

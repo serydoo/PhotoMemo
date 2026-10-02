@@ -52,13 +52,13 @@ struct V1ReleaseNotesContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        #expect(simplifiedChinese.contains("卡片内容编辑与照片预览留在同一视野"))
-        #expect(simplifiedChinese.contains("键盘出现时，预览会留出查看内容的空间"))
-        #expect(simplifiedChinese.contains("文字超出安全范围"))
+        #expect(simplifiedChinese.contains("玻璃卡片"))
+        #expect(simplifiedChinese.contains("正式选择入口暂未开放"))
+        #expect(simplifiedChinese.contains("辅助功能大字号"))
         #expect(simplifiedChinese.contains("原图保持不变"))
-        #expect(english.contains("card content editing and the photo preview in the same view"))
-        #expect(english.contains("When the keyboard appears"))
-        #expect(english.contains("safe area"))
+        #expect(english.contains("GlassCard"))
+        #expect(english.contains("public selection entry is not yet available"))
+        #expect(english.contains("Accessibility text sizes"))
         #expect(english.contains("original unchanged"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
@@ -73,10 +73,10 @@ struct V1ReleaseNotesContractTests {
             "Source/MemoMark/MemoMarkiOS-Info.plist"
         )
         let releaseManifest = try sourceText(
-            "Docs/07_Releases/2026-09-27-2.3.4-sync-manifest.md"
+            "Docs/07_Releases/2026-10-02-2.3.5-sync-manifest.md"
         )
-        #expect(releaseManifest.contains("Marketing version：`2.3.4`"))
-        #expect(releaseManifest.contains("build：`115`"))
+        #expect(releaseManifest.contains("Marketing version：`2.3.5`"))
+        #expect(releaseManifest.contains("build：`116`"))
 
         #expect(!projectSource.contains("MARKETING_VERSION = 2.0.3;"))
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
@@ -108,8 +108,8 @@ struct V1ReleaseNotesContractTests {
                         .replacingOccurrences(of: ";", with: "")
                 }
         )
-        #expect(marketingVersions == ["2.3.4"])
-        #expect(projectBuilds == ["115"])
+        #expect(marketingVersions == ["2.3.5"])
+        #expect(projectBuilds == ["116"])
         #expect(iOSInfoPlist.contains(
             "<key>ITSAppUsesNonExemptEncryption</key>\n\t<false/>"
         ))

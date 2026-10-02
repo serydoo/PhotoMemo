@@ -1,6 +1,6 @@
 # MemoMark Current Brief
 
-Last updated: 2026-09-30
+Last updated: 2026-10-02
 
 This is a compact routing brief for a new Codex session. It is not a
 replacement for the project constitution, accepted specifications, contracts,
@@ -9,9 +9,7 @@ follow the linked source-of-truth document.
 
 ## Current Product Stage
 
-- GlassCard full integration baseline (2026-09-30): main working tree now registers the fourth style, independent four-position templates, unified preview/artifact, still/Live Photo pipeline entry, and frozen Share transport. Final macOS regression passed 1947 tests (1 skipped), iOS simulator and signed iPhone Debug builds passed; overwrite installation succeeded, initial CLI launch was blocked by the lock screen, and the owner subsequently confirmed preliminary functionality passed. Release style selection remains gated; detailed media, appearance and accessibility acceptance remain open. See `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Full-Integration-Delivery-2026-09-30.md`. This supersedes the earlier foundation-only integration state.
-
-- GlassCard developer foundation integrated into the main working tree (uncommitted), with DEBUG-only renderer/bridge/review entry; no production style registration. See `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Development-Foundation-Integration-2026-09-30.md` for the review, pending evidence, and next gates. Minimal owner-confirmed integration remains preserved.
+- GlassCard native material is integrated into local main: shared output-size preview, still/motion artifacts, old-system fallback and explicit DEBUG device validation. Release authoring remains gated. Two real pairs were saved/read back on iPhone17ProMax during115 development;116 evidence is tracked separately. See `Docs/03_Engineering/2026-10-02-glasscard-native-material-delivery.md` and the116 sync manifest.
 
 - Stage: `V4 Expression Style System`
 - Subphase: `V4.0 Research And Product Definition`
@@ -31,10 +29,10 @@ follow the linked source-of-truth document.
 ## Current Candidate
 
 - Project: `Source/MemoMark/MemoMark.xcodeproj`
-- Marketing version: `2.3.4`
-- Build: `115`
+- Marketing version: `2.3.5`
+- Build: `116`
 - Release status: `Version Locked; Release Evidence Open`
-- Release scope starts after the `2.3.3 (111)` release commit `2a9dfef1`; see `Docs/07_Releases/2026-09-27-2.3.4-sync-manifest.md` for the exact source and TestFlight evidence.
+- Release scope starts after owner-designated2.3.4 (115) source baseline `45466834`; see `Docs/07_Releases/2026-10-02-2.3.5-sync-manifest.md`.
 - Commerce: `MemoMark Commerce v1.1` — historical lifetime and activation-code
   entitlements preserved; new users use MemoMark+ monthly or annual subscription;
   all built-in memory expression styles are included in the subscription.
