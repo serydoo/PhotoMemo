@@ -11,19 +11,42 @@ enum RecordCardPresentationStyle:
     case filmMark
     case glassCard
 
-    /// DEBUG integration exposes GlassCard while production acceptance remains open.
+    /// Registration is the Codable enum above. Authoring availability must not
+    /// be used to reject an existing configuration or a frozen processing task.
+    struct Availability: Equatable {
+        let isAuthorable: Bool
+        let isProcessable: Bool
+    }
+
+    func availability(isDebugBuild: Bool) -> Availability {
+        switch self {
+        case .classicWhite, .minimal, .filmMark:
+            return Availability(isAuthorable: true, isProcessable: true)
+        case .glassCard:
+            // The integrated raster baseline remains available to existing
+            // configurations while release authoring awaits acceptance.
+            return Availability(isAuthorable: isDebugBuild, isProcessable: true)
+        }
+    }
+
+    static func authorableStyles(isDebugBuild: Bool) -> [Self] {
+        allCases.filter { $0.availability(isDebugBuild: isDebugBuild).isAuthorable }
+    }
+
+    /// Current-build projection used by the native style selection control.
     static var selectableStyles: [Self] {
 #if DEBUG
-        allCases
+        authorableStyles(isDebugBuild: true)
 #else
-        allCases.filter { $0 != .glassCard }
+        authorableStyles(isDebugBuild: false)
 #endif
     }
 
     /// Only these styles are backed by the legacy template dictionary. FM
     /// keeps its presentation payload in `Presentation.filmMark`, so adding
     /// it to the enum must not change the Classic White / Minimal transport
-    /// shape.
+    /// shape. GlassCard has its own entry in this dictionary and does not
+    /// replace Classic White or Minimal content.
     static let legacyTemplateBackedStyles: [Self] = [
         .classicWhite,
         .minimal,

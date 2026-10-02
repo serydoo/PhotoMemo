@@ -125,7 +125,8 @@ struct RecordCardPresentationPlanner {
         return try PresentationArtifact(
             canvasSize: canvasSize, photoFrame: CGRect(origin: .zero, size: canvasSize),
             layers: [.init(frame: plan.artifactOverlayFrame, image: overlay, zIndex: 100)],
-            canvasBackground: .transparent
+            canvasBackground: .transparent,
+            backdropMaterial: GlassCardProductionRenderer.usesNativeMaterial ? GlassCardProductionRenderer.backdropMaterial(for: plan) : nil
         )
     }
 

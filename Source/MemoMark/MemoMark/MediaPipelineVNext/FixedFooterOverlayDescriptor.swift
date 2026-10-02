@@ -5,9 +5,33 @@ import CoreGraphics
 /// `FixedFooterOverlayDescriptor` remains a source-compatible alias below;
 /// new renderers must describe their layers here rather than adding media
 /// encoder branches.
-struct PresentationArtifact {
+nonisolated struct PresentationArtifact: Sendable {
 
-    struct Layer {
+    /// Source-dependent surface. Geometry is resolved by Layout, in media coordinates.
+    struct BackdropMaterial: Equatable, Sendable {
+        let frame: CGRect
+        let renderFrame: CGRect
+        let cornerRadius: CGFloat
+
+        func isValid(in canvas: CGRect) -> Bool {
+            [frame, renderFrame].allSatisfy {
+                [$0.minX, $0.minY, $0.width, $0.height].allSatisfy(\.isFinite)
+                    && $0.width > 0 && $0.height > 0 && canvas.contains($0)
+            } && renderFrame.contains(frame) && cornerRadius.isFinite
+                && cornerRadius > 0 && cornerRadius <= min(frame.width, frame.height) / 2
+        }
+
+        func scaled(x: CGFloat, y: CGFloat) -> Self {
+            func scale(_ rect: CGRect) -> CGRect {
+                CGRect(x: rect.minX * x, y: rect.minY * y,
+                    width: rect.width * x, height: rect.height * y)
+            }
+            return .init(frame: scale(frame), renderFrame: scale(renderFrame),
+                cornerRadius: cornerRadius * min(x, y))
+        }
+    }
+
+    struct Layer: Sendable {
         let frame: CGRect
         let image: CGImage
         let zIndex: Int
@@ -26,14 +50,14 @@ struct PresentationArtifact {
         }
     }
 
-    enum CanvasBackground: Equatable {
+    enum CanvasBackground: Equatable, Sendable {
         case transparent
         case opaqueWhite
     }
 
     /// Compatibility marker for pre-V4 callers. New code must express
     /// placement through layer frames, not this enum.
-    enum Placement: Equatable {
+    enum Placement: Equatable, Sendable {
         case footer
         case floating
     }
@@ -45,6 +69,7 @@ struct PresentationArtifact {
     let layers: [Layer]
     let placement: Placement
     let canvasBackground: CanvasBackground
+    let backdropMaterial: BackdropMaterial?
 
     /// Compatibility initializer for the former footer-only descriptor.
     /// Renderer implementations should prefer `init(canvasSize:photoFrame:layers:canvasBackground:)`.
@@ -55,7 +80,8 @@ struct PresentationArtifact {
         footerImage: CGImage,
         placement: Placement = .footer,
         canvasBackground: CanvasBackground? = nil,
-        layers: [Layer]? = nil
+        layers: [Layer]? = nil,
+        backdropMaterial: BackdropMaterial? = nil
     ) throws {
         guard
             canvasSize.width > 0,
@@ -69,6 +95,10 @@ struct PresentationArtifact {
         }
 
         let canvasBounds = CGRect(origin: .zero, size: canvasSize)
+
+        guard backdropMaterial?.isValid(in: canvasBounds) != false else {
+            throw LivePhotoVideoCompositionError.invalidOverlayGeometry
+        }
 
         guard canvasBounds.contains(photoFrame),
               canvasBounds.contains(footerFrame) else {
@@ -86,6 +116,7 @@ struct PresentationArtifact {
         self.footerFrame = footerFrame
         self.footerImage = footerImage
         self.layers = layers ?? [Layer(frame: footerFrame, image: footerImage)]
+        self.backdropMaterial = backdropMaterial
         self.placement = placement
         self.canvasBackground =
             canvasBackground
@@ -97,7 +128,8 @@ struct PresentationArtifact {
         photoFrame: CGRect,
         layers: [Layer],
         canvasBackground: CanvasBackground,
-        placement: Placement = .floating
+        placement: Placement = .floating,
+        backdropMaterial: BackdropMaterial? = nil
     ) throws {
         guard !layers.isEmpty else {
             throw LivePhotoVideoCompositionError.invalidOverlayGeometry
@@ -111,7 +143,8 @@ struct PresentationArtifact {
             footerImage: firstLayer.image,
             placement: placement,
             canvasBackground: canvasBackground,
-            layers: layers
+            layers: layers,
+            backdropMaterial: backdropMaterial
         )
     }
 }
@@ -135,6 +168,7 @@ extension PresentationArtifact {
             canvasBounds.contains(footerFrame),
             footerFrame.width > 0,
             footerFrame.height > 0,
+            backdropMaterial?.isValid(in: canvasBounds) != false,
             layers.allSatisfy({
                 $0.frame.width > 0
                     && $0.frame.height > 0
@@ -185,7 +219,8 @@ extension PresentationArtifact {
             footerImage: footerImage,
             placement: placement,
             canvasBackground: canvasBackground,
-            layers: resizedLayers
+            layers: resizedLayers,
+            backdropMaterial: backdropMaterial?.scaled(x: scaleX, y: scaleY)
         )
     }
 
@@ -233,7 +268,8 @@ extension PresentationArtifact {
             footerImage: footerImage,
             placement: placement,
             canvasBackground: canvasBackground,
-            layers: normalizedLayers
+            layers: normalizedLayers,
+            backdropMaterial: backdropMaterial?.scaled(x: scaleX, y: scaleY)
         )
     }
 

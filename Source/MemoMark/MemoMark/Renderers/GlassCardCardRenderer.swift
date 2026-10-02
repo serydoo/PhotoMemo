@@ -1,10 +1,15 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 
-/// Integration baseline: one fixed material recipe over the original canvas.
-/// Material tuning remains research work; media services consume its artifact.
+/// Shared native-material policy for preview and source-dependent output artifacts.
 enum GlassCardProductionRenderer {
-    static let recipe = GlassCardMaterialRecipe.darkLayerV1
+    static var usesNativeMaterial: Bool { NativeBackdropMaterialRenderer.isAvailable }
+    static var recipe: GlassCardMaterialRecipe { usesNativeMaterial ? .foregroundOnly : .darkLayerV1 }
+    static var secondaryTextOpacity: Double { usesNativeMaterial ? 0.96 : 0.78 }
+
+    static func backdropMaterial(for plan: GlassCardResolvedPresentation) -> PresentationArtifact.BackdropMaterial {
+        .init(frame: plan.artifactPanelFrame, renderFrame: plan.artifactOverlayFrame, cornerRadius: plan.panelCornerRadius)
+    }
 
     static func outputPixelSize(for metadata: PhotoMetadata, fallbackSize: CGSize) -> CGSize {
         PresentationPixelGeometry.encoderSafeSize(CGSize(
@@ -24,12 +29,21 @@ struct GlassCardCardRenderer: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let plan = GlassCardProductionRenderer.resolve(card: card, canvasSize: proxy.size)
-            ZStack {
-                image.resizable().scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height).clipped()
+            let canvasSize = GlassCardProductionRenderer.outputPixelSize(
+                for: card.metadata, fallbackSize: proxy.size
+            )
+            let plan = GlassCardProductionRenderer.resolve(card: card, canvasSize: canvasSize)
+            ZStack(alignment: .topLeading) {
+                if GlassCardProductionRenderer.usesNativeMaterial {
+                    NativeBackdropMaterialCanvas(image: image, canvasSize: canvasSize, material: GlassCardProductionRenderer.backdropMaterial(for: plan))
+                } else {
+                    image.resizable().scaledToFill().frame(width: canvasSize.width, height: canvasSize.height).clipped()
+                }
                 GlassCardOverlayLayer(presentation: plan, badge: card.badge)
             }
+            .frame(width: canvasSize.width, height: canvasSize.height, alignment: .topLeading)
+            .scaleEffect(proxy.size.width / canvasSize.width, anchor: .topLeading)
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
         }
     }
 }
@@ -38,7 +52,20 @@ struct GlassCardOverlayLayer: View {
     let presentation: GlassCardResolvedPresentation
     let badge: Badge?
 
-    private var recipe: GlassCardMaterialRecipe { GlassCardProductionRenderer.recipe }
+    let recipe: GlassCardMaterialRecipe
+    let secondaryTextOpacity: Double
+
+    init(
+        presentation: GlassCardResolvedPresentation,
+        badge: Badge?,
+        recipe: GlassCardMaterialRecipe = GlassCardProductionRenderer.recipe,
+        secondaryTextOpacity: Double = GlassCardProductionRenderer.secondaryTextOpacity
+    ) {
+        self.presentation = presentation
+        self.badge = badge
+        self.recipe = recipe
+        self.secondaryTextOpacity = secondaryTextOpacity
+    }
 
     var body: some View {
         let geometry = presentation.geometry
@@ -59,7 +86,7 @@ struct GlassCardOverlayLayer: View {
                         .font(Font(GlassCardTextFitSpecification.font(
                             pointSize: slot.fit.pointSize, isPrimary: slot.isPrimary
                         )))
-                        .foregroundStyle(Color.white.opacity(slot.isPrimary ? 0.96 : 0.78))
+                        .foregroundStyle(Color.white.opacity(slot.isPrimary ? 0.96 : secondaryTextOpacity))
                         .lineLimit(1)
                         .frame(width: slot.frame.width, height: slot.frame.height, alignment: .leading)
                         .offset(x: slot.frame.minX, y: slot.frame.minY)

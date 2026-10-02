@@ -189,7 +189,7 @@ final class LivePhotoVideoCompositionService:
         }
 
         let videoComposition =
-            makeVideoComposition(
+            try makeVideoComposition(
                 videoTrack:
                     preparedInput
                     .videoTrack,
@@ -355,7 +355,7 @@ final class LivePhotoPairCompositionService:
             .validatedForEncoder()
 
         let stillPhotoURL =
-            try stillComposer.composeStillImage(
+            try await stillComposer.composeStillImageWithMaterial(
                 sourceStillURL:
                     sourceStillURL,
                 geometry:
@@ -406,9 +406,21 @@ extension LivePhotoVideoCompositionService {
         preparedOverlay: FixedFooterOverlayDescriptor,
         videoLayer: CALayer,
         parentLayer: CALayer
-    ) -> AVVideoComposition {
+    ) throws -> AVVideoComposition {
+        if preparedOverlay.backdropMaterial != nil {
+            guard #available(iOS 26.0, macOS 26.0, *) else {
+                throw LivePhotoVideoCompositionError.exportFailed
+            }
+            let instruction = NativeBackdropVideoInstruction(trackID: videoTrack.trackID,
+                duration: duration, videoTransform: resolvedVideoTransform, artifact: preparedOverlay)
+            return AVVideoComposition(configuration: .init(
+                customVideoCompositorClass: NativeBackdropVideoCompositor.self,
+                frameDuration: frameDuration, instructions: [instruction],
+                perFrameHDRDisplayMetadataPolicy: .generate,
+                renderSize: preparedOverlay.canvasSize))
+        }
         #if os(macOS)
-        makeConfiguredVideoComposition(
+        return makeConfiguredVideoComposition(
             videoTrack: videoTrack,
             duration: duration,
             frameDuration: frameDuration,
@@ -418,7 +430,7 @@ extension LivePhotoVideoCompositionService {
             parentLayer: parentLayer
         )
         #else
-        makeMutableVideoComposition(
+        return makeMutableVideoComposition(
             videoTrack: videoTrack,
             duration: duration,
             frameDuration: frameDuration,

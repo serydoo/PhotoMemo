@@ -8,6 +8,112 @@ import Testing
 @Suite("Live Photo video composition service")
 struct LivePhotoVideoCompositionServiceTests {
 
+    @Test("Native backdrop follows motion and preserves canonical output geometry and foreground")
+    func nativeBackdropSamplesEveryFrame() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("NativeBackdropVideo-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let source = folder.appendingPathComponent("source.mov")
+        try await makeSampleVideo(at: source, size: CGSize(width: 80, height: 60),
+            frameColors: [.red, .red, .green, .green], framesPerSecond: 2)
+        let ink = try makeSolidColorImage(color: .init(red: 255, green: 255, blue: 255, alpha: 255),
+            size: CGSize(width: 8, height: 8))
+        let artifact = try PresentationArtifact(canvasSize: CGSize(width: 160, height: 120),
+            photoFrame: CGRect(x: 0, y: 0, width: 160, height: 120),
+            layers: [.init(frame: CGRect(x: 70, y: 18, width: 8, height: 8), image: ink)],
+            canvasBackground: .transparent,
+            backdropMaterial: .init(frame: CGRect(x: 8, y: 8, width: 144, height: 24),
+                renderFrame: CGRect(x: 0, y: 0, width: 160, height: 50), cornerRadius: 12))
+        let output = try await LivePhotoVideoCompositionService().composeVideo(sourceVideoURL: source,
+            overlay: artifact, outputURL: folder.appendingPathComponent("output.mov"))
+        let asset = AVURLAsset(url: output)
+        Attachment.record(try Data(contentsOf: output), named: "native-backdrop-motion.mov")
+        let track = try #require(try await asset.loadTracks(withMediaType: .video).first)
+        #expect(try await track.load(.naturalSize) == artifact.canvasSize)
+        let first = try await frameImage(from: asset, at: CMTime(seconds: 0.25, preferredTimescale: 600))
+        let later = try await frameImage(from: asset, at: CMTime(seconds: 1.25, preferredTimescale: 600))
+        let rail = CGRect(x: 30, y: 14, width: 16, height: 12)
+        let firstRail = averageColor(in: first, rect: rail)
+        let laterRail = averageColor(in: later, rect: rail)
+        let firstPhoto = averageColor(in: first, rect: CGRect(x: 30, y: 70, width: 30, height: 20))
+        let laterPhoto = averageColor(in: later, rect: CGRect(x: 30, y: 70, width: 30, height: 20))
+        let firstChange = abs(Int(firstPhoto.red) - Int(firstRail.red))
+            + abs(Int(firstPhoto.green) - Int(firstRail.green)) + abs(Int(firstPhoto.blue) - Int(firstRail.blue))
+        let laterChange = abs(Int(laterPhoto.red) - Int(laterRail.red))
+            + abs(Int(laterPhoto.green) - Int(laterRail.green)) + abs(Int(laterPhoto.blue) - Int(laterRail.blue))
+        // Native glass adapts tint; it does not promise a fixed per-channel darkening.
+        #expect(firstChange > 15)
+        #expect(laterChange > 15)
+        #expect(Int(firstRail.red) > Int(laterRail.red) + 40)
+        #expect(Int(laterRail.green) > Int(firstRail.green) + 40)
+        for frame in [first, later] {
+            let white = averageColor(in: frame, rect: CGRect(x: 72, y: 20, width: 4, height: 4))
+            #expect(white.red > 230 && white.green > 230 && white.blue > 230)
+        }
+        let inputAsset = AVURLAsset(url: source)
+        let sourceFirst = try await frameImage(from: inputAsset, at: CMTime(seconds: 0.25, preferredTimescale: 600))
+        let sourceLater = try await frameImage(from: inputAsset, at: CMTime(seconds: 1.25, preferredTimescale: 600))
+        let sourceRed = averageColor(in: sourceFirst, rect: CGRect(x: 15, y: 35, width: 15, height: 10))
+        let sourceGreen = averageColor(in: sourceLater, rect: CGRect(x: 15, y: 35, width: 15, height: 10))
+        let controlArtifact = try PresentationArtifact(canvasSize: artifact.canvasSize,
+            photoFrame: artifact.photoFrame, layers: artifact.layers, canvasBackground: artifact.canvasBackground)
+        let controlURL = try await LivePhotoVideoCompositionService().composeVideo(sourceVideoURL: source,
+            overlay: controlArtifact, outputURL: folder.appendingPathComponent("control.mov"))
+        let controlAsset = AVURLAsset(url: controlURL)
+        for (name, media) in [("source", inputAsset), ("native", asset), ("control", controlAsset)] {
+            let track = try #require(try await media.loadTracks(withMediaType: .video).first)
+            let descriptions = try await track.load(.formatDescriptions)
+            let description = try #require(descriptions.first)
+            Attachment.record(Data(String(describing: CMFormatDescriptionGetExtensions(description)).utf8), named: "\(name)-format.txt")
+        }
+        let controlFirst = try await frameImage(from: controlAsset, at: CMTime(seconds: 0.25, preferredTimescale: 600))
+        let controlLater = try await frameImage(from: controlAsset, at: CMTime(seconds: 1.25, preferredTimescale: 600))
+        let controlRed = averageColor(in: controlFirst, rect: CGRect(x: 30, y: 70, width: 30, height: 20))
+        let controlGreen = averageColor(in: controlLater, rect: CGRect(x: 30, y: 70, width: 30, height: 20))
+        Attachment.record(try JSONSerialization.data(withJSONObject: [
+            "sourceRed": sourceRed.red, "nativeRed": firstPhoto.red, "controlRed": controlRed.red,
+            "sourceGreen": sourceGreen.green, "nativeGreen": laterPhoto.green, "controlGreen": controlGreen.green
+        ], options: [.sortedKeys]), named: "native-source-control-color.json")
+        #expect(abs(Int(firstPhoto.red) - Int(controlRed.red)) <= 3)
+        #expect(abs(Int(laterPhoto.green) - Int(controlGreen.green)) <= 3)
+    }
+
+    @Test("Native backdrop preserves asymmetric source orientation")
+    func nativeBackdropPreservesRotatedSource() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("NativeRotation-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let source = folder.appendingPathComponent("source.mov")
+        try await makeSampleVideo(at: source, size: CGSize(width: 80, height: 60),
+            frameColors: [.red, .red, .green, .green], framesPerSecond: 2,
+            preferredTransform: CGAffineTransform(a: 0, b: 1, c: -1, d: 0, tx: 60, ty: 0), topHalfBlue: true)
+        let ink = try makeSolidColorImage(color: .red, size: CGSize(width: 2, height: 2))
+        let artifact = try PresentationArtifact(canvasSize: CGSize(width: 120, height: 160),
+            photoFrame: CGRect(x: 0, y: 0, width: 120, height: 160),
+            layers: [.init(frame: CGRect(x: 8, y: 8, width: 2, height: 2), image: ink)],
+            canvasBackground: .transparent,
+            backdropMaterial: .init(frame: CGRect(x: 8, y: 8, width: 104, height: 24),
+                renderFrame: CGRect(x: 0, y: 0, width: 120, height: 50), cornerRadius: 12))
+        let output = try await LivePhotoVideoCompositionService().composeVideo(sourceVideoURL: source,
+            overlay: artifact, outputURL: folder.appendingPathComponent("native.mov"))
+        let control = try PresentationArtifact(canvasSize: artifact.canvasSize,
+            photoFrame: artifact.photoFrame, layers: artifact.layers, canvasBackground: .transparent)
+        let reference = try await LivePhotoVideoCompositionService().composeVideo(sourceVideoURL: source,
+            overlay: control, outputURL: folder.appendingPathComponent("control.mov"))
+        for seconds in [0.25, 1.25] {
+            let time = CMTime(seconds: seconds, preferredTimescale: 600)
+            let actual = try await frameImage(from: AVURLAsset(url: output), at: time)
+            let expected = try await frameImage(from: AVURLAsset(url: reference), at: time)
+            for rect in [CGRect(x: 15, y: 80, width: 20, height: 30), CGRect(x: 85, y: 80, width: 20, height: 30)] {
+                let lhs = averageColor(in: actual, rect: rect)
+                let rhs = averageColor(in: expected, rect: rect)
+                #expect(abs(Int(lhs.red) - Int(rhs.red)) <= 5)
+                #expect(abs(Int(lhs.green) - Int(rhs.green)) <= 5)
+                #expect(abs(Int(lhs.blue) - Int(rhs.blue)) <= 5)
+            }
+        }
+    }
+
     @Test("Composes a video with a fixed footer while preserving motion in the photo area")
     func composesVideoWithFixedFooterAndDynamicPhotoArea() async throws {
         let temporaryFolder =
@@ -600,7 +706,9 @@ private extension LivePhotoVideoCompositionServiceTests {
         size: CGSize,
         frameColors: [RGBAColor],
         framesPerSecond: Int32,
-        metadata: [AVMetadataItem] = []
+        metadata: [AVMetadataItem] = [],
+        preferredTransform: CGAffineTransform = .identity,
+        topHalfBlue: Bool = false
     ) async throws {
         try? FileManager.default.removeItem(
             at: url
@@ -624,6 +732,7 @@ private extension LivePhotoVideoCompositionServiceTests {
                 outputSettings: settings
             )
         input.expectsMediaDataInRealTime = false
+        input.transform = preferredTransform
 
         let attributes: [String: Any] = [
             kCVPixelBufferPixelFormatTypeKey as String:
@@ -673,7 +782,7 @@ private extension LivePhotoVideoCompositionServiceTests {
             let buffer =
                 try makePixelBuffer(
                     color: color,
-                    size: size
+                    size: size, topHalfBlue: topHalfBlue
                 )
             #expect(
                 adaptor.append(
@@ -712,7 +821,8 @@ private extension LivePhotoVideoCompositionServiceTests {
 
     func makePixelBuffer(
         color: RGBAColor,
-        size: CGSize
+        size: CGSize,
+        topHalfBlue: Bool = false
     ) throws -> CVPixelBuffer {
         var pixelBuffer: CVPixelBuffer?
         let status =
@@ -774,6 +884,7 @@ private extension LivePhotoVideoCompositionServiceTests {
                 let offset =
                     row * bytesPerRow
                     + column * 4
+                let color = topHalfBlue && row < height / 2 ? RGBAColor.blue : color
                 pointer[offset] = color.alpha
                 pointer[offset + 1] = color.red
                 pointer[offset + 2] = color.green
@@ -855,7 +966,13 @@ private extension LivePhotoVideoCompositionServiceTests {
         generator.requestedTimeToleranceAfter = .zero
         generator.requestedTimeToleranceBefore = .zero
 
-        return try await generator.image(at: time).image
+        let image = try await generator.image(at: time).image
+        // AVFoundation may vend RGBA or BGRA CGImages. Pixel assertions use one explicit byte order.
+        let context = try #require(CGContext(data: nil, width: image.width, height: image.height,
+            bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        return try #require(context.makeImage())
     }
 
     func videoFrameImages(

@@ -1,11 +1,14 @@
 import CoreGraphics
 
-enum MemoMarkRenderedImageArtifactGuard {
+nonisolated enum MemoMarkRenderedImageArtifactGuard {
 
     static func composingSourcePhoto(
         _ sourceImage: CGImage,
-        with artifact: PresentationArtifact
+        with artifact: PresentationArtifact,
+        materialImage: CGImage? = nil,
+        includeLayers: Bool = true
     ) -> CGImage? {
+        guard artifact.backdropMaterial == nil || !includeLayers || materialImage != nil else { return nil }
         let width = max(Int(artifact.canvasSize.width.rounded()), 1)
         let height = max(Int(artifact.canvasSize.height.rounded()), 1)
         let bytesPerRow = width * 4
@@ -49,7 +52,11 @@ enum MemoMarkRenderedImageArtifactGuard {
         )
         context.restoreGState()
 
-        for layer in artifact.layers.sorted(by: { $0.zIndex < $1.zIndex }) {
+        if let material = artifact.backdropMaterial, let materialImage {
+            context.draw(materialImage, in: material.renderFrame)
+        }
+
+        for layer in (includeLayers ? artifact.layers : []).sorted(by: { $0.zIndex < $1.zIndex }) {
             guard layer.opacity > 0 else {
                 continue
             }
@@ -60,6 +67,19 @@ enum MemoMarkRenderedImageArtifactGuard {
         }
 
         return context.makeImage()
+    }
+
+    @MainActor
+    static func composingSourcePhotoWithMaterial(
+        _ sourceImage: CGImage, with artifact: PresentationArtifact
+    ) -> CGImage? {
+        guard let material = artifact.backdropMaterial else {
+            return composingSourcePhoto(sourceImage, with: artifact)
+        }
+        guard let sourceCanvas = composingSourcePhoto(sourceImage, with: artifact, includeLayers: false),
+              let patch = NativeBackdropMaterialRenderer.render(sourceCanvas: sourceCanvas,
+                canvasSize: artifact.canvasSize, material: material) else { return nil }
+        return composingSourcePhoto(sourceImage, with: artifact, materialImage: patch)
     }
 
     static func composingSourcePhoto(

@@ -27,6 +27,15 @@ struct GlassCardResolvedPresentation {
         return CGRect(x: frame.minX, y: canvasSize.height - frame.maxY, width: frame.width, height: frame.height)
     }
 
+    var artifactPanelFrame: CGRect {
+        let panel = geometry.panelFrame
+        return CGRect(x: panel.minX, y: canvasSize.height - panel.maxY, width: panel.width, height: panel.height)
+    }
+
+    var panelCornerRadius: CGFloat {
+        geometry.panelFrame.height * GlassCardLayoutSpecification.layout.cornerRadiusToPanelHeight
+    }
+
     let isEmpty: Bool
 
     var isContentOverflowing: Bool {

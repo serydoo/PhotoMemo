@@ -19,6 +19,15 @@ struct GlassCardMaterialRecipe: Equatable {
     let shadowRadiusToPanelHeight: CGFloat
     let shadowOffsetToPanelHeight: CGFloat
 
+    /// Foreground pixels only; the source-dependent system material is composed separately.
+    static let foregroundOnly = Self(
+        researchID: "glasscard.native.foreground",
+        surface: RGBA(red: 0, green: 0, blue: 0, alpha: 0),
+        keyline: RGBA(red: 0, green: 0, blue: 0, alpha: 0),
+        shadow: RGBA(red: 0, green: 0, blue: 0, alpha: 0),
+        keylineWidthToPanelHeight: 0, shadowRadiusToPanelHeight: 0, shadowOffsetToPanelHeight: 0
+    )
+
     static let lightLayerV1 = Self(
         researchID: "glasscard.light-layer.research.v1",
         surface: RGBA(red: 1, green: 1, blue: 1, alpha: 0.28),

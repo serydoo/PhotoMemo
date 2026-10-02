@@ -22,6 +22,12 @@ protocol LivePhotoStillImageComposing {
 
 protocol LivePhotoStillImagePairingComposing {
 
+    func composeStillImageWithMaterial(
+        sourceStillURL: URL, geometry: CanonicalGeometry,
+        overlay: PresentationArtifact, outputURL: URL, outputType: UTType,
+        pairingIdentifier: String?, outputDescription: String?
+    ) async throws -> URL
+
     func composeStillImage(
         sourceStillURL: URL,
         geometry: CanonicalGeometry,
@@ -31,6 +37,21 @@ protocol LivePhotoStillImagePairingComposing {
         pairingIdentifier: String?,
         outputDescription: String?
     ) throws -> URL
+}
+
+extension LivePhotoStillImagePairingComposing {
+    func composeStillImageWithMaterial(
+        sourceStillURL: URL, geometry: CanonicalGeometry,
+        overlay: PresentationArtifact, outputURL: URL, outputType: UTType,
+        pairingIdentifier: String?, outputDescription: String?
+    ) async throws -> URL {
+        guard overlay.backdropMaterial == nil else {
+            throw LivePhotoStillImageCompositionError.outputContextUnavailable
+        }
+        return try composeStillImage(sourceStillURL: sourceStillURL, geometry: geometry,
+            overlay: overlay, outputURL: outputURL, outputType: outputType,
+            pairingIdentifier: pairingIdentifier, outputDescription: outputDescription)
+    }
 }
 
 enum LivePhotoStillImageCompositionError:
@@ -136,6 +157,7 @@ final class LivePhotoStillImageCompositionService:
         outputType: UTType,
         pairingIdentifier: String?
     ) throws -> URL {
+
         try composeStillImage(
             sourceStillURL:
                 sourceStillURL,
@@ -191,6 +213,10 @@ final class LivePhotoStillImageCompositionService:
         outputDescription: String?,
         pairingIdentifier: String?
     ) throws -> URL {
+
+        guard overlay.backdropMaterial == nil else {
+            throw LivePhotoStillImageCompositionError.outputContextUnavailable
+        }
 
         let preparedOverlay =
             try overlay.validatedForEncoder()
@@ -306,6 +332,31 @@ final class LivePhotoStillImageCompositionService:
                 pairingIdentifier:
                     pairingIdentifier
             )
+    }
+
+    func composeStillImageWithMaterial(
+        sourceStillURL: URL, geometry: CanonicalGeometry,
+        overlay: PresentationArtifact, outputURL: URL, outputType: UTType,
+        pairingIdentifier: String?, outputDescription: String?
+    ) async throws -> URL {
+        let preparedOverlay = try overlay.replacingGeometry(canvasSize: geometry.canvas.canvasSize,
+            photoFrame: geometry.canvas.photoFrame, footerFrame: geometry.canvas.footerFrame).validatedForEncoder()
+        guard preparedOverlay.backdropMaterial != nil else {
+            return try composeStillImage(sourceStillURL: sourceStillURL, overlay: preparedOverlay,
+                outputURL: outputURL, outputType: outputType, outputDescription: outputDescription,
+                pairingIdentifier: pairingIdentifier)
+        }
+        try Task.checkCancellation()
+        let source = try sourcePreparer.preparedStillImage(sourceStillURL: sourceStillURL,
+            targetFrame: preparedOverlay.photoFrame)
+        let image = await MainActor.run {
+            MemoMarkRenderedImageArtifactGuard.composingSourcePhotoWithMaterial(source.image, with: preparedOverlay)
+        }
+        guard let image else { throw LivePhotoStillImageCompositionError.outputContextUnavailable }
+        try Task.checkCancellation()
+        return try writer.writeComposedStillImage(image, sourceProperties: source.properties,
+            outputURL: outputURL, outputType: outputType,
+            outputDescription: outputDescription, pairingIdentifier: pairingIdentifier)
     }
 }
 

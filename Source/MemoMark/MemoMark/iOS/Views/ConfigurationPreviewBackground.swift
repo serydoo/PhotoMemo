@@ -1,5 +1,10 @@
 #if !MEMOMARK_SHARE_EXTENSION
 import CoreGraphics
+#if canImport(UIKit)
+import UIKit
+#else
+import AppKit
+#endif
 
 /// Selects an authorized, downsampled sample photograph for Configuration
 /// Center previews. This is presentation-only calibration state: it never
@@ -51,6 +56,27 @@ enum ConfigurationPreviewBackground: Equatable {
         case .portrait:
             "MidAutumnPreviewBackgroundPortrait"
         }
+    }
+
+    // Decode once per calibration photograph, never per viewport invalidation.
+    private static let glassCardLandscapeSize = calibrationPixelSize(for: .landscape)
+    private static let glassCardPortraitSize = calibrationPixelSize(for: .portrait)
+
+    static func glassCardPixelSize(for orientation: Orientation) -> CGSize? {
+        orientation == .landscape ? glassCardLandscapeSize : glassCardPortraitSize
+    }
+
+    private static func calibrationPixelSize(for orientation: Orientation) -> CGSize? {
+        let name = minimal.assetName(forOrientation: orientation)
+        #if canImport(UIKit)
+        let image = UIImage(named: name)?.cgImage
+        #else
+        let image = NSImage(named: name)?.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        #endif
+        guard let image else { return nil }
+        return PresentationPixelGeometry.encoderSafeSize(
+            CGSize(width: image.width, height: image.height)
+        )
     }
 
     static func aspectRatio(for orientation: Orientation) -> CGFloat {

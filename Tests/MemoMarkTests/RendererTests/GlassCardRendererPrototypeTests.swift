@@ -6,6 +6,16 @@ import Testing
 @Suite("Glass Card renderer prototype")
 struct GlassCardRendererPrototypeTests {
 
+    @Test("Calibration assets provide output pixel geometry in both orientations")
+    func calibrationPixelGeometry() throws {
+        for orientation in ConfigurationPreviewBackground.Orientation.allCases {
+            let size = try #require(ConfigurationPreviewBackground.glassCardPixelSize(for: orientation))
+            #expect(size.width > 360)
+            #expect(size.height > 360)
+            #expect(abs(size.width / size.height - ConfigurationPreviewBackground.aspectRatio(for: orientation)) < 0.01)
+        }
+    }
+
     @Test("Whitespace is empty without rewriting authored content")
     func whitespaceContent() {
         let content = GlassCardContentProjection(leftTop: " \n", leftBottom: "\t", rightTop: "", rightBottom: "　")

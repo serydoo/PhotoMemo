@@ -90,24 +90,38 @@ struct MemoryCardPreviewSurface: View {
                 .aspectRatio(ConfigurationPreviewBackground.aspectRatio(for: previewOrientation ?? .landscape), contentMode: .fit)
                 .overlay {
                     GeometryReader { proxy in
-                        let plan = GlassCardResolvedPresentation.resolve(
-                            content: GlassCardContentProjection(
-                                leftTop: regionText, leftBottom: timeText,
-                                rightTop: contextText, rightBottom: memoryText
-                            ), canvasSize: proxy.size
-                        )
-                        ZStack {
-                            minimalPreviewPhoto(width: proxy.size.width, height: proxy.size.height)
-                            GlassCardOverlayLayer(presentation: plan, badge: glassCardPreviewBadge)
-                            if plan.isEmpty || plan.isContentOverflowing {
-                                Text(MemoMarkLanguage.interfaceStored.localized(
-                                    key: plan.isEmpty ? "GlassCard.Preview.Empty" : "GlassCard.Preview.Overflow",
-                                    fallback: plan.isEmpty ? "请填写卡片内容" : "内容过长，请缩短对应区域的内容"
-                                ))
-                                .font(.footnote).foregroundStyle(.primary)
-                                .padding(8).background(.regularMaterial, in: Capsule())
+                        let orientation = previewOrientation ?? .landscape
+                        if let canvasSize = ConfigurationPreviewBackground.glassCardPixelSize(for: orientation) {
+                            let plan = GlassCardResolvedPresentation.resolve(
+                                content: GlassCardContentProjection(
+                                    leftTop: regionText, leftBottom: timeText,
+                                    rightTop: contextText, rightBottom: memoryText
+                                ), canvasSize: canvasSize
+                            )
+                            ZStack(alignment: .topLeading) {
+                                Image(ConfigurationPreviewBackground.minimal.assetName(forOrientation: orientation))
+                                    .resizable().scaledToFill()
+                                    .frame(width: proxy.size.width, height: proxy.size.height)
+                                    .clipped().accessibilityHidden(true)
+                                // Keep the output-sized font and layout. Resizing the
+                                // viewport must not ask the font engine to fit again.
+                                GlassCardOverlayLayer(presentation: plan, badge: glassCardPreviewBadge)
+                                    .scaleEffect(proxy.size.width / canvasSize.width, anchor: .topLeading)
+                                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
+                                if plan.isEmpty || plan.isContentOverflowing {
+                                    Text(MemoMarkLanguage.interfaceStored.localized(
+                                        key: plan.isEmpty ? "GlassCard.Preview.Empty" : "GlassCard.Preview.Overflow",
+                                        fallback: plan.isEmpty ? "请填写卡片内容" : "内容过长，请缩短对应区域的内容"
+                                    ))
+                                    .font(.footnote).foregroundStyle(.primary)
+                                    .padding(8).background(.regularMaterial, in: Capsule())
+                                    .frame(width: proxy.size.width, height: proxy.size.height)
+                                }
                             }
+                            .frame(width: proxy.size.width, height: proxy.size.height)
+                            .clipped()
                         }
+
                     }
                 }
         case .minimal:

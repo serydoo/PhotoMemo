@@ -29944,3 +29944,9 @@ performed by this record.
 ### 2026-09-30 — Minimal / GlassCard 主线源码备份
 
 用户授权将已回流 main 工作区的 Minimal 与 GlassCard 功能基线整理为正式提交并同步 origin/main。提交范围限于功能源码、测试、集成文档及相关状态记录；推广、发布文案、其他研究与 config 未纳入本次提交。沿用此前全量 1947 通过、1 跳过、0 失败及构建证据；用户确认初步功能正常。本轮仅整理提交与同步，没有更改渲染行为或进行 App Store 发布。远端结果另行核对记录。
+
+### 2026-10-02 — GlassCard native material integration
+
+Native regular dark SwiftUI material now feeds shared output-size preview and still/motion artifacts on iOS/macOS26+, with old-system fixed-alpha fallback. Layout retains panel/corner/frame ownership; existing exporter, metadata, pairing, audio and Photos services remain in use. Release authoring stays closed; existing configurations remain processable. JPEG Unicode export descriptions fixed separately.
+
+Final Mac regression44 tests/52 parameterized executions passed with no runtime warnings (/tmp/MemoMarkNativeDeliveryRegression.xcresult). Signed iPhone 17 Pro Max build/install/launch passed. Both owner-provided real HEIC+MOV pairs composed at full still size and saved/read back as Live Photos, with matching new identities and one audio track each. Encoded motion2880x3840/3840x2880 follows existing export limits; still4284x5712/4032x3024. Private evidence remains outside Git at /Users/rui/Documents/Codex/2026-10-02/GlassCardNativeRealPairsFull. Manual Photos playback, HDR/P3 and whole-product certification remain open. See Docs/03_Engineering/2026-10-02-glasscard-native-material-delivery.md for scoped decision/review/evidence. No remote push/release implied.

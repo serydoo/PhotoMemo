@@ -44,7 +44,7 @@ final class RecordCardExportPipeline {
         guard let sourceImage = sourcePhotoCGImage(for: photo) else {
             throw RecordCardExportError.renderFailed
         }
-        guard let cgImage = MemoMarkRenderedImageArtifactGuard.composingSourcePhoto(
+        guard let cgImage = MemoMarkRenderedImageArtifactGuard.composingSourcePhotoWithMaterial(
             sourceImage,
             with: artifact
         ) else {
