@@ -32,3 +32,5 @@ Evidence: /Users/rui/Documents/Codex/2026-10-02/GlassCardNativeRealPairs1080 and
 ## Review
 
 Correctness: pixel/source parity, foreground, geometry, pairing and actual Photos readback covered. Architecture: Layout has no dependency on the media artifact; Renderer adapts immutable geometry. Privacy: only local files and paired phone; private inputs excluded. Maintainability: shared policy/foreground/native raster, unchanged existing save/export services. Performance: full-canvas native raster is a known bounded cost; two full-size real samples completed successfully; peak memory and broader clips are not certified. No material/color blocker remains for this bounded integration; manual Photos playback and broader certification are explicitly pending.
+
+Final closure: production integration committed on main at4392f3e1, Unicode fix b447f11a, explicit DEBUG device harness2855fd84. Release macOS build passed with signing disabled (/tmp/MemoMarkGlassCardRelease.log). Final signed Debug iOS build, signature verification, overwrite-install and normal app launch passed; no preset/app data reset. These local commits have not been pushed remotely.
