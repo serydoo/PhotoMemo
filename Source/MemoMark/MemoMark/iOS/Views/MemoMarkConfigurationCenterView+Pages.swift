@@ -29,17 +29,6 @@ extension MemoMarkConfigurationCenterView {
             onOpenMemoMarkPlus: {
                 rootPresentationState.showsMemoMarkPlus = true
             },
-            onShowWelcome: {
-                entryFlowState =
-                    EntryFlowCoordinator
-                    .closeSettingsPage(
-                        from: entryFlowState
-                    )
-                Task { @MainActor in
-                    await Task.yield()
-                    rootPresentationState.showsWelcomeInformation = true
-                }
-            },
             onOpenTimeExpression: {
                 rootPresentationState.configurationDisclosureState.setExpanded(
                     true,
@@ -203,6 +192,13 @@ extension MemoMarkConfigurationCenterView {
                 session.selectedMemoryPresetIsProcessingDefault,
             isEditingCardContent:
                 rootPresentationState.isCardContentInspectorPresented,
+            isPreviewVisible: rootPresentationState.previewVisibility.isVisible(
+                isEditingCardContent: rootPresentationState.isCardContentInspectorPresented
+            ),
+            onTogglePreview: {
+                dismissKeyboard()
+                rootPresentationState.previewVisibility.isCollapsed.toggle()
+            },
             previewWidthPolicy:
                 presentationStyle == .minimal
                 ? .fullWidthInCompactLandscape
@@ -274,6 +270,7 @@ extension MemoMarkConfigurationCenterView {
             LocationDisplayInspectorPresenter.presentation
 
         return ConfigurationOptionList(
+            isPreviewVisible: !rootPresentationState.previewVisibility.isCollapsed,
             disclosureState:
                 $rootPresentationState.configurationDisclosureState,
             subjectAvatarLogoImagePath:

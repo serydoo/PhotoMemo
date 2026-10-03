@@ -25,6 +25,8 @@ struct ConfigurationPageSurface<
     let isSavingConfiguration: Bool
     let isSelectedProcessingDefault: Bool
     let isEditingCardContent: Bool
+    let isPreviewVisible: Bool
+    let onTogglePreview: (() -> Void)?
     let previewWidthPolicy: ConfigurationPreviewWidthPolicy
     let editorScrollRequest: ConfigurationEditorScrollRequest?
     let onDismissKeyboard: () -> Void
@@ -44,6 +46,8 @@ struct ConfigurationPageSurface<
         isSavingConfiguration: Bool,
         isSelectedProcessingDefault: Bool,
         isEditingCardContent: Bool = false,
+        isPreviewVisible: Bool = true,
+        onTogglePreview: (() -> Void)? = nil,
         previewWidthPolicy: ConfigurationPreviewWidthPolicy = .readable,
         editorScrollRequest: ConfigurationEditorScrollRequest? = nil,
         onDismissKeyboard: @escaping () -> Void,
@@ -61,6 +65,8 @@ struct ConfigurationPageSurface<
         self.isSavingConfiguration = isSavingConfiguration
         self.isSelectedProcessingDefault = isSelectedProcessingDefault
         self.isEditingCardContent = isEditingCardContent
+        self.isPreviewVisible = isPreviewVisible
+        self.onTogglePreview = onTogglePreview
         self.previewWidthPolicy = previewWidthPolicy
         self.editorScrollRequest = editorScrollRequest
         self.onDismissKeyboard = onDismissKeyboard
@@ -85,6 +91,8 @@ struct ConfigurationPageSurface<
                 key: "configuration.page.subtitle",
                 fallback: "决定这段记忆围绕哪个重要时刻、如何呈现，以及保存到哪里。"
             ),
+            isPreviewVisible: isPreviewVisible,
+            onTogglePreview: onTogglePreview,
             previewWidthPolicy: previewWidthPolicy,
             editorScrollRequest: editorScrollRequest,
             editorContentOwnsScrolling: isEditingCardContent,

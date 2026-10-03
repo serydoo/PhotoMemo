@@ -787,9 +787,11 @@ struct ConfigurationOptionListContractTests {
         #expect(!footerSource.contains("Image(systemName: \"ellipsis.circle\")"))
         #expect(editorSurfaceSource.contains(".safeAreaInset(edge: .bottom, spacing: 0)"))
         #expect(!editorSurfaceSource.contains(".overlay(alignment: .bottom)"))
-        #expect(footerSource.contains("@Environment(\\.accessibilityReduceTransparency)"))
-        #expect(footerSource.contains(".fill(.regularMaterial)"))
-        #expect(footerSource.contains(".fill(ConfigurationUI.panelBackground)"))
+        let footerBody = try #require(footerSource.range(of: "var body: some View"))
+        let actionRow = try #require(footerSource.range(of: "private var configurationActionRow:"))
+        #expect(!footerSource[footerBody.lowerBound..<actionRow.lowerBound].contains(".background("))
+        #expect(!footerSource.contains(".fill(.regularMaterial)"))
+        #expect(footerSource.contains(".alert(isPresented: $showsResetConfigurationConfirmation)"))
         #expect(configurationPageSource.contains("ConfigurationActionFooter("))
         #expect(configurationPageSource.contains("configurationStatus: configurationStatus"))
         #expect(pagesSource.contains("ConfigurationPageSurface("))
@@ -817,7 +819,7 @@ struct ConfigurationOptionListContractTests {
         #expect(editorClusterSource.contains("MemoryCardTextKitSessionEditor("))
         #expect(editorClusterSource.contains("这里的内容会怎样使用？"))
         #expect(editorClusterSource.contains("修改会实时出现在上方完整卡片预览中。"))
-        #expect(editorClusterSource.contains("处理照片时，模块会替换为每张照片自己的信息。"))
+        #expect(editorClusterSource.contains("处理照片时，这些信息会替换为每张照片对应的内容。"))
         #expect(editorClusterSource.contains("这里的内容还会写入 Apple Photos 的照片说明"))
     }
 

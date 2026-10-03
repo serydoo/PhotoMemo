@@ -263,7 +263,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(!output.contains("private struct V1MemoryWriteExplanation"))
         #expect(!output.contains("let tint: Color\n    let title: String\n    let subtitle: String"))
         #expect(support.contains("struct ConfigurationTitledSectionSurface"))
-        #expect(regionEditor.contains("Text(\"这里的内容会怎样使用？\")"))
+        #expect(regionEditor.contains("Text(MemoMarkLanguage.interfaceStored.localized(key: \"这里的内容会怎样使用？\""))
         #expect(!regionEditor.contains("Label(\"这里的内容会怎样使用？\", systemImage:"))
         #expect(regionEditor.contains("private var editorFooterNote"))
     }
@@ -731,8 +731,8 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(source.contains("添加时间锚点"))
         #expect(source.contains("最多保留 5 个时间锚点"))
         #expect(source.contains("至少保留一个时间锚点"))
-        #expect(source.contains("accessibilityAction(named: \"配置时间锚点\")"))
-        #expect(source.contains("accessibilityAction(named: \"删除时间锚点\")"))
+        #expect(source.contains("accessibilityAction(named: uiText(\"配置时间锚点\"))"))
+        #expect(source.contains("accessibilityAction(named: uiText(\"删除时间锚点\"))"))
         #expect(!source.contains("时间锚点配置"))
     }
 

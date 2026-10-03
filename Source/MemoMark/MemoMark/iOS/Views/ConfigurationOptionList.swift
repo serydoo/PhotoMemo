@@ -73,6 +73,8 @@ struct ConfigurationOptionList: View {
     @State
     private var showsFilmMarkDetailsSheet = false
 
+    var isPreviewVisible = true
+
     @Binding var disclosureState: ConfigurationDisclosureState
     let subjectAvatarLogoImagePath: String?
     @Binding var presentationStyle: RecordCardPresentationStyle
@@ -153,7 +155,9 @@ struct ConfigurationOptionList: View {
                     title: "configuration.layout.title",
                     subtitle: "configuration.layout.subtitle",
                     isExpanded: disclosureBinding(for: .cardLayout),
-                    resultTitle: "configuration.layout.result.preview",
+                    resultTitle: isPreviewVisible
+                        ? "configuration.layout.result.preview"
+                        : "configuration.layout.result.edit",
                     expandedAccessibilityLabel: "configuration.layout.accessibility.collapse",
                     collapsedAccessibilityLabel: "configuration.layout.accessibility.expand"
                 ) {
@@ -767,8 +771,30 @@ struct ConfigurationOptionList: View {
                 memoryDisplayPicker
                     .pickerStyle(.menu)
             } else {
-                memoryDisplayPicker
-                    .pickerStyle(.segmented)
+                ViewThatFits(in: .horizontal) {
+                    // UISegmentedControl can report a fit after truncating labels.
+                    // Reserve equal segments using the widest uncompressed title.
+                    HStack(spacing: 0) {
+                        ForEach(availableMemoryDisplayStyles, id: \.self) { _ in
+                            ZStack {
+                                ForEach(availableMemoryDisplayStyles, id: \.self) { style in
+                                    Text(memoryDisplayChoiceTitle(style))
+                                        .font(.body)
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                        }
+                    }
+                    .fixedSize(horizontal: true, vertical: false)
+                    .frame(minHeight: 44)
+                    .hidden()
+                    .overlay {
+                        memoryDisplayPicker.pickerStyle(.segmented)
+                    }
+
+                    memoryDisplayPicker.pickerStyle(.menu)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                }
             }
         }
         .tint(.accentColor)
@@ -793,11 +819,15 @@ struct ConfigurationOptionList: View {
             )
         ) {
             ForEach(availableMemoryDisplayStyles, id: \.self) { style in
-                Text(localized(style.displayTitle == "自然（默认）"
-                    ? "configuration.expression.natural.short" : style.displayTitle))
+                Text(memoryDisplayChoiceTitle(style))
                     .tag(style)
             }
         }
+    }
+
+    private func memoryDisplayChoiceTitle(_ style: MemoryAnchorExpressionStyle) -> String {
+        localized(style.displayTitle == "自然（默认）"
+            ? "configuration.expression.natural.short" : style.displayTitle)
     }
 
     private var displayedMemoryDisplayStyle: MemoryAnchorExpressionStyle {

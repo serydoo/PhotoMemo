@@ -173,8 +173,10 @@ struct MemoryCardPreviewSection: View {
                         : "arrow.up.left.and.arrow.down.right")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.primary)
-                        .frame(width: 44, height: 44)
+                        .frame(width: 34, height: 34)
                         .modifier(PreviewControlGlass())
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(
@@ -341,11 +343,12 @@ struct MemoryCardPreviewSection: View {
             setOrientation(alternateOrientation)
         } label: {
             Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.96))
-                .frame(width: 44, height: 44)
-                .shadow(color: .black.opacity(0.28), radius: 1, y: 1)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 34, height: 34)
                 .modifier(PreviewControlGlass())
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(

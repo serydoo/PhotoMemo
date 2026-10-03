@@ -1,6 +1,10 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 
+private func uiText(_ key: String) -> String {
+    MemoMarkLanguage.interfaceStored.localized(key: key, fallback: key)
+}
+
 struct LocalConfigurationLibrarySheet: View {
 
     let subjectName: String
@@ -23,10 +27,10 @@ struct LocalConfigurationLibrarySheet: View {
                 Section {
                     if backups.isEmpty {
                         ContentUnavailableView(
-                            "还没有本地备份",
+                            uiText("还没有本地备份"),
                             systemImage: MemoMarkSymbol.localStorage.name,
                             description: Text(
-                                "在首页保存配置后，就能从这里找回。"
+                                uiText("在首页保存配置后，就能从这里找回。")
                             )
                         )
                     } else {
@@ -47,15 +51,15 @@ struct LocalConfigurationLibrarySheet: View {
                     )
                 } footer: {
                     Text(
-                        "最近保存的配置会留在这里。恢复时会保留当前配置；恢复并设为当前会立即切换到该备份。"
+                        uiText("最近保存的配置会留在这里。恢复时会保留当前配置；恢复并设为当前会立即切换到该备份。")
                     )
                 }
             }
-            .navigationTitle("本地备份")
+            .navigationTitle(uiText("本地备份"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
+                    Button(uiText("完成")) {
                         dismiss()
                     }
                     .fontWeight(.semibold)
@@ -70,27 +74,27 @@ struct LocalConfigurationLibrarySheet: View {
                         }
                     }
                     .disabled(isWorking)
-                    .accessibilityLabel("刷新本地备份")
+                    .accessibilityLabel(uiText("刷新本地备份"))
                 }
             }
             .alert(
-                pendingDeleteBackup.map { "删除“\($0.title)”备份？" }
-                    ?? "删除本地备份？",
+                pendingDeleteBackup.map { String(format: uiText("local_backup.delete.named"), $0.title) }
+                    ?? uiText("删除本地备份？"),
                 isPresented: Binding(
                     get: { pendingDeleteBackup != nil },
                     set: { if !$0 { pendingDeleteBackup = nil } }
                 )
             ) {
-                Button("取消", role: .cancel) {
+                Button(uiText("取消"), role: .cancel) {
                     pendingDeleteBackup = nil
                 }
-                Button("删除本地备份", role: .destructive) {
+                Button(uiText("删除本地备份"), role: .destructive) {
                     guard let backup = pendingDeleteBackup else { return }
                     pendingDeleteBackup = nil
                     onDelete(backup)
                 }
             } message: {
-                Text("当前正在使用的配置不会被删除。此操作无法撤销。")
+                Text(uiText("当前正在使用的配置不会被删除。此操作无法撤销。"))
             }
         }
     }
@@ -104,7 +108,7 @@ struct LocalConfigurationLibrarySheet: View {
                     .font(.subheadline.weight(.semibold))
 
                 Text(
-                    "版本 \(backup.revision) · \(UserFacingDateFormatter.dateTime(backup.savedAt))"
+                    String(format: uiText("local_backup.revision_date"), String(backup.revision), UserFacingDateFormatter.dateTime(backup.savedAt))
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -112,17 +116,17 @@ struct LocalConfigurationLibrarySheet: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Menu {
-                Button("恢复为副本") {
+                Button(uiText("恢复为副本")) {
                     onRestore(backup)
                 }
 
-                Button("恢复并设为当前") {
+                Button(uiText("恢复并设为当前")) {
                     onRestoreAndMakeCurrent(backup)
                 }
 
                 Divider()
 
-                Button("删除本地备份", role: .destructive) {
+                Button(uiText("删除本地备份"), role: .destructive) {
                     pendingDeleteBackup = backup
                 }
             } label: {
@@ -132,21 +136,21 @@ struct LocalConfigurationLibrarySheet: View {
                     .contentShape(Rectangle())
             }
             .disabled(isWorking)
-            .accessibilityLabel("更多备份操作")
+            .accessibilityLabel(uiText("更多备份操作"))
         }
         .padding(.vertical, 2)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
                 pendingDeleteBackup = backup
             } label: {
-                Label("删除", systemImage: "trash")
+                Label(uiText("删除"), systemImage: "trash")
             }
             .tint(.red)
         }
         .contextMenu {
-            Button("恢复为副本") { onRestore(backup) }
-            Button("恢复并设当前") { onRestoreAndMakeCurrent(backup) }
-            Button("删除本地备份", role: .destructive) {
+            Button(uiText("恢复为副本")) { onRestore(backup) }
+            Button(uiText("恢复并设为当前")) { onRestoreAndMakeCurrent(backup) }
+            Button(uiText("删除本地备份"), role: .destructive) {
                 pendingDeleteBackup = backup
             }
         }

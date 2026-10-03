@@ -262,17 +262,17 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "새로운 기능";
 "settings.version.release_notes_detail" = "MemoMark의 변경 사항을 확인합니다.";
-"settings.release_notes.header" = "미니멀과 홈 프리셋을 다듬고 글라스 카드 개선을 이어갑니다.";
+"settings.release_notes.header" = "메모리 카드 미리보기와 설정을 다듬고 미니멀 표현을 개선했습니다.";
 "settings.release_notes.version_format" = "버전 %@";
 "settings.release_notes.positioning" = "사진 속에 나만의 말을 조용히 남겨 보세요.";
-"settings.release_notes.time_expression.title" = "더 안정적인 미니멀과 글라스 카드 개선";
-"settings.release_notes.time_expression.item_one" = "미니멀에서 긴 텍스트가 표시 너비에 맞게 조정되어 가로·세로 사진에서 더 안정적으로 보입니다.";
-"settings.release_notes.time_expression.item_two" = "글라스 카드의 시스템 유리 효과와 움직이는 사진 표현을 다듬고 있습니다. 일반 선택 항목은 아직 공개되지 않았으며, 가독성·색상·더 다양한 사진 대응을 계속 개선합니다.";
-"settings.release_notes.configuration.title" = "더 선명한 홈 프리셋";
-"settings.release_notes.configuration.item_one" = "일반 글자 크기에서는 설명을 한 줄로 유지하고 필요하면 간격과 크기를 조정합니다. 손쉬운 사용의 큰 글자는 여러 줄로 읽기 쉽게 표시합니다.";
-"settings.release_notes.configuration.item_two" = "글라스 카드 미리보기와 출력에 같은 레이아웃을 사용해 텍스트와 위치를 일관되게 확인합니다.";
+"settings.release_notes.time_expression.title" = "더 자연스러운 미리보기와 설정";
+"settings.release_notes.time_expression.item_one" = "설정 중 미리보기를 표시하거나 접을 수 있습니다. 카드 내용을 편집할 때는 표시되고, 편집을 마치면 이전 선택으로 돌아갑니다.";
+"settings.release_notes.time_expression.item_two" = "미리보기 여백과 버튼, 설정 구성, 소개·사용 방법·업데이트 내역의 뒤로 이동을 다듬었습니다.";
+"settings.release_notes.configuration.title" = "더 명확한 표현과 안내";
+"settings.release_notes.configuration.item_one" = "미니멀의 긴 글과 홈 프리셋 설명의 너비 맞춤을 개선했습니다. 손쉬운 사용의 큰 글자에서는 여러 줄로 표시합니다.";
+"settings.release_notes.configuration.item_two" = "시간 앵커, 백업, 편집 안내를 개선했습니다. 글라스 카드는 개선 중이며 정식 버전의 새 선택 항목으로는 아직 제공되지 않습니다.";
 "settings.release_notes.saving.title" = "나만의 표현을 저장";
-"settings.release_notes.saving.item_one" = "JPEG에 중국어 등 유니코드 텍스트 설명을 저장할 때 발생하던 문제를 수정했습니다.";
+"settings.release_notes.saving.item_one" = "다국어 JPEG 설명 저장과 Live Photo 키프레임 시간 정보 보존 문제를 수정했습니다.";
 "settings.release_notes.saving.item_two" = "사진은 계속 기기에서 처리되며 원본은 변경되지 않습니다. 새로운 기억 사진을 저장합니다.";
 "settings.release_notes.closing" = "의견을 보내주셔서 감사합니다. 세부 사항을 계속 다듬겠습니다.";
 "settings.navigation.title" = "설정";
@@ -951,7 +951,7 @@
 "configuration.editor.configuration_name" = "구성 이름";
 "configuration.editor.saved" = "저장됨";
 "configuration.editor.save" = "구성 저장";
-"configuration.modules.system" = "시스템 모듈";
+"configuration.modules.system" = "시스템 정보";
 "configuration.modules.subject" = "대상 별명";
 "configuration.modules.smart" = "메모리 표현";
 "configuration.modules.anchor" = "시간 앵커";
@@ -1476,7 +1476,7 @@
 "configuration.card_editor.title" = "카드 내용";
 "configuration.card_editor.subtitle" = "글, 사진 정보, 추억 표현을 조합합니다.";
 "configuration.card_editor.subtitle.focused" = "%@ 편집 중";
-"configuration.card_editor.add_module" = "모듈";
+"configuration.card_editor.add_module" = "정보 삽입";
 "configuration.card_editor.done" = "완료";
 "configuration.card_editor.dismiss_keyboard" = "키보드 닫기";
 "configuration.card_editor.accessibility_label" = "카드 내용 편집";
@@ -1486,9 +1486,9 @@
 "configuration.card_editor.slotB.title" = "왼쪽 아래";
 "configuration.card_editor.slotC.title" = "오른쪽 위";
 "configuration.card_editor.slotD.title" = "오른쪽 아래";
-"configuration.card_editor.undo.insert_module" = "모듈 삽입";
+"configuration.card_editor.undo.insert_module" = "정보 삽입";
 "configuration.card_editor.undo.paste_content" = "내용 붙여넣기";
-"configuration.card_editor.undo.delete_module" = "모듈 삭제";
+"configuration.card_editor.undo.delete_module" = "정보 삭제";
 "configuration.action.reset.title" = "기본 구성으로 복원할까요?";
 "configuration.action.delete.title" = "현재 구성을 삭제할까요?";
 "task.progress.stage.preparingRAWPhoto" = "RAW 사진 준비 중";
@@ -1509,7 +1509,7 @@
 "task.progress.stage.cancelled" = "취소됨";
 "task.progress.stage.backgroundExpired" = "백그라운드 처리 시간이 종료되었습니다. 다시 시도해 주세요.";
 "accessibility.subject.switch_format" = "%@ 선택";
-"accessibility.region.module_candidates_format" = "%@ 모듈 후보";
+"accessibility.region.module_candidates_format" = "%@에 삽입할 수 있는 정보";
 "configuration.library.subject_title_format" = "%@ 구성";
 "accessibility.editor.slotA.label" = "왼쪽 위 내용";
 "accessibility.editor.slotB.label" = "왼쪽 아래 내용";
@@ -1609,7 +1609,7 @@
 "subject.overview.fact.label" = "전용 호칭";
 "subject.overview.subject.fallback" = "메모리 대상";
 "configuration.modules.insert.accessibility" = "%@ 삽입, 현재 값 %@";
-"configuration.modules.accessibility.unavailable" = "모듈을 사용할 수 없음, %@";
+"configuration.modules.accessibility.unavailable" = "정보를 사용할 수 없음, %@";
 "configuration.modules.accessibility.value" = "%@ · %@";
 "configuration.modules.category.photo_information" = "사진 정보";
 "configuration.modules.category.memory_expression" = "추억 표현";
@@ -1842,3 +1842,44 @@
 "Batch.GlassCardOverflow.Failed.Recovery" = "해당 영역의 내용을 줄인 후 다시 처리해 주세요.";
 "GlassCard.Preview.Empty" = "카드 내용을 입력해 주세요";
 "GlassCard.Preview.Overflow" = "내용이 너무 길어요. 해당 영역의 내용을 줄여 주세요.";
+
+/* Configuration preview visibility */
+"configuration.preview.collapse" = "미리보기 접기";
+"configuration.preview.expand" = "미리보기 펼치기";
+"configuration.preview.visible" = "펼쳐짐";
+"configuration.preview.hidden" = "접힘";
+"configuration.layout.result.edit" = "카드 내용 편집";
+
+/* Release UI polish: anchors and local backups */
+"删除时间锚点？" = "이 시간 기준점을 삭제할까요?";
+"使用这个时间锚点的配置需要重新选择时间锚点。此操作无法撤销。" = "이 시간 기준점을 사용하는 설정에서는 다른 시간 기준점을 다시 선택해야 합니다. 이 작업은 되돌릴 수 없습니다.";
+"至少保留一个时间锚点" = "시간 기준점을 하나 이상 유지해 주세요";
+"新增另一个时间锚点后，才能删除当前时间锚点。" = "다른 시간 기준점을 추가한 후 현재 기준점을 삭제할 수 있습니다.";
+"订阅 MemoMark+ 后添加更多时间锚点" = "MemoMark+를 구독하여 시간 기준점을 더 추가하세요";
+"配置时间锚点" = "시간 기준점 설정";
+"已选择" = "선택됨";
+"未选择" = "선택 안 됨";
+"用照片拍摄时间计算当时的年龄，也可以表达出生前倒数。" = "사진 촬영 당시의 나이나 출생까지 남은 시간을 표시합니다.";
+"用照片拍摄时间表达相识或相伴了多久。" = "사진 촬영 날짜를 기준으로 서로 알게 되거나 함께한 시간을 표시합니다.";
+"用照片拍摄时间表达共同走过的时间和纪念日。" = "사진 촬영 날짜를 기준으로 함께한 시간과 기념일을 표시합니다.";
+"用照片拍摄时间表达距离目标还有多久。" = "사진 촬영 날짜를 기준으로 목표까지 남은 시간을 표시합니다.";
+"为旅行、毕业、搬家或其他人生时刻设置自己的时间锚点。" = "여행, 졸업, 이사 등 삶의 순간을 위한 시간 기준점을 설정하세요.";
+"生日 / 出生" = "생일 / 출생";
+"恋爱纪念" = "연애 기념일";
+"结婚纪念" = "결혼 기념일";
+"未来目标" = "미래 목표";
+"自定义" = "사용자 지정";
+"在配置中心选择这个时间锚点。" = "설정 센터에서 이 시간 기준점을 선택하세요.";
+"处理照片时，会按每张照片的拍摄时间计算。" = "사진 처리 시에는 각 사진의 촬영 날짜를 사용합니다.";
+"最终怎样写在记忆卡上，仍然由你决定。" = "추억 카드에 어떻게 표현할지는 직접 결정할 수 있습니다.";
+"时间" = "시간";
+"还没有本地备份" = "아직 로컬 백업이 없습니다";
+"删除本地备份？" = "이 로컬 백업을 삭제할까요?";
+"修改会实时出现在上方完整卡片预览中。" = "변경 사항은 위의 전체 카드 미리보기에 바로 반영됩니다.";
+"处理照片时，这些信息会替换为每张照片对应的内容。" = "사진 처리 시 이 정보는 각 사진에 해당하는 내용으로 바뀝니다.";
+"这里的内容还会写入 Apple Photos 的照片说明，方便之后查找。" = "이 내용은 나중에 찾기 쉽도록 Apple Photos의 사진 설명에도 저장됩니다.";
+"time_anchor.delete.named" = "“%@”을(를) 삭제할까요?";
+"local_backup.delete.named" = "“%@” 백업을 삭제할까요?";
+"local_backup.revision_date" = "버전 %@ · %@";
+
+"configuration.card_editor.insertion_position" = "정보 삽입 위치";

@@ -51,15 +51,10 @@ struct InterfacePreferencesContent: View {
         }
     }
 
-    @ViewBuilder private var interfaceLanguagePicker: some View {
-        if usesAccessibilityPickerStyle {
-            interfaceLanguagePickerBase
-                .pickerStyle(.menu)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        } else {
-            interfaceLanguagePickerBase.pickerStyle(.segmented)
-                .tint(.accentColor)
-        }
+    private var interfaceLanguagePicker: some View {
+        interfaceLanguagePickerBase
+            .pickerStyle(.menu)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
     }
 
     private var interfaceLanguagePickerBase: some View {

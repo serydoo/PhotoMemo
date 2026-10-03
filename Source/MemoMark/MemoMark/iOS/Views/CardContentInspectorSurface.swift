@@ -73,7 +73,7 @@ struct CardContentInspectorSurface<EditorContent: View>: View {
         Group {
             Button(action: onToggleModuleLibrary) {
                 Label(
-                    localized("configuration.card_editor.add_module", fallback: "模块"),
+                    localized("configuration.card_editor.add_module", fallback: "插入信息"),
                     systemImage: isModuleLibraryPresented ? "minus" : "plus"
                 )
                 .labelStyle(.titleAndIcon)

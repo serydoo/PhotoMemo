@@ -209,7 +209,7 @@ struct SettingsDisclosureContractTests {
         #expect(supportRows.contains("struct SettingsPrivacyRow"))
         #expect(supportRows.contains("private struct SettingsRowIcon"))
         #expect(source.contains("settings.version.compact_format"))
-        #expect(source.contains("private var aboutMemoMarkSheet"))
+        #expect(source.contains("private var aboutMemoMarkPage"))
         #expect(!source.contains("Xcode Cloud 构建"))
         #expect(!source.contains("系统扩展内存压力"))
         #expect(!source.contains("欢迎在小红书等公开渠道分享体验"))
@@ -304,7 +304,7 @@ struct SettingsDisclosureContractTests {
         #expect(!memoMarkPlusCard.contains("firstRecorderDate"))
     }
 
-    @Test("settings combines appearance and language with matching adaptive controls")
+    @Test("settings keeps adaptive appearance and native language menu")
     func settingsCombinesAppearanceAndLanguageWithMatchingAdaptiveControls() throws {
         let source = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
@@ -325,7 +325,7 @@ struct SettingsDisclosureContractTests {
         #expect(source.contains("interfaceLanguageBinding"))
         #expect(source.contains("InterfacePreferencesContent.summary("))
         #expect(preferencesContent.contains("MemoMarkAppearancePreference.allCases"))
-        #expect(preferencesContent.components(separatedBy: ".pickerStyle(.segmented)").count - 1 >= 2)
+        #expect(preferencesContent.components(separatedBy: ".pickerStyle(.segmented)").count - 1 >= 1)
         #expect(preferencesContent.components(separatedBy: ".pickerStyle(.menu)").count - 1 >= 2)
 
         #expect(source.contains("settings.interface_preferences.title"))
@@ -357,7 +357,9 @@ struct SettingsDisclosureContractTests {
         #expect(settingsSource.contains("var showsWorkflowGuide: Bool"))
         #expect(settingsSource.contains("isPresented: $showsWorkflowGuide"))
         #expect(settingsSource.contains("showsWorkflowGuide = true"))
-        #expect(settingsSource.contains("showsWorkflowGuide = false"))
+        #expect(settingsSource.contains(".navigationDestination(isPresented: $showsWorkflowGuide)"))
+        #expect(settingsSource.contains("embedsNavigationStack: false"))
+        #expect(!settingsSource.contains(".sheet(isPresented: $showsWorkflowGuide)"))
         #expect(!settingsSource.contains("let onShowWorkflow"))
         #expect(workflowSource.contains("let onClose: (() -> Void)?"))
         #expect(workflowSource.contains("welcome.workflow.close"))

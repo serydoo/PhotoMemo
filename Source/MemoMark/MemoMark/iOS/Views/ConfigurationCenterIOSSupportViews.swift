@@ -640,7 +640,7 @@ struct IOSRegionComposer: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(language.localized(
                 key: "configuration.modules.system",
-                fallback: "系统模块"
+                fallback: "系统信息"
             ))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)

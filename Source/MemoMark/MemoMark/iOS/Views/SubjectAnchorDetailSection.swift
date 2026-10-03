@@ -1,6 +1,10 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 
+private func uiText(_ key: String) -> String {
+    MemoMarkLanguage.interfaceStored.localized(key: key, fallback: key)
+}
+
 struct SubjectAnchorDetailSection: View {
 
     private var interfaceLanguage: MemoMarkLanguage {
@@ -90,7 +94,7 @@ struct SubjectAnchorDetailSection: View {
                             .padding(.leading, 12)
                             .contentShape(Rectangle())
                             .zIndex(2)
-                            .accessibilityLabel("删除时间锚点")
+                            .accessibilityLabel(uiText("删除时间锚点"))
                         }
                     }
                     .animation(
@@ -102,7 +106,7 @@ struct SubjectAnchorDetailSection: View {
                         allowsFullSwipe: false
                     ) {
                         if allowsSwipeDeletion {
-                            Button("删除", role: .destructive) {
+                            Button(uiText("删除"), role: .destructive) {
                                 requestDeletion(anchor)
                             }
                             .tint(.red)
@@ -129,7 +133,7 @@ struct SubjectAnchorDetailSection: View {
                     }
                 } else {
                     HorizontalDivider(horizontalInset: 16)
-                    Text("最多保留 5 个时间锚点")
+                    Text(uiText("最多保留 5 个时间锚点"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 16)
@@ -163,8 +167,8 @@ struct SubjectAnchorDetailSection: View {
                 .memoMarkSheet(.editor, detents: [.large])
             }
             .alert(
-                pendingDeleteAnchor.map { "删除“\($0.title)”？" }
-                    ?? "删除时间锚点？",
+                pendingDeleteAnchor.map { String(format: uiText("time_anchor.delete.named"), $0.title) }
+                    ?? uiText("删除时间锚点？"),
                 isPresented: Binding(
                     get: { pendingDeleteAnchor != nil },
                     set: { isPresented in
@@ -174,22 +178,22 @@ struct SubjectAnchorDetailSection: View {
                     }
                 )
             ) {
-                Button("取消", role: .cancel) {
+                Button(uiText("取消"), role: .cancel) {
                     pendingDeleteAnchor = nil
                 }
-                Button("删除时间锚点", role: .destructive) {
+                Button(uiText("删除时间锚点"), role: .destructive) {
                     deletePendingAnchor()
                 }
             } message: {
-                Text("使用这个时间锚点的配置需要重新选择时间锚点。此操作无法撤销。")
+                Text(uiText("使用这个时间锚点的配置需要重新选择时间锚点。此操作无法撤销。"))
             }
             .alert(
-                "至少保留一个时间锚点",
+                uiText("至少保留一个时间锚点"),
                 isPresented: $showsLastAnchorWarning
             ) {
-                Button("好", role: .cancel) {}
+                Button(uiText("好"), role: .cancel) {}
             } message: {
-                Text("新增另一个时间锚点后，才能删除当前时间锚点。")
+                Text(uiText("新增另一个时间锚点后，才能删除当前时间锚点。"))
             }
         }
     }
@@ -220,8 +224,8 @@ struct SubjectAnchorDetailSection: View {
 
                 Text(
                     canAddTimeAnchor
-                    ? "添加时间锚点"
-                    : "订阅 MemoMark+ 后添加更多时间锚点"
+                    ? uiText("添加时间锚点")
+                    : uiText("订阅 MemoMark+ 后添加更多时间锚点")
                 )
                     .font(.body)
                     .foregroundStyle(.primary)
@@ -233,7 +237,7 @@ struct SubjectAnchorDetailSection: View {
             .accessibilityIdentifier("subject-add-anchor")
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("添加时间锚点")
+        .accessibilityLabel(uiText("添加时间锚点"))
         .accessibilityIdentifier("subject-add-anchor")
     }
 
@@ -417,8 +421,8 @@ private struct SubjectAnchorSuggestionModule: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Text(anchor.title)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
 
                     Text(
                         localized(
@@ -426,13 +430,13 @@ private struct SubjectAnchorSuggestionModule: View {
                             fallback: "示例"
                         )
                     )
-                        .font(.caption2.weight(.semibold))
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(Color.secondary.opacity(0.12))
+                                .fill(Color.secondary.opacity(0.06))
                         )
                 }
 
@@ -455,41 +459,45 @@ private struct SubjectAnchorSuggestionModule: View {
 
             Spacer(minLength: 8)
 
-            Button(
-                isPlusAccess
-                ? localized(
-                    "time_anchor.suggestions.add",
-                    fallback: "添加"
-                )
-                : localized(
-                    "time_anchor.suggestions.customize",
-                    fallback: "自定义"
-                )
-            ) {
+            Button {
                 onConfigure()
+            } label: {
+                Text(
+                    isPlusAccess
+                        ? localized(
+                            "time_anchor.suggestions.add",
+                            fallback: "添加"
+                        )
+                        : localized(
+                            "time_anchor.suggestions.customize",
+                            fallback: "自定义"
+                        )
+                )
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
             }
-            .font(.subheadline.weight(.semibold))
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-        .accessibilityLabel(
-            isPlusAccess
-                ? String(
-                    format: localized(
-                        "time_anchor.suggestions.add_accessibility",
-                        fallback: "添加%@时间锚点"
-                    ),
-                    locale: interfaceLanguage.locale,
-                    anchor.title
-                )
-                : String(
-                    format: localized(
-                        "time_anchor.suggestions.customize_accessibility",
-                        fallback: "订阅 MemoMark+ 后自定义%@"
-                    ),
-                    locale: interfaceLanguage.locale,
-                    anchor.title
-                )
-        )
+            .font(.subheadline.weight(.medium))
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
+            .accessibilityLabel(
+                isPlusAccess
+                    ? String(
+                        format: localized(
+                            "time_anchor.suggestions.add_accessibility",
+                            fallback: "添加%@时间锚点"
+                        ),
+                        locale: interfaceLanguage.locale,
+                        anchor.title
+                    )
+                    : String(
+                        format: localized(
+                            "time_anchor.suggestions.customize_accessibility",
+                            fallback: "订阅 MemoMark+ 后自定义%@"
+                        ),
+                        locale: interfaceLanguage.locale,
+                        anchor.title
+                    )
+            )
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -570,17 +578,17 @@ struct SubjectAnchorDetailModule: View {
         .contentShape(Rectangle())
         .onTapGesture(perform: onConfigure)
         .contextMenu {
-            Button("配置", action: onConfigure)
-            Button("删除", role: .destructive, action: onDelete)
+            Button(uiText("配置"), action: onConfigure)
+            Button(uiText("删除"), role: .destructive, action: onDelete)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
             "\(anchor.title)，\(dateText)，\(anchorTypeAccessibilityLabel)"
         )
-        .accessibilityAction(named: "配置时间锚点") {
+        .accessibilityAction(named: uiText("配置时间锚点")) {
             onConfigure()
         }
-        .accessibilityAction(named: "删除时间锚点") {
+        .accessibilityAction(named: uiText("删除时间锚点")) {
             onDelete()
         }
         .accessibilityAction(named: localized(
@@ -779,11 +787,11 @@ private struct SubjectAnchorCompactEditor: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .background(ConfigurationUI.appBackground)
-            .navigationTitle("时间锚点")
+            .navigationTitle(uiText("时间锚点"))
             .navigationBarTitleDisplayMode(.inline)
             .memoMarkEditorSheetToolbar(
-                cancelTitle: "取消",
-                doneTitle: "完成",
+                cancelTitle: uiText("取消"),
+                doneTitle: uiText("完成"),
                 doneAccessibilityIdentifier: "anchor-editor-save",
                 onCancel: onCancel,
                 onDone: onSave
@@ -820,7 +828,7 @@ private struct SubjectAnchorCompactEditor: View {
     }
 
     private var nameLabel: some View {
-        Text("名称")
+        Text(uiText("名称"))
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .frame(minWidth: 48, alignment: .leading)
@@ -864,7 +872,7 @@ private struct SubjectAnchorCompactEditor: View {
                         )
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("今天的时间答案")
+                        Text(uiText("今天的时间答案"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -879,7 +887,7 @@ private struct SubjectAnchorCompactEditor: View {
                     Spacer(minLength: 0)
                 }
 
-                Text("这里先按今天预览；处理照片时，会按每张照片的拍摄时间计算。")
+                Text(uiText("这里先按今天预览；处理照片时，会按每张照片的拍摄时间计算。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -895,11 +903,11 @@ private struct SubjectAnchorCompactEditor: View {
 
     private var anchorSetupPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("这个日子属于哪一类？")
+            Text(uiText("这个日子属于哪一类？"))
                 .font(.headline)
                 .foregroundStyle(.primary)
 
-            Text("类型决定它会表达年龄、纪念时间还是未来倒数。")
+            Text(uiText("类型决定它会表达年龄、纪念时间还是未来倒数。"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -918,11 +926,11 @@ private struct SubjectAnchorCompactEditor: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("日期")
+                Text(uiText("日期"))
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                Text("设置这个时间锚点发生或开始的日期。")
+                Text(uiText("设置这个时间锚点发生或开始的日期。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -1011,36 +1019,36 @@ private struct SubjectAnchorCompactEditor: View {
         .accessibilityIdentifier("anchor-type-\(type.rawValue)")
         .buttonStyle(.plain)
         .accessibilityLabel(anchorTypeSelectionTitle(type))
-        .accessibilityValue(isSelected ? "已选择" : "未选择")
+        .accessibilityValue(isSelected ? uiText("已选择") : uiText("未选择"))
     }
 
     private var typeHelperText: String {
         switch anchor.resolvedAnchorType {
         case .birthday:
-            return "用照片拍摄时间计算当时的年龄，也可以表达出生前倒数。"
+            return uiText("用照片拍摄时间计算当时的年龄，也可以表达出生前倒数。")
         case .relationship:
-            return "用照片拍摄时间表达相识或相伴了多久。"
+            return uiText("用照片拍摄时间表达相识或相伴了多久。")
         case .marriage:
-            return "用照片拍摄时间表达共同走过的时间和纪念日。"
+            return uiText("用照片拍摄时间表达共同走过的时间和纪念日。")
         case .exam:
-            return "用照片拍摄时间表达距离目标还有多久。"
+            return uiText("用照片拍摄时间表达距离目标还有多久。")
         case .custom:
-            return "为旅行、毕业、搬家或其他人生时刻设置自己的时间锚点。"
+            return uiText("为旅行、毕业、搬家或其他人生时刻设置自己的时间锚点。")
         }
     }
 
     private func anchorTypeSelectionTitle(_ type: AnchorType) -> String {
         switch type {
         case .birthday:
-            return "生日 / 出生"
+            return uiText("生日 / 出生")
         case .relationship:
-            return "恋爱纪念"
+            return uiText("恋爱纪念")
         case .marriage:
-            return "结婚纪念"
+            return uiText("结婚纪念")
         case .exam:
-            return "未来目标"
+            return uiText("未来目标")
         case .custom:
-            return "自定义"
+            return uiText("自定义")
         }
     }
 
@@ -1076,13 +1084,13 @@ private struct SubjectAnchorCompactEditor: View {
 
     private var usageGuidance: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("设置后会怎样？")
+            Text(uiText("设置后会怎样？"))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            guidanceRow(number: 1, text: "在配置中心选择这个时间锚点。")
-            guidanceRow(number: 2, text: "处理照片时，会按每张照片的拍摄时间计算。")
-            guidanceRow(number: 3, text: "最终怎样写在记忆卡上，仍然由你决定。")
+            guidanceRow(number: 1, text: uiText("在配置中心选择这个时间锚点。"))
+            guidanceRow(number: 2, text: uiText("处理照片时，会按每张照片的拍摄时间计算。"))
+            guidanceRow(number: 3, text: uiText("最终怎样写在记忆卡上，仍然由你决定。"))
         }
         .padding(.horizontal, ConfigurationUI.sheetPanelPadding)
         .padding(.vertical, 8)
@@ -1130,7 +1138,7 @@ private struct CompactSubjectAnchorDatePicker: View {
 
     var body: some View {
         DatePicker(
-            "时间",
+            uiText("时间"),
             selection: $selection,
             displayedComponents: .date
         )
@@ -1138,7 +1146,7 @@ private struct CompactSubjectAnchorDatePicker: View {
         .labelsHidden()
         .frame(height: 154)
         .clipped()
-        .accessibilityLabel("锚点时间")
+        .accessibilityLabel(uiText("锚点时间"))
     }
 }
 #endif

@@ -29991,3 +29991,8 @@ Final delivery closure: main4392f3e1 native integration, b447f11a Unicode fix,28
 116 iOS Release未签名构建及App／Share／Widget包内版本通过。修改的Source／Tests与全量测试镜像哈希一致。首页修复提交6699986；本次发布整理提交与GitHub远端结果在执行后确认。
 
 116 GitHub同步已完成：origin/main由8828dd34推进至f93ddfef84473cdd549fca1a9d52bef1b557a719，ls-remote与本地HEAD一致。首页修复6699986和116版本／四语／四套材料均已入库；仅追加同步结果文档。Source／Tests无残留修改，未冻结研究、私人资产、config和无关文档保留。未执行TestFlight上传或App Store提交；116启动仍因锁屏待验证，Release Evidence Open。
+
+
+### 2026-10-03 — MemoMark 2.3.5（122）发布准备与 GitHub 同步
+
+负责人指定正式版 2.3.4 为更新起点，沿用 2.3.5，所有 target 构建号维护为 122。纳入已接受的预览披露、设置导航、四语言和界面优化，以及已有 116 功能修复；未冻结 Research、Outreach 和旧商店草稿留在本地。122 验证和远端回执见 `Docs/07_Releases/2026-10-03-2.3.5-122-sync-manifest.md`。本轮准备 TestFlight，未上传或提交 App Store；真机人工与媒体认证不由构建代替。

@@ -151,11 +151,10 @@ struct SettingsExpressionGuideContractTests {
         )
         #expect(!settingsSource.contains("settings.expression_guide.title"))
         #expect(gettingStartedSource.contains("Button(action: action)"))
-        #expect(settingsSource.contains(".sheet(isPresented: $showsExpressionGuide)"))
-        #expect(settingsSource.contains("private var expressionGuideSheet"))
+        #expect(settingsSource.contains(".navigationDestination(isPresented: $showsExpressionGuide)"))
+        #expect(settingsSource.contains("private var expressionGuidePage"))
         #expect(settingsSource.contains("SettingsExpressionGuide("))
-        #expect(settingsSource.contains("key: \"common.done\""))
-        #expect(settingsSource.contains(".memoMarkSheet(.browser)"))
+        #expect(!settingsSource.contains(".sheet(isPresented: $showsExpressionGuide)"))
     }
 
     @Test("settings keeps the concise local-first story after Home dismissal")

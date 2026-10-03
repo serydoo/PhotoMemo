@@ -209,8 +209,19 @@ struct WelcomePageSurface: View {
     let onStart: () -> Void
     let onShowWorkflow: () -> Void
 
+    var embedsNavigationStack = true
+
+    @ViewBuilder
     var body: some View {
-        NavigationStack {
+        if embedsNavigationStack {
+            NavigationStack { pageContent }
+        } else {
+            pageContent
+        }
+    }
+
+    private var pageContent: some View {
+        Group {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     WelcomeHeroSection(
@@ -560,8 +571,19 @@ struct WorkflowGuideSurface: View {
     let language: MemoMarkLanguage
     let onClose: (() -> Void)?
 
+    var embedsNavigationStack = true
+
+    @ViewBuilder
     var body: some View {
-        NavigationStack {
+        if embedsNavigationStack {
+            NavigationStack { pageContent }
+        } else {
+            pageContent
+        }
+    }
+
+    private var pageContent: some View {
+        Group {
             ScrollView {
                 VStack(spacing: 18) {
                     ConfigurationCardSurface(

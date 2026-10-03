@@ -70,7 +70,7 @@ struct MemoMarkiOSHomeView: View {
                             backgroundStatusSymbolName
                     )
                 }
-                .accessibilityLabel("后台状态")
+                .accessibilityLabel(MemoMarkLanguage.interfaceStored.localized(key: "后台状态", fallback: "后台状态"))
             }
         }
         .sheet(

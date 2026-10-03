@@ -27,6 +27,8 @@ struct MemoryCardEditorPageSurface<
     let editorRevealProgress: CGFloat
     let pageTitle: String?
     let pageSubtitle: String?
+    let isPreviewVisible: Bool
+    let onTogglePreview: (() -> Void)?
     let previewWidthPolicy: ConfigurationPreviewWidthPolicy
     let editorScrollRequest: ConfigurationEditorScrollRequest?
     let editorContentOwnsScrolling: Bool
@@ -40,6 +42,8 @@ struct MemoryCardEditorPageSurface<
         editorRevealProgress: CGFloat,
         pageTitle: String?,
         pageSubtitle: String?,
+        isPreviewVisible: Bool = true,
+        onTogglePreview: (() -> Void)? = nil,
         previewWidthPolicy: ConfigurationPreviewWidthPolicy = .readable,
         editorScrollRequest: ConfigurationEditorScrollRequest? = nil,
         editorContentOwnsScrolling: Bool = false,
@@ -52,6 +56,8 @@ struct MemoryCardEditorPageSurface<
         self.editorRevealProgress = editorRevealProgress
         self.pageTitle = pageTitle
         self.pageSubtitle = pageSubtitle
+        self.isPreviewVisible = isPreviewVisible
+        self.onTogglePreview = onTogglePreview
         self.previewWidthPolicy = previewWidthPolicy
         self.editorScrollRequest = editorScrollRequest
         self.editorContentOwnsScrolling = editorContentOwnsScrolling
@@ -73,17 +79,40 @@ struct MemoryCardEditorPageSurface<
                     .ignoresSafeArea()
             )
             .coordinateSpace(name: "configuration-center-scroll")
+            .animation(
+                reduceMotion ? nil : .easeInOut(duration: 0.2),
+                value: isPreviewVisible
+            )
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 accessoryContent
             }
     }
 
-    @ViewBuilder
     private var adaptiveContent: some View {
-        if usesSplitConfigurationLayout {
-            sideBySideContent
-        } else {
-            stackedContent
+        // AnyLayout preserves the preview's inspection state when a wide
+        // configuration changes between split and collapsed presentation.
+        let usesSplit = usesSplitConfigurationLayout && isPreviewVisible
+        let layout = usesSplit
+            ? AnyLayout(HStackLayout(alignment: .top, spacing: 0))
+            : AnyLayout(VStackLayout(spacing: 0))
+
+        return layout {
+            previewPane
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: usesSplit ? .infinity : nil,
+                    alignment: .top
+                )
+                .zIndex(1)
+
+            if usesSplit {
+                Rectangle()
+                    .fill(ConfigurationUI.faintHairline)
+                    .frame(width: 0.5)
+            }
+
+            editorPane
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -91,41 +120,6 @@ struct MemoryCardEditorPageSurface<
         AdaptivePageLayout.usesRegularWorkspace(
             hasRegularHorizontalSizeClass: horizontalSizeClass == .regular,
             hasRegularVerticalSizeClass: verticalSizeClass == .regular
-        )
-    }
-
-    private var stackedContent: some View {
-        VStack(spacing: 0) {
-            previewPane
-                .zIndex(1)
-
-            editorPane
-        }
-    }
-
-    private var sideBySideContent: some View {
-        HStack(alignment: .top, spacing: 0) {
-            previewPane
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: .infinity,
-                    alignment: .top
-                )
-
-            Rectangle()
-                .fill(ConfigurationUI.faintHairline)
-                .frame(width: 0.5)
-
-            editorPane
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: .infinity
-                )
-        }
-        .frame(
-            maxWidth: .infinity,
-            maxHeight: .infinity,
-            alignment: .top
         )
     }
 
@@ -154,11 +148,17 @@ struct MemoryCardEditorPageSurface<
     }
 
     private var previewPaneCore: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: isPreviewVisible ? ConfigurationUI.contentSpacing : 0) {
             if let pageTitle, let pageSubtitle {
                 ConfigurationPageHeader(
                     pageTitle,
-                    subtitle: pageSubtitle
+                    subtitle: pageSubtitle,
+                    previewToggleTitle: onTogglePreview == nil ? nil : (
+                        isPreviewVisible ? "configuration.preview.collapse" : "configuration.preview.expand"
+                    ),
+                    previewAccessibilityValue: isPreviewVisible
+                        ? "configuration.preview.visible" : "configuration.preview.hidden",
+                    onTogglePreview: onTogglePreview
                 )
             }
 
@@ -167,6 +167,12 @@ struct MemoryCardEditorPageSurface<
                     maxWidth: .infinity,
                     alignment: .center
                 )
+                // Keep inspection state alive while releasing all preview height.
+                .frame(height: isPreviewVisible ? nil : 0)
+                .clipped()
+                .opacity(isPreviewVisible ? 1 : 0)
+                .allowsHitTesting(isPreviewVisible)
+                .accessibilityHidden(!isPreviewVisible)
         }
         .padding(.top, 10)
         .padding(.bottom, 10)

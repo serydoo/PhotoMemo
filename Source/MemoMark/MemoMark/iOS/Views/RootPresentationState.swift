@@ -39,6 +39,7 @@ struct LocalConfigurationLibraryPresentationState {
 /// output configuration, bootstrap state, and persistence status. Those values
 /// have separate lifecycle and truth boundaries.
 struct RootPresentationState {
+    var previewVisibility = ConfigurationPreviewVisibilityState()
     var configurationDisclosureState =
         ConfigurationDisclosureState()
     var mediaPickerPresentation =

@@ -223,17 +223,17 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "更新日志";
 "settings.version.release_notes_detail" = "看看时光记最近有哪些变化。";
-"settings.release_notes.header" = "这次更新细化极简表达与首页预设，并继续完善玻璃卡片。";
+"settings.release_notes.header" = "这次更新让记忆卡预览与设置更自然，也继续完善极简表达。";
 "settings.release_notes.version_format" = "版本 %@";
 "settings.release_notes.positioning" = "让文字安静地留在照片上，让每段回忆保留自己的表达。";
-"settings.release_notes.time_expression.title" = "极简更稳，玻璃卡片继续完善";
-"settings.release_notes.time_expression.item_one" = "极简样式改善了较长文字的宽度适配，让横竖照片上的表达更稳定。";
-"settings.release_notes.time_expression.item_two" = "玻璃卡片正在完善原生玻璃效果和动态照片呈现。正式选择入口暂未开放，后续将继续打磨可读性、颜色与更多照片的适配。";
-"settings.release_notes.configuration.title" = "首页预设更清楚";
-"settings.release_notes.configuration.item_one" = "普通字号下，预设说明优先保持一行；较长内容会适度收紧和缩小，辅助功能大字号保留多行阅读。";
-"settings.release_notes.configuration.item_two" = "玻璃卡片的预览与输出使用一致的布局，便于继续核对照片中的文字与位置。";
+"settings.release_notes.time_expression.title" = "预览与设置更从容";
+"settings.release_notes.time_expression.item_one" = "配置中心可以显示或收起预览；编辑卡片内容时仍能看到照片，完成后恢复原来的选择。";
+"settings.release_notes.time_expression.item_two" = "调整预览留白与控件，整理设置层级，让介绍、使用帮助和更新日志的返回更自然。";
+"settings.release_notes.configuration.title" = "表达与说明更清楚";
+"settings.release_notes.configuration.item_one" = "改善极简长文字与首页预设说明的宽度适配；辅助功能大字号保留多行阅读。";
+"settings.release_notes.configuration.item_two" = "优化时间锚点、备份和编辑说明。玻璃卡片继续完善，正式选择入口暂未开放。";
 "settings.release_notes.saving.title" = "保存你的表达";
-"settings.release_notes.saving.item_one" = "修复了 JPEG 中文等文字说明的保存问题，让照片中的表达记录得更完整。";
+"settings.release_notes.saving.item_one" = "修复了多语言 JPEG 说明保存与 Live Photo 关键帧时间信息保留问题。";
 "settings.release_notes.saving.item_two" = "照片继续在设备本地处理，原图保持不变；保存的是新的记忆照片。";
 "settings.release_notes.closing" = "感谢你的反馈，我们会继续把每处细节打磨得更自然。";
 "settings.navigation.title" = "设置";
@@ -1137,7 +1137,7 @@
 "configuration.editor.configuration_name" = "配置名称";
 "configuration.editor.saved" = "已保存";
 "configuration.editor.save" = "保存配置";
-"configuration.modules.system" = "系统模块";
+"configuration.modules.system" = "系统信息";
 "configuration.modules.subject" = "对象昵称";
 "configuration.modules.smart" = "记忆表达";
 "configuration.modules.anchor" = "时间锚点";
@@ -1478,7 +1478,7 @@
 "configuration.card_editor.title" = "卡片内容";
 "configuration.card_editor.subtitle" = "组合文字、照片信息与记忆表达。";
 "configuration.card_editor.subtitle.focused" = "正在编辑%@";
-"configuration.card_editor.add_module" = "模块";
+"configuration.card_editor.add_module" = "插入信息";
 "configuration.card_editor.done" = "完成";
 "configuration.card_editor.dismiss_keyboard" = "收起键盘";
 "configuration.card_editor.accessibility_label" = "卡片内容编辑";
@@ -1488,9 +1488,9 @@
 "configuration.card_editor.slotB.title" = "左下";
 "configuration.card_editor.slotC.title" = "右上";
 "configuration.card_editor.slotD.title" = "右下";
-"configuration.card_editor.undo.insert_module" = "插入模块";
+"configuration.card_editor.undo.insert_module" = "插入信息";
 "configuration.card_editor.undo.paste_content" = "粘贴内容";
-"configuration.card_editor.undo.delete_module" = "删除模块";
+"configuration.card_editor.undo.delete_module" = "删除信息";
 "configuration.action.reset.title" = "恢复默认配置？";
 "configuration.action.delete.title" = "删除当前配置？";
 "task.progress.stage.preparingRAWPhoto" = "正在准备 RAW 照片";
@@ -1511,7 +1511,7 @@
 "task.progress.stage.cancelled" = "已取消";
 "task.progress.stage.backgroundExpired" = "后台处理时间已结束，请重试";
 "accessibility.subject.switch_format" = "切换到%@";
-"accessibility.region.module_candidates_format" = "%@的模块候选";
+"accessibility.region.module_candidates_format" = "%@的可插入信息";
 "configuration.library.subject_title_format" = "%@的配置";
 "accessibility.editor.slotA.label" = "左上内容";
 "accessibility.editor.slotB.label" = "左下内容";
@@ -1611,7 +1611,7 @@
 "subject.overview.fact.label" = "专属称呼";
 "subject.overview.subject.fallback" = "记忆对象";
 "configuration.modules.insert.accessibility" = "插入%@，当前值%@";
-"configuration.modules.accessibility.unavailable" = "模块不可用，%@";
+"configuration.modules.accessibility.unavailable" = "信息不可用，%@";
 "configuration.modules.accessibility.value" = "%@，%@";
 "configuration.modules.category.photo_information" = "照片信息";
 "configuration.modules.category.memory_expression" = "记忆表达";
@@ -1844,3 +1844,44 @@
 "Batch.GlassCardOverflow.Failed.Recovery" = "请缩短对应区域的内容，然后重新处理。";
 "GlassCard.Preview.Empty" = "请填写卡片内容";
 "GlassCard.Preview.Overflow" = "内容过长，请缩短对应区域的内容";
+
+/* Configuration preview visibility */
+"configuration.preview.collapse" = "收起预览";
+"configuration.preview.expand" = "展开预览";
+"configuration.preview.visible" = "已展开";
+"configuration.preview.hidden" = "已收起";
+"configuration.layout.result.edit" = "编辑卡片内容";
+
+/* Release UI polish: anchors and local backups */
+"删除时间锚点？" = "删除时间锚点？";
+"使用这个时间锚点的配置需要重新选择时间锚点。此操作无法撤销。" = "使用这个时间锚点的配置需要重新选择时间锚点。此操作无法撤销。";
+"至少保留一个时间锚点" = "至少保留一个时间锚点";
+"新增另一个时间锚点后，才能删除当前时间锚点。" = "新增另一个时间锚点后，才能删除当前时间锚点。";
+"订阅 MemoMark+ 后添加更多时间锚点" = "订阅 MemoMark+ 后添加更多时间锚点";
+"配置时间锚点" = "配置时间锚点";
+"已选择" = "已选择";
+"未选择" = "未选择";
+"用照片拍摄时间计算当时的年龄，也可以表达出生前倒数。" = "用照片拍摄时间计算当时的年龄，也可以表达出生前倒数。";
+"用照片拍摄时间表达相识或相伴了多久。" = "用照片拍摄时间表达相识或相伴了多久。";
+"用照片拍摄时间表达共同走过的时间和纪念日。" = "用照片拍摄时间表达共同走过的时间和纪念日。";
+"用照片拍摄时间表达距离目标还有多久。" = "用照片拍摄时间表达距离目标还有多久。";
+"为旅行、毕业、搬家或其他人生时刻设置自己的时间锚点。" = "为旅行、毕业、搬家或其他人生时刻设置自己的时间锚点。";
+"生日 / 出生" = "生日 / 出生";
+"恋爱纪念" = "恋爱纪念";
+"结婚纪念" = "结婚纪念";
+"未来目标" = "未来目标";
+"自定义" = "自定义";
+"在配置中心选择这个时间锚点。" = "在配置中心选择这个时间锚点。";
+"处理照片时，会按每张照片的拍摄时间计算。" = "处理照片时，会按每张照片的拍摄时间计算。";
+"最终怎样写在记忆卡上，仍然由你决定。" = "最终怎样写在记忆卡上，仍然由你决定。";
+"时间" = "时间";
+"还没有本地备份" = "还没有本地备份";
+"删除本地备份？" = "删除本地备份？";
+"修改会实时出现在上方完整卡片预览中。" = "修改会实时出现在上方完整卡片预览中。";
+"处理照片时，这些信息会替换为每张照片对应的内容。" = "处理照片时，这些信息会替换为每张照片对应的内容。";
+"这里的内容还会写入 Apple Photos 的照片说明，方便之后查找。" = "这里的内容还会写入 Apple Photos 的照片说明，方便之后查找。";
+"time_anchor.delete.named" = "删除“%@”？";
+"local_backup.delete.named" = "删除“%@”备份？";
+"local_backup.revision_date" = "版本 %@ · %@";
+
+"configuration.card_editor.insertion_position" = "信息插入位置";

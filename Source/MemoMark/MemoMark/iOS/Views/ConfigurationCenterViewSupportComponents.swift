@@ -9,29 +9,43 @@ struct ConfigurationPageHeader: View {
 
     let title: String
     let subtitle: String?
+    let previewToggleTitle: String?
+    let previewAccessibilityValue: String?
+    let onTogglePreview: (() -> Void)?
 
     init(
         _ title: String,
-        subtitle: String? = nil
+        subtitle: String? = nil,
+        previewToggleTitle: String? = nil,
+        previewAccessibilityValue: String? = nil,
+        onTogglePreview: (() -> Void)? = nil
     ) {
         self.title = title
         self.subtitle = subtitle
+        self.previewToggleTitle = previewToggleTitle
+        self.previewAccessibilityValue = previewAccessibilityValue
+        self.onTogglePreview = onTogglePreview
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(localized(title))
-                .font(.title2.weight(.bold))
-                .foregroundStyle(.primary)
-                .accessibilityAddTraits(.isHeader)
-
-            if let subtitle,
-               !subtitle.isEmpty {
-                Text(localized(subtitle))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
-                    .fixedSize(horizontal: false, vertical: true)
+        Group {
+            if previewToggleTitle != nil {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: ConfigurationUI.sheetSubtitleTopPadding) {
+                        titleAndSubtitle
+                        previewToggle
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                } else {
+                    HStack(alignment: .firstTextBaseline, spacing: ConfigurationUI.innerPanelPadding) {
+                        titleAndSubtitle
+                            .layoutPriority(1)
+                        Spacer(minLength: ConfigurationUI.innerPanelPadding)
+                        previewToggle
+                    }
+                }
+            } else {
+                titleAndSubtitle
             }
         }
         .frame(
@@ -39,6 +53,54 @@ struct ConfigurationPageHeader: View {
             alignment: .topLeading
         )
         .frame(maxWidth: .infinity, alignment: .leading)
+        // A fixed preview must not compress the heading and make its subtitle
+        // overflow into the gap reserved between the heading and the photo.
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var titleAndSubtitle: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            titleText
+
+            if let subtitle, !subtitle.isEmpty {
+                Text(localized(subtitle))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var titleText: some View {
+        Text(localized(title))
+            .font(.title2.weight(.bold))
+            .foregroundStyle(.primary)
+            .accessibilityAddTraits(.isHeader)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder
+    private var previewToggle: some View {
+        if let previewToggleTitle, let onTogglePreview {
+            Button(action: onTogglePreview) {
+                HStack(spacing: 5) {
+                    Text(localized(previewToggleTitle))
+                    Image(systemName: previewToggleTitle == "configuration.preview.collapse"
+                        ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.semibold))
+                }
+                .font(.subheadline)
+                .fixedSize()
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
+            .accessibilityLabel(localized(previewToggleTitle))
+            .accessibilityValue(localized(previewAccessibilityValue ?? ""))
+            .accessibilityIdentifier("configuration.preview.visibility")
+        }
     }
 
     private func localized(_ value: String) -> String {

@@ -39,25 +39,25 @@ struct MemoMarkDynamicInterfaceTextTests {
             MemoMarkDynamicInterfaceText.moduleCandidatesLabel(
                 regionTitle: "标题",
                 language: .simplifiedChinese
-            ) == "标题的模块候选"
+            ) == "标题的可插入信息"
         )
         #expect(
             MemoMarkDynamicInterfaceText.moduleCandidatesLabel(
                 regionTitle: "Title",
                 language: .english
-            ) == "Module options for Title"
+            ) == "Available information for Title"
         )
         #expect(
             MemoMarkDynamicInterfaceText.moduleCandidatesLabel(
                 regionTitle: "タイトル",
                 language: .japanese
-            ) == "タイトルのモジュール候補"
+            ) == "タイトルに挿入できる情報"
         )
         #expect(
             MemoMarkDynamicInterfaceText.moduleCandidatesLabel(
                 regionTitle: "제목",
                 language: .korean
-            ) == "제목 모듈 후보"
+            ) == "제목에 삽입할 수 있는 정보"
         )
     }
 

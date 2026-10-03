@@ -24,7 +24,7 @@ struct TimeAnchorEditingTransactionTests {
             ).count == 2
         )
         #expect(source.contains("NavigationStack {"))
-        #expect(source.contains(".navigationTitle(\"时间锚点\")"))
+        #expect(source.contains(".navigationTitle(uiText(\"时间锚点\"))"))
         #expect(source.contains(".navigationBarTitleDisplayMode(.inline)"))
         #expect(source.contains("ConfigurationSheetSubtitle("))
         #expect(source.contains(".safeAreaInset(edge: .top, spacing: 0)"))

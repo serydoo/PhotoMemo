@@ -44,20 +44,10 @@ struct MemoMarkPlusPurchaseView: View {
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(
-                    placement: .topBarTrailing
-                ) {
-                    Button(
-                        localized(
-                            "commerce.done",
-                            fallback: "完成"
-                        ),
-                        action: onDismiss
-                    )
-                        .font(.caption.weight(.semibold))
-                }
-            }
+            .memoMarkBrowserSheetToolbar(
+                doneTitle: localized("commerce.done", fallback: "完成"),
+                onDone: onDismiss
+            )
         }
         .memoMarkSheet(.browser)
     }

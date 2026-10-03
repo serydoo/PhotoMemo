@@ -31,7 +31,7 @@ struct SubjectOverviewSubjectRail: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("新增记忆对象")
+                .accessibilityLabel(MemoMarkLanguage.interfaceStored.localized(key: "新增记忆对象", fallback: "新增记忆对象"))
             }
             .padding(.horizontal, 2)
         }

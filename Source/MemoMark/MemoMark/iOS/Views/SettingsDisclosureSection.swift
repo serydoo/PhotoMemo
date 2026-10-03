@@ -15,6 +15,7 @@ struct SettingsDisclosureSection<Content: View>: View {
     let trailingValue: String?
     let language: MemoMarkLanguage
     let emphasis: SettingsSectionEmphasis
+    var hasStandaloneSurface = true
 
     @Binding
     var isExpanded: Bool
@@ -22,7 +23,16 @@ struct SettingsDisclosureSection<Content: View>: View {
     @ViewBuilder
     let content: Content
 
+    @ViewBuilder
     var body: some View {
+        if hasStandaloneSurface {
+            sectionContent.groupedSurface()
+        } else {
+            sectionContent
+        }
+    }
+
+    private var sectionContent: some View {
         VStack(
             alignment: .leading,
             spacing: ConfigurationSectionCardMetrics.headerContentSpacing
@@ -65,7 +75,6 @@ struct SettingsDisclosureSection<Content: View>: View {
             }
         }
         .v1SectionSurfaceLayout()
-        .groupedSurface()
     }
 
     @ViewBuilder

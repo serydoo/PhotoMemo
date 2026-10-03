@@ -156,7 +156,12 @@ struct MemoryCardRegionEditorCard: View {
             .fill(Color.primary.opacity(0.42))
             .frame(width: 2, height: 20)
             .padding(.horizontal, 2)
-            .accessibilityLabel("模块插入位置")
+            .accessibilityLabel(
+                MemoMarkLanguage.interfaceStored.localized(
+                    key: "configuration.card_editor.insertion_position",
+                    fallback: "信息插入位置"
+                )
+            )
     }
 
     private func insertionAnchorBelongsBefore(

@@ -66,8 +66,24 @@ struct ReleaseNotesSheet: View {
         ]
     }
 
+    var embedsNavigationStack = true
+
+    @ViewBuilder
     var body: some View {
-        NavigationStack {
+        if embedsNavigationStack {
+            NavigationStack {
+                pageContent.memoMarkBrowserSheetToolbar(
+                    doneTitle: language.localized(key: "common.done", fallback: "完成"),
+                    onDone: { dismiss() }
+                )
+            }
+        } else {
+            pageContent
+        }
+    }
+
+    private var pageContent: some View {
+        Group {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     ConfigurationCardContainer {
@@ -153,13 +169,7 @@ struct ReleaseNotesSheet: View {
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
-            .memoMarkBrowserSheetToolbar(
-                doneTitle: language.localized(
-                    key: "common.done",
-                    fallback: "完成"
-                ),
-                onDone: { dismiss() }
-            )
+
         }
     }
 

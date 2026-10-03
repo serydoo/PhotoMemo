@@ -3,9 +3,6 @@ import SwiftUI
 
 struct ConfigurationActionFooter: View {
 
-    @Environment(\.accessibilityReduceTransparency)
-    private var reduceTransparency
-
     @State
     private var showsResetConfigurationConfirmation = false
 
@@ -61,28 +58,7 @@ struct ConfigurationActionFooter: View {
         .padding(.horizontal, MemoMarkDesignTokens.Layout.compactActionClusterHorizontalPadding)
         .padding(.vertical, MemoMarkDesignTokens.Layout.compactActionClusterVerticalPadding)
         .frame(maxWidth: MemoMarkDesignTokens.Layout.compactActionClusterMaxWidth)
-        .background {
-            if reduceTransparency {
-                RoundedRectangle(
-                    cornerRadius: MemoMarkDesignTokens.Layout.compactActionClusterCornerRadius,
-                    style: .continuous
-                )
-                .fill(ConfigurationUI.panelBackground)
-            } else {
-                RoundedRectangle(
-                    cornerRadius: MemoMarkDesignTokens.Layout.compactActionClusterCornerRadius,
-                    style: .continuous
-                )
-                .fill(.regularMaterial)
-            }
-        }
-        .overlay {
-            RoundedRectangle(
-                cornerRadius: MemoMarkDesignTokens.Layout.compactActionClusterCornerRadius,
-                style: .continuous
-            )
-            .stroke(ConfigurationUI.faintHairline)
-        }
+
     }
 
     private var centeredPrimaryAction: some View {

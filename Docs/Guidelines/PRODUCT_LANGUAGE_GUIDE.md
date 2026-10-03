@@ -456,3 +456,13 @@ Before accepting user-facing copy, ask:
 
 When the answer is unclear, choose the simpler sentence and record the open
 question instead of inventing more explanation.
+
+## 2.3.5 (116) 卡片编辑文案收口
+
+用户入口使用“插入信息”，说明使用“处理照片时，这些信息会替换为每张照片对应的内容。”。四语文案与 VoiceOver 同步；内部 Module 类型和本地化键保持不变。
+
+### 2026-10-03 信息分类与辅助功能补齐
+
+卡片编辑主路径将“系统模块”呈现为“系统信息”，插入标记的辅助功能
+标签使用“信息插入位置”，并随界面语言切换。内部 Module 类型、原有
+本地化键及持久化表达式保持不变。

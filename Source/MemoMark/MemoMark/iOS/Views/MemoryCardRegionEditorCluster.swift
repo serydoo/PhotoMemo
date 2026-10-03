@@ -242,7 +242,7 @@ struct MemoryCardRegionEditorCluster: View {
 
     private var editorFooterNote: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("这里的内容会怎样使用？")
+            Text(MemoMarkLanguage.interfaceStored.localized(key: "这里的内容会怎样使用？", fallback: "这里的内容会怎样使用？"))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
 
@@ -252,7 +252,7 @@ struct MemoryCardRegionEditorCluster: View {
             )
             guidanceRow(
                 number: 2,
-                text: "处理照片时，模块会替换为每张照片自己的信息。"
+                text: "处理照片时，这些信息会替换为每张照片对应的内容。"
             )
             if !photoDescriptionRegions.isEmpty {
                 guidanceRow(
@@ -279,7 +279,7 @@ struct MemoryCardRegionEditorCluster: View {
                         .fill(Color.accentColor.opacity(0.1))
                 )
 
-            Text(text)
+            Text(MemoMarkLanguage.interfaceStored.localized(key: text, fallback: text))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

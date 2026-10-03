@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.5 (122) Preview And Settings Refinement - 2026-10-03
+
+- Cumulative update from the owner-designated formal 2.3.4 (115) baseline; includes accepted Minimal, JPEG description and Live Photo timing fixes from build 116.
+- Added preview disclosure with editing visibility and restored session preference; refined heading spacing and preview controls while preserving 44pt touch targets.
+- Refined Settings grouping and native information-page navigation, four-language guidance and adaptive controls.
+- Unified all target build numbers at 122; GlassCard Release authoring remains closed. See the [122 release manifest](Docs/07_Releases/2026-10-03-2.3.5-122-sync-manifest.md). TestFlight upload and manual acceptance remain separate.
+
 ## 2.3.5 (116) Native GlassCard Foundation And Preset Refinement - 2026-10-02
 
 - Follow-up source checkpoint corrects Configuration Center native material parity and shared preview composition, and refines GlassCard mark/local spacing in Layout. Physical Photos save/resource/decode checks pass; timed still-keyframe metadata loss LP-TIME-001 is subsequently fixed and verified on physical Photos readback. See the [timing closure](Docs/03_Engineering/2026-10-02-live-photo-keyframe-time-closure.md). See the [verification record](Docs/03_Engineering/2026-10-02-glasscard-appearance-verification-closure.md). Release authoring stays closed.

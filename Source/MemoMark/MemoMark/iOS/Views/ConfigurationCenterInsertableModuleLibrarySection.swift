@@ -12,7 +12,7 @@ struct ConfigurationCenterInsertableModuleLibrarySection: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Label(
-                    localized("configuration.modules.insertable", fallback: "可插入模块"),
+                    localized("configuration.modules.insertable", fallback: "可加入的照片信息"),
                     systemImage: "tag.fill"
                 )
                 .font(.caption.weight(.semibold))
@@ -33,7 +33,7 @@ struct ConfigurationCenterInsertableModuleLibrarySection: View {
                         }
                     }
                 } label: {
-                    Label(localized("configuration.modules.more", fallback: "更多模块"), systemImage: "chevron.down.circle")
+                    Label(localized("configuration.modules.more", fallback: "更多照片信息"), systemImage: "chevron.down.circle")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(Color.accentColor)
                 }
@@ -53,7 +53,7 @@ struct ConfigurationCenterInsertableModuleLibrarySection: View {
                 .padding(.vertical, 1)
             }
 
-            Text(localized("configuration.modules.detail", fallback: "默认展示当前最常用的 6 个模块。更多 EXIF 字段可从下拉栏插入；若照片中没有该信息，输出保持为空。"))
+            Text(localized("configuration.modules.detail", fallback: "选择想显示的照片信息；照片没有这项信息时，就不显示。"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

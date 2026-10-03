@@ -27,6 +27,68 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         add(screenshot)
     }
 
+    func testSettingsInformationPushReturnsToSettings() throws {
+        launchHostAndWait()
+        openSettingsFromHome()
+        restoreSimplifiedChineseInterfaceIfNeeded()
+
+        let destinations = [
+            "MemoMark 怎么讲述时间",
+            "关于 MemoMark 的诞生",
+            "查看日常使用流程",
+            "重看欢迎介绍"
+        ]
+        for title in destinations {
+            let action = application.buttons.containing(
+                NSPredicate(format: "label CONTAINS %@", title)
+            ).firstMatch
+            if !action.exists {
+                application.buttons["开始使用"].tap()
+            }
+            XCTAssertTrue(action.waitForExistence(timeout: 10))
+            action.tap()
+            if title == "重看欢迎介绍" {
+                let workflow = application.buttons["查看使用流程"]
+                for _ in 0..<5 where !workflow.isHittable {
+                    application.swipeUp()
+                }
+                XCTAssertTrue(workflow.isHittable)
+                workflow.tap()
+                XCTAssertTrue(application.navigationBars["怎么记录"].waitForExistence(timeout: 10))
+                application.navigationBars.buttons.element(boundBy: 0).tap()
+                XCTAssertTrue(application.navigationBars["欢迎"].waitForExistence(timeout: 10))
+            }
+            let back = application.navigationBars.buttons.element(boundBy: 0)
+            XCTAssertTrue(back.waitForExistence(timeout: 10))
+            XCTAssertNotEqual(back.label, "完成", "Information pages must expose native Back.")
+            back.tap()
+            XCTAssertTrue(application.navigationBars["设置"].waitForExistence(timeout: 10))
+            XCTAssertTrue(application.buttons["开始使用"].exists)
+        }
+        let about = application.buttons["关于"]
+        for _ in 0..<5 where !about.isHittable {
+            application.swipeUp()
+        }
+        XCTAssertTrue(about.isHittable)
+        // Disclosure preferences persist across launches and must not be reset.
+        if (about.value as? String)?.contains("已展开") != true {
+            about.tap()
+        }
+        let releaseNotes = application.buttons.containing(
+            NSPredicate(format: "label CONTAINS %@", "更新日志")
+        ).firstMatch
+        for _ in 0..<4 where !releaseNotes.isHittable {
+            application.swipeUp()
+        }
+        XCTAssertTrue(releaseNotes.isHittable)
+        releaseNotes.tap()
+        XCTAssertTrue(application.navigationBars["更新日志"].waitForExistence(timeout: 10))
+        application.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(application.navigationBars["设置"].waitForExistence(timeout: 10))
+        XCTAssertTrue(releaseNotes.exists)
+        attachCurrentScreenshot(named: "qa-stage3-settings-information-return")
+    }
+
     func testInterfaceLanguageMatrixJapaneseAndKorean() throws {
         launchHostAndWait()
         openSettingsFromHome()

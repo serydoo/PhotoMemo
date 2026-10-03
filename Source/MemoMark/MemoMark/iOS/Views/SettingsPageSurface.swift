@@ -94,6 +94,12 @@ struct SettingsPageSurface: View {
     var showsWorkflowGuide: Bool
 
     @State
+    private var showsWelcomeInformation = false
+
+    @State
+    private var showsWelcomeWorkflowGuide = false
+
+    @State
     private var showsAboutMemoMark = false
 
     @State
@@ -113,7 +119,6 @@ struct SettingsPageSurface: View {
         MemoMarkCommerceSnapshot
     let onOpenMemoMarkPlus: () -> Void
 
-    let onShowWelcome: () -> Void
     let onOpenTimeExpression: () -> Void
     let onDismissKeyboard: () -> Void
     var onExportDiagnostics:
@@ -130,12 +135,20 @@ struct SettingsPageSurface: View {
                 memoMarkPlusSection
 
                 gettingStartedSection
-                photoProcessingSection
-                dataSafetySection
-                feedbackSection
-                communitySection
-                interfacePreferencesSection
-                aboutSection
+                VStack(spacing: 0) {
+                    photoProcessingSection
+                    HorizontalDivider(horizontalInset: 16)
+                    dataSafetySection
+                    HorizontalDivider(horizontalInset: 16)
+                    feedbackSection
+                    HorizontalDivider(horizontalInset: 16)
+                    communitySection
+                    HorizontalDivider(horizontalInset: 16)
+                    interfacePreferencesSection
+                    HorizontalDivider(horizontalInset: 16)
+                    aboutSection
+                }
+                .groupedSurface()
 
                 Text(
                     localized(
@@ -169,38 +182,43 @@ struct SettingsPageSurface: View {
             )
         )
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(
-            ConfigurationUI.panelBackground,
-            for: .navigationBar
-        )
-        .toolbarBackground(
-            .visible,
-            for: .navigationBar
-        )
-        .sheet(isPresented: $showsExpressionGuide) {
-            expressionGuideSheet
+        .navigationDestination(isPresented: $showsExpressionGuide) {
+            expressionGuidePage
         }
-        .sheet(isPresented: $showsAboutMemoMark) {
-            aboutMemoMarkSheet
+        .navigationDestination(isPresented: $showsAboutMemoMark) {
+            aboutMemoMarkPage
         }
-        .sheet(isPresented: $showsReleaseNotes) {
+        .navigationDestination(isPresented: $showsReleaseNotes) {
             ReleaseNotesSheet(
                 language: interfaceLanguage,
-                version: appVersion
+                version: appVersion,
+                embedsNavigationStack: false
             )
-            .memoMarkSheet(.browser)
         }
-        .sheet(isPresented: $showsWorkflowGuide) {
+        .navigationDestination(isPresented: $showsWorkflowGuide) {
             WorkflowGuideSurface(
-                steps: WelcomePresentation.workflowSteps(
-                    for: interfaceLanguage
-                ),
+                steps: WelcomePresentation.workflowSteps(for: interfaceLanguage),
                 language: interfaceLanguage,
-                onClose: {
-                    showsWorkflowGuide = false
-                }
+                onClose: nil,
+                embedsNavigationStack: false
             )
-            .memoMarkSheet(.browser)
+        }
+        .navigationDestination(isPresented: $showsWelcomeInformation) {
+            WelcomePageSurface(
+                presentation: WelcomePresentation.localized(for: interfaceLanguage),
+                language: interfaceLanguage,
+                onStart: { showsWelcomeInformation = false },
+                onShowWorkflow: { showsWelcomeWorkflowGuide = true },
+                embedsNavigationStack: false
+            )
+            .navigationDestination(isPresented: $showsWelcomeWorkflowGuide) {
+                WorkflowGuideSurface(
+                    steps: WelcomePresentation.workflowSteps(for: interfaceLanguage),
+                    language: interfaceLanguage,
+                    onClose: nil,
+                    embedsNavigationStack: false
+                )
+            }
         }
         .sheet(item: $diagnosticExportItem) { item in
             DiagnosticsShareSheet(
@@ -481,6 +499,7 @@ struct SettingsPageSurface: View {
             trailingValue: trailingValue,
             language: interfaceLanguage,
             emphasis: emphasis,
+            hasStandaloneSurface: section == .gettingStarted,
             isExpanded: expansionBinding(for: section),
             content: content
         )
@@ -519,15 +538,15 @@ struct SettingsPageSurface: View {
             GettingStartedSupportContent(
                 language: interfaceLanguage,
                 onShowAbout: { showsAboutMemoMark = true },
-                onShowWelcome: onShowWelcome,
+                onShowWelcome: { showsWelcomeInformation = true },
                 onShowWorkflow: { showsWorkflowGuide = true },
                 onShowExpressionGuide: { showsExpressionGuide = true }
             )
         }
     }
 
-    private var aboutMemoMarkSheet: some View {
-        NavigationStack {
+    private var aboutMemoMarkPage: some View {
+        Group {
             ScrollView {
                 ConfigurationCardContainer {
                     AboutMemoMarkNarrativeContent(language: interfaceLanguage)
@@ -549,19 +568,11 @@ struct SettingsPageSurface: View {
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
-            .memoMarkBrowserSheetToolbar(
-                doneTitle: interfaceLanguage.localized(
-                    key: "common.done",
-                    fallback: "完成"
-                ),
-                onDone: { showsAboutMemoMark = false }
-            )
         }
-        .memoMarkSheet(.browser)
     }
 
-    private var expressionGuideSheet: some View {
-        NavigationStack {
+    private var expressionGuidePage: some View {
+        Group {
             ScrollView {
                 SettingsExpressionGuide(
                     language: interfaceLanguage,
@@ -590,21 +601,7 @@ struct SettingsPageSurface: View {
                 )
             )
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(
-                        interfaceLanguage.localized(
-                            key: "common.done",
-                            fallback: "完成"
-                        )
-                    ) {
-                        showsExpressionGuide = false
-                    }
-                    .fontWeight(.semibold)
-                }
-            }
         }
-        .memoMarkSheet(.browser)
     }
 
     private var aboutSection: some View {

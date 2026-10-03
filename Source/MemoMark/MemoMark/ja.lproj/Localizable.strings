@@ -262,17 +262,17 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "新機能";
 "settings.version.release_notes_detail" = "MemoMarkの変更点を見る";
-"settings.release_notes.header" = "ミニマルとホームのプリセットを整え、ガラスカードの改善を進めました。";
+"settings.release_notes.header" = "メモリーカードのプレビューと設定を整え、ミニマルの表現も改善しました。";
 "settings.release_notes.version_format" = "バージョン%@";
 "settings.release_notes.positioning" = "写真の中に、あなたらしい言葉を静かに残せますように。";
-"settings.release_notes.time_expression.title" = "ミニマルの安定性とガラスカードの改善";
-"settings.release_notes.time_expression.item_one" = "ミニマルでは長めの文字を表示幅に合わせ、縦横の写真でより安定して表示します。";
-"settings.release_notes.time_expression.item_two" = "ガラスカードではシステムのガラス表現と動く写真への対応を進めています。通常の選択項目はまだ公開していません。読みやすさ、色、より多くの写真への対応を引き続き整えます。";
-"settings.release_notes.configuration.title" = "ホームのプリセットを見やすく";
-"settings.release_notes.configuration.item_one" = "通常の文字サイズでは説明を一行に保ち、必要に応じて文字間隔とサイズを調整します。アクセシビリティの大きな文字では複数行で表示します。";
-"settings.release_notes.configuration.item_two" = "ガラスカードのプレビューと出力で同じレイアウトを使い、文字と位置を確認しやすくしました。";
+"settings.release_notes.time_expression.title" = "プレビューと設定をより自然に";
+"settings.release_notes.time_expression.item_one" = "設定中のプレビューを表示・非表示にできます。カード内容の編集中は表示され、編集後は元の選択に戻ります。";
+"settings.release_notes.time_expression.item_two" = "プレビューの余白と操作ボタン、設定の構成、紹介・使い方・更新履歴から戻る操作を整えました。";
+"settings.release_notes.configuration.title" = "表現と説明をよりわかりやすく";
+"settings.release_notes.configuration.item_one" = "ミニマルの長文とホームのプリセット説明の幅調整を改善しました。アクセシビリティの大きな文字では複数行で表示します。";
+"settings.release_notes.configuration.item_two" = "時間アンカー、バックアップ、編集の説明を改善しました。ガラスカードは調整中で、正式版の新規選択はまだ利用できません。";
 "settings.release_notes.saving.title" = "あなたの表現を保存";
-"settings.release_notes.saving.item_one" = "JPEG に中国語などの文字説明を保存する際の問題を修正しました。";
+"settings.release_notes.saving.item_one" = "多言語の JPEG 説明の保存と、Live Photo のキーフレーム時刻の保持を修正しました。";
 "settings.release_notes.saving.item_two" = "写真は引き続きデバイス上で処理し、元の写真は変更せず、新しい思い出の写真を保存します。";
 "settings.release_notes.closing" = "フィードバックをありがとうございます。細かな部分を引き続き整えていきます。";
 "settings.navigation.title" = "設定";
@@ -951,7 +951,7 @@
 "configuration.editor.configuration_name" = "設定名";
 "configuration.editor.saved" = "保存済み";
 "configuration.editor.save" = "設定を保存";
-"configuration.modules.system" = "システムモジュール";
+"configuration.modules.system" = "システム情報";
 "configuration.modules.subject" = "対象の呼び名";
 "configuration.modules.smart" = "メモリー表現";
 "configuration.modules.anchor" = "タイムアンカー";
@@ -1476,7 +1476,7 @@
 "configuration.card_editor.title" = "カード内容";
 "configuration.card_editor.subtitle" = "文字、写真の情報、思い出の表現を組み合わせます。";
 "configuration.card_editor.subtitle.focused" = "%@を編集中";
-"configuration.card_editor.add_module" = "モジュール";
+"configuration.card_editor.add_module" = "情報を挿入";
 "configuration.card_editor.done" = "完了";
 "configuration.card_editor.dismiss_keyboard" = "キーボードを閉じる";
 "configuration.card_editor.accessibility_label" = "カード内容を編集";
@@ -1486,9 +1486,9 @@
 "configuration.card_editor.slotB.title" = "左下";
 "configuration.card_editor.slotC.title" = "右上";
 "configuration.card_editor.slotD.title" = "右下";
-"configuration.card_editor.undo.insert_module" = "モジュールを挿入";
+"configuration.card_editor.undo.insert_module" = "情報を挿入";
 "configuration.card_editor.undo.paste_content" = "内容を貼り付け";
-"configuration.card_editor.undo.delete_module" = "モジュールを削除";
+"configuration.card_editor.undo.delete_module" = "情報を削除";
 "configuration.action.reset.title" = "デフォルト設定に戻しますか？";
 "configuration.action.delete.title" = "現在の設定を削除しますか？";
 "task.progress.stage.preparingRAWPhoto" = "RAW写真を準備中";
@@ -1509,7 +1509,7 @@
 "task.progress.stage.cancelled" = "キャンセルしました";
 "task.progress.stage.backgroundExpired" = "バックグラウンド処理時間が終了しました。もう一度お試しください。";
 "accessibility.subject.switch_format" = "%@に切り替える";
-"accessibility.region.module_candidates_format" = "%@のモジュール候補";
+"accessibility.region.module_candidates_format" = "%@に挿入できる情報";
 "configuration.library.subject_title_format" = "%@の構成";
 "accessibility.editor.slotA.label" = "左上の内容";
 "accessibility.editor.slotB.label" = "左下の内容";
@@ -1609,7 +1609,7 @@
 "subject.overview.fact.label" = "専用の呼び名";
 "subject.overview.subject.fallback" = "メモリー対象";
 "configuration.modules.insert.accessibility" = "%@を挿入、現在の値%@";
-"configuration.modules.accessibility.unavailable" = "モジュールを利用できません、%@";
+"configuration.modules.accessibility.unavailable" = "情報を使用できません、%@";
 "configuration.modules.accessibility.value" = "%@、%@";
 "configuration.modules.category.photo_information" = "写真情報";
 "configuration.modules.category.memory_expression" = "思い出の表現";
@@ -1842,3 +1842,44 @@
 "Batch.GlassCardOverflow.Failed.Recovery" = "該当する領域の内容を短くして、もう一度処理してください。";
 "GlassCard.Preview.Empty" = "カードの内容を入力してください";
 "GlassCard.Preview.Overflow" = "内容が長すぎます。該当する領域を短くしてください。";
+
+/* Configuration preview visibility */
+"configuration.preview.collapse" = "プレビューを閉じる";
+"configuration.preview.expand" = "プレビューを表示";
+"configuration.preview.visible" = "展開中";
+"configuration.preview.hidden" = "折りたたみ中";
+"configuration.layout.result.edit" = "カード内容を編集";
+
+/* Release UI polish: anchors and local backups */
+"删除时间锚点？" = "この時間の起点を削除しますか？";
+"使用这个时间锚点的配置需要重新选择时间锚点。此操作无法撤销。" = "この時間の起点を使用する設定では、別の起点を選び直す必要があります。この操作は取り消せません。";
+"至少保留一个时间锚点" = "時間の起点を少なくとも1つ残してください";
+"新增另一个时间锚点后，才能删除当前时间锚点。" = "別の時間の起点を追加すると、この起点を削除できます。";
+"订阅 MemoMark+ 后添加更多时间锚点" = "MemoMark+に登録して時間の起点を追加";
+"配置时间锚点" = "時間の起点を設定";
+"已选择" = "選択済み";
+"未选择" = "未選択";
+"用照片拍摄时间计算当时的年龄，也可以表达出生前倒数。" = "撮影日時に基づく年齢や、誕生までのカウントダウンを表示します。";
+"用照片拍摄时间表达相识或相伴了多久。" = "撮影日時をもとに、出会ってから、または一緒に過ごした時間を表示します。";
+"用照片拍摄时间表达共同走过的时间和纪念日。" = "撮影日時をもとに、共に歩んだ時間や記念日を表示します。";
+"用照片拍摄时间表达距离目标还有多久。" = "撮影日時をもとに、目標までの残り時間を表示します。";
+"为旅行、毕业、搬家或其他人生时刻设置自己的时间锚点。" = "旅行、卒業、引っ越しなど、人生の出来事に合わせて時間の起点を設定します。";
+"生日 / 出生" = "誕生日 / 誕生";
+"恋爱纪念" = "交際記念日";
+"结婚纪念" = "結婚記念日";
+"未来目标" = "未来の目標";
+"自定义" = "カスタム";
+"在配置中心选择这个时间锚点。" = "設定センターでこの時間の起点を選びます。";
+"处理照片时，会按每张照片的拍摄时间计算。" = "写真の処理時は、それぞれの撮影日時を使います。";
+"最终怎样写在记忆卡上，仍然由你决定。" = "思い出カードにどう書くかは、あなたが決められます。";
+"时间" = "時間";
+"还没有本地备份" = "ローカルバックアップはまだありません";
+"删除本地备份？" = "このローカルバックアップを削除しますか？";
+"修改会实时出现在上方完整卡片预览中。" = "変更は上のカード全体のプレビューにすぐ反映されます。";
+"处理照片时，这些信息会替换为每张照片对应的内容。" = "写真の処理時に、これらの情報はそれぞれの写真に対応する内容に置き換わります。";
+"这里的内容还会写入 Apple Photos 的照片说明，方便之后查找。" = "この内容はApple Photosの写真のキャプションにも保存され、後から探しやすくなります。";
+"time_anchor.delete.named" = "「%@」を削除しますか？";
+"local_backup.delete.named" = "バックアップ「%@」を削除しますか？";
+"local_backup.revision_date" = "リビジョン %@ · %@";
+
+"configuration.card_editor.insertion_position" = "情報の挿入位置";

@@ -262,17 +262,17 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "What's New";
 "settings.version.release_notes_detail" = "See what has changed in MemoMark.";
-"settings.release_notes.header" = "This update refines Minimal and Home presets, while continuing work on GlassCard.";
+"settings.release_notes.header" = "This update refines Memory Card previews, Settings, and Minimal expression.";
 "settings.release_notes.version_format" = "Version %@";
 "settings.release_notes.positioning" = "Keep your words quietly within the photo, with an expression of your own.";
-"settings.release_notes.time_expression.title" = "A steadier Minimal, and continued GlassCard refinement";
-"settings.release_notes.time_expression.item_one" = "Minimal handles longer text within its available width more consistently across portrait and landscape photos.";
-"settings.release_notes.time_expression.item_two" = "GlassCard is being refined with native glass and motion-photo rendering. Its public selection entry is not yet available; readability, color and support for more photos remain our next steps.";
-"settings.release_notes.configuration.title" = "Clearer Home presets";
-"settings.release_notes.configuration.item_one" = "At standard text sizes, preset details stay on one line with gentle tightening and scaling when needed. Accessibility text sizes retain a readable multiline layout.";
-"settings.release_notes.configuration.item_two" = "GlassCard preview and output share the same layout, helping us check text and placement consistently.";
+"settings.release_notes.time_expression.title" = "A calmer preview and Settings";
+"settings.release_notes.time_expression.item_one" = "Show or hide the configuration preview. It stays visible while editing card content and restores your choice when editing ends.";
+"settings.release_notes.time_expression.item_two" = "Refined preview spacing and controls, Settings grouping, and Back navigation for information, help, and release notes.";
+"settings.release_notes.configuration.title" = "Clearer expression and guidance";
+"settings.release_notes.configuration.item_one" = "Improved long-text fitting in Minimal and Home preset descriptions; accessibility text sizes retain multiline reading.";
+"settings.release_notes.configuration.item_two" = "Refined time-anchor, backup, and editing guidance. GlassCard is still being refined and is not yet available for new selections in the release version.";
 "settings.release_notes.saving.title" = "Preserve your expression";
-"settings.release_notes.saving.item_one" = "Fixed an issue saving Chinese and other Unicode text descriptions in JPEG files.";
+"settings.release_notes.saving.item_one" = "Fixed multilingual JPEG descriptions and preservation of Live Photo keyframe timing.";
 "settings.release_notes.saving.item_two" = "Photos continue to be processed on device. Each new memory photo leaves the original unchanged.";
 "settings.release_notes.closing" = "Thank you for your feedback as we continue refining the details.";
 "settings.navigation.title" = "Settings";
@@ -1135,7 +1135,7 @@
 "configuration.editor.configuration_name" = "Configuration Name";
 "configuration.editor.saved" = "Saved";
 "configuration.editor.save" = "Save Configuration";
-"configuration.modules.system" = "System Modules";
+"configuration.modules.system" = "System Information";
 "configuration.modules.subject" = "Subject Nickname";
 "configuration.modules.smart" = "Memory Expression";
 "configuration.modules.anchor" = "Time Anchor";
@@ -1476,7 +1476,7 @@
 "configuration.card_editor.title" = "Card Content";
 "configuration.card_editor.subtitle" = "Combine text, photo details, and memory expressions.";
 "configuration.card_editor.subtitle.focused" = "Editing %@";
-"configuration.card_editor.add_module" = "Module";
+"configuration.card_editor.add_module" = "Insert Info";
 "configuration.card_editor.done" = "Done";
 "configuration.card_editor.dismiss_keyboard" = "Dismiss Keyboard";
 "configuration.card_editor.accessibility_label" = "Card Content Editor";
@@ -1486,9 +1486,9 @@
 "configuration.card_editor.slotB.title" = "Lower left";
 "configuration.card_editor.slotC.title" = "Upper right";
 "configuration.card_editor.slotD.title" = "Lower right";
-"configuration.card_editor.undo.insert_module" = "Insert module";
+"configuration.card_editor.undo.insert_module" = "Insert Info";
 "configuration.card_editor.undo.paste_content" = "Paste content";
-"configuration.card_editor.undo.delete_module" = "Delete module";
+"configuration.card_editor.undo.delete_module" = "Delete Info";
 "configuration.action.reset.title" = "Restore Default Configuration?";
 "configuration.action.delete.title" = "Delete Current Configuration?";
 "task.progress.stage.preparingRAWPhoto" = "Preparing RAW photo";
@@ -1509,7 +1509,7 @@
 "task.progress.stage.cancelled" = "Cancelled";
 "task.progress.stage.backgroundExpired" = "Background time ended. Try again.";
 "accessibility.subject.switch_format" = "Switch to %@";
-"accessibility.region.module_candidates_format" = "Module options for %@";
+"accessibility.region.module_candidates_format" = "Available information for %@";
 "configuration.library.subject_title_format" = "%@ configurations";
 "accessibility.editor.slotA.label" = "Upper-left content";
 "accessibility.editor.slotB.label" = "Lower-left content";
@@ -1609,7 +1609,7 @@
 "subject.overview.fact.label" = "Personal Name";
 "subject.overview.subject.fallback" = "Memory Subject";
 "configuration.modules.insert.accessibility" = "Insert %@, current value %@";
-"configuration.modules.accessibility.unavailable" = "Module unavailable, %@";
+"configuration.modules.accessibility.unavailable" = "Information unavailable, %@";
 "configuration.modules.accessibility.value" = "%@, %@";
 "configuration.modules.category.photo_information" = "Photo Information";
 "configuration.modules.category.memory_expression" = "Memory Expression";
@@ -1842,3 +1842,44 @@
 "Batch.GlassCardOverflow.Failed.Recovery" = "Shorten the content in the affected area and process again.";
 "GlassCard.Preview.Empty" = "Add card content";
 "GlassCard.Preview.Overflow" = "Content is too long. Shorten the affected area.";
+
+/* Configuration preview visibility */
+"configuration.preview.collapse" = "Hide Preview";
+"configuration.preview.expand" = "Show Preview";
+"configuration.preview.visible" = "Expanded";
+"configuration.preview.hidden" = "Collapsed";
+"configuration.layout.result.edit" = "Edit card content";
+
+/* Release UI polish: anchors and local backups */
+"删除时间锚点？" = "Delete this time anchor?";
+"使用这个时间锚点的配置需要重新选择时间锚点。此操作无法撤销。" = "Configurations using this time anchor will need another time anchor selected. This cannot be undone.";
+"至少保留一个时间锚点" = "Keep at least one time anchor";
+"新增另一个时间锚点后，才能删除当前时间锚点。" = "Add another time anchor before deleting this one.";
+"订阅 MemoMark+ 后添加更多时间锚点" = "Subscribe to MemoMark+ to add more time anchors";
+"配置时间锚点" = "Configure Time Anchor";
+"已选择" = "Selected";
+"未选择" = "Not selected";
+"用照片拍摄时间计算当时的年龄，也可以表达出生前倒数。" = "Show age at the photo's capture date, or count down to birth.";
+"用照片拍摄时间表达相识或相伴了多久。" = "Show how long you have known each other or been together at the photo's capture date.";
+"用照片拍摄时间表达共同走过的时间和纪念日。" = "Show time together and anniversaries at the photo's capture date.";
+"用照片拍摄时间表达距离目标还有多久。" = "Show time remaining until your goal at the photo's capture date.";
+"为旅行、毕业、搬家或其他人生时刻设置自己的时间锚点。" = "Create your own time anchor for travel, graduation, moving, or other life moments.";
+"生日 / 出生" = "Birthday / Birth";
+"恋爱纪念" = "Relationship";
+"结婚纪念" = "Wedding Anniversary";
+"未来目标" = "Future Goal";
+"自定义" = "Custom";
+"在配置中心选择这个时间锚点。" = "Select this time anchor in Configuration Center.";
+"处理照片时，会按每张照片的拍摄时间计算。" = "Each photo uses its own capture date when processed.";
+"最终怎样写在记忆卡上，仍然由你决定。" = "You decide how the result reads on your memory card.";
+"时间" = "Time";
+"还没有本地备份" = "No Local Backups Yet";
+"删除本地备份？" = "Delete this local backup?";
+"修改会实时出现在上方完整卡片预览中。" = "Changes appear immediately in the full card preview above.";
+"处理照片时，这些信息会替换为每张照片对应的内容。" = "When processing photos, these details are replaced with content from each photo.";
+"这里的内容还会写入 Apple Photos 的照片说明，方便之后查找。" = "This content is also saved to the photo caption in Apple Photos so you can find it later.";
+"time_anchor.delete.named" = "Delete “%@”?";
+"local_backup.delete.named" = "Delete backup “%@”?";
+"local_backup.revision_date" = "Revision %@ · %@";
+
+"configuration.card_editor.insertion_position" = "Information insertion position";
