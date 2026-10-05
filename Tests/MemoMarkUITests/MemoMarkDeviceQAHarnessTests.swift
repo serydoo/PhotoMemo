@@ -46,10 +46,20 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
                 application.buttons["开始使用"].tap()
             }
             XCTAssertTrue(action.waitForExistence(timeout: 10))
+            for _ in 0..<10 where !action.isHittable {
+                application.swipeUp()
+            }
+            XCTAssertTrue(action.isHittable)
             action.tap()
             if title == "重看欢迎介绍" {
+                attachCurrentScreenshot(named: "qa-welcome-entry-state")
+                let hierarchy = XCTAttachment(string: application.debugDescription)
+                hierarchy.name = "qa-welcome-entry-hierarchy"
+                hierarchy.lifetime = .keepAlways
+                add(hierarchy)
+                XCTAssertTrue(application.navigationBars["欢迎"].waitForExistence(timeout: 10))
                 let workflow = application.buttons["查看使用流程"]
-                for _ in 0..<5 where !workflow.isHittable {
+                for _ in 0..<15 where !workflow.isHittable {
                     application.swipeUp()
                 }
                 XCTAssertTrue(workflow.isHittable)
@@ -262,6 +272,7 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             timeout: 3
         )
         if cardEditor == nil {
+            revealConfigurationOption(layoutSection)
             layoutSection.tap()
         }
         cardEditor = configurationButton(
@@ -280,7 +291,9 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         )
 
         cardEditor.tap()
-        let editorDone = application.buttons["card-editor-done"]
+        let editorDone = application.buttons.matching(
+            NSPredicate(format: "identifier == %@ OR label IN %@", "card-editor-done", ["完成", "Done", "完了", "완료"])
+        ).firstMatch
         XCTAssertTrue(
             editorDone.waitForExistence(timeout: 20),
             "The card-content editing presentation did not open."
@@ -293,6 +306,46 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         screenshot.name = "qa-01-configuration-center"
         screenshot.lifetime = .keepAlways
         add(screenshot)
+    }
+
+    func testConfigurationPreviewAndAccessoryLifecycle() throws {
+        launchHostAndWait()
+        let config = application.buttons["配置"]
+        XCTAssertTrue(config.waitForExistence(timeout: 10))
+        config.tap()
+        let toggle = application.buttons["configuration.preview.visibility"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        let originalLabel = toggle.label
+        defer {
+            if toggle.exists && toggle.label != originalLabel { toggle.tap() }
+        }
+        if toggle.label == "展开预览" { toggle.tap() }
+        attachCurrentScreenshot(named: "qa-preview-visible")
+        let direction = application.buttons.matching(
+            NSPredicate(format: "label IN %@", ["切换为竖图", "切换为横图"])
+        ).firstMatch
+        XCTAssertTrue(direction.waitForExistence(timeout: 10))
+        let originalDirection = direction.label
+        direction.tap()
+        let opposite = originalDirection == "切换为竖图" ? "切换为横图" : "切换为竖图"
+        let reverse = application.buttons[opposite].firstMatch
+        XCTAssertTrue(reverse.waitForExistence(timeout: 10))
+        attachCurrentScreenshot(named: "qa-preview-alternate-orientation")
+        reverse.tap()
+        toggle.tap()
+        attachCurrentScreenshot(named: "qa-preview-collapsed")
+        let more = application.buttons["更多配置操作"]
+        XCTAssertTrue(more.isHittable)
+        more.tap()
+        XCTAssertTrue(application.buttons["另存为新配置"].waitForExistence(timeout: 10))
+        attachCurrentScreenshot(named: "qa-configuration-more-actions")
+        application.tap()
+        application.buttons["首页"].tap()
+        XCTAssertFalse(more.exists)
+        application.buttons["进展"].tap()
+        XCTAssertFalse(more.exists)
+        config.tap()
+        XCTAssertTrue(more.waitForExistence(timeout: 10))
     }
 
     private func revealConfigurationOption(_ option: XCUIElement) {

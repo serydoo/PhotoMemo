@@ -44,10 +44,25 @@ struct GlassCardResolvedPresentation {
 
     static func resolve(
         content: GlassCardContentProjection,
-        canvasSize: CGSize
+        canvasSize: CGSize,
+        primaryFontMultiplier: CGFloat = 1.12,
+        secondaryFontMultiplier: CGFloat = 1.04,
+        lineLimit: Int = 1
     ) -> Self {
-        let geometry = GlassCardLayoutSpecification.resolvedGeometry(canvasSize: canvasSize)
         let layout = GlassCardLayoutSpecification.layout
+        let panel = GlassCardLayoutSpecification.panelFrame(canvasSize: canvasSize)
+        func preferredFontSize(primary: Bool) -> CGFloat {
+            panel.height * (primary ? layout.primaryFontToPanelHeight * primaryFontMultiplier
+                : layout.secondaryFontToPanelHeight * secondaryFontMultiplier)
+        }
+        let preferredRightWidth = max(
+            GlassCardTextFitSpecification.preferredWidth(text: content.rightTop,
+                pointSize: preferredFontSize(primary: true), isPrimary: true),
+            GlassCardTextFitSpecification.preferredWidth(text: content.rightBottom,
+                pointSize: preferredFontSize(primary: false), isPrimary: false)
+        )
+        let geometry = GlassCardLayoutSpecification.resolvedGeometry(canvasSize: canvasSize,
+            preferredRightColumnWidth: preferredRightWidth)
         let values: [(String, CGRect, Bool)] = [
             (content.leftTop, geometry.leftTopFrame, true),
             (content.leftBottom, geometry.leftBottomFrame, false),
@@ -58,13 +73,12 @@ struct GlassCardResolvedPresentation {
             canvasSize: canvasSize,
             geometry: geometry,
             slots: values.map { text, frame, primary in
-                let ratio = primary ? layout.primaryFontToPanelHeight : layout.secondaryFontToPanelHeight
                 return TextSlot(
                     text: text, frame: frame, isPrimary: primary,
                     fit: GlassCardTextFitSpecification.resolve(
                         text: text, frame: frame.size,
-                        pointSize: geometry.panelFrame.height * ratio * (primary ? 1.12 : 1.04),
-                        isPrimary: primary, lineLimit: 1,
+                        pointSize: preferredFontSize(primary: primary),
+                        isPrimary: primary, lineLimit: lineLimit,
                         minimumScale: primary ? 0.72 : 0.70
                     )
                 )

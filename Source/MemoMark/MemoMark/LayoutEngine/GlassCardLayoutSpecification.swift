@@ -26,8 +26,7 @@ enum GlassCardLayoutSpecification {
         let rightRowSpacingToPanelHeight: CGFloat
         let primaryFontToPanelHeight: CGFloat
         let secondaryFontToPanelHeight: CGFloat
-        let badgeCenterXToPanelWidth: CGFloat
-        let leftColumnMaxXToPanelWidth: CGFloat
+        let minimumLeftColumnWidthToPanelWidth: CGFloat
         let leftPrimaryCenterYToPanelHeight: CGFloat
         let leftSecondaryCenterYToPanelHeight: CGFloat
         let rightPrimaryCenterYToPanelHeight: CGFloat
@@ -36,9 +35,8 @@ enum GlassCardLayoutSpecification {
         let secondaryRowHeightToPanelHeight: CGFloat
     }
 
-    /// Frames inside the panel, resolved without consulting text or badge
-    /// content. The ratios remain a research candidate, but the anchors are
-    /// now deterministic across every value rendered into the four slots.
+    /// Frames inside the panel. The right group shares a trailing anchor;
+    /// its width comes from the preferred-font measurement in the resolved plan.
     struct ResolvedGeometry: Equatable {
         let panelFrame: CGRect
         let leftTopFrame: CGRect
@@ -64,14 +62,13 @@ enum GlassCardLayoutSpecification {
         dividerHeightToPanelHeight: 0.58,
         dividerSpacingToPanelHeight: 0.12,
         leftPaddingToPanelHeight: 0.50,
-        rightPaddingToPanelHeight: 0.46,
+        rightPaddingToPanelHeight: 0.51,
         columnSpacingToPanelHeight: 0.38,
         leftRowSpacingToPanelHeight: 0.16,
         rightRowSpacingToPanelHeight: 0.10,
         primaryFontToPanelHeight: 0.165,
         secondaryFontToPanelHeight: 0.135,
-        badgeCenterXToPanelWidth: 0.53,
-        leftColumnMaxXToPanelWidth: 0.43,
+        minimumLeftColumnWidthToPanelWidth: 0.30,
         leftPrimaryCenterYToPanelHeight: 0.364,
         leftSecondaryCenterYToPanelHeight: 0.713,
         rightPrimaryCenterYToPanelHeight: 0.386,
@@ -100,29 +97,34 @@ enum GlassCardLayoutSpecification {
         )
     }
 
-    static func resolvedGeometry(canvasSize: CGSize) -> ResolvedGeometry {
+    static func resolvedGeometry(canvasSize: CGSize, preferredRightColumnWidth: CGFloat = 0) -> ResolvedGeometry {
         let panel = panelFrame(canvasSize: canvasSize)
-        let height = max(panel.height, 1)
-        let width = max(panel.width, 1)
-        let leftMinX = min(layout.leftPaddingToPanelHeight * height, width * layout.leftColumnMaxXToPanelWidth)
-        let leftMaxX = width * layout.leftColumnMaxXToPanelWidth
+        let height = max(panel.height, 0.001)
+        let width = max(panel.width, 0.001)
+        let leftMinX = height * layout.leftPaddingToPanelHeight
         let badgeSize = height * layout.logoSizeToPanelHeight
-        let badgeCenter = width * layout.badgeCenterXToPanelWidth
         let dividerWidth = height * 0.006
-        // Keep the mark group compact as the photo gets wider. The former
-        // independent 53%/57%/61% anchors stretched both neighboring gaps.
         let neighboringGap = height * layout.dividerSpacingToPanelHeight
-        let dividerMinX = badgeCenter + badgeSize / 2 + neighboringGap
+        let columnGap = height * layout.columnSpacingToPanelHeight
+        let rightMaxX = width - height * layout.rightPaddingToPanelHeight
+        let minimumLeftWidth = width * layout.minimumLeftColumnWidthToPanelWidth
+        let groupAccessoriesWidth = badgeSize + dividerWidth + neighboringGap * 2
+        let capacity = max(rightMaxX - leftMinX - minimumLeftWidth - columnGap - groupAccessoriesWidth, 0)
+        let requestedWidth = preferredRightColumnWidth.isFinite ? max(preferredRightColumnWidth, 0) : capacity
+        let rightWidth = min(requestedWidth, capacity)
+        let rightMinX = rightMaxX - rightWidth
+        let dividerMinX = rightMinX - neighboringGap - dividerWidth
         let dividerCenter = dividerMinX + dividerWidth / 2
-        let rightMinX = dividerMinX + dividerWidth + neighboringGap
-        let rightMaxX = max(width - layout.rightPaddingToPanelHeight * height, rightMinX)
+        let badgeMinX = dividerMinX - neighboringGap - badgeSize
+        let badgeCenter = badgeMinX + badgeSize / 2
+        let leftMaxX = badgeMinX - columnGap
         let dividerHeight = height * layout.dividerHeightToPanelHeight
 
         func rowFrame(centerY: CGFloat, height ratio: CGFloat, minX: CGFloat, maxX: CGFloat) -> CGRect {
             CGRect(
                 x: minX,
                 y: centerY * height - height * ratio / 2,
-                width: max(maxX - minX, 1),
+                width: max(maxX - minX, 0),
                 height: height * ratio
             )
         }

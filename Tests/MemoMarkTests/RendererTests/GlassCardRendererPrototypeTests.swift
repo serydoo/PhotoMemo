@@ -6,6 +6,39 @@ import Testing
 @Suite("Glass Card renderer prototype")
 struct GlassCardRendererPrototypeTests {
 
+    @Test("Empty and capped right groups stay separated from the left column")
+    func rightGroupCapacityAndEmptyRows() {
+        for size in [CGSize(width: 1, height: 1), CGSize(width: 320, height: 568),
+                     CGSize(width: 1080, height: 1440), CGSize(width: 3240, height: 1080)] {
+            for text in ["", "回忆🌅", String(repeating: "思い出함께한", count: 100)] {
+                let plan = GlassCardResolvedPresentation.resolve(content: .init(leftTop: "Left", leftBottom: "",
+                    rightTop: text, rightBottom: ""), canvasSize: size)
+                let g = plan.geometry
+                #expect(g.leftTopFrame.maxX < g.badgeFrame.minX)
+                #expect(g.badgeFrame.maxX < g.dividerFrame.minX)
+                #expect(g.dividerFrame.maxX < g.rightTopFrame.minX)
+                #expect(g.rightTopFrame.maxX < g.panelFrame.width)
+                #expect(g.leftTopFrame.width >= g.panelFrame.width * GlassCardLayoutSpecification.layout.minimumLeftColumnWidthToPanelWidth - 0.001)
+                if text.isEmpty { #expect(plan.slots[2].fit.outcome == .empty) }
+                if text.count > 100 { #expect(plan.slots[2].fit.outcome == .overflow) }
+            }
+        }
+    }
+
+    @Test("Right group retains its trailing edge and moves with the longer row")
+    func rightGroupUsesContentWidth() {
+        let size = CGSize(width: 1080, height: 1440)
+        let short = GlassCardResolvedPresentation.resolve(content: .init(leftTop: "Left", leftBottom: "", rightTop: "City", rightBottom: "Day"), canvasSize: size)
+        let longer = GlassCardResolvedPresentation.resolve(content: .init(leftTop: "Left", leftBottom: "", rightTop: "City", rightBottom: "Our first summer together"), canvasSize: size)
+        #expect(abs(short.geometry.rightTopFrame.maxX - longer.geometry.rightTopFrame.maxX) < 0.001)
+        #expect(longer.geometry.badgeFrame.minX < short.geometry.badgeFrame.minX)
+        #expect(longer.geometry.rightTopFrame.minX < short.geometry.rightTopFrame.minX)
+        #expect(longer.geometry.rightTopFrame.minX == longer.geometry.rightBottomFrame.minX)
+        let wider = GlassCardResolvedPresentation.resolve(content: .init(leftTop: "Left", leftBottom: "", rightTop: "City", rightBottom: "Day"), canvasSize: CGSize(width: 1920, height: 1080))
+        #expect(abs(wider.geometry.rightTopFrame.width - short.geometry.rightTopFrame.width) < 0.001)
+        #expect(abs(wider.geometry.badgeFrame.midX - short.geometry.badgeFrame.midX - 840) < 0.001)
+    }
+
     @Test("Calibration assets provide output pixel geometry in both orientations")
     func calibrationPixelGeometry() throws {
         for orientation in ConfigurationPreviewBackground.Orientation.allCases {
@@ -81,7 +114,7 @@ struct GlassCardRendererPrototypeTests {
             #expect(geometry.leftTopFrame.width == geometry.leftBottomFrame.width)
             #expect(geometry.rightTopFrame.minX == geometry.rightBottomFrame.minX)
             #expect(geometry.rightTopFrame.width == geometry.rightBottomFrame.width)
-            #expect(abs(geometry.badgeFrame.midX - panel.width * layout.badgeCenterXToPanelWidth) < 0.001)
+            #expect(abs(geometry.rightTopFrame.maxX - (panel.width - panel.height * layout.rightPaddingToPanelHeight)) < 0.001)
             #expect(geometry.leftTopFrame.maxX < geometry.badgeFrame.minX)
             #expect(geometry.badgeFrame.maxX < geometry.dividerFrame.minX)
             #expect(geometry.dividerFrame.maxX < geometry.rightTopFrame.minX)
@@ -98,7 +131,7 @@ struct GlassCardRendererPrototypeTests {
             let height = geometry.panelFrame.height
             #expect(abs((geometry.dividerFrame.minX - geometry.badgeFrame.maxX) / height - 0.12) < 0.001)
             #expect(abs((geometry.rightTopFrame.minX - geometry.dividerFrame.maxX) / height - 0.12) < 0.001)
-            #expect(geometry.rightTopFrame.width >= geometry.panelFrame.width * 0.39 - height * 0.46)
+            #expect(geometry.rightTopFrame.width >= 0)
         }
     }
 
@@ -154,7 +187,8 @@ struct GlassCardRendererPrototypeTests {
                     content: .init(leftTop: text, leftBottom: "", rightTop: "", rightBottom: ""), canvasSize: canvas)
                 #expect(!emptyRight.isEmpty)
                 #expect(!emptyRight.isContentOverflowing)
-                #expect(emptyRight.geometry == short.geometry)
+                #expect(emptyRight.geometry.rightTopFrame.maxX == short.geometry.rightTopFrame.maxX)
+                #expect(emptyRight.geometry.badgeFrame.minX > short.geometry.badgeFrame.minX)
             }
         }
     }

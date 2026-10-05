@@ -29996,3 +29996,8 @@ Final delivery closure: main4392f3e1 native integration, b447f11a Unicode fix,28
 ### 2026-10-03 — MemoMark 2.3.5（122）发布准备与 GitHub 同步
 
 负责人指定正式版 2.3.4 为更新起点，沿用 2.3.5，所有 target 构建号维护为 122。纳入已接受的预览披露、设置导航、四语言和界面优化，以及已有 116 功能修复；未冻结 Research、Outreach 和旧商店草稿留在本地。122 验证和远端回执见 `Docs/07_Releases/2026-10-03-2.3.5-122-sync-manifest.md`。本轮准备 TestFlight，未上传或提交 App Store；真机人工与媒体认证不由构建代替。
+
+
+## 2026-10-06 — GlassCard and configuration UI source checkpoint
+
+Owner authorized GitHub sync of bounded GlassCard layout/material/SDR admission/foreground preparation and configuration preview/accessory work. Version remains 2.3.5 (122). Full unit suite: 1981 passed, 0 failed, 1 existing disabled; 2 QoS warnings remain. Signed iOS build passed; device editor round trip and preview/accessory lifecycle passed. Welcome navigation automated test remains failed pending manual diagnosis. Original P3/HDR is rejected by native backdrop; positive Photos and repeat-export evidence uses SDR fixtures. Peak RSS ~718 MiB and encoded motion downscaling remain open. No TestFlight upload or App Store submission. See [source checkpoint](07_Releases/2026-10-06-glasscard-ui-source-checkpoint.md).

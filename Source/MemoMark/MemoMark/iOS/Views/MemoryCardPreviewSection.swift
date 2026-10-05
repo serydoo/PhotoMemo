@@ -75,10 +75,6 @@ struct MemoryCardPreviewSection: View {
                 for: presentationStyle,
                 orientation: orientation
             )
-            let alternateCanvasAspectRatio = ConfigurationPreviewViewportSpec.canvasAspectRatio(
-                for: presentationStyle,
-                orientation: alternateOrientation
-            )
             let viewportHeight = width
                 / viewportAspectRatio
             let activeCanvasWidth = ConfigurationPreviewViewportSpec.canvasWidth(
@@ -88,31 +84,8 @@ struct MemoryCardPreviewSection: View {
             )
             let activeCanvasHeight = activeCanvasWidth
                 / activeCanvasAspectRatio
-            let alternateRestingWidth = activeCanvasWidth
-                * ConfigurationPreviewViewportSpec.alternateCardPeekScale
-            let alternateCanvasWidth = alternateRestingWidth
-            let alternateCanvasHeight = alternateCanvasWidth / alternateCanvasAspectRatio
-            let alternateCenterX = width / 2
-                + ConfigurationPreviewViewportSpec.alternateCardPeekOffset
 
             ZStack(alignment: .topLeading) {
-                // The alternate orientation remains subtly visible behind the
-                // active canvas; edge buttons provide deliberate switching.
-                previewCanvas(for: alternateOrientation)
-                    .frame(width: alternateCanvasWidth, height: alternateCanvasHeight)
-                    .opacity(ConfigurationPreviewViewportSpec.alternateCardPeekOpacity)
-                    .position(
-                        x: alternateCenterX,
-                        y: canvasCenterY(
-                            canvasHeight: alternateCanvasHeight,
-                            viewportHeight: viewportHeight,
-                            orientation: alternateOrientation,
-                            alignsToContent: usesEditingViewport,
-                            contentFraction: 0.9
-                        ) + 8
-                    )
-                    .accessibilityHidden(true)
-
                 previewCanvas(for: orientation)
                     .frame(width: activeCanvasWidth, height: activeCanvasHeight)
                     .position(

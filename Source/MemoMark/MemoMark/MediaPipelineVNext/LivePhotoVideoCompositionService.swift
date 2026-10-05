@@ -43,6 +43,7 @@ enum LivePhotoVideoCompositionError:
     case destinationPrepareFailed
     case exportFailed
     case pairingIdentityMissing
+    case nativeBackdropColorUnsupported
 
     var errorDescription: String? {
         switch self {
@@ -60,6 +61,8 @@ enum LivePhotoVideoCompositionError:
             return "Unable to prepare the output video destination."
         case .exportFailed:
             return "Unable to export the composed video."
+        case .nativeBackdropColorUnsupported:
+            return "Native glass motion composition cannot preserve this source color format."
         case .pairingIdentityMissing:
             return "A Live Photo pairing identity is required for paired video output."
         }

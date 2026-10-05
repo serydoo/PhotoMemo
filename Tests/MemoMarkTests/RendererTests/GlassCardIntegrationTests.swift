@@ -8,6 +8,33 @@ import Testing
 
 @Suite("GlassCard integration")
 struct GlassCardIntegrationTests {
+    @Test("Content-based right rail exports visible text without changing the photo canvas")
+    @MainActor
+    func trailingRailVisualEvidence() throws {
+        for size in [CGSize(width: 1080, height: 1920), CGSize(width: 1920, height: 1080)] {
+            let content = GlassCardContentProjection(leftTop: "MemoMark", leftBottom: "2026.10.06 08:30",
+                rightTop: "24mm f/1.78 1/5814s ISO80", rightBottom: "A day to remember")
+            let plan = GlassCardResolvedPresentation.resolve(content: content, canvasSize: size)
+            #expect(!plan.isContentOverflowing)
+            #expect(plan.geometry.leftTopFrame.maxX < plan.geometry.badgeFrame.minX)
+            #expect(plan.geometry.rightTopFrame.minX == plan.geometry.rightBottomFrame.minX)
+            let sourceRenderer = ImageRenderer(content: LinearGradient(colors: [.blue, .green, .orange],
+                startPoint: .topLeading, endPoint: .bottomTrailing).frame(width: size.width, height: size.height))
+            sourceRenderer.scale = 1
+            let source = try #require(sourceRenderer.cgImage)
+            let renderer = ImageRenderer(content: GlassCardResolvedCanvas(
+                image: Image(decorative: source, scale: 1), presentation: plan, badge: .appleClassic))
+            renderer.scale = 1
+            let result = try #require(renderer.cgImage)
+            #expect(result.width == Int(size.width) && result.height == Int(size.height))
+            let data = NSMutableData()
+            let destination = try #require(CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil))
+            CGImageDestinationAddImage(destination, result, nil)
+            #expect(CGImageDestinationFinalize(destination))
+            Attachment.record(data as Data, named: "trailing-rail-\(Int(size.width)).png")
+        }
+    }
+
     @Test("Release authoring stays closed while registered GlassCard remains processable")
     func releaseAvailability() throws {
         let style = try JSONDecoder().decode(RecordCardPresentationStyle.self, from: Data("\"glassCard\"".utf8))
@@ -100,7 +127,7 @@ struct GlassCardIntegrationTests {
         let image = Image(decorative: source, scale: 1)
         let outputPlan = GlassCardProductionRenderer.resolve(card: card, canvasSize: CGSize(width: 1080, height: 1440))
         let viewportPlan = GlassCardProductionRenderer.resolve(card: card, canvasSize: viewport)
-        #expect(outputPlan.slots[0].fit.outcome != viewportPlan.slots[0].fit.outcome)
+        #expect(outputPlan.slots[0].fit.pointSize > viewportPlan.slots[0].fit.pointSize)
         let expected = ZStack(alignment: .topLeading) {
             if GlassCardProductionRenderer.usesNativeMaterial {
                 NativeBackdropMaterialCanvas(image: image, canvasSize: outputPlan.canvasSize,
@@ -178,7 +205,7 @@ struct GlassCardIntegrationTests {
         // Sample the interior away from text, badge and view border/shadow.
         let panel = plan.geometry.panelFrame
         let scale = viewport.width / canvas.width
-        let crop = CGRect(x: (panel.minX + panel.width * 0.8) * scale,
+        let crop = CGRect(x: (panel.minX + panel.width * 0.5) * scale,
                           y: (panel.minY + panel.height * 0.35) * scale,
                           width: panel.width * 0.08 * scale, height: panel.height * 0.3 * scale).integral
         let expectedCrop = try #require(expectedImage.cropping(to: crop))

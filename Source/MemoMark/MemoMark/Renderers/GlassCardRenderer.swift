@@ -133,24 +133,13 @@ struct GlassCardPrototypeAppearance: Equatable {
 
     /// Shared eligibility measurement for the reference arrangement's four slots.
     func overflowingPositions(content: GlassCardContentProjection, canvasSize: CGSize) -> [String] {
-        let geometry = GlassCardLayoutSpecification.resolvedGeometry(canvasSize: canvasSize)
-        let layout = GlassCardLayoutSpecification.layout
-        let slots: [(String, String, CGRect, Bool)] = [
-            ("左上", content.leftTop, geometry.leftTopFrame, true),
-            ("左下", content.leftBottom, geometry.leftBottomFrame, false),
-            ("右上", content.rightTop, geometry.rightTopFrame, true),
-            ("右下", content.rightBottom, geometry.rightBottomFrame, false)
-        ]
-        return slots.compactMap { name, value, frame, primary in
-            let ratio = primary ? layout.primaryFontToPanelHeight : layout.secondaryFontToPanelHeight
-            let multiplier = primary ? typeScale.primaryMultiplier : typeScale.secondaryMultiplier
-            let result = GlassCardTextFitSpecification.resolve(
-                text: value, frame: frame.size,
-                pointSize: geometry.panelFrame.height * ratio * multiplier,
-                isPrimary: primary, lineLimit: textFitCandidate.lineLimit,
-                minimumScale: primary ? 0.72 : 0.70
-            )
-            return result.outcome == .overflow ? name : nil
+        let plan = GlassCardResolvedPresentation.resolve(content: content, canvasSize: canvasSize,
+            primaryFontMultiplier: typeScale.primaryMultiplier,
+            secondaryFontMultiplier: typeScale.secondaryMultiplier,
+            lineLimit: textFitCandidate.lineLimit)
+        let names = ["左上", "左下", "右上", "右下"]
+        return plan.slots.enumerated().compactMap { index, slot in
+            slot.fit.outcome == .overflow ? names[index] : nil
         }
     }
 
@@ -215,9 +204,10 @@ struct GlassCardPrototypeOverlay: View {
     let canvasSize: CGSize
 
     var body: some View {
-        let geometry = GlassCardLayoutSpecification.resolvedGeometry(
-            canvasSize: canvasSize
-        )
+        let geometry = GlassCardResolvedPresentation.resolve(content: content, canvasSize: canvasSize,
+            primaryFontMultiplier: appearance.typeScale.primaryMultiplier,
+            secondaryFontMultiplier: appearance.typeScale.secondaryMultiplier,
+            lineLimit: appearance.textFitCandidate.lineLimit).geometry
         let panelFrame = geometry.panelFrame
 
         ZStack(alignment: .topLeading) {

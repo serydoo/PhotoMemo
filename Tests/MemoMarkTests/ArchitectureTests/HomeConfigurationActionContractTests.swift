@@ -266,12 +266,17 @@ struct HomeConfigurationActionContractTests {
         #expect(source.contains("renamePresentation.titleDraft = title"))
         #expect(source.contains("case .commitRenameAndSave(let title):"))
         #expect(!source.contains("case .rename(let title):"))
-        #expect(
-            source.components(
-                separatedBy:
-                    "performConfigurationLibraryAction(.saveCurrent)"
-            ).count - 1 == 2
-        )
+        // Native bottom accessory and fallback surfaces may expose additional
+        // save entries; every callback must still route through the same decision.
+        let callbackPattern = try NSRegularExpression(pattern: #"onSave(?:Current)?Configuration:\s*\{([^}]*)\}"#)
+        let callbacks = callbackPattern.matches(in: pagesSource,
+            range: NSRange(pagesSource.startIndex..., in: pagesSource))
+        #expect(!callbacks.isEmpty)
+        for callback in callbacks {
+            let bodyRange = try #require(Range(callback.range(at: 1), in: pagesSource))
+            #expect(pagesSource[bodyRange].trimmingCharacters(in: .whitespacesAndNewlines)
+                == "performConfigurationLibraryAction(.saveCurrent)")
+        }
         #expect(source.contains("case .saveCurrent:"))
         #expect(
             source.contains("startCurrentConfigurationSaveWithFeedback()")

@@ -6,10 +6,11 @@ import UniformTypeIdentifiers
 import AVFoundation
 import CoreVideo
 import Photos
+import Darwin
 
 /// Explicit DEBUG launch-only study. Optional Photos verification writes new assets through the existing writer.
 struct GlassCardNativeMaterialStudyView: View {
-    @State private var mode = GlassCardNativeMaterialStudyMode.regularDark
+    @State private var mode = GlassCardNativeMaterialStudyMode.production
     @State private var dark = false
     @State private var source: CGImage?
     @State private var message = "准备原生材质对照"
@@ -41,9 +42,16 @@ struct GlassCardNativeMaterialStudyView: View {
     }
     @MainActor private func exportControls() async {
         source = fixture(dark:false)
+        let root = URL.documentsDirectory.appendingPathComponent("GlassCardNativeMaterialStudy",isDirectory:true)
+        let startedAt = Date.now.ISO8601Format()
+        func recordStatus(_ state: String, error: String = "") throws {
+            try JSONSerialization.data(withJSONObject: ["state": state, "startedAt": startedAt,
+                "updatedAt": Date.now.ISO8601Format(), "error": error], options: [.prettyPrinted, .sortedKeys])
+                .write(to: root.appendingPathComponent("study-status.json"), options: .atomic)
+        }
         do {
-            let root = URL.documentsDirectory.appendingPathComponent("GlassCardNativeMaterialStudy",isDirectory:true)
             try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true)
+            try recordStatus("running")
             var rows: [[String:Any]] = []
             for backdrop in [false,true] {
                 guard let image = fixture(dark:backdrop) else { throw CocoaError(.fileWriteUnknown) }
@@ -69,12 +77,27 @@ struct GlassCardNativeMaterialStudyView: View {
             try JSONSerialization.data(withJSONObject:rows,options:[.prettyPrinted,.sortedKeys])
                 .write(to:root.appendingPathComponent("manifest.json"),options:.atomic)
             try await exportMotionControl(to: root)
-            try await exportApprovedPairs(to: root)
+            if ProcessInfo.processInfo.arguments.contains("--glasscard-native-repeat-study") {
+                for cycle in 1...3 {
+                    try Task.checkCancellation()
+                    try await exportApprovedPairs(to: root)
+                    let manifest = try Data(contentsOf: root.appendingPathComponent("real-pair-manifest.json"))
+                    try manifest.write(to: root.appendingPathComponent("repeat-cycle-\(cycle).json"), options: .atomic)
+                    await Task.yield()
+                }
+            } else {
+                try await exportApprovedPairs(to: root)
+            }
+            try recordStatus("completed")
             message = "材质与照片配对验证完成，详情已保存在本地验证记录中"
-        } catch { message = "输出失败：\(error.localizedDescription)" }
+        } catch {
+            try? recordStatus("failed", error: error.localizedDescription)
+            message = "输出失败：\(error.localizedDescription)"
+        }
     }
     @MainActor private func exportApprovedPairs(to root: URL) async throws {
-        let inputs = root.appendingPathComponent("Inputs", isDirectory: true)
+        let usesSDRFixture = ProcessInfo.processInfo.arguments.contains("--glasscard-native-sdr-fixture-study")
+        let inputs = root.appendingPathComponent(usesSDRFixture ? "InputsSDRFixture" : "Inputs", isDirectory: true)
         var rows: [[String: Any]] = []
         let runIdentifier = UUID().uuidString
         for name in ["IMG_7027", "IMG_7033"] {
@@ -109,6 +132,10 @@ struct GlassCardNativeMaterialStudyView: View {
             let artifact = try PresentationArtifact(canvasSize: canvas, photoFrame: CGRect(origin: .zero, size: canvas),
                 layers: [.init(frame: resolved.artifactOverlayFrame, image: ink)], canvasBackground: .transparent,
                 backdropMaterial: GlassCardProductionRenderer.backdropMaterial(for: resolved))
+            var memoryBefore = rusage()
+            _ = getrusage(RUSAGE_SELF, &memoryBefore)
+            let footprintBefore = physicalFootprint()
+            let thermalBefore = ProcessInfo.processInfo.thermalState.rawValue
             let start = ContinuousClock.now
             let outputStill = root.appendingPathComponent(name + "-native.heic")
             let outputMotion = root.appendingPathComponent(name + "-native.mov")
@@ -119,6 +146,8 @@ struct GlassCardNativeMaterialStudyView: View {
             let video = try await asset.loadTracks(withMediaType: .video)
             let audio = try await asset.loadTracks(withMediaType: .audio)
             let elapsed = start.duration(to: .now)
+            var memoryAfter = rusage()
+            _ = getrusage(RUSAGE_SELF, &memoryAfter)
             var savedIdentifier = ""
             var photosReadback: [String: Any] = [:]
             let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
@@ -131,23 +160,48 @@ struct GlassCardNativeMaterialStudyView: View {
                         pairedVideoOriginalFilename: name + "-native.mov",
                         idempotencyKey: "native-glass-device-certification-" + name + "-" + runIdentifier))
                 savedIdentifier = result.assetLocalIdentifier
-                photosReadback = try await verifySavedPair(identifier: savedIdentifier, name: name, root: root)
+                photosReadback = try await verifySavedPair(identifier: savedIdentifier, name: name, root: root, sourceVideoURL: motion)
             }
-            rows.append(["source": name, "still": outputStill.lastPathComponent, "motion": outputMotion.lastPathComponent,
+            let encodedSize = try await video.first?.load(.naturalSize)
+            var row: [String: Any] = ["source": name, "usesSDRVideoFixture": usesSDRFixture, "still": outputStill.lastPathComponent, "motion": outputMotion.lastPathComponent,
                 "canvasWidth": Int(canvas.width), "canvasHeight": Int(canvas.height),
                 "videoTracks": video.count, "audioTracks": audio.count,
+                "processLifetimePeakRSSBeforeBytes": memoryBefore.ru_maxrss,
+                "processLifetimePeakRSSAfterBytes": memoryAfter.ru_maxrss,
+                "thermalStateBefore": thermalBefore, "thermalStateAfter": ProcessInfo.processInfo.thermalState.rawValue,
                 "duration": try await asset.load(.duration).seconds,
                 "seconds": Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18,
                 "savedToPhotos": !savedIdentifier.isEmpty, "photosAssetIdentifier": savedIdentifier,
                 "photosAuthorization": status.rawValue, "fullResolution": fullResolution,
-                "runIdentifier": runIdentifier, "photosReadback": photosReadback])
+                "runIdentifier": runIdentifier, "photosReadback": photosReadback]
+            if let encodedSize {
+                row["encodedVideoWidth"] = Int(encodedSize.width)
+                row["encodedVideoHeight"] = Int(encodedSize.height)
+                row["encodedSizeMatchesCanvas"] = encodedSize == canvas
+                row["encodedAspectMatchesCanvas"] = abs(encodedSize.width / encodedSize.height - canvas.width / canvas.height) < 0.001
+            }
+            if let footprintBefore { row["physicalFootprintBeforeBytes"] = footprintBefore }
+            if let footprintAfter = physicalFootprint() { row["physicalFootprintAfterBytes"] = footprintAfter }
+            rows.append(row)
         }
         try JSONSerialization.data(withJSONObject: rows, options: [.prettyPrinted, .sortedKeys])
             .write(to: root.appendingPathComponent("real-pair-manifest.json"), options: .atomic)
     }
 
+    /// Current footprint complements process-lifetime peak RSS for repeated-export studies.
+    private func physicalFootprint() -> UInt64? {
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
+        let result = withUnsafeMutablePointer(to: &info) { pointer in
+            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+            }
+        }
+        return result == KERN_SUCCESS ? info.phys_footprint : nil
+    }
+
     /// Inspect only this run's saved assets. Cloud downloads are never requested.
-    @MainActor private func verifySavedPair(identifier: String, name: String, root: URL) async throws -> [String: Any] {
+    @MainActor private func verifySavedPair(identifier: String, name: String, root: URL, sourceVideoURL: URL) async throws -> [String: Any] {
         guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil).firstObject,
               asset.mediaSubtypes.contains(.photoLive) else { throw CocoaError(.fileReadCorruptFile) }
         let resources = PHAssetResource.assetResources(for: asset)
@@ -169,8 +223,7 @@ struct GlassCardNativeMaterialStudyView: View {
                 }
             }
             if resource.type == .pairedVideo {
-                let sourceURL = root.appendingPathComponent("Inputs/" + name + ".mov")
-                let expected = try await LivePhotoStillImageTimeMetadata.samples(in: sourceURL)
+                let expected = try await LivePhotoStillImageTimeMetadata.samples(in: sourceVideoURL)
                 guard !expected.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
                 try await LivePhotoStillImageTimeMetadata.verify(expected, in: url)
             }
@@ -227,7 +280,7 @@ struct GlassCardNativeMaterialStudyView: View {
                     throw CocoaError(.fileWriteUnknown)
                 }
                 let renderer = ImageRenderer(content: GlassCardNativeMaterialStudyCanvas(
-                    source: source, plan: plan, mode: .regularDark))
+                    source: source, plan: plan, mode: .production))
                 renderer.scale = 1
                 guard let image = renderer.cgImage, let pool = adaptor.pixelBufferPool else {
                     throw CocoaError(.fileWriteUnknown)

@@ -25,6 +25,7 @@ struct ConfigurationPageSurface<
     let isSavingConfiguration: Bool
     let isSelectedProcessingDefault: Bool
     let isEditingCardContent: Bool
+    let usesExternalConfigurationActions: Bool
     let isPreviewVisible: Bool
     let onTogglePreview: (() -> Void)?
     let previewWidthPolicy: ConfigurationPreviewWidthPolicy
@@ -46,6 +47,7 @@ struct ConfigurationPageSurface<
         isSavingConfiguration: Bool,
         isSelectedProcessingDefault: Bool,
         isEditingCardContent: Bool = false,
+        usesExternalConfigurationActions: Bool = false,
         isPreviewVisible: Bool = true,
         onTogglePreview: (() -> Void)? = nil,
         previewWidthPolicy: ConfigurationPreviewWidthPolicy = .readable,
@@ -65,6 +67,7 @@ struct ConfigurationPageSurface<
         self.isSavingConfiguration = isSavingConfiguration
         self.isSelectedProcessingDefault = isSelectedProcessingDefault
         self.isEditingCardContent = isEditingCardContent
+        self.usesExternalConfigurationActions = usesExternalConfigurationActions
         self.isPreviewVisible = isPreviewVisible
         self.onTogglePreview = onTogglePreview
         self.previewWidthPolicy = previewWidthPolicy
@@ -96,13 +99,16 @@ struct ConfigurationPageSurface<
             previewWidthPolicy: previewWidthPolicy,
             editorScrollRequest: editorScrollRequest,
             editorContentOwnsScrolling: isEditingCardContent,
+            usesSystemBottomAccessory: usesExternalConfigurationActions,
             onDismissKeyboard: onDismissKeyboard
         ) {
             previewContent
         } editorContent: {
             editorContent
         } accessoryContent: {
-            if usesToolbarConfigurationActions || isEditingCardContent {
+            if usesToolbarConfigurationActions
+                || usesExternalConfigurationActions
+                || isEditingCardContent {
                 EmptyView()
             } else {
                 ConfigurationActionFooter(

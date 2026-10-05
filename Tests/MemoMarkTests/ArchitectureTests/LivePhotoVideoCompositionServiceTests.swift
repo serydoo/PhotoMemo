@@ -2,11 +2,178 @@ import AVFoundation
 import CoreGraphics
 import CoreImage
 import Foundation
+import Darwin
 import Testing
 @testable import MemoMark
 
 @Suite("Live Photo video composition service")
 struct LivePhotoVideoCompositionServiceTests {
+
+    @Test("Native backdrop large-output study records export cost and still-material parity")
+    func nativeBackdropLargeOutputStudy() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("GlassLargeOutput-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        var rows: [[String: Any]] = []
+        for size in [CGSize(width: 1920, height: 1080), CGSize(width: 4032, height: 3024)] {
+            let source = folder.appendingPathComponent("source-\(Int(size.width)).mov")
+            try await makeSampleVideo(at: source, size: size, frameColors: [.red, .red, .green, .green], framesPerSecond: 4)
+            let height = size.height * 0.13
+            let ink = try makeSolidColorImage(color: .init(red: 255, green: 255, blue: 255, alpha: 255), size: CGSize(width: 8, height: 8))
+            let material = PresentationArtifact.BackdropMaterial(
+                frame: CGRect(x: 20, y: 20, width: size.width - 40, height: height),
+                renderFrame: CGRect(x: 0, y: 0, width: size.width, height: height + 50), cornerRadius: height / 2)
+            let artifact = try PresentationArtifact(canvasSize: size, photoFrame: CGRect(origin: .zero, size: size),
+                layers: [.init(frame: CGRect(x: size.width / 2, y: height / 2, width: 8, height: 8), image: ink)],
+                canvasBackground: .transparent, backdropMaterial: material)
+            var before = rusage()
+            _ = getrusage(RUSAGE_SELF, &before)
+            let start = ContinuousClock.now
+            let output = try await LivePhotoVideoCompositionService().composeVideo(sourceVideoURL: source,
+                overlay: artifact, outputURL: folder.appendingPathComponent("output-\(Int(size.width)).mov"))
+            let elapsed = start.duration(to: .now)
+            var after = rusage()
+            _ = getrusage(RUSAGE_SELF, &after)
+            let asset = AVURLAsset(url: output)
+            let track = try #require(try await asset.loadTracks(withMediaType: .video).first)
+            #expect(try await track.load(.naturalSize) == size)
+            let time = CMTime(seconds: 0.1, preferredTimescale: 600)
+            let first = try await frameImage(from: asset, at: time)
+            let later = try await frameImage(from: asset, at: CMTime(seconds: 0.6, preferredTimescale: 600))
+            let sourceFrame = try await frameImage(from: AVURLAsset(url: source), at: time)
+            let patch = try #require(await MainActor.run {
+                NativeBackdropMaterialRenderer.render(sourceCanvas: sourceFrame, canvasSize: size, material: material)
+            })
+            let probe = CGRect(x: size.width * 0.25, y: height * 0.5, width: 16, height: 16)
+            func normalized(_ image: CGImage) throws -> CGImage {
+                let space = try #require(CGColorSpace(name: CGColorSpace.sRGB))
+                let context = try #require(CGContext(data: nil, width: image.width, height: image.height,
+                    bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                    space: space,
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+                context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+                return try #require(context.makeImage())
+            }
+            let motion = averageColor(in: try normalized(first), rect: probe)
+            let stillMaterial = averageColor(in: try normalized(patch), rect: probe)
+            let moved = averageColor(in: try normalized(later), rect: probe)
+            let delta = max(abs(Int(motion.red) - Int(stillMaterial.red)),
+                abs(Int(motion.green) - Int(stillMaterial.green)), abs(Int(motion.blue) - Int(stillMaterial.blue)))
+            // Compare a stable flat interior; lossy H.264 permits small SDR rounding.
+            #expect(delta <= 8)
+            #expect(Int(motion.red) > Int(moved.red) + 40)
+            #expect(Int(moved.green) > Int(motion.green) + 40)
+            rows.append(["width": Int(size.width), "height": Int(size.height), "sourceFrames": 4,
+                "sourceFPS": 4, "exportSeconds": Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18,
+                "processLifetimePeakRSSBeforeBytes": before.ru_maxrss, "processLifetimePeakRSSAfterBytes": after.ru_maxrss,
+                "stillMaterialMotionInteriorMaxChannelDelta": delta,
+                "motionRGB": [motion.red, motion.green, motion.blue], "stillMaterialRGB": [stillMaterial.red, stillMaterial.green, stillMaterial.blue],
+                "outputBytes": try Data(contentsOf: output, options: .mappedIfSafe).count])
+        }
+        Attachment.record(try JSONSerialization.data(withJSONObject: rows, options: [.prettyPrinted, .sortedKeys]),
+            named: "large-output-cost-and-parity.json")
+    }
+
+    @Test("Prepared foreground preserves z order, opacity, fractional transforms and changing backgrounds")
+    func preparedForegroundParity() throws {
+        let size = CGSize(width: 64, height: 48)
+        let red = try makeSolidColorImage(color: .init(red: 255, green: 0, blue: 0, alpha: 255), size: CGSize(width: 8, height: 6))
+        let blue = try makeSolidColorImage(color: .init(red: 0, green: 0, blue: 255, alpha: 255), size: CGSize(width: 4, height: 4))
+        let layers: [PresentationArtifact.Layer] = [
+            .init(frame: CGRect(x: 12.5, y: 9.25, width: 24, height: 18), image: blue, zIndex: 2, opacity: 0.6),
+            .init(frame: CGRect(x: 8, y: 6, width: 32, height: 24), image: red, zIndex: 1),
+            .init(frame: CGRect(x: 0, y: 0, width: 64, height: 48), image: blue, zIndex: 3, opacity: 0)
+        ]
+        let artifact = try PresentationArtifact(canvasSize: size, photoFrame: CGRect(origin: .zero, size: size),
+            layers: layers, canvasBackground: .transparent)
+        let instruction = NativeBackdropVideoInstruction(trackID: 1, duration: CMTime(seconds: 1, preferredTimescale: 600),
+            videoTransform: .identity, artifact: artifact)
+        func original(_ background: CIImage) -> CIImage {
+            layers.sorted(by: { $0.zIndex < $1.zIndex }).reduce(background) { canvas, layer in
+                CIImage(cgImage: layer.image)
+                    .applyingFilter("CIColorMatrix", parameters: ["inputAVector": CIVector(x: 0, y: 0, z: 0, w: layer.opacity)])
+                    .transformed(by: CGAffineTransform(scaleX: layer.frame.width / CGFloat(layer.image.width),
+                        y: layer.frame.height / CGFloat(layer.image.height)))
+                    .transformed(by: CGAffineTransform(translationX: layer.frame.minX, y: layer.frame.minY))
+                    .composited(over: canvas)
+            }
+        }
+        let context = CIContext()
+        let bounds = CGRect(origin: .zero, size: size)
+        for color in [CIColor.white, .green, .black] {
+            let background = CIImage(color: color).cropped(to: bounds)
+            let expected = try #require(context.createCGImage(original(background), from: bounds))
+            let actual = try #require(context.createCGImage(instruction.compositingForeground(over: background), from: bounds))
+            #expect((try #require(expected.dataProvider?.data)) as Data == (try #require(actual.dataProvider?.data)) as Data)
+        }
+        // Isolate graph preparation cost; this is not end-to-end video/GPU timing.
+        let background = CIImage(color: .green).cropped(to: bounds)
+        let clock = ContinuousClock()
+        let originalTime = clock.measure { for _ in 0..<1000 { _ = original(background).extent } }
+        let preparedTime = clock.measure { for _ in 0..<1000 { _ = instruction.compositingForeground(over: background).extent } }
+        Attachment.record(Data("1000 graph constructions: original=\(originalTime), prepared=\(preparedTime)".utf8), named: "foreground-preparation-cost.txt")
+    }
+
+    @Test("Native color admission distinguishes SDR, HDR, wide color and unknown tags")
+    func nativeMotionColorCapabilities() throws {
+        let p = kCMFormatDescriptionExtension_ColorPrimaries as String
+        let t = kCMFormatDescriptionExtension_TransferFunction as String
+        let cases: [([String: Any], NativeBackdropMotionColorCapability)] = [
+            ([:], .sdrSupported),
+            ([p: kCMFormatDescriptionColorPrimaries_ITU_R_709_2,
+              t: kCMFormatDescriptionTransferFunction_ITU_R_709_2], .sdrSupported),
+            ([t: kCMFormatDescriptionTransferFunction_ITU_R_2100_HLG], .hdrRequiresFallback),
+            ([t: kCMFormatDescriptionTransferFunction_SMPTE_ST_2084_PQ], .hdrRequiresFallback),
+            ([p: kCMFormatDescriptionColorPrimaries_P3_D65], .wideColorRequiresFallback),
+            ([p: kCMFormatDescriptionColorPrimaries_ITU_R_2020,
+              t: kCMFormatDescriptionTransferFunction_ITU_R_2020], .wideColorRequiresFallback),
+            ([t: "unknown"], .unsupported),
+            ([kCMFormatDescriptionExtension_BitsPerComponent as String: 10], .unsupported),
+            ([kCMFormatDescriptionExtension_YCbCrMatrix as String: kCMFormatDescriptionYCbCrMatrix_ITU_R_2020], .wideColorRequiresFallback),
+            ([p: 123], .unsupported),
+            ([kCMFormatDescriptionExtension_AlternativeTransferCharacteristics as String:
+                kCMFormatDescriptionTransferFunction_ITU_R_2100_HLG], .hdrRequiresFallback),
+            ([kCMFormatDescriptionExtension_LogTransferFunction as String:
+                kCMFormatDescriptionLogTransferFunction_AppleLog], .unsupported),
+            ([kCMFormatDescriptionExtension_ContentLightLevelInfo as String: Data([0, 1, 0, 1])], .hdrRequiresFallback)
+        ]
+        for (extensions, expected) in cases {
+            var description: CMVideoFormatDescription?
+            #expect(CMVideoFormatDescriptionCreate(allocator: kCFAllocatorDefault,
+                codecType: kCMVideoCodecType_H264, width: 80, height: 60,
+                extensions: extensions as CFDictionary, formatDescriptionOut: &description) == noErr)
+            #expect(NativeBackdropMotionColorCapability.resolve(try #require(description)) == expected)
+        }
+    }
+
+    @Test("Native backdrop rejects a P3 motion source before composition")
+    func nativeBackdropRejectsWideColorSource() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("WideBackdrop-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let source = folder.appendingPathComponent("source.mov")
+        try await makeSampleVideo(at: source, size: CGSize(width: 80, height: 60),
+            frameColors: [.red, .green], framesPerSecond: 2, colorProperties: [
+                AVVideoColorPrimariesKey: AVVideoColorPrimaries_P3_D65,
+                AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_709_2,
+                AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2
+            ])
+        let canvas = CGSize(width: 80, height: 60)
+        let ink = try makeSolidColorImage(color: .red, size: CGSize(width: 2, height: 2))
+        let layers: [PresentationArtifact.Layer] = [.init(frame: CGRect(x: 4, y: 4, width: 2, height: 2), image: ink)]
+        let artifact = try PresentationArtifact(canvasSize: canvas, photoFrame: CGRect(origin: .zero, size: canvas),
+            layers: layers, canvasBackground: .transparent,
+            backdropMaterial: .init(frame: CGRect(x: 4, y: 4, width: 72, height: 16),
+                renderFrame: CGRect(x: 0, y: 0, width: 80, height: 28), cornerRadius: 8))
+        await #expect(throws: LivePhotoVideoCompositionError.nativeBackdropColorUnsupported) {
+            try await AVFoundationLivePhotoVideoCompositionInputPreparer().preparedVideoCompositionInput(
+                sourceVideoURL: source, preparedOverlay: artifact)
+        }
+        let control = try PresentationArtifact(canvasSize: canvas, photoFrame: artifact.photoFrame,
+            layers: layers, canvasBackground: .transparent)
+        _ = try await AVFoundationLivePhotoVideoCompositionInputPreparer().preparedVideoCompositionInput(
+            sourceVideoURL: source, preparedOverlay: control)
+    }
 
     @Test("Paired export retains noncentral still time without stale transform metadata", arguments: [false, true])
     func pairedExportRetainsTimedStillMarker(nativeMaterial: Bool) async throws {
@@ -768,7 +935,8 @@ private extension LivePhotoVideoCompositionServiceTests {
         preferredTransform: CGAffineTransform = .identity,
         topHalfBlue: Bool = false,
         stillImageTime: CMTime? = nil,
-        stillMarkerCount: Int = 1
+        stillMarkerCount: Int = 1,
+        colorProperties: [String: String]? = nil
     ) async throws {
         try? FileManager.default.removeItem(
             at: url
@@ -781,11 +949,12 @@ private extension LivePhotoVideoCompositionServiceTests {
             )
         writer.metadata = metadata
 
-        let settings: [String: Any] = [
+        var settings: [String: Any] = [
             AVVideoCodecKey: AVVideoCodecType.h264,
             AVVideoWidthKey: Int(size.width),
             AVVideoHeightKey: Int(size.height)
         ]
+        if let colorProperties { settings[AVVideoColorPropertiesKey] = colorProperties }
         let input =
             AVAssetWriterInput(
                 mediaType: .video,

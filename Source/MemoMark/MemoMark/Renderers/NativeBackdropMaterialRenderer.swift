@@ -35,6 +35,7 @@ struct NativeBackdropMaterialCanvas: View {
                 Color.clear.frame(width: material.frame.width, height: material.frame.height)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: material.cornerRadius, style: .continuous))
                     .environment(\.colorScheme, .dark)
+                    .opacity(0.88)
                     .offset(x: material.frame.minX, y: canvasSize.height - material.frame.maxY)
             }
         }.frame(width: canvasSize.width, height: canvasSize.height)

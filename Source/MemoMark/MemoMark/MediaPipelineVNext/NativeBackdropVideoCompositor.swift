@@ -13,6 +13,7 @@ nonisolated final class NativeBackdropVideoInstruction: NSObject, AVVideoComposi
     let sourceTrackID: CMPersistentTrackID
     let videoTransform: CGAffineTransform
     let artifact: PresentationArtifact
+    private let foregroundLayers: [CIImage]
 
     init(trackID: CMPersistentTrackID, duration: CMTime,
          videoTransform: CGAffineTransform, artifact: PresentationArtifact) {
@@ -20,6 +21,18 @@ nonisolated final class NativeBackdropVideoInstruction: NSObject, AVVideoComposi
         timeRange = CMTimeRange(start: .zero, duration: duration)
         self.videoTransform = videoTransform
         self.artifact = artifact
+        // Prepare immutable foreground once; the photo and glass remain frame-dependent.
+        foregroundLayers = artifact.layers.sorted(by: { $0.zIndex < $1.zIndex }).map { layer in
+            CIImage(cgImage: layer.image)
+                .applyingFilter("CIColorMatrix", parameters: ["inputAVector": CIVector(x: 0, y: 0, z: 0, w: layer.opacity)])
+                .transformed(by: CGAffineTransform(scaleX: layer.frame.width / CGFloat(layer.image.width),
+                    y: layer.frame.height / CGFloat(layer.image.height)))
+                .transformed(by: CGAffineTransform(translationX: layer.frame.minX, y: layer.frame.minY))
+        }
+    }
+
+    func compositingForeground(over canvas: CIImage) -> CIImage {
+        foregroundLayers.reduce(canvas) { $1.composited(over: $0) }
     }
 }
 
@@ -84,18 +97,12 @@ nonisolated final class NativeBackdropVideoCompositor: NSObject, AVVideoComposit
                     scaleX: frame.width / CGFloat(patch.width), y: frame.height / CGFloat(patch.height)))
                     .transformed(by: CGAffineTransform(translationX: frame.minX, y: frame.minY))
                 canvas = materialImage.composited(over: canvas)
-                for layer in instruction.artifact.layers.sorted(by: { $0.zIndex < $1.zIndex }) {
-                    let layerImage = CIImage(cgImage: layer.image)
-                        .applyingFilter("CIColorMatrix", parameters: ["inputAVector": CIVector(x: 0, y: 0, z: 0, w: layer.opacity)])
-                        .transformed(by: CGAffineTransform(scaleX: layer.frame.width / CGFloat(layer.image.width),
-                            y: layer.frame.height / CGFloat(layer.image.height)))
-                        .transformed(by: CGAffineTransform(translationX: layer.frame.minX, y: layer.frame.minY))
-                    canvas = layerImage.composited(over: canvas)
-                }
+                canvas = instruction.compositingForeground(over: canvas)
+                // Match the native material raster space; Rec.709 here raised dark material values on readback.
                 output.withUnsafeBuffer {
                     context.render(canvas.transformed(by: request.renderContext.renderTransform), to: $0,
                         bounds: CGRect(origin: .zero, size: request.renderContext.size),
-                        colorSpace: CGColorSpace(name: CGColorSpace.itur_709))
+                        colorSpace: CGColorSpace(name: CGColorSpace.sRGB))
 
                 }
                 let finishedBuffer = CVReadOnlyPixelBuffer(output)

@@ -32,6 +32,7 @@ struct MemoryCardEditorPageSurface<
     let previewWidthPolicy: ConfigurationPreviewWidthPolicy
     let editorScrollRequest: ConfigurationEditorScrollRequest?
     let editorContentOwnsScrolling: Bool
+    let usesSystemBottomAccessory: Bool
     let onDismissKeyboard: () -> Void
     @ViewBuilder var previewContent: PreviewContent
     @ViewBuilder var editorContent: EditorContent
@@ -47,6 +48,7 @@ struct MemoryCardEditorPageSurface<
         previewWidthPolicy: ConfigurationPreviewWidthPolicy = .readable,
         editorScrollRequest: ConfigurationEditorScrollRequest? = nil,
         editorContentOwnsScrolling: Bool = false,
+        usesSystemBottomAccessory: Bool = false,
         onDismissKeyboard: @escaping () -> Void,
         @ViewBuilder previewContent: () -> PreviewContent,
         @ViewBuilder editorContent: () -> EditorContent,
@@ -61,6 +63,7 @@ struct MemoryCardEditorPageSurface<
         self.previewWidthPolicy = previewWidthPolicy
         self.editorScrollRequest = editorScrollRequest
         self.editorContentOwnsScrolling = editorContentOwnsScrolling
+        self.usesSystemBottomAccessory = usesSystemBottomAccessory
         self.onDismissKeyboard = onDismissKeyboard
         self.previewContent = previewContent()
         self.editorContent = editorContent()
@@ -153,11 +156,9 @@ struct MemoryCardEditorPageSurface<
                 ConfigurationPageHeader(
                     pageTitle,
                     subtitle: pageSubtitle,
-                    previewToggleTitle: onTogglePreview == nil ? nil : (
-                        isPreviewVisible ? "configuration.preview.collapse" : "configuration.preview.expand"
-                    ),
-                    previewAccessibilityValue: isPreviewVisible
-                        ? "configuration.preview.visible" : "configuration.preview.hidden",
+                    previewIsVisible: onTogglePreview == nil
+                        ? nil
+                        : isPreviewVisible,
                     onTogglePreview: onTogglePreview
                 )
             }
@@ -193,10 +194,7 @@ struct MemoryCardEditorPageSurface<
                 .padding(.top, 8)
                 .padding(
                     .bottom,
-                    AdaptivePageLayout
-                        .scrollBottomPadding(
-                            for: navigationStyle
-                        )
+                    editorBottomPadding
                 )
                 .adaptiveScrollContent(
                     horizontalPadding: ConfigurationUI.contentColumnPadding
@@ -245,6 +243,12 @@ struct MemoryCardEditorPageSurface<
             hasCompactVerticalSizeClass:
                 verticalSizeClass == .compact
         )
+    }
+
+    private var editorBottomPadding: CGFloat {
+        usesSystemBottomAccessory
+            ? 26
+            : AdaptivePageLayout.scrollBottomPadding(for: navigationStyle)
     }
 }
 #endif

@@ -9,27 +9,24 @@ struct ConfigurationPageHeader: View {
 
     let title: String
     let subtitle: String?
-    let previewToggleTitle: String?
-    let previewAccessibilityValue: String?
+    let previewIsVisible: Bool?
     let onTogglePreview: (() -> Void)?
 
     init(
         _ title: String,
         subtitle: String? = nil,
-        previewToggleTitle: String? = nil,
-        previewAccessibilityValue: String? = nil,
+        previewIsVisible: Bool? = nil,
         onTogglePreview: (() -> Void)? = nil
     ) {
         self.title = title
         self.subtitle = subtitle
-        self.previewToggleTitle = previewToggleTitle
-        self.previewAccessibilityValue = previewAccessibilityValue
+        self.previewIsVisible = previewIsVisible
         self.onTogglePreview = onTogglePreview
     }
 
     var body: some View {
         Group {
-            if previewToggleTitle != nil {
+            if previewIsVisible != nil {
                 if dynamicTypeSize.isAccessibilitySize {
                     VStack(alignment: .leading, spacing: ConfigurationUI.sheetSubtitleTopPadding) {
                         titleAndSubtitle
@@ -82,11 +79,11 @@ struct ConfigurationPageHeader: View {
 
     @ViewBuilder
     private var previewToggle: some View {
-        if let previewToggleTitle, let onTogglePreview {
+        if let previewIsVisible, let onTogglePreview {
             Button(action: onTogglePreview) {
                 HStack(spacing: 5) {
                     Text(localized(previewToggleTitle))
-                    Image(systemName: previewToggleTitle == "configuration.preview.collapse"
+                    Image(systemName: previewIsVisible
                         ? "chevron.up" : "chevron.down")
                         .font(.caption.weight(.semibold))
                 }
@@ -98,9 +95,21 @@ struct ConfigurationPageHeader: View {
             .buttonStyle(.plain)
             .foregroundStyle(Color.accentColor)
             .accessibilityLabel(localized(previewToggleTitle))
-            .accessibilityValue(localized(previewAccessibilityValue ?? ""))
+            .accessibilityValue(localized(previewAccessibilityValue))
             .accessibilityIdentifier("configuration.preview.visibility")
         }
+    }
+
+    private var previewToggleTitle: String {
+        previewIsVisible == true
+            ? "configuration.preview.collapse"
+            : "configuration.preview.expand"
+    }
+
+    private var previewAccessibilityValue: String {
+        previewIsVisible == true
+            ? "configuration.preview.visible"
+            : "configuration.preview.hidden"
     }
 
     private func localized(_ value: String) -> String {

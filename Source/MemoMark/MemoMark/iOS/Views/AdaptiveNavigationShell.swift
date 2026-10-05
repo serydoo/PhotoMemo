@@ -6,7 +6,8 @@ struct EntryNavigationSurface<
     EditorContent: View,
     OutputContent: View,
     TaskContent: View,
-    SettingsContent: View
+    SettingsContent: View,
+    BottomAccessoryContent: View
 >: View {
 
     let navigationStyle: EntryNavigationStyle
@@ -14,11 +15,14 @@ struct EntryNavigationSurface<
     @Binding
     var selection: EntryTab
 
+    let showsBottomAccessory: Bool
+
     private let homeContent: HomeContent
     private let editorContent: EditorContent
     private let outputContent: OutputContent
     private let taskContent: TaskContent
     private let settingsContent: SettingsContent
+    private let bottomAccessoryContent: BottomAccessoryContent
 
     private func localized(_ value: String) -> String {
         MemoMarkLanguage.interfaceStored.localized(key: value, fallback: value)
@@ -27,19 +31,23 @@ struct EntryNavigationSurface<
     init(
         navigationStyle: EntryNavigationStyle,
         selection: Binding<EntryTab>,
+        showsBottomAccessory: Bool = false,
         @ViewBuilder homeContent: () -> HomeContent,
         @ViewBuilder editorContent: () -> EditorContent,
         @ViewBuilder outputContent: () -> OutputContent,
         @ViewBuilder taskContent: () -> TaskContent,
-        @ViewBuilder settingsContent: () -> SettingsContent
+        @ViewBuilder settingsContent: () -> SettingsContent,
+        @ViewBuilder bottomAccessoryContent: () -> BottomAccessoryContent
     ) {
         self.navigationStyle = navigationStyle
         _selection = selection
+        self.showsBottomAccessory = showsBottomAccessory
         self.homeContent = homeContent()
         self.editorContent = editorContent()
         self.outputContent = outputContent()
         self.taskContent = taskContent()
         self.settingsContent = settingsContent()
+        self.bottomAccessoryContent = bottomAccessoryContent()
     }
 
     var body: some View {
@@ -53,37 +61,64 @@ struct EntryNavigationSurface<
         }
     }
 
+    @ViewBuilder
     private var compactNavigation: some View {
         NavigationStack {
-            TabView(selection: $selection) {
-                homeContent
-                    .tabItem {
-                        Label(
-                            localized("首页"),
-                            systemImage: MemoMarkSymbol.home.name
-                        )
+            if #available(iOS 26.1, *) {
+                compactTabView
+                    .tabBarMinimizeBehavior(
+                        showsBottomAccessory ? .never : .automatic
+                    )
+                    .tabViewBottomAccessory(
+                        isEnabled: showsBottomAccessory
+                    ) {
+                        bottomAccessoryContent
                     }
-                    .tag(EntryTab.home)
-
-                editorContent
-                    .tabItem {
-                        Label(
-                            localized("配置"),
-                            systemImage:
-                                MemoMarkSymbol.configurationCenter.name
-                        )
+            } else if #available(iOS 26.0, *) {
+                compactTabView
+                    .tabBarMinimizeBehavior(
+                        showsBottomAccessory ? .never : .automatic
+                    )
+                    .tabViewBottomAccessory {
+                        if showsBottomAccessory {
+                            bottomAccessoryContent
+                        }
                     }
-                    .tag(EntryTab.editor)
-
-                taskContent
-                    .tabItem {
-                        Label(
-                            localized("进展"),
-                            systemImage: MemoMarkSymbol.task.name
-                        )
-                    }
-                    .tag(EntryTab.tasks)
+            } else {
+                compactTabView
             }
+        }
+    }
+
+    private var compactTabView: some View {
+        TabView(selection: $selection) {
+            homeContent
+                .tabItem {
+                    Label(
+                        localized("首页"),
+                        systemImage: MemoMarkSymbol.home.name
+                    )
+                }
+                .tag(EntryTab.home)
+
+            editorContent
+                .tabItem {
+                    Label(
+                        localized("配置"),
+                        systemImage:
+                            MemoMarkSymbol.configurationCenter.name
+                    )
+                }
+                .tag(EntryTab.editor)
+
+            taskContent
+                .tabItem {
+                    Label(
+                        localized("进展"),
+                        systemImage: MemoMarkSymbol.task.name
+                    )
+                }
+                .tag(EntryTab.tasks)
         }
     }
 

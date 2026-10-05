@@ -199,10 +199,8 @@ struct FilmMarkPresentationSpecificationTests {
                     - ConfigurationPreviewViewportSpec.portraitFitVisibleFraction
             ) < 0.0001
         )
-        #expect(ConfigurationPreviewViewportSpec.alternateCardPeekScale > 0.90)
-        #expect(ConfigurationPreviewViewportSpec.alternateCardPeekScale < 1)
-        #expect(ConfigurationPreviewViewportSpec.alternateCardPeekOpacity > 0.65)
-        #expect(ConfigurationPreviewViewportSpec.alternateCardPeekOffset > 0)
+        #expect(ConfigurationPreviewViewportSpec.landscapeFitScale < 1)
+        #expect(ConfigurationPreviewViewportSpec.portraitFitScale < 1)
     }
 
     @Test("Classic White preview includes its complete information bar in the canvas ratio")

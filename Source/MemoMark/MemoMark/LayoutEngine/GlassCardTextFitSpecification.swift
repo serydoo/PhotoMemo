@@ -22,6 +22,16 @@ enum GlassCardTextFitSpecification {
         let outcome: Outcome
     }
 
+    /// Preferred single-line advance; fitting and explicit overflow remain separate.
+    static func preferredWidth(text: String, pointSize: CGFloat, isPrimary: Bool) -> CGFloat {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return 0 }
+        let attributed = NSAttributedString(string: text, attributes: [
+            kCTFontAttributeName as NSAttributedString.Key: font(pointSize: pointSize, isPrimary: isPrimary)
+        ])
+        let line = CTLineCreateWithAttributedString(attributed)
+        return max(CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil)), 0)
+    }
+
     static func resolve(
         text: String,
         frame: CGSize,

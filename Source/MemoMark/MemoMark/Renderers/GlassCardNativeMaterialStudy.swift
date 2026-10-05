@@ -4,7 +4,7 @@ import CoreGraphics
 
 /// Native feasibility control only. Geometry and text remain the production Layout's input.
 enum GlassCardNativeMaterialStudyMode: String, CaseIterable, Identifiable {
-    case current, regular, regularDark, clear
+    case production, current, regular, regularDark, clear
     var id: String { rawValue }
 }
 
@@ -14,18 +14,20 @@ struct GlassCardNativeMaterialStudyCanvas: View {
     let mode: GlassCardNativeMaterialStudyMode
 
     var body: some View {
-        ZStack(alignment:.topLeading) {
-            Image(decorative:source,scale:1).resizable()
-                .frame(width:plan.canvasSize.width,height:plan.canvasSize.height)
-            if mode == .current {
-                GlassCardOverlayLayer(presentation:plan,badge:nil,recipe:.darkLayerV1,secondaryTextOpacity:0.96)
-            } else {
-                if #available(iOS 26.0,macOS 26.0,*) {
-                    panel
+        if mode == .production {
+            GlassCardResolvedCanvas(image: Image(decorative: source, scale: 1), presentation: plan, badge: nil)
+        } else {
+            ZStack(alignment: .topLeading) {
+                Image(decorative: source, scale: 1).resizable()
+                    .frame(width: plan.canvasSize.width, height: plan.canvasSize.height)
+                if mode == .current {
+                    GlassCardOverlayLayer(presentation: plan, badge: nil, recipe: .darkLayerV1, secondaryTextOpacity: 0.96)
+                } else {
+                    if #available(iOS 26.0, macOS 26.0, *) { panel }
+                    GlassCardOverlayLayer(presentation: plan, badge: nil, recipe: foreground, secondaryTextOpacity: 0.96)
                 }
-                GlassCardOverlayLayer(presentation:plan,badge:nil,recipe:foreground,secondaryTextOpacity:0.96)
-            }
-        }.frame(width:plan.canvasSize.width,height:plan.canvasSize.height)
+            }.frame(width: plan.canvasSize.width, height: plan.canvasSize.height)
+        }
     }
     @available(iOS 26.0,macOS 26.0,*)
     private var panel: some View {

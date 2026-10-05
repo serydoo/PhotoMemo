@@ -38,6 +38,14 @@ struct AVFoundationLivePhotoVideoCompositionInputPreparer:
             throw LivePhotoVideoCompositionError.videoTrackMissing
         }
 
+        if preparedOverlay.backdropMaterial != nil {
+            let descriptions = try await sourceVideoTrack.load(.formatDescriptions)
+            guard !descriptions.isEmpty,
+                  descriptions.allSatisfy({ NativeBackdropMotionColorCapability.resolve($0) == .sdrSupported }) else {
+                throw LivePhotoVideoCompositionError.nativeBackdropColorUnsupported
+            }
+        }
+
         let composition = AVMutableComposition()
 
         guard let compositionVideoTrack = composition.addMutableTrack(
@@ -234,5 +242,63 @@ struct AVFoundationLivePhotoVideoCompositionInputPreparer:
                 "%.3f",
             Double(value)
         )
+    }
+}
+
+/// Admission for the existing 8-bit native backdrop, not a promise of HDR conversion.
+nonisolated enum NativeBackdropMotionColorCapability: Equatable {
+    case sdrSupported
+    case hdrRequiresFallback
+    case wideColorRequiresFallback
+    case unsupported
+
+    static func resolve(_ description: CMFormatDescription) -> Self {
+        func value(_ key: CFString) -> String? {
+            CMFormatDescriptionGetExtension(description, extensionKey: key) as? String
+        }
+        let transfer = value(kCMFormatDescriptionExtension_TransferFunction)
+        let alternative = value(kCMFormatDescriptionExtension_AlternativeTransferCharacteristics)
+        let hdrTransfers = [kCMFormatDescriptionTransferFunction_SMPTE_ST_2084_PQ as String,
+                           kCMFormatDescriptionTransferFunction_ITU_R_2100_HLG as String]
+        if [transfer, alternative].compactMap({ $0 }).contains(where: hdrTransfers.contains)
+            || CMFormatDescriptionGetExtension(description,
+                extensionKey: kCMFormatDescriptionExtension_MasteringDisplayColorVolume) != nil
+            || CMFormatDescriptionGetExtension(description,
+                extensionKey: kCMFormatDescriptionExtension_ContentLightLevelInfo) != nil {
+            return .hdrRequiresFallback
+        }
+        if CMFormatDescriptionGetExtension(description,
+            extensionKey: kCMFormatDescriptionExtension_LogTransferFunction) != nil {
+            return .unsupported
+        }
+        if let depth = CMFormatDescriptionGetExtension(description,
+            extensionKey: kCMFormatDescriptionExtension_BitsPerComponent) as? NSNumber,
+            depth.intValue > 8 { return .unsupported }
+        if value(kCMFormatDescriptionExtension_YCbCrMatrix) == kCMFormatDescriptionYCbCrMatrix_ITU_R_2020 as String {
+            return .wideColorRequiresFallback
+        }
+        let primaries = value(kCMFormatDescriptionExtension_ColorPrimaries)
+        let widePrimaries = [kCMFormatDescriptionColorPrimaries_P3_D65 as String,
+                             kCMFormatDescriptionColorPrimaries_DCI_P3 as String,
+                             kCMFormatDescriptionColorPrimaries_ITU_R_2020 as String]
+        if let primaries, widePrimaries.contains(primaries) { return .wideColorRequiresFallback }
+        let sdrPrimaries = [kCMFormatDescriptionColorPrimaries_ITU_R_709_2 as String,
+                           kCMFormatDescriptionColorPrimaries_EBU_3213 as String,
+                           kCMFormatDescriptionColorPrimaries_SMPTE_C as String]
+        let sdrTransfers = [kCMFormatDescriptionTransferFunction_ITU_R_709_2 as String,
+                           kCMFormatDescriptionTransferFunction_ITU_R_2020 as String,
+                           kCMFormatDescriptionTransferFunction_sRGB as String,
+                           kCMFormatDescriptionTransferFunction_SMPTE_240M_1995 as String]
+        // Untagged legacy SDR remains compatible; malformed or unknown tags are not admitted.
+        for key in [kCMFormatDescriptionExtension_ColorPrimaries, kCMFormatDescriptionExtension_TransferFunction,
+                    kCMFormatDescriptionExtension_AlternativeTransferCharacteristics] {
+            if CMFormatDescriptionGetExtension(description, extensionKey: key) != nil && value(key) == nil {
+                return .unsupported
+            }
+        }
+        if alternative != nil { return .unsupported }
+        if let primaries, !sdrPrimaries.contains(primaries) { return .unsupported }
+        if let transfer, !sdrTransfers.contains(transfer) { return .unsupported }
+        return .sdrSupported
     }
 }

@@ -97,9 +97,6 @@ enum ConfigurationPreviewViewportSpec {
     static let landscapeFitScale: CGFloat = 0.88
     static let portraitFitScale: CGFloat = 0.88
     static let portraitFitVisibleFraction: CGFloat = 0.5
-    static let alternateCardPeekScale: CGFloat = 0.94
-    static let alternateCardPeekOpacity: CGFloat = 0.82
-    static let alternateCardPeekOffset: CGFloat = 48
     /// The keyboard leaves room for both a readable card detail and the editor.
     static let editingViewportMinimumAspectRatio: CGFloat = 2.4
 
