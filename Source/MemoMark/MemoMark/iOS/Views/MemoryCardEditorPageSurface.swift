@@ -32,7 +32,6 @@ struct MemoryCardEditorPageSurface<
     let previewWidthPolicy: ConfigurationPreviewWidthPolicy
     let editorScrollRequest: ConfigurationEditorScrollRequest?
     let editorContentOwnsScrolling: Bool
-    let usesSystemBottomAccessory: Bool
     let onDismissKeyboard: () -> Void
     @ViewBuilder var previewContent: PreviewContent
     @ViewBuilder var editorContent: EditorContent
@@ -48,7 +47,6 @@ struct MemoryCardEditorPageSurface<
         previewWidthPolicy: ConfigurationPreviewWidthPolicy = .readable,
         editorScrollRequest: ConfigurationEditorScrollRequest? = nil,
         editorContentOwnsScrolling: Bool = false,
-        usesSystemBottomAccessory: Bool = false,
         onDismissKeyboard: @escaping () -> Void,
         @ViewBuilder previewContent: () -> PreviewContent,
         @ViewBuilder editorContent: () -> EditorContent,
@@ -63,7 +61,6 @@ struct MemoryCardEditorPageSurface<
         self.previewWidthPolicy = previewWidthPolicy
         self.editorScrollRequest = editorScrollRequest
         self.editorContentOwnsScrolling = editorContentOwnsScrolling
-        self.usesSystemBottomAccessory = usesSystemBottomAccessory
         self.onDismissKeyboard = onDismissKeyboard
         self.previewContent = previewContent()
         self.editorContent = editorContent()
@@ -194,7 +191,10 @@ struct MemoryCardEditorPageSurface<
                 .padding(.top, 8)
                 .padding(
                     .bottom,
-                    editorBottomPadding
+                    AdaptivePageLayout
+                        .scrollBottomPadding(
+                            for: navigationStyle
+                        )
                 )
                 .adaptiveScrollContent(
                     horizontalPadding: ConfigurationUI.contentColumnPadding
@@ -245,10 +245,5 @@ struct MemoryCardEditorPageSurface<
         )
     }
 
-    private var editorBottomPadding: CGFloat {
-        usesSystemBottomAccessory
-            ? 26
-            : AdaptivePageLayout.scrollBottomPadding(for: navigationStyle)
-    }
 }
 #endif

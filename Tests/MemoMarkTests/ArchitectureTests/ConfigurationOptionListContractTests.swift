@@ -765,8 +765,8 @@ struct ConfigurationOptionListContractTests {
         #expect(!source.contains("Button(\"删除当前配置？\""))
     }
 
-    @Test("configuration card owns status while compact actions adopt the native tab accessory with fallback")
-    func configurationCardOwnsStatusWhileActionsAdoptNativeTabAccessory() throws {
+    @Test("configuration card owns status while a translucent footer floats above the editor")
+    func configurationCardOwnsStatusWhileFooterFloatsAboveEditor() throws {
         let optionListSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
         )
@@ -781,9 +781,6 @@ struct ConfigurationOptionListContractTests {
         )
         let pagesSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
-        )
-        let navigationSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/AdaptiveNavigationShell.swift"
         )
 
         #expect(footerSource.contains("struct ConfigurationActionFooter"))
@@ -805,18 +802,7 @@ struct ConfigurationOptionListContractTests {
         #expect(footerSource.contains(".alert(isPresented: $showsResetConfigurationConfirmation)"))
         #expect(configurationPageSource.contains("ConfigurationActionFooter("))
         #expect(configurationPageSource.contains("configurationStatus: configurationStatus"))
-        #expect(configurationPageSource.contains("usesExternalConfigurationActions"))
-        #expect(configurationPageSource.contains("usesSystemBottomAccessory: usesExternalConfigurationActions"))
         #expect(pagesSource.contains("ConfigurationPageSurface("))
-        #expect(pagesSource.contains("usesNativeConfigurationBottomAccessory"))
-        #expect(pagesSource.contains("configurationBottomAccessory"))
-        #expect(pagesSource.contains("showsBottomAccessory: showsConfigurationBottomAccessory"))
-        #expect(navigationSource.contains(".tabViewBottomAccessory("))
-        #expect(navigationSource.contains("isEnabled: showsBottomAccessory"))
-        #expect(navigationSource.contains("else if #available(iOS 26.0, *)"))
-        #expect(navigationSource.contains("showsBottomAccessory ? .never : .automatic"))
-        #expect(editorSurfaceSource.contains("usesSystemBottomAccessory"))
-        #expect(editorSurfaceSource.contains("private var editorBottomPadding"))
     }
 
     @Test("region editor explains how personal words and photo details enter the card")

@@ -1,6 +1,6 @@
 # MemoMark Current Brief
 
-Last updated: 2026-10-02
+Last updated: 2026-10-06
 
 This is a compact routing brief for a new Codex session. It is not a
 replacement for the project constitution, accepted specifications, contracts,
@@ -9,7 +9,7 @@ follow the linked source-of-truth document.
 
 ## Current Product Stage
 
-- GlassCard native material is integrated into local main: shared output-size preview, still/motion artifacts, old-system fallback and explicit DEBUG device validation. Release authoring remains gated. Two real pairs were saved/read back on iPhone17ProMax during115 development;116 evidence is tracked separately. See `Docs/03_Engineering/2026-10-02-glasscard-native-material-delivery.md` and the116 sync manifest.
+- GlassCard native material is integrated into local main: shared output-size preview, still/motion artifacts, old-system fallback and explicit DEBUG device validation. Owner directs restoring Release authoring in2.3.6(124) after observing the missing entry; both build configurations must expose the same four existing styles. Two real pairs were saved/read back on iPhone17ProMax during115 development;116 evidence is tracked separately. See `Docs/03_Engineering/2026-10-02-glasscard-native-material-delivery.md` and the116 sync manifest.
 
 - Stage: `V4 Expression Style System`
 - Subphase: `V4.0 Research And Product Definition`
@@ -29,12 +29,12 @@ follow the linked source-of-truth document.
 ## Current Candidate
 
 - Project: `Source/MemoMark/MemoMark.xcodeproj`
-- Marketing version: `2.3.5`
-- Build: `116`
+- Marketing version: `2.3.6`
+- Build: `124`
 - Release status: `Version Locked; Release Evidence Open`
-- Release scope starts after owner-designated2.3.4 (115) source baseline `45466834`; see `Docs/07_Releases/2026-10-02-2.3.5-sync-manifest.md`.
+- Release scope starts from public 2.3.5 (122), source53b7edd3; accepted checkpoint19139c49 and incident repair follow. See `Docs/07_Releases/2026-10-06-2.3.6-sync-manifest.md`.
 - Commerce: `MemoMark Commerce v1.1` — historical lifetime and activation-code
-  entitlements preserved; new users use MemoMark+ monthly or annual subscription;
+  entitlements preserved; new users may choose monthly/annual subscription or the existing lifetime SKU; see the accepted 2026-10-06 lifetime amendment;
   all built-in memory expression styles are included in the subscription.
 - Latest current-state record: `Docs/CURRENT_STATUS.md`
 - Latest handoff record: `HANDOFF.md` (historical continuity; read on demand)

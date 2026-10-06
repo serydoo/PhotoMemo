@@ -569,12 +569,27 @@ private extension LivePhotoBatchTaskProcessor {
                 .exportDescription(
                     from: card
                 )
-            let overlay =
+            var overlay =
                 try exportService
                 .renderLivePhotoOverlay(
                     photo: importedPhoto,
                     card: card
                 )
+            if overlay.backdropMaterial != nil,
+               try await !NativeBackdropMotionColorCapability.supportsNativeBackdrop(
+                    in: preparedBundle.pairedVideoFileURL
+               ) {
+                // The renderer selects the approved compatible surface once.
+                // Still and motion must consume the same artifact; never fall back to JPEG.
+                overlay = try exportService.renderLivePhotoOverlay(
+                    photo: importedPhoto, card: card, allowsNativeBackdrop: false
+                )
+                _ = MemoMarkShareDiagnostics.recordResult(
+                    stage: .livePhotoVideoCompositionGeometry,
+                    message: "taskID=\(task.id.uuidString) nativeBackdrop=compatibleSurface reason=sourceMotionColor",
+                    defaults: diagnosticsDefaults
+                )
+            }
             let outputStillURL =
                 workDirectoryURL
                 .appendingPathComponent(

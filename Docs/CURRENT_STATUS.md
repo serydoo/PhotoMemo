@@ -30001,3 +30001,61 @@ Final delivery closure: main4392f3e1 native integration, b447f11a Unicode fix,28
 ## 2026-10-06 — GlassCard and configuration UI source checkpoint
 
 Owner authorized GitHub sync of bounded GlassCard layout/material/SDR admission/foreground preparation and configuration preview/accessory work. Version remains 2.3.5 (122). Full unit suite: 1981 passed, 0 failed, 1 existing disabled; 2 QoS warnings remain. Signed iOS build passed; device editor round trip and preview/accessory lifecycle passed. Welcome navigation automated test remains failed pending manual diagnosis. Original P3/HDR is rejected by native backdrop; positive Photos and repeat-export evidence uses SDR fixtures. Peak RSS ~718 MiB and encoded motion downscaling remain open. No TestFlight upload or App Store submission. See [source checkpoint](07_Releases/2026-10-06-glasscard-ui-source-checkpoint.md).
+
+## 2026-10-06 — Lifetime discovery and Live Photo incident repair (local)
+
+The owner reinstates new-user lifetime purchase beneath subscriptions using the existing approved non-consumable. Loader now requests all three SKUs, lifetime action resolves its own SKU, four-language free/paid copy uses StoreKit pricing, and purchase actions are serialized. Commercial decision: repaired public release starts another two-day lifetime-free window, then mainland CNY 68; withdraw temporary annual first-year-free when repaired release is downloadable. ASC currently has AUTO_FREE with no restore schedule; backend dates remain unchanged until release timing is known.
+
+Supplied build-122 diagnostic confirms JOB-E783BF88C353 and a separate 12-task batch all fail nativeBackdropColorUnsupported. The preset titled 经典白 actually resolves to glassCard. Preserve the native compositor color guard; select existing compatible darkLayerV1 renderer artifact before pair composition for unsupported source motion, and use the same artifact for still/motion. Generic recovery no longer asserts storage exhaustion. No static-only success or original mutation.
+
+Full host suite: 1984 passed, 0 failed, 1 skipped, 2027 executions. Signed physical repair build/install/launch passed. User reproduction and paired Photos/color readback remain pending; no public release or HDR/P3 certification. Local App Store three-slide visual draft and growth activation plan prepared; no upload/marketing launch. Scope and evidence: Docs/03_Engineering/2026-10-06-commerce-live-photo-incident.md.
+
+
+2026-10-06 owner acceptance: original fault checks have no issue; close the observed incident and revisit only if new evidence appears. Owner directs formal2.3.6 (124), baseline public2.3.5, Xcode build followed by all-language release. Scope accepted; broader media/performance certification is not inferred.
+
+
+## 2026-10-06 — Formal2.3.6(124) preparation
+
+Owner closes original commerce/Live Photo fault checks and authorizes baselinepublic2.3.5 -> formal2.3.6(124), Cloud build and all-language release. Target values, four-language app release notes and bounded materials updated. Full1984 tests passed/2027 executions/0 failures/1 existing skip; signed124 Release archive App/Share/Widget values read back and paired phone install/launch succeeded. ASC2.3.6 draft created; all4 existing locales have saved/read-back What’s New, promotion and lifetime-aware commerce descriptions. Inherited approved screenshot sets remain; direction drafts stay local.
+
+Source checkpoint19139c49 belongs after formal53b7edd3 baseline. Original incident is owner-accepted, not a broad HDR/P3 certification. A final discrepancy remains: Release newGlassCard selection gate vs inherited four-style Store description. Await owner choice before source freeze/push/Cloud124 and final submission. Release manifest: Docs/07_Releases/2026-10-06-2.3.6-sync-manifest.md.
+
+
+2026-10-06 GlassCard Release entry correction: owner observes missingGlassCard after124 Release installation. Restore authoring in Release as well as Debug using the existing style picker; existing presets/render/export/Plus rules remain intact. This resolves the source-vs-Store discrepancy and supersedes the earlier pending choice. Rebuild final124 before Cloud sync; original incident closure remains accepted.
+
+
+GlassCard entry regression closure: both Release and Debug now expose all four existing styles. Full host regression passed1984 unique tests/2028 executions/0 failures/1 existing skip. Signed2.3.6(124) Release archive rebuilt at /tmp/MemoMark236-124-GlassEntry.xcarchive; all three bundle version/build fields and strict signature verification passed. This supersedes the previous124 binary for delivery; phone manual selection acceptance remains separate.
+
+Final signed124 GlassCard-entry archive overwrite installed and launched successfully on paired iPhone17ProMax; no container reset. Owner visual selection acceptance pending.
+
+
+## 2026-10-06 — Configuration save-bar width restoration for2.3.6(124)
+
+Owner screenshot IMG_6455 rejects excess whitespace around the primary save action. Product Loop/P2; replace centered184pt button/328pt cluster with full-width native HStack, flexible primary save button,44pt more-menu hit target and existing8pt gaps. State, persistence actions, native tab accessory host and media pipeline unchanged. Existing source contracts updated for accepted layout;134 focused host tests passed,0 failures/0 skips (xcresult /tmp/MemoMark236Tests/Logs/Test/Test-MemoMarkTests-2026.10.06_10-20-20-+0800.xcresult). Signed Release rebuild and exact-device visual acceptance tracked in2.3.6 manifest.
+
+Save-bar signed124 Release archive, all three bundle version readbacks and strict signature verification passed; paired iPhone overwrite install and fresh launch receipts confirmed. Owner visual acceptance remains pending. Latest artifact /tmp/MemoMark236-124-SaveWidth.xcarchive supersedes earlier124 archives.
+
+
+## 2026-10-06 — Owner-corrected compact footer restoration
+
+Owner rejects wide configuration save button, clarifies historical IMG_5960 desired standalone compact save action and unchanged bottom tabs across all three pages. Supersedes previous width pass. Compare53b7edd3 ->19139c49 identifies native tab accessory migration as source of configuration-specific broad glass bar. Restore53b7edd3 footer/nav/page wiring, remove accessory-only editor padding; retain accepted preview/header/AnyLayout, GlassCard Release availability, commerce/Live Photo fixes. Existing host contracts aligned with restored native TabView/page safeAreaInset boundaries. Full host and signed124 Release evidence pending below; manual three-tab/footer acceptance remains owner decision.
+
+
+Compact footer restoration final evidence: full host1984 unique tests/2028 executions/0 failures/1 existing skip; xcresult /tmp/MemoMark236Tests/Logs/Test/Test-MemoMarkTests-2026.10.06_10-53-41-+0800.xcresult. xcodebuild test exit0. Signed Release archive /tmp/MemoMark236-124-CompactFooter.xcarchive succeeded, App/Share/Widget all2.3.6(124), strict signature verification passed. Overwrite install returned App installed and fresh --terminate-existing launch returned Launched application on paired iPhone17ProMax. No container reset. Four footer/navigation wiring files match53b7edd3 exactly; current preview/header behavior and GlassCard Release authoring retained. This archive supersedes SaveWidth and GlassEntry124 artifacts. Owner manual footer appearance and three-tab consistency acceptance remain pending; build/install is not visual acceptance.
+
+
+## 2026-10-06 — New owner screenshot-based App Store material draft
+
+Owner supplied desktop10-6 asset folder/ZIP;23 PNG contents match (22 real1320×2868 screenshots plus1 historical collage). Reviewed current ASC2.3.6 creative slots and Apple's latest public asset/screenshot/creative specifications. Produced8 zh-Hans screenshots in1320×2868 and1242×2688,3840×1646 product header,3840×2560 search creative;18 RGB/no-alpha PNG exports verified. EditableSVG and per-source crop/hash manifest plus local gallery retained outside repository at /Users/rui/Desktop/MemoMark_商店素材_2026-10-06. RealUI cropped/scaled without rewriting UI. Original files preserved; no cloud upload or public replacement. Current source avatar rights in02/03/06 await owner confirmation/replacement; other-language actualUI, iPad capture and video footage are not provided. Four-language headline draft and20sec actual-capture script included. Materials visual acceptance and ASC upload/readback remain separate from local file checks.
+
+
+## 2026-10-06 — Owner-approved avatar and enlarged material revision
+
+Owner explicitly confirms continued Shin-chan avatar use, superseding previous pending-avatar item. Product Loop/P2; revise first screenshot, four-style comparison and real-preview banner around capture-time age and distance to an important date. Four-style page uses original preview plus enlarged actual time detail, without rewriting source text. Historical collage is layout reference only. Latest README grounds a new AI-generated family-photography hero, explicitly distinguished from actual UI/export; original1916x821 and3840x1646 RGB size export retained with prompt at desktop asset directory05_AI主视觉. No user photos were supplied to image generation. Local material revision only; no application code edits, App Store upload or external release mutation. Source hashes and18 real-composition PNGs verified, AI exports separately recorded.
+
+
+## 2026-10-06 — Owner-approved2.3.6(124) GitHub and automatic release handoff
+
+Owner accepts latest enlarged real product materials and explicitly authorizes scoped main sync followed by automatic release after Xcode Cloud. Final upload directory is /Users/rui/Desktop/MemoMark_2.3.6_124_正式上传包; source hashes and chosen privacy-masked exports are indexed in Docs/07_Releases/2026-10-06-2.3.6-approved-materials.md. Historic AI/collage drafts and private originals excluded. All four metadata locales retained; existing approved other-language/iPad screenshots remain where new actual captures are unavailable.
+
+Current release review preserves StoreKit verified entitlements, serialized purchase operations, paired Live Photo output, durable style identity and original protection. No critical finding remains in the scoped change. Full host xcresult freshly read back1984 passed/0 failed/1 skipped (2028 executions); existing export QoS warnings and broad physical certification remain separately recorded. App/Share/Widget archive all2.3.6(124). Cloud/archive/upload, ASC review and public availability remain independent downstream receipts. Automatic campaign follow-up begins the two-day free window at public availability, then restores mainlandCNY68 and withdraws temporary annual first-year-free.

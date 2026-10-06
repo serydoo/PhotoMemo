@@ -262,18 +262,18 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "새로운 기능";
 "settings.version.release_notes_detail" = "MemoMark의 변경 사항을 확인합니다.";
-"settings.release_notes.header" = "메모리 카드 미리보기와 설정을 다듬고 미니멀 표현을 개선했습니다.";
+"settings.release_notes.header" = "평생 잠금 해제를 추가하고 Live Photo 저장과 메모리 카드 표시를 개선했습니다.";
 "settings.release_notes.version_format" = "버전 %@";
 "settings.release_notes.positioning" = "사진 속에 나만의 말을 조용히 남겨 보세요.";
-"settings.release_notes.time_expression.title" = "더 자연스러운 미리보기와 설정";
-"settings.release_notes.time_expression.item_one" = "설정 중 미리보기를 표시하거나 접을 수 있습니다. 카드 내용을 편집할 때는 표시되고, 편집을 마치면 이전 선택으로 돌아갑니다.";
-"settings.release_notes.time_expression.item_two" = "미리보기 여백과 버튼, 설정 구성, 소개·사용 방법·업데이트 내역의 뒤로 이동을 다듬었습니다.";
-"settings.release_notes.configuration.title" = "더 명확한 표현과 안내";
-"settings.release_notes.configuration.item_one" = "미니멀의 긴 글과 홈 프리셋 설명의 너비 맞춤을 개선했습니다. 손쉬운 사용의 큰 글자에서는 여러 줄로 표시합니다.";
-"settings.release_notes.configuration.item_two" = "시간 앵커, 백업, 편집 안내를 개선했습니다. 글라스 카드는 개선 중이며 정식 버전의 새 선택 항목으로는 아직 제공되지 않습니다.";
-"settings.release_notes.saving.title" = "나만의 표현을 저장";
-"settings.release_notes.saving.item_one" = "다국어 JPEG 설명 저장과 Live Photo 키프레임 시간 정보 보존 문제를 수정했습니다.";
-"settings.release_notes.saving.item_two" = "사진은 계속 기기에서 처리되며 원본은 변경되지 않습니다. 새로운 기억 사진을 저장합니다.";
+"settings.release_notes.time_expression.title" = "나에게 맞는 이용 방식";
+"settings.release_notes.time_expression.item_one" = "구독 아래에 평생 잠금 해제 옵션을 추가했습니다. 구매하거나 받은 권한은 복원할 수 있습니다.";
+"settings.release_notes.time_expression.item_two" = "가격은 App Store에 표시됩니다. 기존 구독의 갱신은 Apple 구독 설정에서 관리하세요.";
+"settings.release_notes.configuration.title" = "더 보기 편한 메모리 카드";
+"settings.release_notes.configuration.item_one" = "GlassCard의 글자 간격, 내용 배치와 표시 세부 사항을 다듬었습니다.";
+"settings.release_notes.configuration.item_two" = "설정 미리보기와 하단 조작을 개선해 보기와 편집을 더 자연스럽게 만들었습니다.";
+"settings.release_notes.saving.title" = "추억 저장";
+"settings.release_notes.saving.item_one" = "일부 Live Photo 저장 실패를 수정하고 재시도 안내를 개선했습니다.";
+"settings.release_notes.saving.item_two" = "사진은 계속 기기에서 처리되며 원본은 변경되지 않고 새로운 추억 사진으로 저장됩니다.";
 "settings.release_notes.closing" = "의견을 보내주셔서 감사합니다. 세부 사항을 계속 다듬겠습니다.";
 "settings.navigation.title" = "설정";
 "settings.interface_preferences.title" = "인터페이스";
@@ -1883,3 +1883,10 @@
 "local_backup.revision_date" = "버전 %@ · %@";
 
 "configuration.card_editor.insertion_position" = "정보 삽입 위치";
+
+/* Lifetime purchase alongside subscriptions */
+"commerce.purchase.lifetime.title" = "영구 이용";
+"commerce.purchase.lifetime.detail" = "한 번 구매하면 MemoMark+ 핵심 기능을 영구적으로 이용할 수 있습니다. 자동 갱신은 없습니다.";
+"commerce.purchase.lifetime.subscription_notice" = "영구 이용 권한을 받아도 기존 구독은 자동 취소되지 않습니다. Apple 구독 설정에서 갱신을 관리하세요.";
+"commerce.purchase.lifetime.claim" = "무료 영구 이용 권한 받기";
+"commerce.purchase.lifetime.buy_format" = "영구 이용 · %@";

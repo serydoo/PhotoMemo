@@ -262,18 +262,18 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "What's New";
 "settings.version.release_notes_detail" = "See what has changed in MemoMark.";
-"settings.release_notes.header" = "This update refines Memory Card previews, Settings, and Minimal expression.";
+"settings.release_notes.header" = "This update adds lifetime unlock and improves Live Photo saving and Memory Card presentation.";
 "settings.release_notes.version_format" = "Version %@";
 "settings.release_notes.positioning" = "Keep your words quietly within the photo, with an expression of your own.";
-"settings.release_notes.time_expression.title" = "A calmer preview and Settings";
-"settings.release_notes.time_expression.item_one" = "Show or hide the configuration preview. It stays visible while editing card content and restores your choice when editing ends.";
-"settings.release_notes.time_expression.item_two" = "Refined preview spacing and controls, Settings grouping, and Back navigation for information, help, and release notes.";
-"settings.release_notes.configuration.title" = "Clearer expression and guidance";
-"settings.release_notes.configuration.item_one" = "Improved long-text fitting in Minimal and Home preset descriptions; accessibility text sizes retain multiline reading.";
-"settings.release_notes.configuration.item_two" = "Refined time-anchor, backup, and editing guidance. GlassCard is still being refined and is not yet available for new selections in the release version.";
-"settings.release_notes.saving.title" = "Preserve your expression";
-"settings.release_notes.saving.item_one" = "Fixed multilingual JPEG descriptions and preservation of Live Photo keyframe timing.";
-"settings.release_notes.saving.item_two" = "Photos continue to be processed on device. Each new memory photo leaves the original unchanged.";
+"settings.release_notes.time_expression.title" = "Choose how you use MemoMark+";
+"settings.release_notes.time_expression.item_one" = "A lifetime unlock option now appears below subscriptions, with purchase and restore support.";
+"settings.release_notes.time_expression.item_two" = "Prices come from the App Store. Manage any existing subscription renewal in Apple subscription settings.";
+"settings.release_notes.configuration.title" = "Clearer Memory Cards";
+"settings.release_notes.configuration.item_one" = "Refined GlassCard text spacing, content arrangement and presentation details.";
+"settings.release_notes.configuration.item_two" = "Refined the configuration preview and bottom controls for more natural viewing and editing.";
+"settings.release_notes.saving.title" = "Save your memories";
+"settings.release_notes.saving.item_one" = "Fixed saving failures for some Live Photos and clarified retry guidance.";
+"settings.release_notes.saving.item_two" = "Photos are still processed locally, keeping the original unchanged and saving a new memory photo.";
 "settings.release_notes.closing" = "Thank you for your feedback as we continue refining the details.";
 "settings.navigation.title" = "Settings";
 "settings.interface_preferences.title" = "Interface";
@@ -1883,3 +1883,10 @@
 "local_backup.revision_date" = "Revision %@ · %@";
 
 "configuration.card_editor.insertion_position" = "Information insertion position";
+
+/* Lifetime purchase alongside subscriptions */
+"commerce.purchase.lifetime.title" = "Lifetime access";
+"commerce.purchase.lifetime.detail" = "One purchase for permanent access to MemoMark+ core features. No automatic renewal.";
+"commerce.purchase.lifetime.subscription_notice" = "Lifetime access does not cancel an existing subscription. Manage renewal in your Apple subscription settings.";
+"commerce.purchase.lifetime.claim" = "Claim free lifetime access";
+"commerce.purchase.lifetime.buy_format" = "Lifetime access · %@";

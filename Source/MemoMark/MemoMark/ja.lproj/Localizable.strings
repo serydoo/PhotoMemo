@@ -262,18 +262,18 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "新機能";
 "settings.version.release_notes_detail" = "MemoMarkの変更点を見る";
-"settings.release_notes.header" = "メモリーカードのプレビューと設定を整え、ミニマルの表現も改善しました。";
+"settings.release_notes.header" = "永久アンロックを追加し、Live Photoの保存とメモリーカードの表示を改善しました。";
 "settings.release_notes.version_format" = "バージョン%@";
 "settings.release_notes.positioning" = "写真の中に、あなたらしい言葉を静かに残せますように。";
-"settings.release_notes.time_expression.title" = "プレビューと設定をより自然に";
-"settings.release_notes.time_expression.item_one" = "設定中のプレビューを表示・非表示にできます。カード内容の編集中は表示され、編集後は元の選択に戻ります。";
-"settings.release_notes.time_expression.item_two" = "プレビューの余白と操作ボタン、設定の構成、紹介・使い方・更新履歴から戻る操作を整えました。";
-"settings.release_notes.configuration.title" = "表現と説明をよりわかりやすく";
-"settings.release_notes.configuration.item_one" = "ミニマルの長文とホームのプリセット説明の幅調整を改善しました。アクセシビリティの大きな文字では複数行で表示します。";
-"settings.release_notes.configuration.item_two" = "時間アンカー、バックアップ、編集の説明を改善しました。ガラスカードは調整中で、正式版の新規選択はまだ利用できません。";
-"settings.release_notes.saving.title" = "あなたの表現を保存";
-"settings.release_notes.saving.item_one" = "多言語の JPEG 説明の保存と、Live Photo のキーフレーム時刻の保持を修正しました。";
-"settings.release_notes.saving.item_two" = "写真は引き続きデバイス上で処理し、元の写真は変更せず、新しい思い出の写真を保存します。";
+"settings.release_notes.time_expression.title" = "使い方に合う購入方法を";
+"settings.release_notes.time_expression.item_one" = "サブスクリプションの下に永久アンロックを追加しました。購入や取得後の権利は復元できます。";
+"settings.release_notes.time_expression.item_two" = "価格はApp Storeに表示されます。既存のサブスクリプションの更新はAppleの設定で管理してください。";
+"settings.release_notes.configuration.title" = "メモリーカードを見やすく";
+"settings.release_notes.configuration.item_one" = "GlassCardの文字間隔、内容の配置、表示の細部を改善しました。";
+"settings.release_notes.configuration.item_two" = "設定中のプレビューと下部の操作を整え、表示と編集をより自然にしました。";
+"settings.release_notes.saving.title" = "思い出を保存";
+"settings.release_notes.saving.item_one" = "一部のLive Photoの保存失敗を修正し、再試行の案内を改善しました。";
+"settings.release_notes.saving.item_two" = "写真は引き続きデバイス内で処理し、元の写真を変更せず、新しい思い出の写真を保存します。";
 "settings.release_notes.closing" = "フィードバックをありがとうございます。細かな部分を引き続き整えていきます。";
 "settings.navigation.title" = "設定";
 "settings.interface_preferences.title" = "インターフェース";
@@ -1883,3 +1883,10 @@
 "local_backup.revision_date" = "リビジョン %@ · %@";
 
 "configuration.card_editor.insertion_position" = "情報の挿入位置";
+
+/* Lifetime purchase alongside subscriptions */
+"commerce.purchase.lifetime.title" = "永久アクセス";
+"commerce.purchase.lifetime.detail" = "一度の購入で MemoMark+ の基本機能を永久に利用できます。自動更新はありません。";
+"commerce.purchase.lifetime.subscription_notice" = "永久アクセスを取得しても既存のサブスクリプションは自動解約されません。Apple の設定で更新を管理してください。";
+"commerce.purchase.lifetime.claim" = "永久アクセスを無料で取得";
+"commerce.purchase.lifetime.buy_format" = "永久アクセス · %@";

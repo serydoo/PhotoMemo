@@ -107,11 +107,13 @@ final class RecordCardExportService {
 
     func renderLivePhotoOverlay(
         photo: SelectedPhoto,
-        card: RecordCard
+        card: RecordCard,
+        allowsNativeBackdrop: Bool = true
     ) throws -> FixedFooterOverlayDescriptor {
         try pipeline.renderLivePhotoOverlay(
             photo: photo,
-            card: card
+            card: card,
+            allowsNativeBackdrop: allowsNativeBackdrop
         )
     }
 

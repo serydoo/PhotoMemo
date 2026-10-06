@@ -25,6 +25,9 @@ final class MemoMarkCommerceStore:
     static let legacyLifetimeProductID =
         "com.serydoo.PhotoMemo.iOS.memomarkplus.lifetime"
 
+    static let purchasableProductIDs =
+        subscriptionProductIDs + [legacyLifetimeProductID]
+
     @Published private(set) var products:
         [String: Product] = [:]
     @Published private(set) var selectedSubscriptionPeriod:
@@ -93,6 +96,18 @@ final class MemoMarkCommerceStore:
             .isTestFlightExperienceActive(
                 environment: .sandbox
             )
+    }
+
+    var lifetimeProduct: Product? {
+        products[Self.legacyLifetimeProductID]
+    }
+
+    var lifetimeDisplayPrice: String {
+        lifetimeProduct?.displayPrice ?? "—"
+    }
+
+    var isLifetimeFree: Bool {
+        lifetimeProduct?.price == 0
     }
 
     var displayPrice: String {
@@ -234,27 +249,26 @@ final class MemoMarkCommerceStore:
     }
 
     func purchasePlus() async {
-#if DEBUG
-        print("MemoMark.StoreKit: purchase action received")
-#endif
-        let productToPurchase: Product
+        await purchase(productID: selectedSubscriptionPeriod.productID)
+    }
 
-        if let selectedSubscriptionProduct {
-            productToPurchase = selectedSubscriptionProduct
+    func purchaseLifetime() async {
+        await purchase(productID: Self.legacyLifetimeProductID)
+    }
+
+    private func purchase(productID: String) async {
+        guard !isPurchaseActionInProgress else { return }
+        let productToPurchase: Product
+        if let existingProduct = products[productID] {
+            productToPurchase = existingProduct
         } else {
             purchaseState = .loading
-
-            let loadedProducts = await loadProducts()
-            products = loadedProducts
+            products = await loadProducts()
             selectAvailableSubscriptionPeriodIfNeeded()
-
-            guard let loadedProduct = loadedProducts[
-                selectedSubscriptionPeriod.productID
-            ] else {
+            guard let loadedProduct = products[productID] else {
                 purchaseState = unavailableStoreState
                 return
             }
-
             productToPurchase = loadedProduct
         }
 
@@ -469,7 +483,7 @@ final class MemoMarkCommerceStore:
             print("MemoMark.StoreKit: requesting product")
 #endif
             let loadedProducts = try await productLoader(
-                Self.subscriptionProductIDs
+                Self.purchasableProductIDs
             )
             let products = Dictionary(
                 uniqueKeysWithValues: loadedProducts.map {

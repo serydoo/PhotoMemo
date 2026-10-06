@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.6 (124) Lifetime Unlock And Live Photo Repair - 2026-10-06
+
+- Baseline: public 2.3.5 (122), source 53b7edd3. Includes accepted subsequent GlassCard layout/material/SDR motion and configuration preview/bottom-control refinements.
+- Restored new-user lifetime purchase below subscriptions using the existing approved StoreKit SKU, localized pricing and verified entitlement/restore rules.
+- Fixed unsupported native-backdrop source-motion failures by choosing one compatible renderer artifact for both members of the Live Photo pair; corrected generic recovery guidance.
+- Owner accepted original fault checks. Keep broader color, performance and accessibility acceptance boundaries separate.
+- Unified all target versions at 2.3.6 (124), updated four-language app notes and release materials. See [release manifest](Docs/07_Releases/2026-10-06-2.3.6-sync-manifest.md).
+
 ## 2.3.5 (122) Preview And Settings Refinement - 2026-10-03
 
 - Cumulative update from the owner-designated formal 2.3.4 (115) baseline; includes accepted Minimal, JPEG description and Live Photo timing fixes from build 116.

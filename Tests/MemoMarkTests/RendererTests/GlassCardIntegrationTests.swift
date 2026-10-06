@@ -8,6 +8,22 @@ import Testing
 
 @Suite("GlassCard integration")
 struct GlassCardIntegrationTests {
+    @Test("Motion color fallback retains layout and readable foreground without native backdrop")
+    @MainActor
+    func motionColorFallbackArtifact() throws {
+        let input = card(text: "A memory")
+        let size = CGSize(width: 1080, height: 1440)
+        let planner = RecordCardPresentationPlanner()
+        let native = try planner.artifact(for: input, canvasSize: size)
+        let fallback = try planner.artifact(for: input, canvasSize: size, allowsNativeBackdrop: false)
+        #expect(fallback.backdropMaterial == nil)
+        #expect(fallback.canvasSize == native.canvasSize)
+        #expect(fallback.photoFrame == native.photoFrame)
+        #expect(fallback.layers[0].frame == native.layers[0].frame)
+        #expect(fallback.layers[0].image.width == native.layers[0].image.width)
+        _ = try fallback.validatedForEncoder()
+    }
+
     @Test("Content-based right rail exports visible text without changing the photo canvas")
     @MainActor
     func trailingRailVisualEvidence() throws {
@@ -35,13 +51,13 @@ struct GlassCardIntegrationTests {
         }
     }
 
-    @Test("Release authoring stays closed while registered GlassCard remains processable")
+    @Test("GlassCard remains selectable and processable in Release and Debug")
     func releaseAvailability() throws {
         let style = try JSONDecoder().decode(RecordCardPresentationStyle.self, from: Data("\"glassCard\"".utf8))
-        #expect(!style.availability(isDebugBuild: false).isAuthorable)
+        #expect(style.availability(isDebugBuild: false).isAuthorable)
         #expect(style.availability(isDebugBuild: false).isProcessable)
         #expect(style.availability(isDebugBuild: true).isAuthorable)
-        #expect(RecordCardPresentationStyle.authorableStyles(isDebugBuild: false) == [.classicWhite, .minimal, .filmMark])
+        #expect(RecordCardPresentationStyle.authorableStyles(isDebugBuild: false) == RecordCardPresentationStyle.allCases)
         #expect(RecordCardPresentationStyle.authorableStyles(isDebugBuild: true) == RecordCardPresentationStyle.allCases)
         #expect(throws: DecodingError.self) {
             try JSONDecoder().decode(RecordCardPresentationStyle.self, from: Data("\"unknownStyle\"".utf8))
@@ -49,7 +65,7 @@ struct GlassCardIntegrationTests {
     }
 
     @Test("Existing styles remain authorable and processable in every build", arguments: [
-        RecordCardPresentationStyle.classicWhite, .minimal, .filmMark
+        RecordCardPresentationStyle.classicWhite, .minimal, .filmMark, .glassCard
     ])
     func existingStyleAvailability(style: RecordCardPresentationStyle) {
         for isDebugBuild in [false, true] {

@@ -62,7 +62,8 @@ final class RecordCardExportPipeline {
 
     func renderLivePhotoOverlay(
         photo: SelectedPhoto,
-        card: RecordCard
+        card: RecordCard,
+        allowsNativeBackdrop: Bool = true
     ) throws -> FixedFooterOverlayDescriptor {
         let renderSize = presentationPlanner.outputPixelSize(
             for: card,
@@ -70,7 +71,8 @@ final class RecordCardExportPipeline {
         )
         return try presentationPlanner.artifact(
             for: card,
-            canvasSize: renderSize
+            canvasSize: renderSize,
+            allowsNativeBackdrop: allowsNativeBackdrop
         )
     }
 

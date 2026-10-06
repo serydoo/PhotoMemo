@@ -1113,7 +1113,7 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
         case .processingExportFailed:
             return (
                 "生成输出文件时失败。",
-                "请确认设备存储空间后重试。"
+                "请重试；若再次失败，请导出诊断信息反馈。"
             )
         case .processingLivePhotoPreparationFailed:
             return (
@@ -1346,7 +1346,7 @@ nonisolated enum ProductionDiagnosticFailureClassifier {
         case .processingExportFailed:
             return (
                 "The output file could not be created.",
-                "Check available storage and try again."
+                "Try again; if it fails again, export diagnostics for support."
             )
         case .processingLivePhotoPreparationFailed:
             return (

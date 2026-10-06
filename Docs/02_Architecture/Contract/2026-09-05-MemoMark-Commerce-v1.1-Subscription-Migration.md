@@ -1,5 +1,7 @@
 # MemoMark Commerce v1.1 — Subscription Migration
 
+> Current new-user lifetime purchase policy is superseded by [the 2026-10-06 amendment](2026-10-06-MemoMark-Commerce-Lifetime-Purchase-Amendment.md). Historical release evidence remains unchanged.
+
 Status: Historical baseline for the 2.3.0 / build 103 release slice.
 The build-104 subscription amendment is recorded in
 `2026-09-06-MemoMark-Commerce-v1.1-Build104-Amendment.md`.

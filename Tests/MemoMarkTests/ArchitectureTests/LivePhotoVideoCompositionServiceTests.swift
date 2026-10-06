@@ -165,6 +165,7 @@ struct LivePhotoVideoCompositionServiceTests {
             layers: layers, canvasBackground: .transparent,
             backdropMaterial: .init(frame: CGRect(x: 4, y: 4, width: 72, height: 16),
                 renderFrame: CGRect(x: 0, y: 0, width: 80, height: 28), cornerRadius: 8))
+        #expect(try await NativeBackdropMotionColorCapability.supportsNativeBackdrop(in: source) == false)
         await #expect(throws: LivePhotoVideoCompositionError.nativeBackdropColorUnsupported) {
             try await AVFoundationLivePhotoVideoCompositionInputPreparer().preparedVideoCompositionInput(
                 sourceVideoURL: source, preparedOverlay: artifact)

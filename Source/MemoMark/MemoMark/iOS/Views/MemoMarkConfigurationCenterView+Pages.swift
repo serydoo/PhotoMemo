@@ -7,8 +7,7 @@ extension MemoMarkConfigurationCenterView {
     var rootNavigation: some View {
         EntryNavigationSurface(
             navigationStyle: entryNavigationStyle,
-            selection: entryBinding(\.selectedTab),
-            showsBottomAccessory: showsConfigurationBottomAccessory
+            selection: entryBinding(\.selectedTab)
         ) {
             homePage
         } editorContent: {
@@ -19,46 +18,7 @@ extension MemoMarkConfigurationCenterView {
             tasksPage
         } settingsContent: {
             settingsPage
-        } bottomAccessoryContent: {
-            configurationBottomAccessory
         }
-    }
-
-    private var showsConfigurationBottomAccessory: Bool {
-        entryFlowState.selectedTab == .editor
-            && !rootPresentationState.isCardContentInspectorPresented
-    }
-
-    private var usesNativeConfigurationBottomAccessory: Bool {
-        guard case .bottomTabBar = entryNavigationStyle else {
-            return false
-        }
-        if #available(iOS 26.0, *) {
-            return true
-        }
-        return false
-    }
-
-    private var configurationBottomAccessory: some View {
-        ConfigurationActionFooter(
-            configurationStatus: activeConfigurationStatus,
-            isSavingConfiguration: isSavingConfiguration,
-            isSelectedProcessingDefault:
-                session.selectedMemoryPresetIsProcessingDefault,
-            onSaveCurrentConfiguration: {
-                performConfigurationLibraryAction(.saveCurrent)
-            },
-            onSetAsProcessingDefault: {
-                performConfigurationLibraryAction(.setAsProcessingDefault)
-            },
-            onCreateConfiguration: {
-                performConfigurationLibraryAction(.create)
-            },
-            onResetConfiguration: {
-                performConfigurationLibraryAction(.reset)
-            },
-            onDeleteConfiguration: deleteCurrentConfiguration
-        )
     }
 
     var settingsPage: some View {
@@ -232,8 +192,6 @@ extension MemoMarkConfigurationCenterView {
                 session.selectedMemoryPresetIsProcessingDefault,
             isEditingCardContent:
                 rootPresentationState.isCardContentInspectorPresented,
-            usesExternalConfigurationActions:
-                usesNativeConfigurationBottomAccessory,
             isPreviewVisible: rootPresentationState.previewVisibility.isVisible(
                 isEditingCardContent: rootPresentationState.isCardContentInspectorPresented
             ),

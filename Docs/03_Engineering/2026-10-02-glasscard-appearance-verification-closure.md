@@ -1,4 +1,6 @@
 # GlassCard appearance correction and physical verification checkpoint
+> 2026-10-06: The historical fixed53% anchor in this record is superseded by the owner-approved trailing-group contract in `Docs/03_Engineering/2026-10-06-glasscard-trailing-group-layout.md`; other historical evidence retains its original scope.
+
 
 Date: 2026-10-02. Source baseline: main72e101ed. Version2.3.5(116), source checkpoint; Release Evidence Open. Owner explicitly authorized scoped commit/push and necessary automatic acceptance on unlocked iPhone17ProMax. No version increment or Store delivery.
 

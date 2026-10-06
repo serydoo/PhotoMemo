@@ -53,12 +53,12 @@ struct V1ReleaseNotesContractTests {
         }
 
         #expect(simplifiedChinese.contains("玻璃卡片"))
-        #expect(simplifiedChinese.contains("正式选择入口暂未开放"))
-        #expect(simplifiedChinese.contains("辅助功能大字号"))
+        #expect(simplifiedChinese.contains("永久解锁"))
+        #expect(simplifiedChinese.contains("Live Photo"))
         #expect(simplifiedChinese.contains("原图保持不变"))
         #expect(english.contains("GlassCard"))
-        #expect(english.contains("not yet available for new selections in the release version"))
-        #expect(english.contains("accessibility text sizes"))
+        #expect(english.contains("lifetime unlock"))
+        #expect(english.contains("Live Photo"))
         #expect(english.contains("original unchanged"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
@@ -73,10 +73,10 @@ struct V1ReleaseNotesContractTests {
             "Source/MemoMark/MemoMarkiOS-Info.plist"
         )
         let releaseManifest = try sourceText(
-            "Docs/07_Releases/2026-10-03-2.3.5-122-sync-manifest.md"
+            "Docs/07_Releases/2026-10-06-2.3.6-sync-manifest.md"
         )
-        #expect(releaseManifest.contains("Marketing version：`2.3.5`"))
-        #expect(releaseManifest.contains("build：`122`"))
+        #expect(releaseManifest.contains("Marketing version：`2.3.6`"))
+        #expect(releaseManifest.contains("build：`124`"))
 
         #expect(!projectSource.contains("MARKETING_VERSION = 2.0.3;"))
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
@@ -108,8 +108,8 @@ struct V1ReleaseNotesContractTests {
                         .replacingOccurrences(of: ";", with: "")
                 }
         )
-        #expect(marketingVersions == ["2.3.5"])
-        #expect(projectBuilds == ["122"])
+        #expect(marketingVersions == ["2.3.6"])
+        #expect(projectBuilds == ["124"])
         #expect(iOSInfoPlist.contains(
             "<key>ITSAppUsesNonExemptEncryption</key>\n\t<false/>"
         ))

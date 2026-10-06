@@ -223,18 +223,18 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "更新日志";
 "settings.version.release_notes_detail" = "看看时光记最近有哪些变化。";
-"settings.release_notes.header" = "这次更新让记忆卡预览与设置更自然，也继续完善极简表达。";
+"settings.release_notes.header" = "这次更新补上永久解锁入口，并改善 Live Photo 保存与记忆卡片呈现。";
 "settings.release_notes.version_format" = "版本 %@";
 "settings.release_notes.positioning" = "让文字安静地留在照片上，让每段回忆保留自己的表达。";
-"settings.release_notes.time_expression.title" = "预览与设置更从容";
-"settings.release_notes.time_expression.item_one" = "配置中心可以显示或收起预览；编辑卡片内容时仍能看到照片，完成后恢复原来的选择。";
-"settings.release_notes.time_expression.item_two" = "调整预览留白与控件，整理设置层级，让介绍、使用帮助和更新日志的返回更自然。";
-"settings.release_notes.configuration.title" = "表达与说明更清楚";
-"settings.release_notes.configuration.item_one" = "改善极简长文字与首页预设说明的宽度适配；辅助功能大字号保留多行阅读。";
-"settings.release_notes.configuration.item_two" = "优化时间锚点、备份和编辑说明。玻璃卡片继续完善，正式选择入口暂未开放。";
-"settings.release_notes.saving.title" = "保存你的表达";
-"settings.release_notes.saving.item_one" = "修复了多语言 JPEG 说明保存与 Live Photo 关键帧时间信息保留问题。";
-"settings.release_notes.saving.item_two" = "照片继续在设备本地处理，原图保持不变；保存的是新的记忆照片。";
+"settings.release_notes.time_expression.title" = "选择适合你的使用方式";
+"settings.release_notes.time_expression.item_one" = "在订阅下方新增永久解锁选项，购买或领取后可恢复永久权益。";
+"settings.release_notes.time_expression.item_two" = "价格由 App Store 显示；已有订阅的续订仍需在 Apple 订阅设置中管理。";
+"settings.release_notes.configuration.title" = "记忆卡片更清楚";
+"settings.release_notes.configuration.item_one" = "改善玻璃卡片的文字间距、内容排列与呈现细节。";
+"settings.release_notes.configuration.item_two" = "调整配置时的预览与底部操作，让查看和编辑更自然。";
+"settings.release_notes.saving.title" = "安心保存这段回忆";
+"settings.release_notes.saving.item_one" = "修复部分 Live Photo 保存失败的问题，并改善重试提示。";
+"settings.release_notes.saving.item_two" = "照片仍在本地处理，原图保持不变；完成后保存新的记忆照片。";
 "settings.release_notes.closing" = "感谢你的反馈，我们会继续把每处细节打磨得更自然。";
 "settings.navigation.title" = "设置";
 "settings.interface_preferences.title" = "界面";
@@ -1885,3 +1885,10 @@
 "local_backup.revision_date" = "版本 %@ · %@";
 
 "configuration.card_editor.insertion_position" = "信息插入位置";
+
+/* Lifetime purchase alongside subscriptions */
+"commerce.purchase.lifetime.title" = "永久解锁";
+"commerce.purchase.lifetime.detail" = "一次购买，永久使用 MemoMark+ 核心能力。无自动续订。";
+"commerce.purchase.lifetime.subscription_notice" = "领取永久权益不会自动取消已有订阅。请在 Apple 订阅设置中管理续订。";
+"commerce.purchase.lifetime.claim" = "免费领取永久权益";
+"commerce.purchase.lifetime.buy_format" = "永久解锁 · %@";

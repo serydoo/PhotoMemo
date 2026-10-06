@@ -23,9 +23,9 @@ enum RecordCardPresentationStyle:
         case .classicWhite, .minimal, .filmMark:
             return Availability(isAuthorable: true, isProcessable: true)
         case .glassCard:
-            // The integrated raster baseline remains available to existing
-            // configurations while release authoring awaits acceptance.
-            return Availability(isAuthorable: isDebugBuild, isProcessable: true)
+            // GlassCard is available in the production style picker as well
+            // as for existing configurations and frozen processing tasks.
+            return Availability(isAuthorable: true, isProcessable: true)
         }
     }
 

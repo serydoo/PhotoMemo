@@ -1,5 +1,7 @@
 # MemoMark Commerce v1.1 — Build 104 Amendment
 
+> Current new-user lifetime purchase policy is superseded by [the 2026-10-06 amendment](2026-10-06-MemoMark-Commerce-Lifetime-Purchase-Amendment.md). Historical release evidence remains unchanged.
+
 Status: Accepted for MemoMark 2.3.0 / build 104
 
 This amendment supersedes the build-103 product-count statement in the

@@ -5,7 +5,7 @@
 MemoMark（时光记）是一款为 Apple Photos 设计的本地优先照片记忆工具。
 它不会替代系统相册，也不会修改你的原始照片。MemoMark 读取照片已有的拍摄时间、地点、设备和拍摄信息，再结合你设定的重要日期，为照片生成一份新的记忆版本。
 
-当前源码候选版本：**MemoMark 2.3.5（构建 122）**。更新范围从正式版 2.3.4 开始，包含预览显示／收起、设置导航与四语言细节优化，以及极简长文字、多语言照片说明和 Live Photo 关键帧时间修复。GlassCard 正式新建入口仍关闭。照片本地处理，原图不变。详见[更新说明](Docs/07_Releases/2026-10-03-2.3.5-122-release-notes.md)、[TestFlight 测试说明](Docs/07_Releases/2026-10-03-2.3.5-122-testflight-notes.md)和[同步清单](Docs/07_Releases/2026-10-03-2.3.5-122-sync-manifest.md)。当前为发布准备源码候选，尚未上传本轮 TestFlight。
+当前源码候选版本：**MemoMark 2.3.6（构建 124）**。以正式版 2.3.5 为基准，新增永久解锁入口、修复部分 Live Photo 保存失败，并改善玻璃卡片排版和配置预览／底部操作。照片本地处理，原图不变。详见[更新说明](Docs/07_Releases/2026-10-06-2.3.6-release-notes.md)、[TestFlight 说明](Docs/07_Releases/2026-10-06-2.3.6-testflight-notes.md)和[发布清单](Docs/07_Releases/2026-10-06-2.3.6-sync-manifest.md)。构建、提交审核与正式上线分别记录。
 
 例如，一张普通的宝宝照片，除了拍摄日期，还可以留下：
 
@@ -127,7 +127,7 @@ MemoMark 是一个独立开发项目。它使用 Swift、SwiftUI、PhotoKit 等 
 
 进一步了解项目内部设计，可阅读 `PROJECT_CONSTITUTION.md`、`Docs/MASTER_PLAN.md`、`Docs/PRODUCT_VERSION_HISTORY.md`、`Docs/CURRENT_STATUS.md` 与 `PROJECT_PHILOSOPHY.md`。
 
-发布与同步遵循 [MemoMark 发布同步规范](Docs/07_Releases/RELEASE_SYNC_STANDARD.md)。版本号、更新范围、GitHub 同步、TestFlight 和 App Store 提交分别确认，不把源码检查点等同于正式发布。当前目标为 MemoMark `2.3.4`（构建 `115`）的 GitHub 同步与 TestFlight 测试分发；正式 App Store 版本不在本轮范围。
+发布与同步遵循 [MemoMark 发布同步规范](Docs/07_Releases/RELEASE_SYNC_STANDARD.md)。版本号、更新范围、GitHub 同步、TestFlight 和 App Store 提交分别确认，不把源码检查点等同于正式发布。当前目标为 MemoMark `2.3.6`（构建 `124`）的 GitHub 同步与全语言 App Store 发布；Xcode Cloud 构建、商店处理、审核与正式上线分别留证。
 
 ## English
 

@@ -252,6 +252,18 @@ nonisolated enum NativeBackdropMotionColorCapability: Equatable {
     case wideColorRequiresFallback
     case unsupported
 
+    /// Read motion color before rendering either member of a Live Photo pair.
+    static func supportsNativeBackdrop(in sourceVideoURL: URL) async throws -> Bool {
+        try Task.checkCancellation()
+        let asset = AVURLAsset(url: sourceVideoURL)
+        guard let track = try await asset.loadTracks(withMediaType: .video).first else {
+            throw LivePhotoVideoCompositionError.videoTrackMissing
+        }
+        let descriptions = try await track.load(.formatDescriptions)
+        try Task.checkCancellation()
+        return !descriptions.isEmpty && descriptions.allSatisfy { resolve($0) == .sdrSupported }
+    }
+
     static func resolve(_ description: CMFormatDescription) -> Self {
         func value(_ key: CFString) -> String? {
             CMFormatDescriptionGetExtension(description, extensionKey: key) as? String

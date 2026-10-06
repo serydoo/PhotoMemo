@@ -67,7 +67,8 @@ struct RecordCardPresentationPlanner {
     @MainActor
     func artifact(
         for card: RecordCard,
-        canvasSize: CGSize
+        canvasSize: CGSize,
+        allowsNativeBackdrop: Bool = true
     ) throws -> PresentationArtifact {
         switch card.presentationStyle {
         case .classicWhite:
@@ -76,7 +77,7 @@ struct RecordCardPresentationPlanner {
                 canvasSize: canvasSize
             )
         case .glassCard:
-            return try glassCardArtifact(for: card, canvasSize: canvasSize)
+            return try glassCardArtifact(for: card, canvasSize: canvasSize, allowsNativeBackdrop: allowsNativeBackdrop)
         case .minimal:
             return try minimalArtifact(
                 for: card,
@@ -107,13 +108,15 @@ struct RecordCardPresentationPlanner {
     }
 
     @MainActor
-    private func glassCardArtifact(for card: RecordCard, canvasSize: CGSize) throws -> PresentationArtifact {
+    private func glassCardArtifact(for card: RecordCard, canvasSize: CGSize, allowsNativeBackdrop: Bool) throws -> PresentationArtifact {
         let plan = GlassCardProductionRenderer.resolve(card: card, canvasSize: canvasSize)
         guard !plan.isEmpty else { throw ProductionConfigurationContractError.emptyResolvedContent }
         guard !plan.isContentOverflowing else { throw ProductionConfigurationContractError.glassCardContentOverflow }
         let layerFrame = plan.overlayFrame
         let renderer = ImageRenderer(content:
-            GlassCardOverlayLayer(presentation: plan, badge: card.badge)
+            GlassCardOverlayLayer(presentation: plan, badge: card.badge,
+                recipe: allowsNativeBackdrop ? GlassCardProductionRenderer.recipe : .darkLayerV1,
+                secondaryTextOpacity: allowsNativeBackdrop ? GlassCardProductionRenderer.secondaryTextOpacity : 0.78)
                 .offset(y: -layerFrame.minY)
                 .frame(width: layerFrame.width, height: layerFrame.height, alignment: .topLeading)
                 .clipped()
@@ -126,7 +129,7 @@ struct RecordCardPresentationPlanner {
             canvasSize: canvasSize, photoFrame: CGRect(origin: .zero, size: canvasSize),
             layers: [.init(frame: plan.artifactOverlayFrame, image: overlay, zIndex: 100)],
             canvasBackground: .transparent,
-            backdropMaterial: GlassCardProductionRenderer.usesNativeMaterial ? GlassCardProductionRenderer.backdropMaterial(for: plan) : nil
+            backdropMaterial: allowsNativeBackdrop && GlassCardProductionRenderer.usesNativeMaterial ? GlassCardProductionRenderer.backdropMaterial(for: plan) : nil
         )
     }
 

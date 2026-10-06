@@ -23,6 +23,7 @@ struct MemoMarkPlusPurchaseView: View {
                     planSection
                     benefitSection
                     actionSection
+                    lifetimeSection
                     trustSection
                 }
                 .padding(.top, 18)
@@ -442,6 +443,49 @@ struct MemoMarkPlusPurchaseView: View {
             .disabled(store.isPurchaseActionInProgress)
         }
         .padding(.horizontal, 2)
+    }
+
+    @ViewBuilder
+    private var lifetimeSection: some View {
+        if !store.hasFounderLifetimeEntitlement {
+            ConfigurationCardSurface(
+                title: localized("commerce.purchase.lifetime.title", fallback: "永久解锁"),
+                systemImage: "checkmark.seal",
+                tint: .accentColor
+            ) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(localized("commerce.purchase.lifetime.detail", fallback: "一次购买，永久使用 MemoMark+ 核心能力。无自动续订。"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text(store.lifetimeDisplayPrice)
+                        .font(.title2.weight(.semibold))
+                        .monospacedDigit()
+                    Button {
+                        Task { await store.purchaseLifetime() }
+                    } label: {
+                        Text(lifetimeButtonTitle)
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(store.isPurchaseActionInProgress)
+                    if store.hasActiveSubscription {
+                        Text(localized("commerce.purchase.lifetime.subscription_notice", fallback: "领取永久权益不会自动取消已有订阅。请在 Apple 订阅设置中管理续订。"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    private var lifetimeButtonTitle: String {
+        if store.lifetimeProduct == nil {
+            return localized("commerce.purchase.retry", fallback: "重新连接 App Store")
+        }
+        return store.isLifetimeFree
+            ? localized("commerce.purchase.lifetime.claim", fallback: "免费领取永久权益")
+            : formatted("commerce.purchase.lifetime.buy_format", fallback: "永久解锁 · %@", store.lifetimeDisplayPrice)
     }
 
     private var trustSection: some View {
