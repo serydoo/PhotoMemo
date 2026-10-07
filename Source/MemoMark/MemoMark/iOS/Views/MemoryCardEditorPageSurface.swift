@@ -153,7 +153,7 @@ struct MemoryCardEditorPageSurface<
                 ConfigurationPageHeader(
                     pageTitle,
                     subtitle: pageSubtitle,
-                    previewIsVisible: onTogglePreview == nil || verticalSizeClass == .compact
+                    previewIsVisible: onTogglePreview == nil || navigationStyle == .floatingRail
                         ? nil
                         : isPreviewVisible,
                     onTogglePreview: onTogglePreview

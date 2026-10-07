@@ -16,6 +16,7 @@ struct EntryNavigationSurface<
 >: View {
 
     let navigationStyle: EntryNavigationStyle
+    @Environment(\.layoutDirection) private var contentLayoutDirection
     private let previewControl: ConfigurationPreviewRailControl?
     private let configurationActions: ConfigurationActionFooter?
 
@@ -102,6 +103,7 @@ struct EntryNavigationSurface<
     private var floatingRailNavigation: some View {
         NavigationStack {
             sidebarDestination
+                .environment(\.layoutDirection, contentLayoutDirection)
                 // Apply the inset inside navigation's hosting boundary so the
                 // destination receives the reduced safe content region.
                 .safeAreaInset(edge: .trailing, spacing: ConfigurationUI.innerPanelPadding) {
@@ -142,6 +144,9 @@ struct EntryNavigationSurface<
                         .padding(.trailing, 10)
                         .padding(.vertical, 12)
                 }
+                // The rail is physically right; destination content retains
+                // its own semantic reading direction for RTL languages.
+                .environment(\.layoutDirection, .leftToRight)
         }
         .frame(
             maxWidth: .infinity,

@@ -29,15 +29,15 @@ struct AdaptivePageLayoutTests {
         )
     }
 
-    @Test("regular width and regular height uses the full sidebar")
-    func regularWidthAndRegularHeightUsesRegularSidebar() {
+    @Test("regular width and regular height keeps the right-side floating rail")
+    func regularWidthAndRegularHeightUsesFloatingRail() {
         #expect(
             AdaptivePageLayout
                 .navigationStyle(
                     hasRegularHorizontalSizeClass: true,
                     hasCompactVerticalSizeClass: false
                 )
-            == .regularSidebar
+            == .floatingRail
         )
     }
 

@@ -25,7 +25,8 @@ enum AdaptivePageLayout {
         }
 
         if hasRegularHorizontalSizeClass {
-            return .regularSidebar
+            // Large windows share the same right-side controls in either pose.
+            return .floatingRail
         }
 
         return .bottomTabBar

@@ -102,7 +102,7 @@ struct ConfigurationPageSurface<
         } editorContent: {
             editorContent
         } accessoryContent: {
-            if usesToolbarConfigurationActions || isEditingCardContent || verticalSizeClass == .compact {
+            if usesToolbarConfigurationActions || isEditingCardContent || navigationStyle == .floatingRail {
                 EmptyView()
             } else {
                 ConfigurationActionFooter(
@@ -138,9 +138,13 @@ struct ConfigurationPageSurface<
     }
 
     private var usesToolbarConfigurationActions: Bool {
-        AdaptivePageLayout.usesRegularWorkspace(
+        navigationStyle == .regularSidebar
+    }
+
+    private var navigationStyle: EntryNavigationStyle {
+        AdaptivePageLayout.navigationStyle(
             hasRegularHorizontalSizeClass: horizontalSizeClass == .regular,
-            hasRegularVerticalSizeClass: verticalSizeClass == .regular
+            hasCompactVerticalSizeClass: verticalSizeClass == .compact
         )
     }
 
