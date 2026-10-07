@@ -7,7 +7,33 @@ extension MemoMarkConfigurationCenterView {
     var rootNavigation: some View {
         EntryNavigationSurface(
             navigationStyle: entryNavigationStyle,
-            selection: entryBinding(\.selectedTab)
+            selection: entryBinding(\.selectedTab),
+            previewControl: entryFlowState.selectedTab == .editor
+                ? ConfigurationPreviewRailControl(
+                    isVisible: rootPresentationState.previewVisibility.isVisible(
+                        isEditingCardContent: rootPresentationState.isCardContentInspectorPresented,
+                        allowsCollapseDuringEditing: verticalSizeClass == .compact
+                    ),
+                    toggle: {
+                        dismissKeyboard()
+                        rootPresentationState.previewVisibility.isCollapsed.toggle()
+                    }
+                )
+                : nil,
+            configurationActions: entryFlowState.selectedTab == .editor
+                && !rootPresentationState.isCardContentInspectorPresented
+                ? ConfigurationActionFooter(
+                    configurationStatus: activeConfigurationStatus,
+                    isSavingConfiguration: isSavingConfiguration,
+                    isSelectedProcessingDefault: session.selectedMemoryPresetIsProcessingDefault,
+                    onSaveCurrentConfiguration: { performConfigurationLibraryAction(.saveCurrent) },
+                    onSetAsProcessingDefault: { performConfigurationLibraryAction(.setAsProcessingDefault) },
+                    onCreateConfiguration: { performConfigurationLibraryAction(.create) },
+                    onResetConfiguration: { performConfigurationLibraryAction(.reset) },
+                    onDeleteConfiguration: deleteCurrentConfiguration,
+                    isRail: true
+                )
+                : nil
         ) {
             homePage
         } editorContent: {
@@ -69,7 +95,7 @@ extension MemoMarkConfigurationCenterView {
         switch entryNavigationStyle {
         case .bottomTabBar:
             return .compact
-        case .compactSidebar, .regularSidebar:
+        case .floatingRail, .regularSidebar:
             return .regular
         }
     }
@@ -193,7 +219,8 @@ extension MemoMarkConfigurationCenterView {
             isEditingCardContent:
                 rootPresentationState.isCardContentInspectorPresented,
             isPreviewVisible: rootPresentationState.previewVisibility.isVisible(
-                isEditingCardContent: rootPresentationState.isCardContentInspectorPresented
+                isEditingCardContent: rootPresentationState.isCardContentInspectorPresented,
+                allowsCollapseDuringEditing: verticalSizeClass == .compact
             ),
             onTogglePreview: {
                 dismissKeyboard()

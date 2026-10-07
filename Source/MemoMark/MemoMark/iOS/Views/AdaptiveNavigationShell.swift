@@ -1,6 +1,12 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 
+/// A contextual viewing action, separate from primary destination navigation.
+struct ConfigurationPreviewRailControl {
+    let isVisible: Bool
+    let toggle: () -> Void
+}
+
 struct EntryNavigationSurface<
     HomeContent: View,
     EditorContent: View,
@@ -10,6 +16,8 @@ struct EntryNavigationSurface<
 >: View {
 
     let navigationStyle: EntryNavigationStyle
+    private let previewControl: ConfigurationPreviewRailControl?
+    private let configurationActions: ConfigurationActionFooter?
 
     @Binding
     var selection: EntryTab
@@ -27,6 +35,8 @@ struct EntryNavigationSurface<
     init(
         navigationStyle: EntryNavigationStyle,
         selection: Binding<EntryTab>,
+        previewControl: ConfigurationPreviewRailControl? = nil,
+        configurationActions: ConfigurationActionFooter? = nil,
         @ViewBuilder homeContent: () -> HomeContent,
         @ViewBuilder editorContent: () -> EditorContent,
         @ViewBuilder outputContent: () -> OutputContent,
@@ -34,6 +44,8 @@ struct EntryNavigationSurface<
         @ViewBuilder settingsContent: () -> SettingsContent
     ) {
         self.navigationStyle = navigationStyle
+        self.previewControl = previewControl
+        self.configurationActions = configurationActions
         _selection = selection
         self.homeContent = homeContent()
         self.editorContent = editorContent()
@@ -46,8 +58,8 @@ struct EntryNavigationSurface<
         switch navigationStyle {
         case .bottomTabBar:
             compactNavigation
-        case .compactSidebar:
-            compactSidebarNavigation
+        case .floatingRail:
+            floatingRailNavigation
         case .regularSidebar:
             regularSidebarNavigation
         }
@@ -87,10 +99,58 @@ struct EntryNavigationSurface<
         }
     }
 
-    private var compactSidebarNavigation: some View {
-        sidebarNavigation(width: 64) {
-            EntryCompactSidebar(selection: $selection)
+    private var floatingRailNavigation: some View {
+        NavigationStack {
+            sidebarDestination
+                // Apply the inset inside navigation's hosting boundary so the
+                // destination receives the reduced safe content region.
+                .safeAreaInset(edge: .trailing, spacing: ConfigurationUI.innerPanelPadding) {
+                    ScrollView(.vertical) {
+                        VStack(spacing: ConfigurationUI.innerPanelPadding) {
+                            EntryFloatingNavigationRail(selection: $selection)
+                            if let previewControl {
+                                Button(action: previewControl.toggle) {
+                                    Image(systemName: previewControl.isVisible
+                                        ? "eye.slash" : "eye")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .frame(width: 46, height: 46)
+                                        .foregroundStyle(Color.accentColor)
+                                }
+                                .buttonStyle(.plain)
+                                .background(
+                                    MemoMarkDesignTokens.SurfaceMaterial.contextual,
+                                    in: Circle()
+                                )
+                                .accessibilityLabel(localized(previewControl.isVisible
+                                    ? "configuration.preview.collapse"
+                                    : "configuration.preview.expand"))
+                                .accessibilityValue(localized(previewControl.isVisible
+                                    ? "configuration.preview.visible"
+                                    : "configuration.preview.hidden"))
+                                .accessibilityIdentifier("configuration.preview.rail-visibility")
+                            }
+                            if let configurationActions {
+                                configurationActions
+                            }
+                        }
+                    }
+                        // Normally centered; short keyboard/window regions can
+                        // scroll the actions instead of clipping the last one.
+                        .scrollIndicators(.hidden)
+                        .defaultScrollAnchor(.center, for: .alignment)
+                        .frame(width: 56)
+                        .padding(.trailing, 10)
+                        .padding(.vertical, 12)
+                }
         }
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity
+        )
+        .background(
+            ConfigurationUI.appBackground
+                .ignoresSafeArea()
+        )
     }
 
     private var regularSidebarNavigation: some View {
@@ -147,37 +207,6 @@ struct EntryNavigationSurface<
         )
     }
 
-    private func sidebarNavigation<Sidebar: View>(
-        width: CGFloat,
-        @ViewBuilder sidebar: () -> Sidebar
-    ) -> some View {
-        HStack(spacing: 0) {
-            sidebar()
-                .frame(width: width)
-
-            Rectangle()
-                .fill(ConfigurationUI.faintHairline)
-                .frame(width: 0.5)
-
-            NavigationStack {
-                sidebarDestination
-            }
-            .frame(
-                maxWidth: .infinity,
-                maxHeight: .infinity
-            )
-        }
-        .frame(
-            maxWidth: .infinity,
-            maxHeight: .infinity,
-            alignment: .leading
-        )
-        .background(
-            ConfigurationUI.appBackground
-                .ignoresSafeArea()
-        )
-    }
-
     @ViewBuilder
     private var sidebarDestination: some View {
         switch selection {
@@ -195,36 +224,26 @@ struct EntryNavigationSurface<
     }
 }
 
-struct EntryCompactSidebar: View {
+struct EntryFloatingNavigationRail: View {
 
     @Binding
     var selection: EntryTab
 
     var body: some View {
-        VStack(spacing: 12) {
-            ForEach(EntryTab.sidebarNavigationCases) { destination in
+        VStack(spacing: 4) {
+            ForEach(EntryTab.primaryNavigationCases) { destination in
                 Button {
                     selection = destination
                 } label: {
                     Image(systemName: destination.symbolName)
-                        .font(.system(size: 19, weight: .semibold))
-                        .frame(width: 48, height: 48)
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: 46, height: 46)
                         .foregroundStyle(
                             selection == destination
                             ? Color.accentColor
                             : Color.secondary
                         )
-                        .background(
-                            RoundedRectangle(
-                                cornerRadius: 8,
-                                style: .continuous
-                            )
-                            .fill(
-                                selection == destination
-                                ? Color.accentColor.opacity(0.12)
-                                : Color.clear
-                            )
-                        )
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(destination.localizedTitle)
@@ -235,9 +254,21 @@ struct EntryCompactSidebar: View {
                 )
             }
         }
-        .frame(maxHeight: .infinity, alignment: .center)
-        .padding(.vertical, 12)
-        .background(ConfigurationUI.appBackground)
+        .padding(5)
+        .background(
+            MemoMarkDesignTokens.SurfaceMaterial.contextual,
+            in: Capsule()
+        )
+        .overlay {
+            Capsule()
+                .stroke(ConfigurationUI.faintHairline, lineWidth: 0.5)
+        }
+        .shadow(
+            color: ConfigurationUI.cardShadow,
+            radius: 6,
+            y: 2
+        )
+        .accessibilityElement(children: .contain)
     }
 }
 

@@ -6,19 +6,20 @@ struct FilmMarkPositionDetailsContent: View {
     @Binding var configuration: FilmMarkConfiguration
     let onChange: () -> Void
     var showsHeader: Bool = true
+    var horizontalInset: CGFloat = CompactInformationRowMetrics.horizontalPadding
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if showsHeader {
                 Text(filmMarkLocalized("filmMark.configuration.position.title", fallback: "位置"))
                     .font(.headline.weight(.semibold))
-                    .padding(.horizontal, CompactInformationRowMetrics.horizontalPadding)
+                    .padding(.horizontal, horizontalInset)
                     .padding(.top, 4)
                 Text(filmMarkLocalized("filmMark.configuration.position.help", fallback: "选择文字在照片中的位置，并微调。"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, CompactInformationRowMetrics.horizontalPadding)
+                    .padding(.horizontal, horizontalInset)
                     .padding(.top, 4)
                     .padding(.bottom, 4)
             }
@@ -66,7 +67,7 @@ struct FilmMarkPositionDetailsContent: View {
                 }
             }
         }
-        .padding(.horizontal, CompactInformationRowMetrics.horizontalPadding)
+        .padding(.horizontal, horizontalInset)
         .padding(.vertical, 8)
         .accessibilityElement(children: .contain)
     }
@@ -115,7 +116,7 @@ struct FilmMarkPositionDetailsContent: View {
             ConfigurationFieldHeading(title: title, subtitle: subtitle)
             trailing()
         }
-        .padding(.horizontal, CompactInformationRowMetrics.horizontalPadding)
+        .padding(.horizontal, horizontalInset)
         .padding(.vertical, 8)
     }
 

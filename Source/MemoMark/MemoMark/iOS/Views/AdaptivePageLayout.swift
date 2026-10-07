@@ -2,7 +2,7 @@ import CoreGraphics
 
 enum EntryNavigationStyle {
     case bottomTabBar
-    case compactSidebar
+    case floatingRail
     case regularSidebar
 }
 
@@ -21,7 +21,7 @@ enum AdaptivePageLayout {
         hasCompactVerticalSizeClass: Bool
     ) -> EntryNavigationStyle {
         if hasCompactVerticalSizeClass {
-            return .compactSidebar
+            return .floatingRail
         }
 
         if hasRegularHorizontalSizeClass {
@@ -44,7 +44,7 @@ enum AdaptivePageLayout {
         switch navigationStyle {
         case .bottomTabBar:
             return 96
-        case .compactSidebar, .regularSidebar:
+        case .floatingRail, .regularSidebar:
             return 26
         }
     }

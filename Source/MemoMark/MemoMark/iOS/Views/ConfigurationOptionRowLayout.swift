@@ -37,6 +37,7 @@ struct ConfigurationOptionRowLayout<Icon: View, Trailing: View>: View {
     let showsTrailingChevron: Bool
     let horizontalTrailingWidth: CGFloat
     let trailing: Trailing
+    var horizontalInset: CGFloat = CompactInformationRowMetrics.horizontalPadding
 
     var body: some View {
         let trailingSpacing: CGFloat =
@@ -47,7 +48,7 @@ struct ConfigurationOptionRowLayout<Icon: View, Trailing: View>: View {
         adaptiveConfigurationRow(trailingSpacing: trailingSpacing)
             .padding(
                 .horizontal,
-                CompactInformationRowMetrics.horizontalPadding
+                horizontalInset
             )
             .padding(
                 .vertical,

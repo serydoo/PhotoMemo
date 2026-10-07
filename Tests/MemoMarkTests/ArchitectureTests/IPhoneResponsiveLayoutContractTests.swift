@@ -1370,8 +1370,13 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(navigationSource.contains("TabView(selection: $selection)"))
         #expect(!navigationSource.contains("tabViewBottomAccessory"))
         #expect(!navigationSource.contains("tabBarMinimizeBehavior"))
-        #expect(navigationSource.contains("compactSidebarNavigation"))
-        #expect(navigationSource.contains("EntryCompactSidebar(selection: $selection)"))
+        #expect(navigationSource.contains("floatingRailNavigation"))
+        #expect(navigationSource.contains("EntryFloatingNavigationRail(selection: $selection)"))
+        #expect(navigationSource.contains("ForEach(EntryTab.primaryNavigationCases)"))
+        #expect(navigationSource.contains(".safeAreaInset(edge: .trailing, spacing: ConfigurationUI.innerPanelPadding)"))
+        #expect(navigationSource.contains("MemoMarkDesignTokens.SurfaceMaterial.contextual"))
+        #expect(!navigationSource.contains("sidebarNavigation(width: 64)"))
+        #expect(!navigationSource.contains("EntryCompactSidebar"))
         #expect(navigationSource.contains("NavigationSplitView"))
         #expect(navigationSource.contains("List {"))
         #expect(navigationSource.contains("selection = destination"))
@@ -1393,25 +1398,31 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(pagesSource.contains("hasCompactVerticalSizeClass:"))
     }
 
-    @Test("sidebar navigation fills the host viewport")
-    func sidebarNavigationFillsHostViewport() throws {
+    @Test("landscape floating rail reserves space within the system safe area")
+    func landscapeFloatingRailReservesSafeContentViewport() throws {
         let source = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/AdaptiveNavigationShell.swift"
         )
-        let sidebarStart = try #require(
-            source.range(of: "private func sidebarNavigation")?.lowerBound
+        let railStart = try #require(
+            source.range(of: "private var floatingRailNavigation")?.lowerBound
         )
-        let sidebarEnd = try #require(
+        let railEnd = try #require(
             source.range(
-                of: "    @ViewBuilder\n    private var sidebarDestination",
-                range: sidebarStart..<source.endIndex
+                of: "    private var regularSidebarNavigation",
+                range: railStart..<source.endIndex
             )?.lowerBound
         )
-        let sidebarBody = String(source[sidebarStart..<sidebarEnd])
+        let railBody = String(source[railStart..<railEnd])
 
-        #expect(sidebarBody.contains("maxWidth: .infinity"))
-        #expect(sidebarBody.contains("maxHeight: .infinity"))
-        #expect(sidebarBody.contains("alignment: .leading"))
+        #expect(railBody.contains("maxWidth: .infinity"))
+        #expect(railBody.contains("maxHeight: .infinity"))
+        #expect(railBody.contains(".safeAreaInset(edge: .trailing, spacing: ConfigurationUI.innerPanelPadding)"))
+        #expect(!railBody.contains(".overlay(alignment: .trailing)"))
+        #expect(!railBody.contains("ignoresSafeArea(.container"))
+        #expect(railBody.contains("EntryFloatingNavigationRail(selection: $selection)"))
+        #expect(!railBody.contains("HStack(spacing: 0)"))
+        #expect(!railBody.contains("sidebarNavigation(width: 64)"))
+        #expect(railBody.contains("configuration.preview.rail-visibility"))
     }
 
     @Test("card content editor uses one fixed four-region editing surface")

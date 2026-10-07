@@ -1,6 +1,15 @@
 # MemoMark Current Brief
 
-Last updated: 2026-10-06
+Last updated: 2026-10-07
+
+2026-10-07 research execution: use
+`Docs/03_Engineering/2026-10-07-post-2.3.6-research-execution-plan.md` for the
+combined competitor, GlassCard/Live Photo and adaptive-form roadmap. Released
+source baseline is `06eebcd2` (2.3.6/124); post-release floating-rail
+source checkpoint is separate. Live selected SDK is 27.2, with isolated 27.1 adaptive API
+typecheck passing. Small-phone landscape direction is provisionally accepted; the complete keyboard/accessibility matrix remains open. See
+`Docs/03_Engineering/2026-10-07-landscape-source-checkpoint.md`. Existing
+GlassCard motion already resolves material per source frame and is SDR-only.
 
 This is a compact routing brief for a new Codex session. It is not a
 replacement for the project constitution, accepted specifications, contracts,

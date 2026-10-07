@@ -67,6 +67,14 @@ struct ConfigurationOptionList: View {
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
+
+    @Environment(\.verticalSizeClass)
+    private var verticalSizeClass
+    #endif
+
     @State
     private var showsAdvancedModulesSheet = false
 
@@ -164,12 +172,12 @@ struct ConfigurationOptionList: View {
                     regionContentRow
                     HorizontalDivider(
                         horizontalInset:
-                            CompactInformationRowMetrics.horizontalPadding
+                            panelContentHorizontalInset
                     )
                     advancedModulesRow
                     HorizontalDivider(
                         horizontalInset:
-                            CompactInformationRowMetrics.horizontalPadding
+                            panelContentHorizontalInset
                     )
                     logoRow
                 }
@@ -243,7 +251,7 @@ struct ConfigurationOptionList: View {
                 resolvedMemoryWriteText:
                     output.resolvedMemoryWriteText
             )
-            .padding(.horizontal, 14)
+            .padding(.horizontal, usesCompactHeightPanelLayout ? ConfigurationUI.contentColumnPadding : 14)
             .padding(
                 .vertical,
                 ConfigurationSectionCardMetrics.cardVerticalPadding
@@ -273,7 +281,7 @@ struct ConfigurationOptionList: View {
                 albumStatusMessage: output.albumStatusMessage,
                 onReloadAlbums: output.onReloadAlbums
             )
-            .padding(.horizontal, 14)
+            .padding(.horizontal, usesCompactHeightPanelLayout ? ConfigurationUI.contentColumnPadding : 14)
             .padding(
                 .vertical,
                 ConfigurationSectionCardMetrics.cardVerticalPadding
@@ -435,10 +443,14 @@ struct ConfigurationOptionList: View {
             memoryExpressionSectionHeader
 
             if disclosureState.isExpanded(for: .memoryExpression) {
-                VStack(spacing: 0) {
+                memoryExpressionLayout {
                     memoryDisplayRow
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     memoryExpressionPreview
                 }
+                .padding(.horizontal, usesHorizontalMemoryExpressionLayout ? ConfigurationUI.contentColumnPadding : 0)
+                .padding(.vertical, usesHorizontalMemoryExpressionLayout ? ConfigurationSectionCardMetrics.cardVerticalPadding : 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(
                         cornerRadius: 18,
@@ -499,11 +511,12 @@ struct ConfigurationOptionList: View {
                 onChange: {
                     // The parent remains the single draft owner.
                 },
-                showsHeader: false
+                showsHeader: false,
+                horizontalInset: panelContentHorizontalInset
             )
             HorizontalDivider(
                 horizontalInset:
-                    CompactInformationRowMetrics.horizontalPadding
+                    panelContentHorizontalInset
             )
             FilmMarkConfigurationControls(
                 configuration: $filmMarkConfiguration,
@@ -512,7 +525,7 @@ struct ConfigurationOptionList: View {
                 includesFont: false,
                 includesFontSize: true,
                 includesColor: false,
-                horizontalInset: CompactInformationRowMetrics.horizontalPadding,
+                horizontalInset: panelContentHorizontalInset,
                 onChange: {
                     // The parent remains the single draft owner.
                 }
@@ -762,7 +775,37 @@ struct ConfigurationOptionList: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(CompactInformationRowMetrics.horizontalPadding)
+        .padding(usesHorizontalMemoryExpressionLayout ? 0 : panelContentHorizontalInset)
+    }
+
+    private var memoryExpressionLayout: AnyLayout {
+        usesHorizontalMemoryExpressionLayout
+            ? AnyLayout(HStackLayout(alignment: .center, spacing: ConfigurationUI.innerPanelPadding))
+            : AnyLayout(VStackLayout(spacing: 0))
+    }
+
+    private var usesCompactHeightPanelLayout: Bool {
+        #if os(iOS)
+        verticalSizeClass == .compact
+        #else
+        false
+        #endif
+    }
+
+    private var panelContentHorizontalInset: CGFloat {
+        usesCompactHeightPanelLayout
+            ? ConfigurationUI.contentColumnPadding
+            : CompactInformationRowMetrics.horizontalPadding
+    }
+
+    private var usesHorizontalMemoryExpressionLayout: Bool {
+        #if os(iOS)
+        horizontalSizeClass == .regular
+            && verticalSizeClass == .compact
+            && !dynamicTypeSize.isAccessibilitySize
+        #else
+        false
+        #endif
     }
 
     private var memoryDisplayStyleChoices: some View {
@@ -886,8 +929,12 @@ struct ConfigurationOptionList: View {
             )
             .stroke(ConfigurationUI.faintHairline)
         )
-        .padding(.horizontal, CompactInformationRowMetrics.horizontalPadding)
-        .padding(.bottom, 12)
+        .padding(.horizontal, usesHorizontalMemoryExpressionLayout ? 0 : panelContentHorizontalInset)
+        .padding(.bottom, usesHorizontalMemoryExpressionLayout ? 0 : 12)
+        .frame(
+            maxWidth: usesHorizontalMemoryExpressionLayout ? 240 : .infinity,
+            alignment: .leading
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(localized("configuration.expression.example"))
         .accessibilityValue(memoryExpressionPreviewLines.joined(separator: "，"))
@@ -953,7 +1000,7 @@ struct ConfigurationOptionList: View {
         }
         .padding(
             .horizontal,
-            CompactInformationRowMetrics.horizontalPadding
+            panelContentHorizontalInset
         )
         .padding(
             .vertical,
@@ -1224,7 +1271,8 @@ struct ConfigurationOptionList: View {
             detail: detail,
             showsTrailingChevron: showsTrailingChevron,
             horizontalTrailingWidth: horizontalTrailingWidth,
-            trailing: trailing()
+            trailing: trailing(),
+            horizontalInset: panelContentHorizontalInset
         )
     }
 

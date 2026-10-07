@@ -5,6 +5,18 @@ import Testing
 @MainActor
 @Suite("Configuration preview viewing choice")
 struct ConfigurationPreviewVisibilityTests {
+    @Test("Compact-height editing can hide preview and restore it without changing portrait policy")
+    func compactHeightEditingRespectsViewingChoice() {
+        var state = ConfigurationPreviewVisibilityState()
+        state.isCollapsed = true
+        #expect(!state.isVisible(isEditingCardContent: true, allowsCollapseDuringEditing: true))
+        #expect(state.isVisible(isEditingCardContent: true))
+        #expect(state.isCollapsed)
+        state.isCollapsed.toggle()
+        #expect(state.isVisible(isEditingCardContent: true, allowsCollapseDuringEditing: true))
+        #expect(state.isVisible(isEditingCardContent: false))
+    }
+
     @Test("Editing temporarily restores preview without overwriting the choice")
     func editingPreservesCollapsedChoice() {
         var state = ConfigurationPreviewVisibilityState()

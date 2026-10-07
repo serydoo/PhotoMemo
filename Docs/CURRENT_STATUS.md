@@ -30059,3 +30059,17 @@ Owner explicitly confirms continued Shin-chan avatar use, superseding previous p
 Owner accepts latest enlarged real product materials and explicitly authorizes scoped main sync followed by automatic release after Xcode Cloud. Final upload directory is /Users/rui/Desktop/MemoMark_2.3.6_124_正式上传包; source hashes and chosen privacy-masked exports are indexed in Docs/07_Releases/2026-10-06-2.3.6-approved-materials.md. Historic AI/collage drafts and private originals excluded. All four metadata locales retained; existing approved other-language/iPad screenshots remain where new actual captures are unavailable.
 
 Current release review preserves StoreKit verified entitlements, serialized purchase operations, paired Live Photo output, durable style identity and original protection. No critical finding remains in the scoped change. Full host xcresult freshly read back1984 passed/0 failed/1 skipped (2028 executions); existing export QoS warnings and broad physical certification remain separately recorded. App/Share/Widget archive all2.3.6(124). Cloud/archive/upload, ASC review and public availability remain independent downstream receipts. Automatic campaign follow-up begins the two-day free window at public availability, then restores mainlandCNY68 and withdraws temporary annual first-year-free.
+
+# 2026-10-07 — Small-phone landscape accepted source checkpoint
+
+Owner provisionally accepts the small-phone landscape direction and authorizes
+GitHub source synchronization. Rail space reservation, contextual preview toggle,
+side Save/More, compact example/shared panel alignment, matching Home/Progress
+headings and icon-only navigation selection are recorded in
+Docs/03_Engineering/2026-10-07-landscape-source-checkpoint.md.
+Final signed iPhoneOS build succeeded; focused host tests69 passed/0 failed/0
+skipped, /tmp/MemoMarkLandscapeSync.xcresult. Physical package install/launch and
+final Home/icon-selection captures inspected during this pass. Full keyboard,
+rotation, localization/accessibility matrix and native Duo integration remain
+open. Version2.3.6(124) unchanged. No renderer/media/schema or Store mutation.
+Unrelated release/Outreach/research/config edits and private assets remain local.

@@ -17,12 +17,13 @@ struct ConfigurationActionFooter: View {
     let onCreateConfiguration: () -> Void
     let onResetConfiguration: () -> Void
     let onDeleteConfiguration: () -> Void
+    var isRail = false
 
     var body: some View {
         configurationActionRow
-            .padding(.top, 8)
-            .padding(.bottom, 8)
-            .frame(maxWidth: .infinity)
+            .padding(.top, isRail ? 0 : 8)
+            .padding(.bottom, isRail ? 0 : 8)
+            .frame(maxWidth: isRail ? nil : .infinity)
             .alert(isPresented: $showsResetConfigurationConfirmation) {
                 Alert(
                     title: Text(localized("configuration.action.reset.title", fallback: "恢复默认配置？")),
@@ -47,18 +48,43 @@ struct ConfigurationActionFooter: View {
             }
     }
 
+    @ViewBuilder
     private var configurationActionRow: some View {
-        ZStack(alignment: .bottom) {
-            HStack {
-                Spacer(minLength: 0)
+        if isRail {
+            ViewThatFits(in: .vertical) {
+                VStack(spacing: ConfigurationUI.innerPanelPadding) {
+                    Button(action: onSaveCurrentConfiguration) {
+                        Image(systemName: saveActionSystemImage)
+                            .font(.system(size: 17, weight: .semibold))
+                            .frame(width: 36, height: 36)
+                            .foregroundStyle(configurationStatus == .saved ? Color.secondary : Color.white)
+                            .background(configurationStatus == .saved ? ConfigurationUI.controlBackground : Color.accentColor, in: Circle())
+                            .frame(width: 46, height: 46)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(saveActionTitle)
+                    .disabled(isSavingConfiguration || configurationStatus == .saved)
+                    .accessibilityIdentifier("configuration.rail.save")
+                    moreActionsMenu
+                        .background(MemoMarkDesignTokens.SurfaceMaterial.contextual, in: Circle())
+                }
+                .fixedSize(horizontal: false, vertical: true)
                 moreActionsMenu
+                    .background(MemoMarkDesignTokens.SurfaceMaterial.contextual, in: Circle())
             }
-            centeredPrimaryAction
+        } else {
+            ZStack(alignment: .bottom) {
+                HStack {
+                    Spacer(minLength: 0)
+                    moreActionsMenu
+                }
+                centeredPrimaryAction
+            }
+            .padding(.horizontal, MemoMarkDesignTokens.Layout.compactActionClusterHorizontalPadding)
+            .padding(.vertical, MemoMarkDesignTokens.Layout.compactActionClusterVerticalPadding)
+            .frame(maxWidth: MemoMarkDesignTokens.Layout.compactActionClusterMaxWidth)
         }
-        .padding(.horizontal, MemoMarkDesignTokens.Layout.compactActionClusterHorizontalPadding)
-        .padding(.vertical, MemoMarkDesignTokens.Layout.compactActionClusterVerticalPadding)
-        .frame(maxWidth: MemoMarkDesignTokens.Layout.compactActionClusterMaxWidth)
-
     }
 
     private var centeredPrimaryAction: some View {
@@ -78,6 +104,13 @@ struct ConfigurationActionFooter: View {
 
     private var moreActionsMenu: some View {
         Menu {
+            if isRail {
+                Button(action: onSaveCurrentConfiguration) {
+                    Label(saveActionTitle, systemImage: saveActionSystemImage)
+                }
+                .disabled(isSavingConfiguration || configurationStatus == .saved)
+                Divider()
+            }
             if !isSelectedProcessingDefault {
                 Button { onSetAsProcessingDefault() } label: {
                     Label(

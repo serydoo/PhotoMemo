@@ -102,7 +102,7 @@ struct ConfigurationPageSurface<
         } editorContent: {
             editorContent
         } accessoryContent: {
-            if usesToolbarConfigurationActions || isEditingCardContent {
+            if usesToolbarConfigurationActions || isEditingCardContent || verticalSizeClass == .compact {
                 EmptyView()
             } else {
                 ConfigurationActionFooter(

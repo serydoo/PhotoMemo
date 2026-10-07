@@ -9,6 +9,9 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
+    @Environment(\.verticalSizeClass)
+    private var verticalSizeClass
+
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
     }
@@ -72,7 +75,13 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
+                if verticalSizeClass == .compact {
+                    ConfigurationPageHeader(
+                        localized("home.title"),
+                        subtitle: localized("home.brand.tagline")
+                    )
+                }
                 topHeaderSection
 
                 topSummaryCluster
@@ -81,7 +90,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                     processPhotoFooter
                 }
             }
-            .padding(.top, 16)
+            .padding(.top, verticalSizeClass == .compact ? 10 : 16)
             .padding(
                 .bottom,
                 dynamicTypeSize.isAccessibilitySize ? 16 : 104
@@ -101,8 +110,9 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
         )
-        .navigationTitle(localized("home.title"))
+        .navigationTitle(verticalSizeClass == .compact ? "" : localized("home.title"))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(verticalSizeClass == .compact ? .hidden : .visible, for: .navigationBar)
         .safeAreaInset(edge: .bottom) {
             if !dynamicTypeSize.isAccessibilitySize {
                 processPhotoFooter
@@ -453,10 +463,12 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         VStack(alignment: .leading, spacing: 7) {
             brandTitle
 
-            Text(localized("home.brand.tagline"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if verticalSizeClass != .compact {
+                Text(localized("home.brand.tagline"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

@@ -3,8 +3,11 @@
 struct ConfigurationPreviewVisibilityState {
     var isCollapsed = false
 
-    func isVisible(isEditingCardContent: Bool) -> Bool {
-        isEditingCardContent || !isCollapsed
+    func isVisible(
+        isEditingCardContent: Bool,
+        allowsCollapseDuringEditing: Bool = false
+    ) -> Bool {
+        (isEditingCardContent && !allowsCollapseDuringEditing) || !isCollapsed
     }
 }
 #endif

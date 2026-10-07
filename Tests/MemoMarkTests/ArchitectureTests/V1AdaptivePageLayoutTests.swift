@@ -17,15 +17,15 @@ struct AdaptivePageLayoutTests {
         )
     }
 
-    @Test("regular width and compact height uses a compact sidebar")
-    func regularWidthAndCompactHeightUsesCompactSidebar() {
+    @Test("regular width and compact height uses a floating rail")
+    func regularWidthAndCompactHeightUsesFloatingRail() {
         #expect(
             AdaptivePageLayout
                 .navigationStyle(
                     hasRegularHorizontalSizeClass: true,
                     hasCompactVerticalSizeClass: true
                 )
-            == .compactSidebar
+            == .floatingRail
         )
     }
 
@@ -41,15 +41,15 @@ struct AdaptivePageLayoutTests {
         )
     }
 
-    @Test("compact width and compact height uses a compact sidebar")
-    func compactWidthAndCompactHeightUsesCompactSidebar() {
+    @Test("compact width and compact height uses a floating rail")
+    func compactWidthAndCompactHeightUsesFloatingRail() {
         #expect(
             AdaptivePageLayout
                 .navigationStyle(
                     hasRegularHorizontalSizeClass: false,
                     hasCompactVerticalSizeClass: true
                 )
-            == .compactSidebar
+            == .floatingRail
         )
     }
 
@@ -64,12 +64,12 @@ struct AdaptivePageLayoutTests {
         )
     }
 
-    @Test("sidebars avoid unnecessary bottom whitespace")
-    func sidebarsUseStandardBottomPadding() {
+    @Test("side presentations avoid unnecessary bottom whitespace")
+    func sidePresentationsUseStandardBottomPadding() {
         #expect(
             AdaptivePageLayout
                 .scrollBottomPadding(
-                    for: .compactSidebar
+                    for: .floatingRail
                 )
             == 26
         )
