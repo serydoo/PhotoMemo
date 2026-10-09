@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 
 /// A single resolved plan consumed by preview and output drawing.
 struct GlassCardResolvedPresentation {
@@ -6,6 +7,7 @@ struct GlassCardResolvedPresentation {
         let text: String
         let frame: CGRect
         let isPrimary: Bool
+        let lineLimit: Int
         let fit: GlassCardTextFitSpecification.Result
     }
 
@@ -47,7 +49,8 @@ struct GlassCardResolvedPresentation {
         canvasSize: CGSize,
         primaryFontMultiplier: CGFloat = 1.12,
         secondaryFontMultiplier: CGFloat = 1.04,
-        lineLimit: Int = 1
+        lineLimit: Int = 1,
+        permitsExplicitSecondaryLines: Bool = false
     ) -> Self {
         let layout = GlassCardLayoutSpecification.layout
         let panel = GlassCardLayoutSpecification.panelFrame(canvasSize: canvasSize)
@@ -73,12 +76,22 @@ struct GlassCardResolvedPresentation {
             canvasSize: canvasSize,
             geometry: geometry,
             slots: values.map { text, frame, primary in
+                let wrapsSupplement = permitsExplicitSecondaryLines && !primary
+                    && text.rangeOfCharacter(from: .newlines) != nil
+                let resolvedLineLimit = wrapsSupplement ? max(lineLimit, 2) : lineLimit
+                // Secondary rows have room below their existing top edge. Grow
+                // only the explicit two-line slot, without crossing the primary
+                // row or the rail's bottom padding. Scaling stays bounded.
+                let resolvedFrame = wrapsSupplement
+                    ? CGRect(x: frame.minX, y: frame.minY, width: frame.width,
+                        height: min(frame.height * 1.5, panel.maxY - panel.height * 0.07 - frame.minY))
+                    : frame
                 return TextSlot(
-                    text: text, frame: frame, isPrimary: primary,
+                    text: text, frame: resolvedFrame, isPrimary: primary, lineLimit: resolvedLineLimit,
                     fit: GlassCardTextFitSpecification.resolve(
-                        text: text, frame: frame.size,
+                        text: text, frame: resolvedFrame.size,
                         pointSize: preferredFontSize(primary: primary),
-                        isPrimary: primary, lineLimit: lineLimit,
+                        isPrimary: primary, lineLimit: resolvedLineLimit,
                         minimumScale: primary ? 0.72 : 0.70
                     )
                 )

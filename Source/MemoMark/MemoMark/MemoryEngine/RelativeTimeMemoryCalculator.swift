@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct RelativeTimeMemoryCalculator:
     MemoryCalculator {
 
@@ -48,4 +47,3 @@ struct RelativeTimeMemoryCalculator:
         )
     }
 }
-#endif

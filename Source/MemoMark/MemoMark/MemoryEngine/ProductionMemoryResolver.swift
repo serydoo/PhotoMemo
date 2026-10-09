@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct ProductionMemoryPayload:
     Hashable {
 
@@ -219,4 +218,3 @@ private extension ConfigurationSnapshot {
         return copy
     }
 }
-#endif

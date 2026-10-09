@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 struct MemoryBlockLibrary {
@@ -48,4 +47,3 @@ struct MemoryBlockLibrary {
         )
     ]
 }
-#endif

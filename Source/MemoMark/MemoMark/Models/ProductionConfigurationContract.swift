@@ -23,7 +23,6 @@ struct ProductionConfigurationReference:
     }
 }
 
-#if !MEMOMARK_SHARE_EXTENSION
 enum ProductionConfigurationContractError:
     Error,
     Equatable {
@@ -53,6 +52,7 @@ enum ProductionConfigurationContractError:
     case emptyRendererOutput(String)
 }
 
+#if !MEMOMARK_SHARE_EXTENSION
 enum ProductionConfigurationSnapshotFactory {
 
     static func resolve(
@@ -298,6 +298,8 @@ enum ConfigurationSnapshotSelectionResolver {
     }
 }
 
+#endif
+
 enum ProductionConfigurationSnapshotContract {
 
     static func validate(
@@ -458,4 +460,3 @@ private extension BatchConfigurationSnapshot {
         )
     }
 }
-#endif

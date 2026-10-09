@@ -51,6 +51,8 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     let isFirstRecorder: Bool
     let onOpenSubject: () -> Void
     let onOpenProcessing: () -> Void
+    let onCancelProcessing: () -> Void
+    let onDeleteProcessingRecord: () -> Void
     let onCommitMemoryPresetTitle: () -> Void
     let onOpenWorkflowGuide: () -> Void
     let onOpenSettingsWorkflowGuide: () -> Void
@@ -112,7 +114,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         )
         .navigationTitle(verticalSizeClass == .compact ? "" : localized("home.title"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(verticalSizeClass == .compact ? .hidden : .visible, for: .navigationBar)
+        .toolbar(verticalSizeClass == .compact ? .hidden : .automatic, for: .navigationBar)
         .safeAreaInset(edge: .bottom) {
             if !dynamicTypeSize.isAccessibilitySize {
                 processPhotoFooter
@@ -396,7 +398,10 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
             .shouldShow(projection) {
             HomeActivityCard(
                 projection: projection,
-                onOpenProcessing: onOpenProcessing
+                onOpenProcessing: onOpenProcessing,
+                isPaused: activitySnapshot?.isPaused ?? false,
+                onCancel: onCancelProcessing,
+                onDeleteRecord: onDeleteProcessingRecord
             )
         }
     }

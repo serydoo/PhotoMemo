@@ -560,8 +560,8 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
         _ status: PHAuthorizationStatus
     ) -> Bool {
 
-        status == .authorized
-            || status == .limited
+        PhotoLibraryCapability(readWrite: status, addOnly: .notDetermined)
+            .canReadVisibleAssets
     }
 
     func requestAuthorizationIfNeeded() async -> PHAuthorizationStatus {
@@ -572,6 +572,12 @@ private extension PhotoKitLivePhotoAssetSavePerformer {
     func resolvedAlbum(
         _ localIdentifier: String?
     ) async throws -> PHAssetCollection? {
+
+        switch PhotoLibraryCapability.current.albumDisposition(preferredIdentifier: localIdentifier) {
+        case .systemLibrary: return nil
+        case .requiresFullAccess: throw LivePhotoAssetWritingError.unauthorized
+        case .resolveAlbum: break
+        }
 
         let destination = try PhotoLibraryOutputDestinationResolver.resolve(
             preferredAlbumIdentifier: localIdentifier,

@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryContext {
 
     let metadata: PhotoMetadata
@@ -64,4 +63,3 @@ struct MemoryContext {
             : trimmed
     }
 }
-#endif

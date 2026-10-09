@@ -267,16 +267,11 @@ struct BatchConfigurationSnapshot:
 
     var logoModeRawValue: String?
 
-#if !MEMOMARK_SHARE_EXTENSION
     private(set) var frozenMemorySubject:
         MemorySubject?
 
     private(set) var frozenConfigurationSnapshot:
         ConfigurationSnapshot?
-#else
-    // The extension transports canonical meaning without importing engines.
-    private var frozenCanonicalSnapshotData: Data?
-#endif
 
     var shouldWritePhotoDescription: Bool
 
@@ -378,10 +373,8 @@ extension BatchConfigurationSnapshot {
         case filmMarkContent
         case logoModeRawValue
         case frozenCanonicalSnapshotData
-#if !MEMOMARK_SHARE_EXTENSION
         case frozenMemorySubject
         case frozenConfigurationSnapshot
-#endif
         case shouldWritePhotoDescription
         case photoDescriptionOverride
         case selectedAlbumIdentifier
@@ -459,7 +452,6 @@ extension BatchConfigurationSnapshot {
             String.self,
             forKey: .logoModeRawValue
         )
-#if !MEMOMARK_SHARE_EXTENSION
         frozenMemorySubject = try container.decodeIfPresent(
             MemorySubject.self,
             forKey: .frozenMemorySubject
@@ -471,9 +463,6 @@ extension BatchConfigurationSnapshot {
         if let data = try container.decodeIfPresent(Data.self, forKey: .frozenCanonicalSnapshotData) {
             frozenConfigurationSnapshot = try JSONDecoder().decode(ConfigurationSnapshot.self, from: data)
         }
-#else
-        frozenCanonicalSnapshotData = try container.decodeIfPresent(Data.self, forKey: .frozenCanonicalSnapshotData)
-#endif
         shouldWritePhotoDescription = try container.decode(
             Bool.self,
             forKey: .shouldWritePhotoDescription
@@ -557,7 +546,6 @@ extension BatchConfigurationSnapshot {
             logoModeRawValue,
             forKey: .logoModeRawValue
         )
-#if !MEMOMARK_SHARE_EXTENSION
         if presentationRouteRawValue == "filmMark", let canonicalProductionSnapshot {
             try container.encode(
                 JSONEncoder().encode(canonicalProductionSnapshot),
@@ -572,9 +560,6 @@ extension BatchConfigurationSnapshot {
             frozenConfigurationSnapshot,
             forKey: .frozenConfigurationSnapshot
         )
-#else
-        try container.encodeIfPresent(frozenCanonicalSnapshotData, forKey: .frozenCanonicalSnapshotData)
-#endif
         try container.encode(
             shouldWritePhotoDescription,
             forKey: .shouldWritePhotoDescription
@@ -601,7 +586,6 @@ extension BatchConfigurationSnapshot {
 
 extension BatchConfigurationSnapshot {
 
-#if !MEMOMARK_SHARE_EXTENSION
     /// A missing route is the legacy Classic White transport. Once a route is
     /// explicitly present, however, it is part of the task's frozen meaning:
     /// unknown routes and FM routes without their dedicated payload must not
@@ -633,7 +617,6 @@ extension BatchConfigurationSnapshot {
         }
         return nil
     }
-#endif
 
     var productionConfigurationReference:
         ProductionConfigurationReference? {
@@ -657,13 +640,11 @@ extension BatchConfigurationSnapshot {
         copy.configurationID = reference.configurationID
         copy.configurationRevision = reference.revision
         copy.productionContractVersion = reference.contractVersion
-#if !MEMOMARK_SHARE_EXTENSION
         if var snapshot = copy.frozenConfigurationSnapshot {
             snapshot.configurationID = reference.configurationID
             snapshot.configurationRevision = reference.revision
             copy.frozenConfigurationSnapshot = snapshot
         }
-#endif
         return copy
     }
 
@@ -677,7 +658,6 @@ extension BatchConfigurationSnapshot {
     }
 }
 
-#if !MEMOMARK_SHARE_EXTENSION
 extension BatchConfigurationSnapshot {
 
     /// Resolves the immutable production output mode from the persisted
@@ -693,7 +673,7 @@ extension BatchConfigurationSnapshot {
 
         if let livePhotoPolicyRawValue,
             let policy =
-                MemoryConfigurationRecord.Output.LivePhotoPolicy(
+                LivePhotoOutputPolicy(
                     rawValue: livePhotoPolicyRawValue
                 ) {
             switch policy {
@@ -708,13 +688,10 @@ extension BatchConfigurationSnapshot {
     }
 
 }
-#endif
 
-#if !MEMOMARK_SHARE_EXTENSION
 extension BatchConfigurationSnapshot {
 
     var resolvedProductionAnchorTitle: String? {
-#if !MEMOMARK_SHARE_EXTENSION
         if let canonicalProductionSnapshot {
             return normalizedAnchorTitle(
                 canonicalProductionSnapshot
@@ -722,7 +699,6 @@ extension BatchConfigurationSnapshot {
                     .title
             )
         }
-#endif
 
         return normalizedAnchorTitle(
             legacyAnchor?.title
@@ -819,7 +795,6 @@ extension BatchConfigurationSnapshot {
             : trimmed
     }
 }
-#endif
 
 extension BatchConfigurationSnapshot {
 
@@ -1143,6 +1118,15 @@ nonisolated struct BatchTask:
 
     let id: UUID
 
+    // Optional additive schema migration: legacy pending receipts keep UUID keys.
+    var processingIdentity: ProcessingIdentity?
+
+    var successfulSaveAccountingID: UUID { processingIdentity?.accountingID ?? id }
+
+    var photoLibraryIdempotencyKey: String {
+        processingIdentity?.receiptKey ?? id.uuidString
+    }
+
     let sourceURL: URL
 
     let fileName: String
@@ -1189,6 +1173,7 @@ nonisolated struct BatchTask:
         progress: BatchTaskProgress = .init()
     ) {
         self.id = id
+        self.processingIdentity = nil
         self.sourceURL = sourceURL
         self.fileName =
             fileName ?? sourceURL.lastPathComponent
@@ -1211,6 +1196,11 @@ nonisolated struct BatchTask:
 }
 
 struct BatchJobHistoryCover: Codable, Hashable, Sendable {
+
+    nonisolated func resolvedURL(baseDirectoryURL: URL) -> URL? {
+        guard Self.isValid(relativePath: relativePath) else { return nil }
+        return baseDirectoryURL.appendingPathComponent(relativePath)
+    }
 
     nonisolated static let currentSchemaVersion = 1
 
@@ -1250,6 +1240,15 @@ struct BatchJob:
     Hashable {
 
     let id: UUID
+
+    var executionSessionID: UUID?
+
+    /// A system-owned task stopped; remaining work requires an explicit resume.
+    /// Optional for backwards-compatible decoding of existing durable jobs.
+    var executionSuspendedAt: Date? = nil
+
+    /// Hidden history retains processing identity and save evidence.
+    var historyDeletedAt: Date? = nil
 
     var title: String
 
@@ -1299,6 +1298,7 @@ struct BatchJob:
         historyCover: BatchJobHistoryCover? = nil
     ) {
         self.id = id
+        self.executionSessionID = nil
         self.title = title
         self.createdAt = createdAt
         self.updatedAt = updatedAt

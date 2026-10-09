@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryAnchorTypeDefinition {
 
     let calculator: any MemoryCalculator
@@ -32,4 +31,3 @@ enum MemoryAnchorTypeRegistry {
         }
     }
 }
-#endif

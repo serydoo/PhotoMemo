@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// Application boundary for the queue execution loop. It exposes only the
@@ -28,6 +27,7 @@ protocol BatchQueueProcessingRuntime:
     ) async
 }
 
+#if !MEMOMARK_SHARE_EXTENSION
 extension BatchQueueStore: BatchQueueProcessingRuntime {
 
     func processingTask(

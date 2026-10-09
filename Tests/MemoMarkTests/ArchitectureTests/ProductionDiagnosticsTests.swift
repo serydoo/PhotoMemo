@@ -595,6 +595,70 @@ struct ProductionDiagnosticsTests {
         #expect(exportText.contains("240"))
     }
 
+    @MainActor
+    @Test("Batch failure diagnostics preserve safe error identifiers without source paths")
+    func batchFailureLegacyDetailsAreSanitized() async throws {
+        let directoryURL = temporaryDirectoryURL()
+        let exportDirectoryURL = temporaryDirectoryURL()
+        let suite = "BatchFailureDiagnostics-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer {
+            try? FileManager.default.removeItem(at: directoryURL)
+            try? FileManager.default.removeItem(at: exportDirectoryURL)
+            defaults.removePersistentDomain(forName: suite)
+        }
+        let store = ProductionDiagnosticsStore(directoryURL: directoryURL)
+        let task = BatchTask(
+            sourceURL: URL(fileURLWithPath: "/private/child.heic"),
+            phase: .savingToPhotoLibrary
+        )
+        let supportID = ProductionDiagnosticSupportID.make(
+            prefix: "JOB",
+            operationID: task.id
+        )
+        let recorder = BatchTaskDiagnosticsRecorder(
+            defaults: defaults,
+            productionDiagnostics: ProductionDiagnosticsRepository(store: store)
+        )
+        await recorder.recordTerminalFailure(
+            failure: ProductionDiagnosticFailure(
+                code: .photoLibraryAssetSaveFailed,
+                supportID: supportID,
+                userMessage: "private child photo failed",
+                systemError: ProductionDiagnosticSystemError(
+                    domain: "PHPhotosErrorDomain",
+                    code: 3300
+                )
+            ),
+            phase: .savingToPhotoLibrary,
+            task: task,
+            jobID: UUID(),
+            startedAt: Date()
+        )
+        let legacyEvents = MemoMarkShareDiagnostics.loadEvents(defaults: defaults)
+        #expect(legacyEvents.count == 1)
+        #expect(legacyEvents.first?.stage == .batchTaskFailure)
+        #expect(legacyEvents.first?.message.contains("/private/child.heic") == false)
+
+        let exportURL = try await store.makeExport(
+            metadata: ProductionDiagnosticEnvironment(
+                appVersion: "5.0",
+                buildNumber: "500",
+                operatingSystem: "iOS 27.2",
+                deviceFamily: "iPhone"
+            ),
+            legacyEvents: legacyEvents,
+            exportDirectoryURL: exportDirectoryURL
+        )
+        let exportText = try String(contentsOf: exportURL, encoding: .utf8)
+
+        #expect(exportText.contains("errorCode=photoLibrary.asset.saveFailed"))
+        #expect(exportText.contains("systemDomain=PHPhotosErrorDomain"))
+        #expect(exportText.contains("systemCode=3300"))
+        #expect(exportText.contains("supportID=\(supportID)"))
+        #expect(!exportText.contains("/private/child.heic"))
+    }
+
     private func temporaryDirectoryURL() -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(

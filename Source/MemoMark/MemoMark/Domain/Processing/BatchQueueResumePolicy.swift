@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// Deterministic recovery of non-terminal queue work after process restart.
@@ -100,4 +99,3 @@ nonisolated struct BatchQueueResumePolicy:
         return changed
     }
 }
-#endif

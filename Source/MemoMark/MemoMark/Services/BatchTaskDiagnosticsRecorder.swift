@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 @MainActor
@@ -151,6 +150,24 @@ final class BatchTaskDiagnosticsRecorder {
         jobID: UUID?,
         startedAt: Date
     ) async {
+        let safeSystemDomain = failure.systemError?.domain ?? "none"
+        let safeSystemCode = failure.systemError?.code ?? 0
+        let supportID = ProductionDiagnosticSupportID.make(
+            prefix: "JOB",
+            operationID: task.id
+        )
+        _ = MemoMarkShareDiagnostics.recordResult(
+            stage: .batchTaskFailure,
+            message: [
+                "phase=\(phase.rawValue)",
+                "errorCode=\(failure.code.rawValue)",
+                "systemDomain=\(safeSystemDomain)",
+                "systemCode=\(safeSystemCode)",
+                "supportID=\(supportID)"
+            ].joined(separator: ", "),
+            jobID: jobID,
+            defaults: defaults
+        )
         await productionDiagnostics.record(
             ProductionDiagnosticEvent(
                 operationID: task.id,
@@ -293,4 +310,3 @@ final class BatchTaskDiagnosticsRecorder {
         )
     }
 }
-#endif

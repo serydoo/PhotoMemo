@@ -310,6 +310,10 @@ struct ExternalPhotoIntakeRequest:
 
     let receivedAt: Date
 
+    var executionSuspendedAt: Date?
+
+    var continuedExecutionSessionID: UUID?
+
     init(
         id: UUID = UUID(),
         launchSource: BatchJobLaunchSource,

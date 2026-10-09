@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import CoreGraphics
 import Foundation
 import ImageIO
@@ -488,6 +487,9 @@ private extension LivePhotoBatchTaskProcessor {
                 originalFileName: bundle.stillPhotoResource.originalFilename,
                 contentTypeIdentifier: bundle.stillPhotoResource.uniformTypeIdentifier
             )
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+            MemoMarkBackgroundProbe.record("extension.livePhoto.beforeCard")
+#endif
             let card = try await buildCard(
                 from: importedPhoto,
                 configuration: configuration
@@ -508,7 +510,7 @@ private extension LivePhotoBatchTaskProcessor {
                 preferredAlbumIdentifier: preferredAlbumIdentifier(
                     from: configuration
                 ),
-                idempotencyKey: task.id.uuidString
+                idempotencyKey: task.photoLibraryIdempotencyKey
             )
 
             return LivePhotoBatchTaskResult(
@@ -555,6 +557,9 @@ private extension LivePhotoBatchTaskProcessor {
                         ?? task
                         .contentTypeIdentifier
                 )
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+            MemoMarkBackgroundProbe.record("extension.livePhoto.beforeCard")
+#endif
             let card = try await buildCard(
                 from: importedPhoto,
                 configuration: configuration
@@ -569,6 +574,9 @@ private extension LivePhotoBatchTaskProcessor {
                 .exportDescription(
                     from: card
                 )
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+            MemoMarkBackgroundProbe.record("extension.livePhoto.beforeOverlay")
+#endif
             var overlay =
                 try exportService
                 .renderLivePhotoOverlay(
@@ -606,6 +614,9 @@ private extension LivePhotoBatchTaskProcessor {
                     "MemoMark-LivePhoto"
                 )
                 .appendingPathExtension("mov")
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+            MemoMarkBackgroundProbe.record("extension.livePhoto.beforePairComposition")
+#endif
             let composedPair =
                 try await pairComposer.composePair(
                     sourceStillURL:
@@ -699,7 +710,7 @@ private extension LivePhotoBatchTaskProcessor {
                         pairedVideoOriginalFilename:
                             pairedVideoOriginalFilename,
                         idempotencyKey:
-                            task.id.uuidString
+                            task.photoLibraryIdempotencyKey
                     )
                 )
 
@@ -854,4 +865,3 @@ private extension LivePhotoBatchTaskProcessor {
         }
     }
 }
-#endif

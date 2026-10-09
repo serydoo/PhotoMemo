@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// Resolves the shared recovery facts for an interrupted managed intake file.
@@ -56,4 +55,3 @@ struct BatchQueueResumeSourceInspector {
         )
     }
 }
-#endif

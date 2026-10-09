@@ -71,7 +71,7 @@ struct MemoMarkLiveActivityWidgetDefinition:
                 )
             } compactTrailing: {
                 Text(
-                    "\(context.state.progressPercent)%"
+                    context.isStale ? "—" : "\(context.state.progressPercent)%"
                 )
                 .font(
                     .caption2
@@ -140,7 +140,7 @@ private struct MemoMarkLiveActivityLockScreenView:
                 Spacer(minLength: 10)
 
                 Text(
-                    "\(context.state.progressPercent)%"
+                    context.isStale ? "—" : "\(context.state.progressPercent)%"
                 )
                 .font(
                     .subheadline
@@ -331,7 +331,7 @@ private struct MemoMarkLiveActivityExpandedTrailingView:
             spacing: 4
         ) {
             Text(
-                "\(context.state.progressPercent)%"
+                context.isStale ? "—" : "\(context.state.progressPercent)%"
             )
             .font(
                 .title3
@@ -418,6 +418,8 @@ private func compactSymbolName(
             MemoMarkBackgroundActivityAttributes
         >
 ) -> String {
+
+    if context.isStale { return "clock" }
 
     switch feedbackState(
         for: context

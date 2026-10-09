@@ -5,6 +5,281 @@ import Testing
 @Suite("Batch queue store persistence", .serialized)
 struct BatchQueueStorePersistenceTests {
 
+    @MainActor
+    @Test("Deleting interrupted recovered work cancels it and hides history without losing receipts")
+    func deleteInterruptedRecoveredWork() async throws {
+        let suite = "DeleteInterrupted-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: directory) }
+        let taskID = UUID()
+        let job = savingJob(taskID: taskID)
+        defaults.set(try JSONEncoder().encode([job]), forKey: "photomemo.batchQueue.jobs")
+        let receipts = PhotoLibrarySaveReceiptStore(defaults: defaults)
+        try #require(receipts.record(assetIdentifier: "retained-save-evidence", for: taskID.uuidString))
+        let store = BatchQueueStore(defaults: defaults, settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receipts,
+            photoLibraryReceiptAssetLocator: StubPhotoLibraryReceiptAssetLocator(visibleAssetIdentifiers: [:]),
+            automaticallyStartsProcessing: false,
+            executionFileLock: ProcessingExecutionFileLock(url: directory.appendingPathComponent("execution.lock")))
+        #expect(await store.deleteExecutionSessionHistory(job.executionSessionID ?? job.id))
+        #expect(store.jobs.first?.tasks.first?.phase == .cancelled)
+        #expect(store.jobs.first?.historyDeletedAt != nil)
+        #expect(receipts.assetIdentifier(for: taskID.uuidString) == "retained-save-evidence")
+        let restored = BatchQueueStore(defaults: defaults, settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receipts,
+            photoLibraryReceiptAssetLocator: StubPhotoLibraryReceiptAssetLocator(visibleAssetIdentifiers: [:]),
+            automaticallyStartsProcessing: false)
+        #expect(restored.jobs.first?.historyDeletedAt != nil)
+        #expect(restored.jobs.first?.tasks.first?.phase == .cancelled)
+    }
+
+    @MainActor
+    @Test("System preparation admits durable work without starting media before authorization")
+    func systemAdmissionDoesNotAutoStart() async throws {
+        let suite = "SystemPreparation-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: directory) }
+        let settings = SettingsService(defaults: defaults)
+        let store = BatchQueueStore(defaults: defaults, settingsService: settings,
+            automaticallyStartsProcessing: true,
+            executionFileLock: ProcessingExecutionFileLock(url: directory.appendingPathComponent("execution.lock")))
+        let lease = try #require(store.reserveSystemExecution(owner: .continuedProcessing))
+        let job = await store.enqueue(payloads: [BatchTaskIntakePayload(sourceURL: URL(fileURLWithPath: "/tmp/system-preparation-\(UUID()).jpg"))],
+            configuration: settings.buildBatchConfigurationSnapshot(), launchSource: .shareExtension)
+        #expect(job != nil)
+        #expect(!store.isProcessing)
+        #expect(store.jobs.first?.tasks.first?.phase == .queued)
+        await store.stopProcessingForBackgroundExpiration(lease: lease)
+        await store.finishSystemExecution(lease)
+    }
+
+    @MainActor
+    @Test("Continued interruption holds its session without blocking a fresh Share")
+    func continuedInterruptionIsSessionScoped() async throws {
+        let suite = "ContinuedSessionStop-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: directory) }
+        let settings = SettingsService(defaults: defaults)
+        let store = BatchQueueStore(defaults: defaults, settingsService: settings,
+            automaticallyStartsProcessing: false,
+            executionFileLock: ProcessingExecutionFileLock(url: directory.appendingPathComponent("execution.lock")))
+        let lease = try #require(store.reserveSystemExecution(owner: .continuedProcessing))
+        let first = try #require(await store.enqueue(payloads: [BatchTaskIntakePayload(sourceURL: URL(fileURLWithPath: "/tmp/stopped-\(UUID()).jpg"))],
+            configuration: settings.buildBatchConfigurationSnapshot(), launchSource: .shareExtension))
+        await store.stopProcessingForBackgroundExpiration(lease: lease)
+        #expect(store.jobs.first(where: { $0.id == first.id })?.executionSuspendedAt != nil)
+        #expect(store.executablePendingTaskCount == 0)
+        #expect(!store.processingPaused)
+        await store.finishSystemExecution(lease)
+        let fresh = try #require(await store.enqueue(payloads: [BatchTaskIntakePayload(sourceURL: URL(fileURLWithPath: "/tmp/fresh-\(UUID()).jpg"))],
+            configuration: settings.buildBatchConfigurationSnapshot(), launchSource: .shareExtension))
+        #expect(fresh.executionSessionID != first.executionSessionID)
+        #expect(fresh.executionSuspendedAt == nil)
+        #expect(store.executablePendingTaskCount == 1)
+    }
+
+    @MainActor
+    @Test("Held intake is admitted paused and stays paused across host recreation")
+    func heldIntakeAdmission() async throws {
+        let suite = "HeldAdmission-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsService(defaults: defaults)
+        let request = ExternalPhotoIntakeRequest(launchSource: .shareExtension,
+            urls: [URL(fileURLWithPath: "/tmp/missing-held-\(UUID().uuidString).jpg")],
+            configurationSnapshot: settings.buildBatchConfigurationSnapshot())
+        let requests = ExternalIntakeRequestStore(defaults: defaults)
+        #expect(requests.persistRequest(request, diagnosticsSeed: .init()) == nil)
+        let heldAt = Date(timeIntervalSince1970: 100)
+        guard case .success = requests.suspendRequest(request.id, at: heldAt) else {
+            Issue.record("Hold persistence failed"); return
+        }
+        let intake = ExternalPhotoIntakeStore(defaults: defaults)
+        let store = BatchQueueStore(defaults: defaults, settingsService: settings,
+            externalIntakeStore: intake, automaticallyStartsProcessing: false)
+        let admitted = await store.enqueue(payloads: request.intakePayloads,
+            configuration: request.configurationSnapshot, launchSource: request.launchSource, intakeRequestID: request.id)
+        #expect(admitted?.executionSuspendedAt == heldAt)
+        #expect(ExecutionSessionSuspensionPolicy.executablePendingTaskCount(in: store.jobs) == 0)
+        let restored = BatchQueueStore(defaults: defaults, settingsService: settings,
+            externalIntakeStore: intake, automaticallyStartsProcessing: false)
+        #expect(restored.jobs.first?.executionSuspendedAt == heldAt)
+        #expect(restored.jobs.first?.tasks.first?.sourceURL == request.urls.first)
+    }
+
+    @MainActor
+    @Test("Cancelled admission never falls back to a legacy job for a missing source")
+    func cancelledAdmissionDoesNotUseLegacyFallback() async throws {
+        let suite = "CancelledAdmission-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsService(defaults: defaults)
+        let store = BatchQueueStore(defaults: defaults, settingsService: settings, automaticallyStartsProcessing: false)
+        let operation = Task { @MainActor in
+            withUnsafeCurrentTask { $0?.cancel() }
+            return await store.enqueue(payloads: [BatchTaskIntakePayload(
+                sourceURL: URL(fileURLWithPath: "/tmp/missing-cancelled-\(UUID().uuidString).jpg"), fileName: "missing.jpg")],
+                configuration: settings.buildBatchConfigurationSnapshot(), launchSource: .shareExtension)
+        }
+        #expect(await operation.value == nil)
+        #expect(store.jobs.isEmpty)
+    }
+
+    @MainActor
+    @Test("Cancelling a recovered save requires exclusive ownership and preserves its receipt", arguments: [false, true])
+    func cancelRecoveredSave(externalOwner: Bool) async throws {
+        let suite = "CancelRecoveredSave-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: directory) }
+        let taskID = UUID()
+        let job = savingJob(taskID: taskID)
+        defaults.set(try JSONEncoder().encode([job]), forKey: "photomemo.batchQueue.jobs")
+        let receipts = PhotoLibrarySaveReceiptStore(defaults: defaults)
+        try #require(receipts.record(assetIdentifier: "missing-recovered-asset", for: taskID.uuidString))
+        let lockURL = directory.appendingPathComponent("execution.lock")
+        let foreignLock = ProcessingExecutionFileLock(url: lockURL)
+        if externalOwner { try #require(try foreignLock.acquire()) }
+        defer { foreignLock.release() }
+        let store = BatchQueueStore(defaults: defaults, settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receipts,
+            photoLibraryReceiptAssetLocator: StubPhotoLibraryReceiptAssetLocator(visibleAssetIdentifiers: [:]),
+            automaticallyStartsProcessing: false, executionFileLock: ProcessingExecutionFileLock(url: lockURL))
+        try #require(store.jobs.first?.tasks.first?.phase == .savingToPhotoLibrary)
+        store.pauseProcessing()
+        await store.cancelExecutionSession(job.executionSessionID ?? job.id)
+        #expect(store.jobs.first?.tasks.first?.phase == (externalOwner ? .savingToPhotoLibrary : .cancelled))
+        #expect(receipts.assetIdentifier(for: taskID.uuidString) == "missing-recovered-asset")
+        let restored = BatchQueueStore(defaults: defaults, settingsService: SettingsService(defaults: defaults),
+            saveReceiptStore: receipts,
+            photoLibraryReceiptAssetLocator: StubPhotoLibraryReceiptAssetLocator(visibleAssetIdentifiers: [:]),
+            automaticallyStartsProcessing: false)
+        #expect(restored.jobs.first?.tasks.first?.phase == (externalOwner ? .savingToPhotoLibrary : .cancelled))
+    }
+
+    @MainActor
+    @Test("Cancelling one job or session preserves another consumer of its managed source", arguments: [true, false])
+    func cancellationPreservesSharedManagedSource(cancelSession: Bool) async throws {
+        let suite = "SharedSourceCancel-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let intake = directory.appendingPathComponent("Intake")
+        let source = intake.appendingPathComponent(UUID().uuidString).appendingPathComponent("shared.jpg")
+        try FileManager.default.createDirectory(at: source.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("managed-test-source".utf8).write(to: source)
+        let persistence = BatchQueuePersistence(backend: FileBatchQueuePersistenceBackend(baseDirectoryURL: directory.appendingPathComponent("Queue")))
+        let ledger = BatchQueueDurableLedger.bootstrap(persistence: persistence).ledger
+        let configuration = BatchConfigurationSnapshot(template: .classicWhite, badge: nil, anchor: nil,
+            shouldWritePhotoDescription: false, photoDescriptionOverride: "", selectedAlbumIdentifier: "")
+        var first = BatchJob(title: "First", state: .queued, configuration: configuration, tasks: [.init(sourceURL: source)])
+        var second = BatchJob(title: "Second", state: .queued, configuration: configuration, tasks: [.init(sourceURL: source)])
+        first.executionSessionID = UUID()
+        second.executionSessionID = UUID()
+        // Restore distinct historic sessions; normal admission deliberately joins
+        // consecutive Shares into one active session.
+        _ = await ledger.commit([first, second], expectedRevision: 0)
+        let store = BatchQueueStore(defaults: defaults, settingsService: SettingsService(defaults: defaults),
+            externalIntakeStore: ExternalPhotoIntakeStore(defaults: defaults, intakeDirectoryURL: intake),
+            persistence: persistence, automaticallyStartsProcessing: false)
+        try #require(FileManager.default.fileExists(atPath: source.path))
+        if cancelSession {
+            await store.cancelExecutionSession(try #require(first.executionSessionID))
+        } else {
+            await store.cancelJob(first.id)
+        }
+        #expect(FileManager.default.fileExists(atPath: source.path))
+        #expect(store.jobs.first(where: { $0.id == second.id })?.tasks.first?.phase == .queued)
+        await store.cancelExecutionSession(try #require(second.executionSessionID))
+        #expect(FileManager.default.fileExists(atPath: source.path) == false)
+    }
+
+    @MainActor
+    @Test("Processing pause survives queue-store recreation and resumes explicitly")
+    func processingPauseSurvivesStoreRecreation() async throws {
+        let suite = "ProcessingPause-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let first = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            automaticallyStartsProcessing: false
+        )
+        first.pauseProcessing()
+        #expect(first.processingPaused)
+        #expect(first.canContinueProcessing == false)
+
+        let restored = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            automaticallyStartsProcessing: false
+        )
+        #expect(restored.processingPaused)
+        await restored.resumeProcessing()
+        #expect(restored.processingPaused == false)
+    }
+
+    @Test("Pausing lets an in-flight PhotoKit save finish before stopping the processor")
+    func pauseDoesNotCancelPhotoLibraryCommit() {
+        #expect(
+            BatchQueueStore.shouldCancelActiveProcessingForPause(
+                activeTaskPhase: .savingToPhotoLibrary
+            ) == false
+        )
+        #expect(
+            BatchQueueStore.shouldCancelActiveProcessingForPause(
+                activeTaskPhase: .exporting
+            )
+        )
+    }
+
+    @MainActor
+    @Test("Cancelling the final paused task clears the pause gate for future shares")
+    func cancellingFinalPausedTaskClearsPauseGate() async throws {
+        let suite = "ProcessingPauseCancel-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = BatchQueueStore(
+            defaults: defaults,
+            settingsService: SettingsService(defaults: defaults),
+            automaticallyStartsProcessing: false
+        )
+        let job = try #require(await store.enqueue(
+            urls: [FileManager.default.temporaryDirectory.appendingPathComponent("pause-cancel-source.jpg")]
+        ))
+        store.pauseProcessing()
+        await store.cancelJob(job.id)
+        #expect(store.processingPaused == false)
+        #expect(defaults.bool(forKey: "memomark.processing.executionPaused") == false)
+    }
+
+    @MainActor
+    @Test("system reservation survives idle projection and stale expiration is harmless")
+    func systemExecutionReservation() async throws {
+        let suite = "ExecutionReservation-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = BatchQueueStore(defaults: defaults, settingsService: SettingsService(defaults: defaults))
+        let first = try #require(store.reserveSystemExecution(owner: .bgProcessing))
+        #expect(store.reserveSystemExecution(owner: .continuedProcessing) == nil)
+        await store.startProcessingIfNeeded()
+        #expect(store.executionLease == first)
+        await store.finishSystemExecution(first)
+        let second = try #require(store.reserveSystemExecution(owner: .continuedProcessing))
+        await store.stopProcessingForBackgroundExpiration(lease: first)
+        await store.finishSystemExecution(first)
+        #expect(store.executionLease == second)
+        await store.finishSystemExecution(second)
+        #expect(store.executionLease == nil)
+    }
+
     @Test("Corrupted queue payload is surfaced instead of becoming an empty successful load")
     func corruptedQueuePayloadIsSurfaced() throws {
         let suiteName =

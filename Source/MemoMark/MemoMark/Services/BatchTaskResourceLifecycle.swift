@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
@@ -258,10 +257,7 @@ final class BatchTaskResourceLifecycle {
         for cover: BatchJobHistoryCover,
         baseDirectoryURL: URL = MemoMarkSharedContainer.baseDirectoryURL
     ) -> URL? {
-        guard BatchJobHistoryCover.isValid(relativePath: cover.relativePath) else {
-            return nil
-        }
-        return baseDirectoryURL.appendingPathComponent(cover.relativePath)
+        cover.resolvedURL(baseDirectoryURL: baseDirectoryURL)
     }
 
     static func cleanupUnreferencedNotificationAttachments(
@@ -342,4 +338,3 @@ final class BatchTaskResourceLifecycle {
         return currentUnreferencedURLs
     }
 }
-#endif

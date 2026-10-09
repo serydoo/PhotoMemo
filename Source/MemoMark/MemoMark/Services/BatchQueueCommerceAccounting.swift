@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// Owns the commerce facts attached to durable queue work. The queue facade
@@ -68,9 +67,7 @@ struct BatchQueueCommerceAccounting {
         among jobs: [BatchJob],
         current snapshot: MemoMarkCommerceSnapshot
     ) -> Int {
-        let reservedRecordCount = jobs.reduce(into: 0) { count, job in
-            count += job.tasks.count { !$0.phase.isTerminal }
-        }
+        let reservedRecordCount = ProcessingReservationPolicy.reservedIDs(in: jobs).count
         let policy = snapshot.isPlus
             ? MemoMarkCommercePolicy.plus
             : MemoMarkCommercePolicy.resolved(
@@ -86,6 +83,12 @@ struct BatchQueueCommerceAccounting {
         )
     }
 
+    func batchLimit(current snapshot: MemoMarkCommerceSnapshot) -> Int {
+        snapshot.isPlus ? MemoMarkCommercePolicy.plus.batchLimit
+            : MemoMarkCommercePolicy.resolved(for: snapshot.environment,
+                bonusAllowance: persistence.bonusAllowance(environment: snapshot.environment)).batchLimit
+    }
+
     func recordSuccessfulSave(
         for task: BatchTask,
         current snapshot: MemoMarkCommerceSnapshot
@@ -99,7 +102,7 @@ struct BatchQueueCommerceAccounting {
         }
 
         if persistence.hasRecordedSuccessfulSave(
-            taskID: task.id,
+            taskID: task.successfulSaveAccountingID,
             environment: snapshot.environment
         ) {
             return Outcome(
@@ -109,10 +112,10 @@ struct BatchQueueCommerceAccounting {
         }
 
         if !persistence.recordSuccessfulSave(
-            taskID: task.id,
+            taskID: task.successfulSaveAccountingID,
             environment: snapshot.environment
         ), !persistence.hasRecordedSuccessfulSave(
-            taskID: task.id,
+            taskID: task.successfulSaveAccountingID,
             environment: snapshot.environment
         ) {
             return Outcome(
@@ -219,4 +222,3 @@ struct BatchQueueCommerceAccounting {
         )
     }
 }
-#endif

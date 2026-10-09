@@ -690,6 +690,14 @@
 "home.activity.status.processing" = "Processing";
 "home.activity.status.completed" = "Completed";
 "home.activity.status.failed" = "Failed";
+"home.activity.status.paused" = "Paused";
+"home.activity.pause" = "Pause processing";
+"home.activity.resume" = "Resume processing";
+"home.activity.cancel" = "Cancel session";
+"home.activity.cancel.title" = "Cancel this processing session?";
+"home.activity.cancel.message" = "Completed photos stay saved. A photo already being saved may finish; the remaining work in this session will stop.";
+"home.activity.cancel.confirm" = "Cancel session";
+"home.activity.cancel.keep" = "Keep processing";
 "home.workflow.title" = "How to Record";
 "home.workflow.detail" = "Choose photos in Apple Photos and share them with MemoMark. MemoMark processes them locally using your current preset, then saves new photos back to Apple Photos.";
 "home.workflow.note" = "For everyday recording, share from Apple Photos; choose photos in MemoMark when you need a temporary entry point.";
@@ -1890,3 +1898,17 @@
 "commerce.purchase.lifetime.subscription_notice" = "Lifetime access does not cancel an existing subscription. Manage renewal in your Apple subscription settings.";
 "commerce.purchase.lifetime.claim" = "Claim free lifetime access";
 "commerce.purchase.lifetime.buy_format" = "Lifetime access · %@";
+
+"home.activity.delete" = "Delete task record";
+"home.activity.delete.message" = "Delete this finished session’s task record. Saved photos are kept.";
+
+/* System continued-processing status */
+"notification.continued.processing.title" = "MemoMark is processing photos";
+"notification.continued.preparing" = "Preparing photos";
+"notification.continued.completed.title" = "MemoMark photos are ready";
+"notification.continued.completed.subtitle" = "Photo processing is complete.";
+"notification.continued.progress.subtitle" = "%@ · %d/%d · %@";
+"notification.continued.suspended.title" = "MemoMark processing is paused";
+"notification.continued.suspended.body" = "Confirmed photo saves: %d. Unfinished items: %d. Open MemoMark to resume or cancel processing.";
+
+"home.activity.status.interrupted" = "Processing interrupted";

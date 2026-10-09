@@ -1,6 +1,8 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 import Photos
+#if os(iOS)
+import UIKit
+#endif
 
 /// Owns only Apple Photos mechanics shared by static-photo and Live Photo
 /// transactions. It deliberately does not own receipt state, Memory Engine
@@ -20,6 +22,16 @@ final class PhotoLibraryTransactionGateway {
         let currentStatus = PHPhotoLibrary.authorizationStatus(
             for: .readWrite
         )
+#if MEMOMARK_SHARE_EXTENSION
+        // Continued extension execution cannot present host permission UI.
+        return currentStatus
+#else
+#if os(iOS)
+        // Recovery must never bring up a permission prompt from background.
+        guard UIApplication.shared.applicationState == .active else {
+            return currentStatus
+        }
+#endif
         guard currentStatus == .notDetermined else {
             return currentStatus
         }
@@ -31,6 +43,7 @@ final class PhotoLibraryTransactionGateway {
                 continuation.resume(returning: status)
             }
         }
+#endif
     }
 
     func asset(
@@ -172,4 +185,3 @@ final class PhotoLibraryTransactionGateway {
         }
     }
 }
-#endif

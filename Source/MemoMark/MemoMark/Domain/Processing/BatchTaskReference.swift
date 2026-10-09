@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 nonisolated struct BatchTaskReference:
@@ -9,4 +8,3 @@ nonisolated struct BatchTaskReference:
 
     let taskID: UUID
 }
-#endif

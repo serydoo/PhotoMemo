@@ -15,6 +15,85 @@
 		8B0A7C6D4E184A8AA7E10005 /* MemoMarkWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F4A1B2333A9C410100A10001 /* MemoMarkWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F4A1B2303A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2383A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift */; };
 		F4A1B2313A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A1B2393A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift */; };
+		675060E6A272D2F2FBC7D5AB /* MediaProcessingIntent.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 89C069C3539E1F2E4C49F2E9; };
+		39FEBA20129EF24FD36BFC73 /* MediaOutputPolicy.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 076B8972D2E72319BF2F5BF9; };
+		C6E2C4D2C164041CA29C5117 /* MediaProcessingRoute.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 7375EF90028FA5178C612F14; };
+		0A843A43DC503811C61DEECF /* AnchorEngine.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 1D701881AE8F7F5D37E9F886; };
+		6D3ECD8138149A2B66AAA877 /* FilmMarkPresentationSpecification.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 53B1459305420A6788761C88; };
+		7F28BA9E39603A6788A33F6E /* LocationResolution.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 8D1211E8A8D372DBAB65F340; };
+		0D47B701BA1399C07BCC9888 /* LocationResolver.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 21F037279DBA978D858CE087; };
+		FE9BD9B31E9E69C14972FE84 /* LocationFormatter.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 279AE99BEC837141924838A6; };
+		A191479DE409BF1AE22D2FC1 /* LocationPresentationMode.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 5BFD81CDD6958B9EBEB280F3; };
+		384CFBF517AF380D0951C770 /* LocationAddress.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 03D2E05D44D15F80A4B2B262; };
+		E7ECE7B5126B1156A57E6047 /* LocationAvailability.swift in Share sources */ = {isa = PBXBuildFile; fileRef = C3E34C61A0EF6C643A7B2851; };
+		C762C8C99327271EDEEFBBD7 /* LocationContext.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 332AFB675477EE9C4A0E2A6F; };
+		932B94B98F8013EABBD9826A /* LocationCoordinate.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 875A5F7EC29EA749FEF63852; };
+		B7DB9D93DBA90ABF45DA8244 /* LocationExpressionProvider.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 210FBABC6B43F6E2A0EC0A40; };
+		807814D33671419912F9190C /* LocationConfigurationAdapter.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 45AC5BF7AEBF6EDA50857A84; };
+		0637527FFE075FFA29768713 /* LocationContextBuilder.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 006B61F6C75D1B5FAD9DEE8B; };
+		0FE4779ABC1F0E0C9C4EEB20 /* FilmMarkLayoutSpecification.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 6D8A376388DB1F5A0AB522C7; };
+		956684D5335E2457D888D092 /* CardTextBlockEngine.swift in Share sources */ = {isa = PBXBuildFile; fileRef = A90E5C6D82D5AC3F3465D181; };
+		C2DE56DFD3FB80EF49FBFE9C /* TemplateVariableEngine.swift in Share sources */ = {isa = PBXBuildFile; fileRef = F847A02FA37AE61E8087415D; };
+		A97D3FAE467EEA46B497DB4B /* MetadataContextExpressionLookup.swift in Share sources */ = {isa = PBXBuildFile; fileRef = D5CFA605A403666D22DC73E0; };
+		C891388CA53D452BAA51397B /* ExpressionContextMetadataAdapter.swift in Share sources */ = {isa = PBXBuildFile; fileRef = FB953930C238E075E084FFBE; };
+		354B3C62091C672BF828EFF0 /* MetadataProvider.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 644F067E0D94E9483FC53109; };
+		378878A7B34BDD54D3538ED9 /* BadgeRenderer.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 23D8D617B962B94CD6A7345A; };
+		E6252FDF75F8C664CFB504B6 /* GlassCardRenderer.swift in Share sources */ = {isa = PBXBuildFile; fileRef = C3755AB1ED0123B36AE08218; };
+		8B9166C8485778906C44E77A /* RecordCardRenderer.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 95092B7D323C8AA2FD86D9D9; };
+		57A5A042DF3F57E90E253749 /* FilmMarkRenderer.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 38227885E235BDC3769DA058; };
+		1FA0302D4DF9F864C3ED33B0 /* ClassicWhiteRenderer.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 9641B5443DB96B3068D39801; };
+		D29772BFEA1FBC6EBCC29098 /* RecordCardPresentationPlanner.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 860A517DA0F5FE02DA11DCA8; };
+		376C11DA097CAAD3A2C00E3B /* MinimalRenderer.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 06E98992BA7C9B7B66D445B4; };
+		74C8DDD88C025882D833D411 /* GlassCardCardRenderer.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 0C286D3A5C418E52A28D780A; };
+		66FE79597BCB136BC0070E1E /* RendererConstants.swift in Share sources */ = {isa = PBXBuildFile; fileRef = DB9935CF4D00F59A99572B7F; };
+		01B6A1C840CD8BFCE22E3BC4 /* GlassCardNativeMaterialStudy.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 94755A5FFA4D956E1FFD3D97; };
+		8D1FB43FD298073983447B37 /* NativeBackdropMaterialRenderer.swift in Share sources */ = {isa = PBXBuildFile; fileRef = C2CA23533B1D97C068780931; };
+		C712D3943845BDF37FDDEC16 /* MinimalCardLayoutSpecification.swift in Share sources */ = {isa = PBXBuildFile; fileRef = D496EA2470F26F98BFB5A2D5; };
+		36E794CCFE34CA5E3F7BDF6E /* PresentationPixelGeometry.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 15FE5598221971DD722A7299; };
+		31143514BFB541AA0B0BA1CC /* GlassCardTextFitSpecification.swift in Share sources */ = {isa = PBXBuildFile; fileRef = EED5F625FC20E66E7EF81839; };
+		B351738EF234AF7E3D9FA698 /* ClassicWhitePortraitLayoutSpecification.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 3654E3935DD2CD89B8EF290C; };
+		6BDDFEFB3911B4CEB0440F3B /* GlassCardLayoutSpecification.swift in Share sources */ = {isa = PBXBuildFile; fileRef = DB5AAE18401E06AB75AB047D; };
+		CD806CD76EEC2E3088793C31 /* GlassCardResolvedPresentation.swift in Share sources */ = {isa = PBXBuildFile; fileRef = AAE8743A4319939865C9878B; };
+		438713BFDCED80EB101A9A47 /* NativeBackdropVideoCompositor.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 861AFE97DA02865DD70644AC; };
+		BA01F2B5A97B40E618746A44 /* MetadataPolicyPlan.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 9A881B31B7A1F4364EE31167; };
+		81312F0593E5701D46301116 /* LivePhotoSaveRequest.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 44F293A9CDF6927F6D78A9CE; };
+		19BA98D677B3D929BF0F9848 /* LivePhotoRenderOutputGeometry.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 78B28CB8098D7D5C68D20EBB; };
+		6C7DB2F51908A9ED6E7F0F43 /* PhotoKitLivePhotoAssetWriter.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 98F9BF1F503BDE9E6ED69F79; };
+		AA63983FFCC2157B7B30032E /* LivePhotoAssetBundle.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 6EEF307E00B9E141EF7C8EA7; };
+		5A070074FF7F00EEADB2EBCB /* LivePhotoPairingIdentityVerifier.swift in Share sources */ = {isa = PBXBuildFile; fileRef = A4A0383E7771BE6C74D869AF; };
+		934A35A6A683B020DB699C8F /* LivePhotoStillImageCompositionInput.swift in Share sources */ = {isa = PBXBuildFile; fileRef = EA9F58B364D0E8C179893185; };
+		B76EA1CCFB90B0ED6F3B7F40 /* MediaProcessingPlanner.swift in Share sources */ = {isa = PBXBuildFile; fileRef = ACBDBB9BEF214921E20253D8; };
+		927C7B39D5B6E8AB05D7AD53 /* LivePhotoStillImageCompositionService.swift in Share sources */ = {isa = PBXBuildFile; fileRef = EB12FF4B21623B3F004377D1; };
+		83D424CD051FB950E1D8B07A /* LivePhotoAssetLoading.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 85DC136BE2832A69EBE34307; };
+		E5EC5C45ED0D5079528167C1 /* LivePhotoVideoCompositionInput.swift in Share sources */ = {isa = PBXBuildFile; fileRef = A2C7EFD62105C5422359A02A; };
+		2408CE93245B03CD9280DEA6 /* LivePhotoAssetReadbackVerification.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 138211007E6C77F578F0FD32; };
+		D338F9D89867F01550F50EFD /* LivePhotoStillImageTimeMetadata.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 06F3B0104D51D8B5D3962C76; };
+		F40BBD4833B3A8308277EEB2 /* MediaProcessingRouter.swift in Share sources */ = {isa = PBXBuildFile; fileRef = E8CECDC7553871ACDC7295EC; };
+		37027CF150C8666A3F07BC93 /* FixedFooterOverlayDescriptor.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 011AE302CBC941BB167C572A; };
+		41C7EDDFA7B24F693080E9EC /* LivePhotoVideoMetadataWriting.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 1044CA97E13E54B0F8CFA668; };
+		5D3BEF232FB85F6231408A77 /* LivePhotoVideoCompositionService.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 5EAB86CF5C96604515977A55; };
+		BDFADAD9A0D44585D6A2ECFF /* MediaPipelineRuntimeGate.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 3D0A29F4102BBBA15D9ED0A0; };
+		43A0FFDA75B0EBABA9ABCFD6 /* StillImageMetadataWriting.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 6DDF2D03ADD3785CED45A0BA; };
+		C331BAE3996E922739CCE75F /* LivePhotoAssetWriting.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 2D08144FD7F605CCDC8A273D; };
+		1F29258DE28EC4E7068A1D58 /* LivePhotoGeometryResolver.swift in Share sources */ = {isa = PBXBuildFile; fileRef = FB79B74DB305732CF3E66A99; };
+		58668F436B18BA814CE1C581 /* MediaGeometryFacts.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 3FE1D54C711A07648D8B145C; };
+		CCD9DD20451D948D64B62F60 /* MediaGeometryOrientation.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 0B5A29992A5F57D22685BCE7; };
+		3EC59E639667930D448E7C86 /* CanvasGeometry.swift in Share sources */ = {isa = PBXBuildFile; fileRef = B02F417FF260FC44F6464EFD; };
+		C2ED4CC85E510F967711835F /* CanonicalGeometry.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 5BD0DB99AA3947E4635C258F; };
+		694FC682B18B63947FCB5A14 /* GeometrySnapshotSerializer.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 8B4540EBC9607B9449CB9524; };
+		42299515F194916D3DCBAF9A /* GeometryLinter.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 12A420AFB45BB44898FC7370; };
+		460C614D568CA2198D1276E6 /* GeometryIssue.swift in Share sources */ = {isa = PBXBuildFile; fileRef = B564896F9454FB582363B7FB; };
+		2E725419268051F102DE30E4 /* MediaGeometryResolver.swift in Share sources */ = {isa = PBXBuildFile; fileRef = CE42D2867A99454D57929840; };
+		0DEBF20465B2AD27E6B9819B /* ReverseGeocoder.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 807816BEF0CD046737C1FC87; };
+		C2366B2C965F9473CE243157 /* PhotoRepository.swift in Share sources */ = {isa = PBXBuildFile; fileRef = DFAE0641B7E649F495EEB037; };
+		DB599A7EE71507E27ED9C735 /* PhotoLibraryRepository.swift in Share sources */ = {isa = PBXBuildFile; fileRef = EFCA3B3A082B9FBE27D6B5C7; };
+		5146B5A4F826A10DD0304B35 /* ExportCoordinator.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 958FB1DBF51082A1D2CA16C8; };
+		0C300548B483DF34A0828010 /* ImportBatchPhotoIntent.swift in Share sources */ = {isa = PBXBuildFile; fileRef = DAE44B7040F5C9CD23421D98; };
+		591768FE27E3AE0D9D4479D3 /* MemoMarkIntent.swift in Share sources */ = {isa = PBXBuildFile; fileRef = E3CD1208BCE90560131A4154; };
+		F6687C034863A80C9B714130 /* ProductionDiagnosticsRepository.swift in Share sources */ = {isa = PBXBuildFile; fileRef = DC68D5F272217506371874C9; };
+		CB43F467B9FF7CE2590E78B9 /* ProductionDiagnosticsStore.swift in Share sources */ = {isa = PBXBuildFile; fileRef = 1D2E308C51039783B7B2DDD3; };
+		835516D9C6CC9A1F46AB2B14 /* ProductionExportIntents.swift in Share sources */ = {isa = PBXBuildFile; fileRef = B880BF266376FC4FBA0D2E3B; };
+		FA06B39CD8DE47544BA05D49 /* MemoMarkBackgroundLiveActivityPayload.swift in Share sources */ = {isa = PBXBuildFile; fileRef = DF8DC856451963C66DBDC648; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,6 +155,85 @@
 		F4A1B2393A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift; sourceTree = SOURCE_ROOT; };
 		F5B100023A9D000000A10001 /* MemoMarkTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MemoMarkTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0D000010000000000000001 /* MemoMarkDeviceQA.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MemoMarkDeviceQA.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		89C069C3539E1F2E4C49F2E9 /* MediaProcessingIntent.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/MediaProcessingIntent.swift; sourceTree = SOURCE_ROOT; };
+		076B8972D2E72319BF2F5BF9 /* MediaOutputPolicy.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/MediaOutputPolicy.swift; sourceTree = SOURCE_ROOT; };
+		7375EF90028FA5178C612F14 /* MediaProcessingRoute.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/MediaProcessingRoute.swift; sourceTree = SOURCE_ROOT; };
+		1D701881AE8F7F5D37E9F886 /* AnchorEngine.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Engines/AnchorEngine.swift; sourceTree = SOURCE_ROOT; };
+		53B1459305420A6788761C88 /* FilmMarkPresentationSpecification.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LayoutEngine/FilmMarkPresentationSpecification.swift; sourceTree = SOURCE_ROOT; };
+		8D1211E8A8D372DBAB65F340 /* LocationResolution.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Presentation/LocationResolution.swift; sourceTree = SOURCE_ROOT; };
+		21F037279DBA978D858CE087 /* LocationResolver.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Presentation/LocationResolver.swift; sourceTree = SOURCE_ROOT; };
+		279AE99BEC837141924838A6 /* LocationFormatter.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Presentation/LocationFormatter.swift; sourceTree = SOURCE_ROOT; };
+		5BFD81CDD6958B9EBEB280F3 /* LocationPresentationMode.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Presentation/LocationPresentationMode.swift; sourceTree = SOURCE_ROOT; };
+		03D2E05D44D15F80A4B2B262 /* LocationAddress.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Models/LocationAddress.swift; sourceTree = SOURCE_ROOT; };
+		C3E34C61A0EF6C643A7B2851 /* LocationAvailability.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Models/LocationAvailability.swift; sourceTree = SOURCE_ROOT; };
+		332AFB675477EE9C4A0E2A6F /* LocationContext.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Models/LocationContext.swift; sourceTree = SOURCE_ROOT; };
+		875A5F7EC29EA749FEF63852 /* LocationCoordinate.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Models/LocationCoordinate.swift; sourceTree = SOURCE_ROOT; };
+		210FBABC6B43F6E2A0EC0A40 /* LocationExpressionProvider.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Providers/LocationExpressionProvider.swift; sourceTree = SOURCE_ROOT; };
+		45AC5BF7AEBF6EDA50857A84 /* LocationConfigurationAdapter.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Providers/LocationConfigurationAdapter.swift; sourceTree = SOURCE_ROOT; };
+		006B61F6C75D1B5FAD9DEE8B /* LocationContextBuilder.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/Builders/LocationContextBuilder.swift; sourceTree = SOURCE_ROOT; };
+		6D8A376388DB1F5A0AB522C7 /* FilmMarkLayoutSpecification.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LayoutEngine/FilmMarkLayoutSpecification.swift; sourceTree = SOURCE_ROOT; };
+		A90E5C6D82D5AC3F3465D181 /* CardTextBlockEngine.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Engines/CardTextBlockEngine.swift; sourceTree = SOURCE_ROOT; };
+		F847A02FA37AE61E8087415D /* TemplateVariableEngine.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Engines/TemplateVariableEngine.swift; sourceTree = SOURCE_ROOT; };
+		D5CFA605A403666D22DC73E0 /* MetadataContextExpressionLookup.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Engines/MetadataContextExpressionLookup.swift; sourceTree = SOURCE_ROOT; };
+		FB953930C238E075E084FFBE /* ExpressionContextMetadataAdapter.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Engines/ExpressionContextMetadataAdapter.swift; sourceTree = SOURCE_ROOT; };
+		644F067E0D94E9483FC53109 /* MetadataProvider.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MetadataExpression/MetadataProvider.swift; sourceTree = SOURCE_ROOT; };
+		23D8D617B962B94CD6A7345A /* BadgeRenderer.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/BadgeRenderer.swift; sourceTree = SOURCE_ROOT; };
+		C3755AB1ED0123B36AE08218 /* GlassCardRenderer.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/GlassCardRenderer.swift; sourceTree = SOURCE_ROOT; };
+		95092B7D323C8AA2FD86D9D9 /* RecordCardRenderer.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/RecordCardRenderer.swift; sourceTree = SOURCE_ROOT; };
+		38227885E235BDC3769DA058 /* FilmMarkRenderer.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/FilmMarkRenderer.swift; sourceTree = SOURCE_ROOT; };
+		9641B5443DB96B3068D39801 /* ClassicWhiteRenderer.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/ClassicWhiteRenderer.swift; sourceTree = SOURCE_ROOT; };
+		860A517DA0F5FE02DA11DCA8 /* RecordCardPresentationPlanner.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/RecordCardPresentationPlanner.swift; sourceTree = SOURCE_ROOT; };
+		06E98992BA7C9B7B66D445B4 /* MinimalRenderer.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/MinimalRenderer.swift; sourceTree = SOURCE_ROOT; };
+		0C286D3A5C418E52A28D780A /* GlassCardCardRenderer.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/GlassCardCardRenderer.swift; sourceTree = SOURCE_ROOT; };
+		DB9935CF4D00F59A99572B7F /* RendererConstants.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/RendererConstants.swift; sourceTree = SOURCE_ROOT; };
+		94755A5FFA4D956E1FFD3D97 /* GlassCardNativeMaterialStudy.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/GlassCardNativeMaterialStudy.swift; sourceTree = SOURCE_ROOT; };
+		C2CA23533B1D97C068780931 /* NativeBackdropMaterialRenderer.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Renderers/NativeBackdropMaterialRenderer.swift; sourceTree = SOURCE_ROOT; };
+		D496EA2470F26F98BFB5A2D5 /* MinimalCardLayoutSpecification.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LayoutEngine/MinimalCardLayoutSpecification.swift; sourceTree = SOURCE_ROOT; };
+		15FE5598221971DD722A7299 /* PresentationPixelGeometry.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LayoutEngine/PresentationPixelGeometry.swift; sourceTree = SOURCE_ROOT; };
+		EED5F625FC20E66E7EF81839 /* GlassCardTextFitSpecification.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LayoutEngine/GlassCardTextFitSpecification.swift; sourceTree = SOURCE_ROOT; };
+		3654E3935DD2CD89B8EF290C /* ClassicWhitePortraitLayoutSpecification.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LayoutEngine/ClassicWhitePortraitLayoutSpecification.swift; sourceTree = SOURCE_ROOT; };
+		DB5AAE18401E06AB75AB047D /* GlassCardLayoutSpecification.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LayoutEngine/GlassCardLayoutSpecification.swift; sourceTree = SOURCE_ROOT; };
+		AAE8743A4319939865C9878B /* GlassCardResolvedPresentation.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LayoutEngine/GlassCardResolvedPresentation.swift; sourceTree = SOURCE_ROOT; };
+		861AFE97DA02865DD70644AC /* NativeBackdropVideoCompositor.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/NativeBackdropVideoCompositor.swift; sourceTree = SOURCE_ROOT; };
+		9A881B31B7A1F4364EE31167 /* MetadataPolicyPlan.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/MetadataPolicyPlan.swift; sourceTree = SOURCE_ROOT; };
+		44F293A9CDF6927F6D78A9CE /* LivePhotoSaveRequest.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoSaveRequest.swift; sourceTree = SOURCE_ROOT; };
+		78B28CB8098D7D5C68D20EBB /* LivePhotoRenderOutputGeometry.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoRenderOutputGeometry.swift; sourceTree = SOURCE_ROOT; };
+		98F9BF1F503BDE9E6ED69F79 /* PhotoKitLivePhotoAssetWriter.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/PhotoKitLivePhotoAssetWriter.swift; sourceTree = SOURCE_ROOT; };
+		6EEF307E00B9E141EF7C8EA7 /* LivePhotoAssetBundle.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoAssetBundle.swift; sourceTree = SOURCE_ROOT; };
+		A4A0383E7771BE6C74D869AF /* LivePhotoPairingIdentityVerifier.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoPairingIdentityVerifier.swift; sourceTree = SOURCE_ROOT; };
+		EA9F58B364D0E8C179893185 /* LivePhotoStillImageCompositionInput.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoStillImageCompositionInput.swift; sourceTree = SOURCE_ROOT; };
+		ACBDBB9BEF214921E20253D8 /* MediaProcessingPlanner.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/MediaProcessingPlanner.swift; sourceTree = SOURCE_ROOT; };
+		EB12FF4B21623B3F004377D1 /* LivePhotoStillImageCompositionService.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoStillImageCompositionService.swift; sourceTree = SOURCE_ROOT; };
+		85DC136BE2832A69EBE34307 /* LivePhotoAssetLoading.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoAssetLoading.swift; sourceTree = SOURCE_ROOT; };
+		A2C7EFD62105C5422359A02A /* LivePhotoVideoCompositionInput.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoVideoCompositionInput.swift; sourceTree = SOURCE_ROOT; };
+		138211007E6C77F578F0FD32 /* LivePhotoAssetReadbackVerification.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoAssetReadbackVerification.swift; sourceTree = SOURCE_ROOT; };
+		06F3B0104D51D8B5D3962C76 /* LivePhotoStillImageTimeMetadata.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoStillImageTimeMetadata.swift; sourceTree = SOURCE_ROOT; };
+		E8CECDC7553871ACDC7295EC /* MediaProcessingRouter.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/MediaProcessingRouter.swift; sourceTree = SOURCE_ROOT; };
+		011AE302CBC941BB167C572A /* FixedFooterOverlayDescriptor.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/FixedFooterOverlayDescriptor.swift; sourceTree = SOURCE_ROOT; };
+		1044CA97E13E54B0F8CFA668 /* LivePhotoVideoMetadataWriting.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoVideoMetadataWriting.swift; sourceTree = SOURCE_ROOT; };
+		5EAB86CF5C96604515977A55 /* LivePhotoVideoCompositionService.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoVideoCompositionService.swift; sourceTree = SOURCE_ROOT; };
+		3D0A29F4102BBBA15D9ED0A0 /* MediaPipelineRuntimeGate.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/MediaPipelineRuntimeGate.swift; sourceTree = SOURCE_ROOT; };
+		6DDF2D03ADD3785CED45A0BA /* StillImageMetadataWriting.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/StillImageMetadataWriting.swift; sourceTree = SOURCE_ROOT; };
+		2D08144FD7F605CCDC8A273D /* LivePhotoAssetWriting.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoAssetWriting.swift; sourceTree = SOURCE_ROOT; };
+		FB79B74DB305732CF3E66A99 /* LivePhotoGeometryResolver.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaPipelineVNext/LivePhotoGeometryResolver.swift; sourceTree = SOURCE_ROOT; };
+		3FE1D54C711A07648D8B145C /* MediaGeometryFacts.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaGeometry/MediaGeometryFacts.swift; sourceTree = SOURCE_ROOT; };
+		0B5A29992A5F57D22685BCE7 /* MediaGeometryOrientation.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaGeometry/MediaGeometryOrientation.swift; sourceTree = SOURCE_ROOT; };
+		B02F417FF260FC44F6464EFD /* CanvasGeometry.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaGeometry/CanvasGeometry.swift; sourceTree = SOURCE_ROOT; };
+		5BD0DB99AA3947E4635C258F /* CanonicalGeometry.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaGeometry/CanonicalGeometry.swift; sourceTree = SOURCE_ROOT; };
+		8B4540EBC9607B9449CB9524 /* GeometrySnapshotSerializer.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaGeometry/Snapshot/GeometrySnapshotSerializer.swift; sourceTree = SOURCE_ROOT; };
+		12A420AFB45BB44898FC7370 /* GeometryLinter.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaGeometry/Linter/GeometryLinter.swift; sourceTree = SOURCE_ROOT; };
+		B564896F9454FB582363B7FB /* GeometryIssue.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaGeometry/Linter/GeometryIssue.swift; sourceTree = SOURCE_ROOT; };
+		CE42D2867A99454D57929840 /* MediaGeometryResolver.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/MediaGeometry/Resolver/MediaGeometryResolver.swift; sourceTree = SOURCE_ROOT; };
+		807816BEF0CD046737C1FC87 /* ReverseGeocoder.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/LocationExpression/ReverseGeocoder.swift; sourceTree = SOURCE_ROOT; };
+		DFAE0641B7E649F495EEB037 /* PhotoRepository.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Repositories/PhotoRepository.swift; sourceTree = SOURCE_ROOT; };
+		EFCA3B3A082B9FBE27D6B5C7 /* PhotoLibraryRepository.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Repositories/PhotoLibraryRepository.swift; sourceTree = SOURCE_ROOT; };
+		958FB1DBF51082A1D2CA16C8 /* ExportCoordinator.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Coordinators/ExportCoordinator.swift; sourceTree = SOURCE_ROOT; };
+		DAE44B7040F5C9CD23421D98 /* ImportBatchPhotoIntent.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Intent/ImportBatchPhotoIntent.swift; sourceTree = SOURCE_ROOT; };
+		E3CD1208BCE90560131A4154 /* MemoMarkIntent.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Intent/MemoMarkIntent.swift; sourceTree = SOURCE_ROOT; };
+		DC68D5F272217506371874C9 /* ProductionDiagnosticsRepository.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Repositories/ProductionDiagnosticsRepository.swift; sourceTree = SOURCE_ROOT; };
+		1D2E308C51039783B7B2DDD3 /* ProductionDiagnosticsStore.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Repositories/ProductionDiagnosticsStore.swift; sourceTree = SOURCE_ROOT; };
+		B880BF266376FC4FBA0D2E3B /* ProductionExportIntents.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/Intent/ProductionExportIntents.swift; sourceTree = SOURCE_ROOT; };
+		DF8DC856451963C66DBDC648 /* MemoMarkBackgroundLiveActivityPayload.swift shared core */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXVariantGroup section */
@@ -108,19 +266,6 @@
 		A1B2C3023A9C410100A10001 /* Exceptions for "MemoMark/Models" folder in "MemoMarkShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				AnchorResult.swift,
-				CardTextBlock.swift,
-				CardVariableProvider.swift,
-				CustomBadge.swift,
-				InlineContentTextComposer.swift,
-				MetadataContext.swift,
-				PersonalProfile.swift,
-				PhotoMetadata.swift,
-				RecordCard.swift,
-				SelectedPhoto.swift,
-				TemplateVariable.swift,
-				TemplateVariableCategory.swift,
-				TemplateVariableLibrary.swift,
 			);
 			target = F4A1B20B3A9C410100A10001 /* MemoMarkShareExtension */;
 		};
@@ -149,6 +294,98 @@
 				iOS/Views/README.md,
 			);
 			target = B3DBA4F32FE1581100945016 /* MemoMark */;
+		};
+		89F16A134D972968E13A0B40 /* MemoryEngine Share core exceptions */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"MemoryExpressionPreviewResolver.swift",
+			);
+			target = F4A1B20B3A9C410100A10001;
+		};
+		3E3C0DD9DD32A683A3279F6C /* ConfigurationCenter Share core exceptions */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Components/DecorationLibraryGrid.swift",
+				"Components/InspectorSectionView.swift",
+				"ConfigurationCenterMemoryTemplateCatalog.swift",
+				"ConfigurationCenterMockSeed.swift",
+				"ConfigurationCenterPreviewDefaults.swift",
+				"ConfigurationCenterState.swift",
+				"ConfigurationCenterView.swift",
+				"ConfigurationEditingState.swift",
+				"ConfigurationPersistenceReconciler.swift",
+				"ConfigurationSession.swift",
+				"ConfigurationSessionPresentationState.swift",
+				"Editors/BadgeLibraryView.swift",
+				"Editors/CompactAnchorDatePicker.swift",
+				"Editors/ExpressionEditor.swift",
+				"Editors/IconLibraryView.swift",
+				"Editors/MemorySubjectEditingDraft.swift",
+				"Editors/MemorySubjectEditorBindings.swift",
+				"Editors/MemorySubjectEditorView.swift",
+				"Editors/SubjectAvatarCropSheet.swift",
+				"Editors/SubjectAvatarEditingDraft.swift",
+				"Editors/SubjectAvatarEditingSurfaces.swift",
+				"Editors/SubjectAvatarOptimizationState.swift",
+				"Editors/SubjectAvatarPreview.swift",
+				"Editors/SubjectTimeAnchorPresentationSurfaces.swift",
+				"Editors/SubjectTimeAnchorRow.swift",
+				"Editors/TimeAnchorEditingTransaction.swift",
+				"Editors/TokenPicker.swift",
+				"Inspector/InspectorProvider.swift",
+				"Inspector/InspectorView.swift",
+				"Inspector/MemoryBlockInspectorConfigurationPickerSection.swift",
+				"Inspector/MemoryBlockInspectorCustomFieldsSection.swift",
+				"Inspector/MemoryBlockInspectorSupportViews.swift",
+				"Inspector/MemoryBlockInspectorSystemModulesSection.swift",
+				"Inspector/MemoryBlockInspectorView.swift",
+				"MacConfigurationCenterHeader.swift",
+				"MacConfigurationCenterPage.swift",
+				"MacConfigurationEditingContext.swift",
+				"MemoryCard/InteractiveMemoryCard.swift",
+				"MemoryCard/InteractiveMemoryCardCompactPreview.swift",
+				"MemoryCard/InteractiveMemoryCardConfigurationComponentDock.swift",
+				"MemoryCard/InteractiveMemoryCardConfigurationContext.swift",
+				"MemoryCard/InteractiveMemoryCardRegionStrip.swift",
+				"Sidebar/MemorySubjectListView.swift",
+			);
+			target = F4A1B20B3A9C410100A10001;
+		};
+		8E824B2F126DB010EC2AA080 /* Services Share core exceptions */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"BadgeStorageService.swift",
+				"BatchNotificationService.swift",
+				"BatchQueueBootstrapReceiptReconciler.swift",
+				"BatchQueueBootstrapRecoveryNormalizer.swift",
+				"BatchQueueHistory.swift",
+				"BatchQueueNotifications.swift",
+				"BatchQueueRecoveryDiagnosticsReporter.swift",
+				"BatchQueueStore.swift",
+				"ConfigurationAssetPackager.swift",
+				"ConfigurationLibraryPersistence.swift",
+				"ConfigurationLibraryStore.swift",
+				"ConfigurationLogoResolver.swift",
+				"ConfigurationProjectionService.swift",
+				"LegacySettingsStore.swift",
+				"LogoAssetOptimizationService.swift",
+				"MemoMarkCommerceStore.swift",
+				"PermissionCenter.swift",
+				"PersonalProfileStore.swift",
+				"PhotoImporterFileRepresentationResolver.swift",
+				"PhotoLibraryReceiptResumeRecoveryPlanner.swift",
+				"SettingsService.swift",
+				"SubjectAvatarAssetOptimizationService.swift",
+				"SubjectAvatarCropSupport.swift",
+			);
+			target = F4A1B20B3A9C410100A10001;
+		};
+		523993373C5E5E7B48A89D60 /* Architecture Share core exceptions */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"AppEnvironment.swift",
+			);
+			target = F4A1B20B3A9C410100A10001;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -206,6 +443,45 @@
 			path = ../../Tests/MemoMarkUITests;
 			sourceTree = "<group>";
 		};
+		212FE80021D02E315BE1D1D1 /* MemoMark/MemoryEngine shared core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (89F16A134D972968E13A0B40,);
+			path = MemoMark/MemoryEngine;
+			sourceTree = "<group>";
+		};
+		94C845A3C0C0BCA4B222F8F9 /* MemoMark/ConfigurationCenter shared core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (3E3C0DD9DD32A683A3279F6C,);
+			path = MemoMark/ConfigurationCenter;
+			sourceTree = "<group>";
+		};
+		4FD191C20F229E73FA3C1F1A /* MemoMark/Domain shared core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MemoMark/Domain;
+			sourceTree = "<group>";
+		};
+		42F8EE9D168BCFBBA47B2AAF /* MemoMark/Infrastructure shared core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MemoMark/Infrastructure;
+			sourceTree = "<group>";
+		};
+		F63BEAA286763ECA2DC23D02 /* MemoMark/Application shared core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MemoMark/Application;
+			sourceTree = "<group>";
+		};
+		856FC273E59A6D95CAAEF37C /* MemoMark/Services shared core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (8E824B2F126DB010EC2AA080,);
+			path = MemoMark/Services;
+			sourceTree = "<group>";
+		};
+		20069272431CD9B9A7D72D36 /* MemoMark/Architecture shared core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (523993373C5E5E7B48A89D60,);
+			path = MemoMark/Architecture;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -245,6 +521,85 @@
 		B39FE7622FECAF5200C88A23 /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
+				DF8DC856451963C66DBDC648 /* MemoMarkBackgroundLiveActivityPayload.swift shared core */,
+				B880BF266376FC4FBA0D2E3B /* ProductionExportIntents.swift shared core */,
+				1D2E308C51039783B7B2DDD3 /* ProductionDiagnosticsStore.swift shared core */,
+				DC68D5F272217506371874C9 /* ProductionDiagnosticsRepository.swift shared core */,
+				E3CD1208BCE90560131A4154 /* MemoMarkIntent.swift shared core */,
+				DAE44B7040F5C9CD23421D98 /* ImportBatchPhotoIntent.swift shared core */,
+				958FB1DBF51082A1D2CA16C8 /* ExportCoordinator.swift shared core */,
+				EFCA3B3A082B9FBE27D6B5C7 /* PhotoLibraryRepository.swift shared core */,
+				DFAE0641B7E649F495EEB037 /* PhotoRepository.swift shared core */,
+				807816BEF0CD046737C1FC87 /* ReverseGeocoder.swift shared core */,
+				CE42D2867A99454D57929840 /* MediaGeometryResolver.swift shared core */,
+				B564896F9454FB582363B7FB /* GeometryIssue.swift shared core */,
+				12A420AFB45BB44898FC7370 /* GeometryLinter.swift shared core */,
+				8B4540EBC9607B9449CB9524 /* GeometrySnapshotSerializer.swift shared core */,
+				5BD0DB99AA3947E4635C258F /* CanonicalGeometry.swift shared core */,
+				B02F417FF260FC44F6464EFD /* CanvasGeometry.swift shared core */,
+				0B5A29992A5F57D22685BCE7 /* MediaGeometryOrientation.swift shared core */,
+				3FE1D54C711A07648D8B145C /* MediaGeometryFacts.swift shared core */,
+				FB79B74DB305732CF3E66A99 /* LivePhotoGeometryResolver.swift shared core */,
+				2D08144FD7F605CCDC8A273D /* LivePhotoAssetWriting.swift shared core */,
+				6DDF2D03ADD3785CED45A0BA /* StillImageMetadataWriting.swift shared core */,
+				3D0A29F4102BBBA15D9ED0A0 /* MediaPipelineRuntimeGate.swift shared core */,
+				5EAB86CF5C96604515977A55 /* LivePhotoVideoCompositionService.swift shared core */,
+				1044CA97E13E54B0F8CFA668 /* LivePhotoVideoMetadataWriting.swift shared core */,
+				011AE302CBC941BB167C572A /* FixedFooterOverlayDescriptor.swift shared core */,
+				E8CECDC7553871ACDC7295EC /* MediaProcessingRouter.swift shared core */,
+				06F3B0104D51D8B5D3962C76 /* LivePhotoStillImageTimeMetadata.swift shared core */,
+				138211007E6C77F578F0FD32 /* LivePhotoAssetReadbackVerification.swift shared core */,
+				A2C7EFD62105C5422359A02A /* LivePhotoVideoCompositionInput.swift shared core */,
+				85DC136BE2832A69EBE34307 /* LivePhotoAssetLoading.swift shared core */,
+				EB12FF4B21623B3F004377D1 /* LivePhotoStillImageCompositionService.swift shared core */,
+				ACBDBB9BEF214921E20253D8 /* MediaProcessingPlanner.swift shared core */,
+				EA9F58B364D0E8C179893185 /* LivePhotoStillImageCompositionInput.swift shared core */,
+				A4A0383E7771BE6C74D869AF /* LivePhotoPairingIdentityVerifier.swift shared core */,
+				6EEF307E00B9E141EF7C8EA7 /* LivePhotoAssetBundle.swift shared core */,
+				98F9BF1F503BDE9E6ED69F79 /* PhotoKitLivePhotoAssetWriter.swift shared core */,
+				78B28CB8098D7D5C68D20EBB /* LivePhotoRenderOutputGeometry.swift shared core */,
+				44F293A9CDF6927F6D78A9CE /* LivePhotoSaveRequest.swift shared core */,
+				9A881B31B7A1F4364EE31167 /* MetadataPolicyPlan.swift shared core */,
+				861AFE97DA02865DD70644AC /* NativeBackdropVideoCompositor.swift shared core */,
+				AAE8743A4319939865C9878B /* GlassCardResolvedPresentation.swift shared core */,
+				DB5AAE18401E06AB75AB047D /* GlassCardLayoutSpecification.swift shared core */,
+				3654E3935DD2CD89B8EF290C /* ClassicWhitePortraitLayoutSpecification.swift shared core */,
+				EED5F625FC20E66E7EF81839 /* GlassCardTextFitSpecification.swift shared core */,
+				15FE5598221971DD722A7299 /* PresentationPixelGeometry.swift shared core */,
+				D496EA2470F26F98BFB5A2D5 /* MinimalCardLayoutSpecification.swift shared core */,
+				C2CA23533B1D97C068780931 /* NativeBackdropMaterialRenderer.swift shared core */,
+				94755A5FFA4D956E1FFD3D97 /* GlassCardNativeMaterialStudy.swift shared core */,
+				DB9935CF4D00F59A99572B7F /* RendererConstants.swift shared core */,
+				0C286D3A5C418E52A28D780A /* GlassCardCardRenderer.swift shared core */,
+				06E98992BA7C9B7B66D445B4 /* MinimalRenderer.swift shared core */,
+				860A517DA0F5FE02DA11DCA8 /* RecordCardPresentationPlanner.swift shared core */,
+				9641B5443DB96B3068D39801 /* ClassicWhiteRenderer.swift shared core */,
+				38227885E235BDC3769DA058 /* FilmMarkRenderer.swift shared core */,
+				95092B7D323C8AA2FD86D9D9 /* RecordCardRenderer.swift shared core */,
+				C3755AB1ED0123B36AE08218 /* GlassCardRenderer.swift shared core */,
+				23D8D617B962B94CD6A7345A /* BadgeRenderer.swift shared core */,
+				644F067E0D94E9483FC53109 /* MetadataProvider.swift shared core */,
+				FB953930C238E075E084FFBE /* ExpressionContextMetadataAdapter.swift shared core */,
+				D5CFA605A403666D22DC73E0 /* MetadataContextExpressionLookup.swift shared core */,
+				F847A02FA37AE61E8087415D /* TemplateVariableEngine.swift shared core */,
+				A90E5C6D82D5AC3F3465D181 /* CardTextBlockEngine.swift shared core */,
+				6D8A376388DB1F5A0AB522C7 /* FilmMarkLayoutSpecification.swift shared core */,
+				006B61F6C75D1B5FAD9DEE8B /* LocationContextBuilder.swift shared core */,
+				45AC5BF7AEBF6EDA50857A84 /* LocationConfigurationAdapter.swift shared core */,
+				210FBABC6B43F6E2A0EC0A40 /* LocationExpressionProvider.swift shared core */,
+				875A5F7EC29EA749FEF63852 /* LocationCoordinate.swift shared core */,
+				332AFB675477EE9C4A0E2A6F /* LocationContext.swift shared core */,
+				C3E34C61A0EF6C643A7B2851 /* LocationAvailability.swift shared core */,
+				03D2E05D44D15F80A4B2B262 /* LocationAddress.swift shared core */,
+				5BFD81CDD6958B9EBEB280F3 /* LocationPresentationMode.swift shared core */,
+				279AE99BEC837141924838A6 /* LocationFormatter.swift shared core */,
+				21F037279DBA978D858CE087 /* LocationResolver.swift shared core */,
+				8D1211E8A8D372DBAB65F340 /* LocationResolution.swift shared core */,
+				53B1459305420A6788761C88 /* FilmMarkPresentationSpecification.swift shared core */,
+				1D701881AE8F7F5D37E9F886 /* AnchorEngine.swift shared core */,
+				7375EF90028FA5178C612F14 /* MediaProcessingRoute.swift shared core */,
+				076B8972D2E72319BF2F5BF9 /* MediaOutputPolicy.swift shared core */,
+				89C069C3539E1F2E4C49F2E9 /* MediaProcessingIntent.swift shared core */,
 				F4A1B2383A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift */,
 				F4A1B2393A9C410100A10001 /* MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift */,
 			);
@@ -337,6 +692,13 @@
 				A1B2C3143A9C410100A10001 /* MemoMark/Expression */,
 				A1B2C3123A9C410100A10001 /* MemoMark/Models */,
 				A1B2C3133A9C410100A10001 /* MemoMark/iOS/ShareExtension */,
+				212FE80021D02E315BE1D1D1 /* MemoMark/MemoryEngine shared core */,
+				94C845A3C0C0BCA4B222F8F9 /* MemoMark/ConfigurationCenter shared core */,
+				4FD191C20F229E73FA3C1F1A /* MemoMark/Domain shared core */,
+				42F8EE9D168BCFBBA47B2AAF /* MemoMark/Infrastructure shared core */,
+				F63BEAA286763ECA2DC23D02 /* MemoMark/Application shared core */,
+				856FC273E59A6D95CAAEF37C /* MemoMark/Services shared core */,
+				20069272431CD9B9A7D72D36 /* MemoMark/Architecture shared core */,
 			);
 			name = MemoMarkShareExtension;
 			productName = MemoMarkShareExtension;
@@ -509,6 +871,85 @@
 		F4A1B20C3A9C410100A10001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				FA06B39CD8DE47544BA05D49 /* MemoMarkBackgroundLiveActivityPayload.swift in Share sources */,
+				835516D9C6CC9A1F46AB2B14 /* ProductionExportIntents.swift in Share sources */,
+				CB43F467B9FF7CE2590E78B9 /* ProductionDiagnosticsStore.swift in Share sources */,
+				F6687C034863A80C9B714130 /* ProductionDiagnosticsRepository.swift in Share sources */,
+				591768FE27E3AE0D9D4479D3 /* MemoMarkIntent.swift in Share sources */,
+				0C300548B483DF34A0828010 /* ImportBatchPhotoIntent.swift in Share sources */,
+				5146B5A4F826A10DD0304B35 /* ExportCoordinator.swift in Share sources */,
+				DB599A7EE71507E27ED9C735 /* PhotoLibraryRepository.swift in Share sources */,
+				C2366B2C965F9473CE243157 /* PhotoRepository.swift in Share sources */,
+				0DEBF20465B2AD27E6B9819B /* ReverseGeocoder.swift in Share sources */,
+				2E725419268051F102DE30E4 /* MediaGeometryResolver.swift in Share sources */,
+				460C614D568CA2198D1276E6 /* GeometryIssue.swift in Share sources */,
+				42299515F194916D3DCBAF9A /* GeometryLinter.swift in Share sources */,
+				694FC682B18B63947FCB5A14 /* GeometrySnapshotSerializer.swift in Share sources */,
+				C2ED4CC85E510F967711835F /* CanonicalGeometry.swift in Share sources */,
+				3EC59E639667930D448E7C86 /* CanvasGeometry.swift in Share sources */,
+				CCD9DD20451D948D64B62F60 /* MediaGeometryOrientation.swift in Share sources */,
+				58668F436B18BA814CE1C581 /* MediaGeometryFacts.swift in Share sources */,
+				1F29258DE28EC4E7068A1D58 /* LivePhotoGeometryResolver.swift in Share sources */,
+				C331BAE3996E922739CCE75F /* LivePhotoAssetWriting.swift in Share sources */,
+				43A0FFDA75B0EBABA9ABCFD6 /* StillImageMetadataWriting.swift in Share sources */,
+				BDFADAD9A0D44585D6A2ECFF /* MediaPipelineRuntimeGate.swift in Share sources */,
+				5D3BEF232FB85F6231408A77 /* LivePhotoVideoCompositionService.swift in Share sources */,
+				41C7EDDFA7B24F693080E9EC /* LivePhotoVideoMetadataWriting.swift in Share sources */,
+				37027CF150C8666A3F07BC93 /* FixedFooterOverlayDescriptor.swift in Share sources */,
+				F40BBD4833B3A8308277EEB2 /* MediaProcessingRouter.swift in Share sources */,
+				D338F9D89867F01550F50EFD /* LivePhotoStillImageTimeMetadata.swift in Share sources */,
+				2408CE93245B03CD9280DEA6 /* LivePhotoAssetReadbackVerification.swift in Share sources */,
+				E5EC5C45ED0D5079528167C1 /* LivePhotoVideoCompositionInput.swift in Share sources */,
+				83D424CD051FB950E1D8B07A /* LivePhotoAssetLoading.swift in Share sources */,
+				927C7B39D5B6E8AB05D7AD53 /* LivePhotoStillImageCompositionService.swift in Share sources */,
+				B76EA1CCFB90B0ED6F3B7F40 /* MediaProcessingPlanner.swift in Share sources */,
+				934A35A6A683B020DB699C8F /* LivePhotoStillImageCompositionInput.swift in Share sources */,
+				5A070074FF7F00EEADB2EBCB /* LivePhotoPairingIdentityVerifier.swift in Share sources */,
+				AA63983FFCC2157B7B30032E /* LivePhotoAssetBundle.swift in Share sources */,
+				6C7DB2F51908A9ED6E7F0F43 /* PhotoKitLivePhotoAssetWriter.swift in Share sources */,
+				19BA98D677B3D929BF0F9848 /* LivePhotoRenderOutputGeometry.swift in Share sources */,
+				81312F0593E5701D46301116 /* LivePhotoSaveRequest.swift in Share sources */,
+				BA01F2B5A97B40E618746A44 /* MetadataPolicyPlan.swift in Share sources */,
+				438713BFDCED80EB101A9A47 /* NativeBackdropVideoCompositor.swift in Share sources */,
+				CD806CD76EEC2E3088793C31 /* GlassCardResolvedPresentation.swift in Share sources */,
+				6BDDFEFB3911B4CEB0440F3B /* GlassCardLayoutSpecification.swift in Share sources */,
+				B351738EF234AF7E3D9FA698 /* ClassicWhitePortraitLayoutSpecification.swift in Share sources */,
+				31143514BFB541AA0B0BA1CC /* GlassCardTextFitSpecification.swift in Share sources */,
+				36E794CCFE34CA5E3F7BDF6E /* PresentationPixelGeometry.swift in Share sources */,
+				C712D3943845BDF37FDDEC16 /* MinimalCardLayoutSpecification.swift in Share sources */,
+				8D1FB43FD298073983447B37 /* NativeBackdropMaterialRenderer.swift in Share sources */,
+				01B6A1C840CD8BFCE22E3BC4 /* GlassCardNativeMaterialStudy.swift in Share sources */,
+				66FE79597BCB136BC0070E1E /* RendererConstants.swift in Share sources */,
+				74C8DDD88C025882D833D411 /* GlassCardCardRenderer.swift in Share sources */,
+				376C11DA097CAAD3A2C00E3B /* MinimalRenderer.swift in Share sources */,
+				D29772BFEA1FBC6EBCC29098 /* RecordCardPresentationPlanner.swift in Share sources */,
+				1FA0302D4DF9F864C3ED33B0 /* ClassicWhiteRenderer.swift in Share sources */,
+				57A5A042DF3F57E90E253749 /* FilmMarkRenderer.swift in Share sources */,
+				8B9166C8485778906C44E77A /* RecordCardRenderer.swift in Share sources */,
+				E6252FDF75F8C664CFB504B6 /* GlassCardRenderer.swift in Share sources */,
+				378878A7B34BDD54D3538ED9 /* BadgeRenderer.swift in Share sources */,
+				354B3C62091C672BF828EFF0 /* MetadataProvider.swift in Share sources */,
+				C891388CA53D452BAA51397B /* ExpressionContextMetadataAdapter.swift in Share sources */,
+				A97D3FAE467EEA46B497DB4B /* MetadataContextExpressionLookup.swift in Share sources */,
+				C2DE56DFD3FB80EF49FBFE9C /* TemplateVariableEngine.swift in Share sources */,
+				956684D5335E2457D888D092 /* CardTextBlockEngine.swift in Share sources */,
+				0FE4779ABC1F0E0C9C4EEB20 /* FilmMarkLayoutSpecification.swift in Share sources */,
+				0637527FFE075FFA29768713 /* LocationContextBuilder.swift in Share sources */,
+				807814D33671419912F9190C /* LocationConfigurationAdapter.swift in Share sources */,
+				B7DB9D93DBA90ABF45DA8244 /* LocationExpressionProvider.swift in Share sources */,
+				932B94B98F8013EABBD9826A /* LocationCoordinate.swift in Share sources */,
+				C762C8C99327271EDEEFBBD7 /* LocationContext.swift in Share sources */,
+				E7ECE7B5126B1156A57E6047 /* LocationAvailability.swift in Share sources */,
+				384CFBF517AF380D0951C770 /* LocationAddress.swift in Share sources */,
+				A191479DE409BF1AE22D2FC1 /* LocationPresentationMode.swift in Share sources */,
+				FE9BD9B31E9E69C14972FE84 /* LocationFormatter.swift in Share sources */,
+				0D47B701BA1399C07BCC9888 /* LocationResolver.swift in Share sources */,
+				7F28BA9E39603A6788A33F6E /* LocationResolution.swift in Share sources */,
+				6D3ECD8138149A2B66AAA877 /* FilmMarkPresentationSpecification.swift in Share sources */,
+				0A843A43DC503811C61DEECF /* AnchorEngine.swift in Share sources */,
+				C6E2C4D2C164041CA29C5117 /* MediaProcessingRoute.swift in Share sources */,
+				39FEBA20129EF24FD36BFC73 /* MediaOutputPolicy.swift in Share sources */,
+				675060E6A272D2F2FBC7D5AB /* MediaProcessingIntent.swift in Share sources */,
 			);
 		};
 		F4A1B23A3A9C410100A10001 /* Sources */ = {

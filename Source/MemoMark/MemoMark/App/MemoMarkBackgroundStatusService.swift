@@ -219,6 +219,8 @@ struct MemoMarkBackgroundJobSnapshot: Hashable {
 
     let savedAssetIdentifier: String?
 
+    let isPaused: Bool
+
     init(
         jobID: UUID,
         title: String,
@@ -249,7 +251,8 @@ struct MemoMarkBackgroundJobSnapshot: Hashable {
         templateName: String = "Classic White",
         previewSourceURL: URL? = nil,
         savedAlbumName: String? = nil,
-        savedAssetIdentifier: String? = nil
+        savedAssetIdentifier: String? = nil,
+        isPaused: Bool = false
     ) {
         self.jobID = jobID
         self.title = title
@@ -303,6 +306,7 @@ struct MemoMarkBackgroundJobSnapshot: Hashable {
             savedAlbumName
         self.savedAssetIdentifier =
             savedAssetIdentifier
+        self.isPaused = isPaused
     }
 
     func localizedStatusMessage(
@@ -372,6 +376,8 @@ final class MemoMarkBackgroundStatusService:
     var currentSnapshot:
         MemoMarkBackgroundJobSnapshot?
 
+    @Published private(set) var currentExecutionSession: ExecutionSession?
+
     @Published private(set)
     var taskOverview =
         MemoMarkBackgroundTaskOverview.empty
@@ -407,6 +413,11 @@ final class MemoMarkBackgroundStatusService:
             interfaceLanguageProvider
 
         bind()
+        refreshSnapshot()
+    }
+
+    func deleteExecutionSessionHistory(_ sessionID: UUID) async {
+        _ = await batchQueueStore.deleteExecutionSessionHistory(sessionID)
         refreshSnapshot()
     }
 
@@ -448,31 +459,49 @@ private extension MemoMarkBackgroundStatusService {
             batchQueueStore.$activeJobID,
             batchQueueStore.$activeTaskID
         )
-        .sink { [weak self] _, _, _, _ in
-            self?.refreshSnapshot()
+        .combineLatest(batchQueueStore.$processingPaused)
+        .sink { [weak self] state, _ in
+            let (jobs, _, activeJobID, activeTaskID) = state
+            self?.refreshSnapshot(jobs: jobs, activeJobID: activeJobID, activeTaskID: activeTaskID)
         }
         .store(in: &cancellables)
     }
 
     func refreshSnapshot() {
+        refreshSnapshot(jobs: batchQueueStore.jobs, activeJobID: batchQueueStore.activeJobID,
+            activeTaskID: batchQueueStore.activeTaskID)
+    }
 
+    func refreshSnapshot(jobs: [BatchJob], activeJobID: UUID?, activeTaskID: UUID?) {
         let externalJobs =
             resolvedExternalJobs(
-                from: batchQueueStore.jobs
+                from: jobs
             )
 
         hasProcessingRecord = !externalJobs.isEmpty
 
-        currentSnapshot =
+        let nextSnapshot =
             projection.resolvedSnapshot(
                 externalJobs: externalJobs,
                 activeJobID:
-                    batchQueueStore.activeJobID,
+                    activeJobID,
                 activeTaskID:
-                    batchQueueStore.activeTaskID,
+                    activeTaskID,
                 focusedJobID:
-                    focusedJobID
+                    focusedJobID,
+                isPaused: batchQueueStore.processingPaused
             )
+
+        if let jobID = nextSnapshot?.jobID,
+           let job = externalJobs.first(where: { $0.id == jobID }) {
+            currentExecutionSession = ExecutionSession(
+                id: job.executionSessionID ?? job.id, jobs: externalJobs
+            )
+        } else {
+            currentExecutionSession = nil
+        }
+
+        currentSnapshot = nextSnapshot
 
         taskOverview =
             projection.taskOverview(
@@ -494,7 +523,7 @@ private extension MemoMarkBackgroundStatusService {
     ) -> [BatchJob] {
         jobs
             .filter {
-                $0.launchSource != .inAppPreview
+                $0.launchSource != .inAppPreview && $0.historyDeletedAt == nil
             }
             .sorted {
                 $0.updatedAt > $1.updatedAt

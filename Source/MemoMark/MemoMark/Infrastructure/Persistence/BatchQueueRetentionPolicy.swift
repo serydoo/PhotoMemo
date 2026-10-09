@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// Applies the durable queue's bounded-history contract before a candidate
@@ -73,8 +72,7 @@ nonisolated struct BatchQueueRetentionPolicy:
 
         for index in orderedIndices {
             guard let cover = jobs[index].historyCover,
-                  let url = BatchTaskResourceLifecycle.historyCoverURL(
-                    for: cover,
+                  let url = cover.resolvedURL(
                     baseDirectoryURL:
                         historyCoversBaseDirectoryURL
                   ) else {
@@ -122,4 +120,3 @@ nonisolated struct BatchQueueRetentionPolicy:
         }
     }
 }
-#endif

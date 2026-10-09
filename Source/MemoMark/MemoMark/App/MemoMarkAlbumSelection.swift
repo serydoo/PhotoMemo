@@ -1,6 +1,6 @@
 import Foundation
 
-enum MemoMarkAlbumSelection {
+nonisolated enum MemoMarkAlbumSelection {
 
     static let defaultAlbumTitle =
         "时光记"

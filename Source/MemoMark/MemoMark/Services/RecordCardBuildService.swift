@@ -2,21 +2,13 @@ import Foundation
 
 final class RecordCardBuildService {
 
-#if !MEMOMARK_SHARE_EXTENSION
     private let productionMemoryResolver:
         ProductionMemoryResolver
-#endif
 
-#if MEMOMARK_SHARE_EXTENSION
-    init() {}
-#else
     init() {
-#if !MEMOMARK_SHARE_EXTENSION
         self.productionMemoryResolver =
             ProductionMemoryResolver()
-#endif
     }
-#endif
 
     func buildCard(
         from selectedPhoto: SelectedPhoto,
@@ -66,7 +58,6 @@ private extension RecordCardBuildService {
         configuration: BatchConfigurationSnapshot
     ) -> RecordCard {
 
-#if !MEMOMARK_SHARE_EXTENSION
         let memoryPayload =
             resolvedMemoryPayload(
                 from: selectedPhoto,
@@ -104,31 +95,6 @@ private extension RecordCardBuildService {
             resolvedMemorySubjectText(
                 from: memoryPayload
             )
-#else
-        let context =
-            buildContext(
-                from: selectedPhoto.metadata,
-                configuration: configuration,
-                timeDisplayConfiguration:
-                    configuration.timeDisplayConfiguration,
-                language: configuration.language
-            )
-        let anchor =
-            configuration.legacyAnchor
-        let anchorResult =
-            resolvedAnchorResult(
-                from: anchor,
-                photo: selectedPhoto,
-                outputLanguage:
-                    configuration.language
-            )
-        let title =
-            resolvedTitle(
-                from: configuration
-            )
-        let memorySubjectText =
-            configuration.legacyMemorySubjectText
-#endif
 
         var card = RecordCard(
             template: configuration.template,
@@ -157,7 +123,6 @@ private extension RecordCardBuildService {
             exportDescriptionOverride: nil
         )
 
-#if !MEMOMARK_SHARE_EXTENSION
         card.memoryResult =
             memoryPayload.result
         card.memoryModule =
@@ -177,7 +142,6 @@ private extension RecordCardBuildService {
                     .locationDisplayConfiguration,
                 configuration: configuration
             )
-#endif
 
         return card
     }
@@ -218,7 +182,6 @@ private extension RecordCardBuildService {
         }
     }
 
-#if !MEMOMARK_SHARE_EXTENSION
     func resolvedMemoryPayload(
         from selectedPhoto: SelectedPhoto,
         configuration: BatchConfigurationSnapshot
@@ -414,7 +377,6 @@ private extension RecordCardBuildService {
                 resolvedText: ""
             )
     }
-#endif
 
     func resolvedStory(
         from configuration: BatchConfigurationSnapshot
@@ -423,7 +385,6 @@ private extension RecordCardBuildService {
         ""
     }
 
-#if !MEMOMARK_SHARE_EXTENSION
     func resolvedMemoryModule(
         from module: MemoryModule?,
         configuration: BatchConfigurationSnapshot
@@ -457,7 +418,6 @@ private extension RecordCardBuildService {
                 .smartModuleCarrierRegion
         )
     }
-#endif
 
     func resolvedPhotoDescription(
         from card: RecordCard,
@@ -494,7 +454,6 @@ private extension RecordCardBuildService {
             .joined(separator: "\n")
     }
 
-#if !MEMOMARK_SHARE_EXTENSION
     func buildContext(
         from metadata: PhotoMetadata,
         memorySubject: MemorySubject,
@@ -542,33 +501,6 @@ private extension RecordCardBuildService {
 
         return context
     }
-#else
-    func buildContext(
-        from metadata: PhotoMetadata,
-        configuration: BatchConfigurationSnapshot,
-        timeDisplayConfiguration:
-            ExpressionModuleConfiguration?,
-        language: MemoMarkLanguage
-    ) -> MetadataContext {
-
-        var context = MetadataContext.build(
-            from: metadata
-        )
-        context.replace(
-            metadata.orientationText(for: language),
-            for: MetadataContext.Key.orientation
-        )
-
-        applyTimeDisplayConfiguration(
-            timeDisplayConfiguration,
-            to: &context,
-            metadata: metadata,
-            language: language
-        )
-
-        return context
-    }
-#endif
 
     func applyTimeDisplayConfiguration(
         _ configuration: ExpressionModuleConfiguration?,

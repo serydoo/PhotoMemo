@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 extension MemorySubject.TimeAnchor {
@@ -25,4 +24,3 @@ extension MemorySubject.TimeAnchor {
         return normalized
     }
 }
-#endif

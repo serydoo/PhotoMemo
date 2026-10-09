@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 nonisolated struct BatchQueueDurableSnapshot:
@@ -123,7 +122,16 @@ actor BatchQueueDurableLedger {
         let snapshot: BatchQueueDurableSnapshot
         let error: MemoMarkError?
 
-        switch persistence.loadPersistedJobsResult() {
+        let loaded: MemoMarkResult<[BatchJob]>
+        do {
+            let lock = persistence.transactionLockURL.map { ProcessingExecutionFileLock(url: $0) }
+            if let lock { guard try lock.acquire(waitForAvailability: true) else { throw POSIXError(.EWOULDBLOCK) } }
+            defer { lock?.release() }
+            loaded = persistence.loadPersistedJobsResult()
+        } catch {
+            loaded = .failure(MemoMarkError.wrapped(error, code: .persistenceWriteFailed, message: "无法锁定批处理队列。"))
+        }
+        switch loaded {
         case .success(let jobs):
             snapshot = BatchQueueDurableSnapshot(
                 jobs: jobs,
@@ -151,14 +159,58 @@ actor BatchQueueDurableLedger {
         )
     }
 
+    /// Hold only across synchronous disk read/modify/write; never across an await.
+    private func acquireTransactionLock() throws -> ProcessingExecutionFileLock? {
+        guard let url = persistence.transactionLockURL else { return nil }
+        let lock = ProcessingExecutionFileLock(url: url)
+        guard try lock.acquire(waitForAvailability: true) else { throw POSIXError(.EWOULDBLOCK) }
+        return lock
+    }
+
+    private func refreshFileSnapshot() -> MemoMarkError? {
+        if let error = currentSnapshot.persistenceError { return error }
+        guard persistence.transactionLockURL != nil else { return nil }
+        switch persistence.loadPersistedJobsResult() {
+        case .success(let jobs):
+            if jobs != currentSnapshot.jobs {
+                currentSnapshot = BatchQueueDurableSnapshot(jobs: jobs, revision: currentSnapshot.revision + 1, persistenceError: nil)
+            }
+            return nil
+        case .failure(let error):
+            currentSnapshot = BatchQueueDurableSnapshot(jobs: currentSnapshot.jobs, revision: currentSnapshot.revision, persistenceError: error)
+            return error
+        }
+    }
+
+    private func transactionLockError(_ error: Error) -> MemoMarkError {
+        MemoMarkError.wrapped(error, code: .persistenceWriteFailed, message: "无法锁定批处理队列。")
+    }
+
     func snapshot() -> BatchQueueDurableSnapshot {
         currentSnapshot
+    }
+
+    /// Refresh under the same interprocess transaction lock used for writes.
+    /// A background owner must observe cancellation from another process.
+    func refreshedSnapshot() -> BatchQueueDurableSnapshot {
+        switch transaction({ _ in .unchanged(()) }) {
+        case .committed(_, let snapshot), .unchanged(_, let snapshot):
+            return snapshot
+        case .failure(let error, let snapshot):
+            return .init(jobs: snapshot.jobs, revision: snapshot.revision, persistenceError: error)
+        }
     }
 
     func commit(
         _ candidateJobs: [BatchJob],
         expectedRevision: UInt64
     ) -> BatchQueueDurableCommitResult {
+        let transactionLock: ProcessingExecutionFileLock?
+        do { transactionLock = try acquireTransactionLock() }
+        catch { return .failure(transactionLockError(error), currentSnapshot) }
+        defer { transactionLock?.release() }
+        if let error = refreshFileSnapshot() { return .failure(error, currentSnapshot) }
+
         if let persistenceError = currentSnapshot.persistenceError {
             return .failure(
                 persistenceError,
@@ -196,6 +248,12 @@ actor BatchQueueDurableLedger {
         _ mutation: @Sendable
             (inout [BatchJob]) -> BatchQueueDurableMutation<Value>
     ) -> BatchQueueDurableTransactionResult<Value> {
+        let transactionLock: ProcessingExecutionFileLock?
+        do { transactionLock = try acquireTransactionLock() }
+        catch { return .failure(transactionLockError(error), currentSnapshot) }
+        defer { transactionLock?.release() }
+        if let error = refreshFileSnapshot() { return .failure(error, currentSnapshot) }
+
         if let persistenceError = currentSnapshot.persistenceError {
             return .failure(
                 persistenceError,
@@ -234,6 +292,26 @@ actor BatchQueueDurableLedger {
         }
     }
 
+    /// Capacity and reservation share the same cross-process file transaction.
+    /// An already-admitted request remains idempotent even after quota changes.
+    func admit(
+        _ job: BatchJob,
+        maximumPendingTaskCount: Int
+    ) -> BatchQueueDurableTransactionResult<BatchQueueAdmission?> {
+        transaction { jobs in
+            if let requestID = job.intakeRequestID,
+               let existing = jobs.first(where: { $0.intakeRequestID == requestID }) {
+                return .unchanged(.init(job: existing, didInsert: false))
+            }
+            let reserved = ProcessingReservationPolicy.reservedIDs(in: jobs).count
+            let required = ProcessingReservationPolicy.newReservationCount(for: job, among: jobs)
+            guard required <= max(max(maximumPendingTaskCount, 0) - reserved, 0) else {
+                return .unchanged(nil)
+            }
+            return .commit(BatchQueueTransitionPolicy().admit(job, into: &jobs))
+        }
+    }
+
     func admit(
         _ job: BatchJob
     ) -> BatchQueueDurableTransactionResult<BatchQueueAdmission> {
@@ -265,6 +343,20 @@ actor BatchQueueDurableLedger {
         }
     }
 
+    func suspendExecutionSession(_ sessionID: UUID, now: Date = Date()) -> BatchQueueDurableTransactionResult<Bool> {
+        transaction { jobs in
+            ExecutionSessionSuspensionPolicy.suspend(sessionID, in: &jobs, now: now)
+                ? .commit(true) : .unchanged(false)
+        }
+    }
+
+    func resumeExecutionSession(_ sessionID: UUID, now: Date = Date()) -> BatchQueueDurableTransactionResult<Bool> {
+        transaction { jobs in
+            ExecutionSessionSuspensionPolicy.resume(sessionID, in: &jobs, now: now)
+                ? .commit(true) : .unchanged(false)
+        }
+    }
+
     func cancelJob(
         _ jobID: UUID,
         now: Date = Date()
@@ -276,6 +368,39 @@ actor BatchQueueDurableLedger {
                     in: &jobs,
                     jobID: jobID,
                     now: now
+                )
+            return changed
+                ? .commit(true)
+                : .unchanged(false)
+        }
+    }
+
+    func deleteExecutionSessionHistory(_ sessionID: UUID, now: Date = Date()) -> BatchQueueDurableTransactionResult<Bool> {
+        transaction { jobs in
+            let indices = jobs.indices.filter { (jobs[$0].executionSessionID ?? jobs[$0].id) == sessionID }
+            guard !indices.isEmpty,
+                  indices.allSatisfy({ jobs[$0].tasks.allSatisfy { $0.phase.isTerminal } }) else {
+                return .unchanged(false)
+            }
+            let visible = indices.filter { jobs[$0].historyDeletedAt == nil }
+            guard !visible.isEmpty else { return .unchanged(false) }
+            for index in visible { jobs[index].historyDeletedAt = now }
+            return .commit(true)
+        }
+    }
+
+    func cancelExecutionSession(
+        _ sessionID: UUID,
+        now: Date = Date(),
+        cancellableRecoveredSaveTaskIDs: Set<UUID> = []
+    ) -> BatchQueueDurableTransactionResult<Bool> {
+        transaction { jobs in
+            let changed = BatchQueueTransitionPolicy()
+                .cancelExecutionSession(
+                    in: &jobs,
+                    sessionID: sessionID,
+                    now: now,
+                    cancellableRecoveredSaveTaskIDs: cancellableRecoveredSaveTaskIDs
                 )
             return changed
                 ? .commit(true)
@@ -399,6 +524,11 @@ actor BatchQueueDurableLedger {
     /// prevents an empty startup fallback from overwriting a queue that later
     /// becomes readable.
     func recover() -> BatchQueueDurableRecoveryResult {
+        let transactionLock: ProcessingExecutionFileLock?
+        do { transactionLock = try acquireTransactionLock() }
+        catch { return .failure(transactionLockError(error), currentSnapshot) }
+        defer { transactionLock?.release() }
+
         let loadedJobs: [BatchJob]
         switch persistence.loadPersistedJobsResult() {
         case .success(let jobs):
@@ -431,4 +561,3 @@ actor BatchQueueDurableLedger {
         return .recovered(currentSnapshot)
     }
 }
-#endif

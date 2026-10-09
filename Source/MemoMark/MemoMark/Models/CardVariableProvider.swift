@@ -139,7 +139,6 @@ struct CardVariableProvider {
             )
         }
 
-#if !MEMOMARK_SHARE_EXTENSION
         // Resolved MemoryResult variables are authoritative. The legacy
         // AnchorResult/MemoryVariableProvider projection below is only a
         // compatibility fallback for cards without a resolved semantic
@@ -148,7 +147,6 @@ struct CardVariableProvider {
             from: card,
             into: &context
         )
-#endif
 
         if !card.tags.isEmpty {
 
@@ -436,7 +434,6 @@ private extension CardVariableProvider {
             )
         )
 
-#if !MEMOMARK_SHARE_EXTENSION
         let hasMemoryResult =
             card.memoryResult != nil
         let memoryResultStatus =
@@ -502,7 +499,6 @@ private extension CardVariableProvider {
         if semanticValues != MemoryCalculationResult() {
             return semanticValues
         }
-#endif
 
         return legacyValues
     }

@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 enum CardRegion:
@@ -212,4 +211,3 @@ extension CardRegion {
         }
     }
 }
-#endif

@@ -121,7 +121,8 @@ final class MemoMarkAppRuntime:
             MemoMarkiOSLiveActivityDriverService(
                 bridgeService:
                     self
-                    .liveActivityBridgeService
+                    .liveActivityBridgeService,
+                batchQueueStore: self.batchQueueStore
             )
 #endif
 #endif
@@ -141,6 +142,9 @@ final class MemoMarkAppRuntime:
             )
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
         self.backgroundTaskCoordinator.register()
+#if DEBUG
+        if #available(iOS 26.0, *) { ContinuedProcessingSpike.register(queue: self.batchQueueStore) }
+#endif
 #endif
 
         commerceStore.$snapshot

@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 
 /// Shared native-material policy for preview and source-dependent output artifacts.
@@ -19,7 +18,8 @@ enum GlassCardProductionRenderer {
     }
 
     static func resolve(card: RecordCard, canvasSize: CGSize) -> GlassCardResolvedPresentation {
-        .resolve(content: GlassCardContentResolver.resolve(from: card), canvasSize: canvasSize)
+        .resolve(content: GlassCardContentResolver.resolve(from: card), canvasSize: canvasSize,
+                 permitsExplicitSecondaryLines: true)
     }
 }
 
@@ -104,7 +104,7 @@ struct GlassCardOverlayLayer: View {
                             pointSize: slot.fit.pointSize, isPrimary: slot.isPrimary
                         )))
                         .foregroundStyle(Color.white.opacity(slot.isPrimary ? 0.96 : secondaryTextOpacity))
-                        .lineLimit(1)
+                        .lineLimit(slot.lineLimit)
                         .frame(width: slot.frame.width, height: slot.frame.height, alignment: .leading)
                         .offset(x: slot.frame.minX, y: slot.frame.minY)
                 }
@@ -128,4 +128,3 @@ struct GlassCardOverlayLayer: View {
         Color(.sRGB, red: value.red, green: value.green, blue: value.blue, opacity: value.alpha)
     }
 }
-#endif

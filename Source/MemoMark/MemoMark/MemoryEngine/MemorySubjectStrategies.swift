@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct ConfiguredSubjectStrategy:
     SubjectStrategy {
 
@@ -10,4 +9,3 @@ struct ConfiguredSubjectStrategy:
         subject.resolvedExpressionSubjectText
     }
 }
-#endif

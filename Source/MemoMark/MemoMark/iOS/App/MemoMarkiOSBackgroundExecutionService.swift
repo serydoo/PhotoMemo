@@ -40,9 +40,13 @@ final class MemoMarkiOSBackgroundExecutionService {
 
         scenePhase = newPhase
         if newPhase == .background,
-           batchQueueStore.pendingTaskCount > 0 {
+           !batchQueueStore.processingPaused,
+           batchQueueStore.executablePendingTaskCount > 0 {
             _ = MemoMarkBackgroundTaskSubmission
                 .submit()
+        }
+        if newPhase == .active {
+            _ = batchQueueStore.transitionForegroundExecution(to: .foreground)
         }
         reconcileBackgroundExecution()
     }
@@ -51,6 +55,9 @@ final class MemoMarkiOSBackgroundExecutionService {
 private extension MemoMarkiOSBackgroundExecutionService {
 
     func bind() {
+        batchQueueStore.$executionLease.sink { [weak self] _ in
+            Task { @MainActor in self?.reconcileBackgroundExecution() }
+        }.store(in: &cancellables)
 
         batchQueueStore.$isProcessing
             .sink { [weak self] _ in
@@ -63,8 +70,10 @@ private extension MemoMarkiOSBackgroundExecutionService {
     func reconcileBackgroundExecution() {
 
         let shouldHoldBackgroundTime =
-            batchQueueStore.isProcessing
+            batchQueueStore.executionLease != nil
             && scenePhase == .background
+            && (batchQueueStore.executionLease?.owner == .foreground
+                || batchQueueStore.executionLease?.owner == .backgroundGrace)
 
         if shouldHoldBackgroundTime {
             beginBackgroundTaskIfNeeded()
@@ -79,6 +88,7 @@ private extension MemoMarkiOSBackgroundExecutionService {
             return
         }
 
+        guard let lease = batchQueueStore.transitionForegroundExecution(to: .backgroundGrace) else { return }
         backgroundTaskID =
             UIApplication.shared
             .beginBackgroundTask(
@@ -87,16 +97,18 @@ private extension MemoMarkiOSBackgroundExecutionService {
             ) { [weak self] in
                 Task { @MainActor in
                     await self?
-                        .handleBackgroundTimeExpiration()
+                        .handleBackgroundTimeExpiration(lease: lease)
                 }
             }
     }
 
-    func handleBackgroundTimeExpiration() async {
+    func handleBackgroundTimeExpiration(lease: ExecutionLease) async {
+        guard batchQueueStore.executionLease == lease else { return }
         await batchQueueStore
-            .stopProcessingForBackgroundExpiration()
-        _ = MemoMarkBackgroundTaskSubmission
-            .submit()
+            .stopProcessingForBackgroundExpiration(lease: lease)
+        if batchQueueStore.executablePendingTaskCount > 0 {
+            _ = MemoMarkBackgroundTaskSubmission.submit()
+        }
         MemoMarkShareDiagnostics.record(
             stage: .appBackgroundTimeExpired,
             message:

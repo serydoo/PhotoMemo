@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 struct CaptureTimeResolver {
@@ -51,4 +50,3 @@ struct CaptureTimeResolver {
         return "\(days)天"
     }
 }
-#endif

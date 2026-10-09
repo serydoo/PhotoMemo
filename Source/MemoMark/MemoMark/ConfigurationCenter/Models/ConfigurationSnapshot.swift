@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 struct ConfigurationSnapshot:
@@ -93,4 +92,3 @@ extension ConfigurationSnapshot {
         try container.encode(language, forKey: .language)
     }
 }
-#endif

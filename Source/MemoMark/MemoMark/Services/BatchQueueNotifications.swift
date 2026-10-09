@@ -16,6 +16,10 @@ final class BatchQueueNotifications {
             ?? BatchNotificationService()
     }
 
+    func removeSessionStatusNotification(_ sessionID: UUID) {
+        notificationService.removeSessionStatusNotification(sessionID)
+    }
+
     func scheduleStartNotificationIfNeeded(
         for jobID: UUID,
         in runtime: any BatchQueueNotificationRuntime

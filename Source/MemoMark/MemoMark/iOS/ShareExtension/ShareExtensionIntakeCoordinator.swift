@@ -79,9 +79,23 @@ final class ShareExtensionIntakeCoordinator {
                 message:
                     "imported=\(result.importedCount), requested=\(result.requestedCount), skipped=\(result.skippedCount), failed=\(result.failedCount), livePhotoStaticFallback=\(result.livePhotoStaticFallbackCount)"
             )
+#if DEBUG
+            MemoMarkBackgroundProbe.record("intakeProbe.persisted", detail: "request=\(result.requestID) count=\(result.importedCount)")
+#endif
             onPersisted(result)
+#if DEBUG
+            if #available(iOS 26.0, *), ContinuedProcessingSpike.isEnabled {
+                _ = await ContinuedProcessingSpike.submitMarker(requestID: result.requestID)
+                // Isolate the probe: neither foreground handoff nor full queue
+                // BGProcessing is triggered. Durable intake remains recoverable.
+                return .received(result)
+            }
+#endif
             let backgroundRequestSubmitted =
                 MemoMarkBackgroundTaskSubmission.submit()
+#if DEBUG
+            MemoMarkBackgroundProbe.record("intakeProbe.bgProcessingSubmission", detail: "accepted=\(backgroundRequestSubmitted)")
+#endif
             let hostAppRequiresPhotoAuthorization =
                 MemoMarkBackgroundTaskSubmission
                 .requiresHostAppForPhotoAuthorization

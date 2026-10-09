@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct ConfiguredAnchorExpressionProvider:
     MemoryExpressionProvider {
 
@@ -63,4 +62,3 @@ struct ConfiguredAnchorExpressionProvider:
         )
     }
 }
-#endif

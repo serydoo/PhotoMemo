@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import UniformTypeIdentifiers
 
 enum BatchTaskMemoryPolicy {
@@ -82,4 +81,3 @@ enum BatchTaskMemoryPolicy {
             )
     }
 }
-#endif

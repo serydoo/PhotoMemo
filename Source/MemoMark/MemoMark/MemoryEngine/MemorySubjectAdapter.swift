@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemorySubjectAdapter {
 
     private static let unspecifiedReferenceDate =
@@ -87,4 +86,3 @@ struct MemorySubjectAdapter {
         )
     }
 }
-#endif

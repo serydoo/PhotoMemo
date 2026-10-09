@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 enum MemoryResultVariableProjector {
 
     static func project(
@@ -399,4 +398,3 @@ private extension MemoryResultVariableProjector {
         }
     }
 }
-#endif

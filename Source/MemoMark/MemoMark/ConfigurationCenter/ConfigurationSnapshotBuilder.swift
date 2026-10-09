@@ -1,8 +1,8 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 enum ConfigurationSnapshotBuilder {
 
+#if !MEMOMARK_SHARE_EXTENSION
     static func build(
         from session: ConfigurationSession
     ) -> ConfigurationSnapshot? {
@@ -20,6 +20,8 @@ enum ConfigurationSnapshotBuilder {
             language: session.language
         )
     }
+
+#endif
 
     static func build(
         from subject: MemorySubject,
@@ -63,4 +65,3 @@ private extension ConfigurationSnapshotBuilder {
         )
     }
 }
-#endif

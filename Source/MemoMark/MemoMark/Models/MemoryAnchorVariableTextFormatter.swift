@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 enum MemoryAnchorVariableTextFormatter {
 
     static func babyAgeText(
@@ -156,4 +155,3 @@ private extension MemoryAnchorVariableTextFormatter {
         } ?? ""
     }
 }
-#endif

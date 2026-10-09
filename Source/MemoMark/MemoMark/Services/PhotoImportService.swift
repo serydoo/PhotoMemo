@@ -18,6 +18,7 @@ final class PhotoImportService {
                 PhotoLocationMetadataEnricher()
     ) {
 
+
         self.inputPolicy =
             inputPolicy
         self.locationMetadataEnricher =
@@ -149,6 +150,10 @@ final class PhotoImportService {
         sourceInfo: PhotoSourceInfo? = nil
     ) throws -> SelectedPhoto {
 
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        MemoMarkBackgroundProbe.record("extension.import.started")
+#endif
+
         let accessGranted = url.startAccessingSecurityScopedResource()
         defer {
             if accessGranted {
@@ -222,12 +227,25 @@ final class PhotoImportService {
             for: mediaAsset
         )
 
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        MemoMarkBackgroundProbe.record("extension.import.beforeDecode")
+#endif
+
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        let previewDecodeLimit: Int? = 2048
+#else
+        let previewDecodeLimit: Int? = nil
+#endif
         let image =
             try mediaDecodeService
             .previewImage(
-                for: mediaAsset
+                for: mediaAsset,
+                maxPixelDimension: previewDecodeLimit
             )
             .removingMemoMarkLeftEdgeArtifact()
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        MemoMarkBackgroundProbe.record("extension.import.decoded", detail: "width=\(Int(image.photoMemoSize.width)) height=\(Int(image.photoMemoSize.height))")
+#endif
         let previewRepresentation =
             MediaRepresentation.preview(
                 asset: mediaAsset,
@@ -237,7 +255,7 @@ final class PhotoImportService {
                             image.photoMemoSize
                     ),
                 maxPixelDimension:
-                    inputPolicy
+                    previewDecodeLimit ?? inputPolicy
                     .maximumPixelDimension
             )
 

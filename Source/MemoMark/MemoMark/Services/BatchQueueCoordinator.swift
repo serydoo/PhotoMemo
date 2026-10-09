@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 @MainActor
@@ -24,6 +23,10 @@ final class BatchQueueCoordinator {
         self.diagnosticsRecorder = diagnosticsRecorder
         self.resourceLifecycle = resourceLifecycle
         self.taskProcessor = taskProcessor
+    }
+
+    func process(context: BatchTaskExecutionContext, runtime: any BatchTaskExecutionRuntime) async {
+        await taskProcessor.process(context: context, runtime: runtime)
     }
 
     func enqueue(
@@ -155,7 +158,7 @@ final class BatchQueueCoordinator {
     }
 
     func nextPendingTaskReference(in jobs: [BatchJob]) -> TaskReference? {
-        for jobIndex in jobs.indices {
+        for jobIndex in jobs.indices where jobs[jobIndex].executionSuspendedAt == nil {
             for taskIndex in jobs[jobIndex].tasks.indices
             where jobs[jobIndex].tasks[taskIndex].phase == .queued {
                 return TaskReference(
@@ -190,4 +193,3 @@ final class BatchQueueCoordinator {
         )
     }
 }
-#endif

@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct BirthdayAgeCalculator:
     MemoryCalculator {
 
@@ -42,4 +41,3 @@ struct BirthdayAgeCalculator:
         )
     }
 }
-#endif

@@ -368,6 +368,9 @@ final class LivePhotoPairCompositionService:
             )
             .validatedForEncoder()
 
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        MemoMarkBackgroundProbe.record("extension.livePhoto.beforeStillComposition")
+#endif
         let stillPhotoURL =
             try await stillComposer.composeStillImageWithMaterial(
                 sourceStillURL:
@@ -386,6 +389,9 @@ final class LivePhotoPairCompositionService:
                 outputDescription:
                     outputDescription
             )
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        MemoMarkBackgroundProbe.record("extension.livePhoto.beforeVideoComposition")
+#endif
         let pairedVideoURL =
             try await videoComposer.composePairedVideo(
                 sourceVideoURL:

@@ -355,14 +355,7 @@ struct MemoryConfigurationRecord:
         Codable,
         Hashable {
 
-        enum LivePhotoPolicy:
-            String,
-            Codable,
-            Hashable {
-
-            case preserveMotion
-            case staticImageOnly
-        }
+        typealias LivePhotoPolicy = LivePhotoOutputPolicy
 
         struct PhotosDescriptionPolicy:
             Codable,

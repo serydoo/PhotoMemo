@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct BirthdayAgeExpressionProvider:
     MemoryExpressionProvider {
 
@@ -43,4 +42,3 @@ struct BirthdayAgeExpressionProvider:
         )
     }
 }
-#endif

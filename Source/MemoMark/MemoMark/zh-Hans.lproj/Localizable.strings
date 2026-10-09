@@ -651,6 +651,14 @@
 "home.activity.status.processing" = "进行中";
 "home.activity.status.completed" = "已完成";
 "home.activity.status.failed" = "失败";
+"home.activity.status.paused" = "已暂停";
+"home.activity.pause" = "暂停处理";
+"home.activity.resume" = "继续处理";
+"home.activity.cancel" = "取消本轮";
+"home.activity.cancel.title" = "取消本轮处理？";
+"home.activity.cancel.message" = "已完成的照片会保留；正在保存到系统相册的一张可能完成。本轮剩余任务都会停止。";
+"home.activity.cancel.confirm" = "取消本轮";
+"home.activity.cancel.keep" = "继续处理";
 "home.workflow.title" = "怎么记录";
 "home.workflow.detail" = "从 Apple Photos 选择照片并分享给时光记；时光记会按当前预设在本地处理，完成后将新照片保存回 Apple Photos。";
 "home.workflow.note" = "日常记录建议从 Apple Photos 分享；临时需要时，也可以在时光记内选择照片。";
@@ -1892,3 +1900,17 @@
 "commerce.purchase.lifetime.subscription_notice" = "领取永久权益不会自动取消已有订阅。请在 Apple 订阅设置中管理续订。";
 "commerce.purchase.lifetime.claim" = "免费领取永久权益";
 "commerce.purchase.lifetime.buy_format" = "永久解锁 · %@";
+
+"home.activity.delete" = "删除任务记录";
+"home.activity.delete.message" = "删除本轮已结束的任务记录，已保存的照片不受影响。";
+
+/* System continued-processing status */
+"notification.continued.processing.title" = "时光记正在处理照片";
+"notification.continued.preparing" = "正在准备照片";
+"notification.continued.completed.title" = "时光记照片处理完成";
+"notification.continued.completed.subtitle" = "本轮照片处理已完成。";
+"notification.continued.progress.subtitle" = "%@ · 已完成 %d/%d 张 · %@";
+"notification.continued.suspended.title" = "时光记处理已暂停";
+"notification.continued.suspended.body" = "已确认保存 %d 张照片，%d 项尚未完成。打开时光记可继续或取消本轮。";
+
+"home.activity.status.interrupted" = "处理未完成";

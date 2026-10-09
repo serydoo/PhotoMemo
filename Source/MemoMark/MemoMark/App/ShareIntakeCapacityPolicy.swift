@@ -20,6 +20,9 @@ nonisolated struct ShareIntakeCapacityPolicy:
         // Defensive boundary for a stale shared snapshot. Production and
         // sandbox free users must never inherit the Plus batch limit; Xcode
         // QA remains intentionally unlimited within its own environment.
+        if snapshot.environment == .xcode, snapshot.totalAllowance == nil {
+            return snapshot.batchLimit
+        }
         let batchLimit = snapshot.environment == .xcode
             ? snapshot.batchLimit
             : MemoMarkCommercePolicy.freeBatchLimit

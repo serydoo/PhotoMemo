@@ -1,4 +1,4 @@
-#if os(iOS) && MEMOMARK_SHARE_EXTENSION
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION && !MEMOMARK_HOST_HANDOFF_MINIMAL
 import UIKit
 
 final class MemoMarkShareExtensionViewController:
@@ -133,6 +133,9 @@ final class MemoMarkShareExtensionViewController:
         Task<Void, Never>?
 
     private var pendingHandoffPhotoCount = 0
+#if DEBUG
+    private var pendingProbeRequestID: UUID?
+#endif
 
     private var viewState: ShareExtensionViewState = .confirming
 
@@ -1378,6 +1381,9 @@ private extension MemoMarkShareExtensionViewController {
 
                 pendingHandoffPhotoCount =
                     result.importedCount
+#if DEBUG
+                pendingProbeRequestID = result.requestID
+#endif
 
                 if result.hasWarnings {
                     statusMessageLabel.attributedText =
@@ -1459,6 +1465,12 @@ private extension MemoMarkShareExtensionViewController {
                   let self else {
                 return
             }
+#if DEBUG
+            MemoMarkBackgroundProbe.record("share.completeRequest")
+            if #available(iOS 26.0, *), let requestID = self.pendingProbeRequestID {
+                ContinuedProcessingSpike.markShareCompletionRequested(requestID: requestID)
+            }
+#endif
             self.extensionContext?
                 .completeRequest(
                     returningItems: nil

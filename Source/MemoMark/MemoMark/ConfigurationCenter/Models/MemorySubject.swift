@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 enum MemorySubjectExpressionSubjectSource:
@@ -387,4 +386,3 @@ extension MemorySubject {
             : trimmed
     }
 }
-#endif

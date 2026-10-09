@@ -50,7 +50,7 @@ struct BackgroundProcessingContractTests {
         #expect(permissionSurface.contains("允许完成提醒"))
         #expect(permissionSurface.contains("authorizeNotificationWorkflow"))
         #expect(runtime.contains("guard permissionCenter.canAccessPhotoLibrary"))
-        #expect(executionService.contains("pendingTaskCount > 0"))
+        #expect(executionService.contains("executablePendingTaskCount > 0"))
         #expect(executionService.contains("MemoMarkBackgroundTaskSubmission"))
         #expect(executionService.contains("stopProcessingForBackgroundExpiration"))
         #expect(executionService.contains("processing.background.expired"))

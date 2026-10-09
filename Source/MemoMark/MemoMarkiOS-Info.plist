@@ -54,6 +54,8 @@
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.serydoo.PhotoMemo.batch-processing</string>
+        <string>com.serydoo.PhotoMemo.iOS.continued-spike.*</string>
+        <string>com.serydoo.PhotoMemo.iOS.continued-processing.*</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

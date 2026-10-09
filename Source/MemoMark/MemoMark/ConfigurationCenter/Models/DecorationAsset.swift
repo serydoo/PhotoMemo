@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 enum DecorationSource:
@@ -52,4 +51,3 @@ struct DecorationAsset:
         self.systemSymbolName = systemSymbolName
     }
 }
-#endif

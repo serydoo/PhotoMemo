@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 enum MemoryResultDirection:
     String,
     Codable,
@@ -181,4 +180,3 @@ struct MemoryResult:
         }
     }
 }
-#endif

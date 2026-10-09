@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 import UniformTypeIdentifiers
 
@@ -126,4 +125,3 @@ final class PhotoRepository {
         }
     }
 }
-#endif

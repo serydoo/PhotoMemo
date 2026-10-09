@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 enum TokenCategory:
@@ -53,4 +52,3 @@ enum TokenCategory:
         }
     }
 }
-#endif

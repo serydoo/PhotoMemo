@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryAnchor:
     Identifiable,
     Codable,
@@ -32,4 +31,3 @@ struct MemoryAnchor:
         self.isEnabled = isEnabled
     }
 }
-#endif

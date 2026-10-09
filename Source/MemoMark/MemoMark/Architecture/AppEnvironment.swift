@@ -263,7 +263,10 @@ final class AppEnvironment {
                 productionDiagnostics:
                     productionDiagnosticsRepository,
                 automaticallyStartsProcessing:
-                    automaticallyStartsBatchProcessing
+                    automaticallyStartsBatchProcessing,
+                executionFileLock: ProcessingExecutionFileLock(
+                    url: configurationLibraryBaseDirectoryURL.appendingPathComponent("BatchQueue/.execution.lock")
+                )
             )
 
         let services =

@@ -15,3 +15,5 @@
 | ADR-011 | Application Transactions And Dependency Direction | Accepted | 2026-08-29 | MemoMark adopts transaction-centered one-way dependencies, actor-backed durable owners, narrow platform ports, and temporary compatibility facades. |
 
 Future ADRs should be appended to this table.
+
+| ADR-012 | Processing Intent, Session And Execution Authority | Implementation under verification | 2026-10-07 | Intent-backed receipts and accounting, ledger-owned session membership, generation leases and evidence-gated Continued Processing marker probe. |

@@ -32,7 +32,8 @@ struct ShareManagedImportMaterializer {
         copyDiagnosticPrefix: String,
         missingManagedURLOperation: String,
         missingManagedURLDescription: String,
-        missingManagedURLErrorCode: Int
+        missingManagedURLErrorCode: Int,
+        sourceIdentifier: String? = nil
     ) -> ShareManagedFileImporter.FileRepresentationLoadResult {
 
         let normalizedURL = sourceURL.standardizedFileURL
@@ -140,6 +141,7 @@ struct ShareManagedImportMaterializer {
                                     managedURL,
                                 originalFileName:
                                     originalFileName,
+                                sourceIdentifier: sourceIdentifier,
                                 contentTypeIdentifier:
                                     diagnosticsSeed
                                     .preferredRegisteredTypeIdentifier
@@ -291,7 +293,9 @@ struct ShareManagedImportMaterializer {
                     "loadObject(PHLivePhoto).copyBundle.missingManagedURL",
                 missingManagedURLDescription:
                     "The Live Photo object resources could not be copied into the shared container.",
-                missingManagedURLErrorCode: 3202
+                missingManagedURLErrorCode: 3202,
+                sourceIdentifier: stillResource.assetLocalIdentifier == pairedVideoResource.assetLocalIdentifier
+                    ? stillResource.assetLocalIdentifier : nil
             )
         } catch {
             return livePhotoObjectFailure(

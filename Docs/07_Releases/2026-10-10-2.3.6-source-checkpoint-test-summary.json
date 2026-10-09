@@ -1,0 +1,26 @@
+{
+  "result": "Passed",
+  "passedTests": 2088,
+  "failedTests": 0,
+  "skippedTests": 1,
+  "totalTestCount": 2089,
+  "statistics": [
+    {
+      "subtitle": "84 test runs",
+      "title": "21 tests ran with dynamic parameters"
+    }
+  ],
+  "toolchain": "Xcode 27.0 (27A266a)",
+  "runtimeWarnings": [
+    {
+      "issueType": "Runtime Warning",
+      "message": "[Internal] Thread running at User-interactive quality-of-service class waiting on a lower QoS thread running at Default quality-of-service class. Investigate ways to avoid priority inversions",
+      "sourceURL": "repo://Tests/MemoMarkTests/ExportTests/FixtureExportReadbackTests.swift"
+    },
+    {
+      "issueType": "Runtime Warning",
+      "message": "[Internal] Thread running at User-interactive quality-of-service class waiting on a lower QoS thread running at Default quality-of-service class. Investigate ways to avoid priority inversions",
+      "sourceURL": "repo://Tests/MemoMarkTests/ExportTests/FixtureExportReadbackTests.swift"
+    }
+  ]
+}

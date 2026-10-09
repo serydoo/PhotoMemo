@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 enum MemoryBlockType:
@@ -28,4 +27,3 @@ extension MemoryBlockType {
         }
     }
 }
-#endif

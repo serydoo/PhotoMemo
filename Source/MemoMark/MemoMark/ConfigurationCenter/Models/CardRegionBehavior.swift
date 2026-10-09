@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 struct CardRegionBehavior:
@@ -15,9 +14,12 @@ struct CardRegionBehavior:
         CardSelection(selectedRegion: region)
     }
 
+#if !MEMOMARK_SHARE_EXTENSION
     var inspectorProvider: InspectorProvider {
         InspectorProvider(region: region)
     }
+
+#endif
 
     var accessibilityIdentifier: String {
         region.accessibilityIdentifier
@@ -27,4 +29,3 @@ struct CardRegionBehavior:
         region.accessibilityLabel
     }
 }
-#endif

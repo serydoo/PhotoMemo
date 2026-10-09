@@ -1,19 +1,1717 @@
 import Foundation
 import Photos
+import ImageIO
+import AVFoundation
 import XCTest
 
 final class MemoMarkDeviceQAHarnessTests: XCTestCase {
 
     private var application: XCUIApplication!
+    private var assistiveTouchWasMovedForShare = false
 
     override func setUpWithError() throws {
         continueAfterFailure = false
 
         application = XCUIApplication()
-        application.launchArguments += [
+        application.launchArguments = [
             "-uiTesting",
             "-uiTestingHarnessOnly"
         ]
+    }
+
+    func testSourceVersionProbe() throws {
+        application.launchArguments += ["-processingSourceVersionProbe"]
+        application.launch()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 30))
+        let observation = expectation(description: "Read source versions for the prepared QA album")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 12) { observation.fulfill() }
+        wait(for: [observation], timeout: 15)
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testRootReliabilitySnapshot() throws {
+        application.launchArguments += ["-disableContinuedProcessingSpike", "-processingReliabilityDiagnostics"]
+        application.launch()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 30))
+        let observation = expectation(description: "Read latest durable configuration diagnostics")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { observation.fulfill() }
+        wait(for: [observation], timeout: 8)
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testFreshInstallEmptyQueueBaseline() throws {
+        application.launchArguments += ["-disableContinuedProcessingSpike"]
+        launchHostAndWait()
+        completeFirstRunConfigurationIfNeeded()
+        attachCurrentScreenshot(named: "fresh-install-home-baseline")
+        let hierarchy = XCTAttachment(string: application.debugDescription)
+        hierarchy.name = "fresh-install-home-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        XCTAssertFalse(application.descendants(matching: .any).matching(identifier: "task-processing-card").firstMatch.exists)
+        XCUIDevice.shared.press(.home)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "fresh-install-output-baseline.json")
+        XCTAssertEqual(outputs.assetCount, 0)
+    }
+
+    func testQAInputsEditingRecipeAudit() throws {
+        let inventory = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "recipe-input-inventory.json")
+        for (index, row) in inventory.assets.enumerated() {
+            let asset = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [row.localIdentifier], options: nil).firstObject)
+            let options = PHContentEditingInputRequestOptions()
+            options.isNetworkAccessAllowed = false
+            options.canHandleAdjustmentData = { _ in true }
+            let ready = expectation(description: "Read local editing recipe")
+            asset.requestContentEditingInput(with: options) { input, _ in
+                let report: [String: Any] = [
+                    "sourceIdentifier": row.localIdentifier,
+                    "creation": asset.creationDate?.timeIntervalSince1970 ?? 0,
+                    "modification": asset.modificationDate?.timeIntervalSince1970 ?? 0,
+                    "width": asset.pixelWidth, "height": asset.pixelHeight,
+                    "subtypes": asset.mediaSubtypes.rawValue,
+                    "inputAvailable": input != nil,
+                    "format": input?.adjustmentData?.formatIdentifier ?? "",
+                    "version": input?.adjustmentData?.formatVersion ?? "",
+                    "recipe": input?.adjustmentData?.data.base64EncodedString() ?? ""
+                ]
+                if let data = try? JSONSerialization.data(withJSONObject: report, options: [.sortedKeys]) {
+                    let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
+                    attachment.name = "recipe-input-\(index).json"
+                    attachment.lifetime = .keepAlways
+                    self.add(attachment)
+                }
+                ready.fulfill()
+            }
+            wait(for: [ready], timeout: 15)
+            if let resource = PHAssetResource.assetResources(for: asset).first(where: { $0.type == .adjustmentData }) {
+                let received = expectation(description: "Read adjustment data independently of movie availability")
+                let options = PHAssetResourceRequestOptions()
+                options.isNetworkAccessAllowed = false
+                let buffer = NSMutableData()
+                PHAssetResourceManager.default().requestData(for: resource, options: options, dataReceivedHandler: { data in
+                    buffer.append(data)
+                }, completionHandler: { error in
+                    let report: [String: Any] = ["sourceIdentifier": row.localIdentifier,
+                        "recipe": (buffer as Data).base64EncodedString(),
+                        "error": error.map { String(describing: $0) } ?? ""]
+                    if let data = try? JSONSerialization.data(withJSONObject: report, options: [.sortedKeys]) {
+                        let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
+                        attachment.name = "resource-recipe-input-\(index).json"
+                        attachment.lifetime = .keepAlways
+                        self.add(attachment)
+                    }
+                    received.fulfill()
+                })
+                wait(for: [received], timeout: 15)
+            }
+        }
+    }
+
+    func testContinuedFormalHostForegroundControl() throws {
+        application.launchArguments += ["-disableContinuedProcessingSpike", "-continuedFormalHostForegroundControl"]
+        application.launch()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 30))
+        let observation = expectation(description: "Observe formal host scheduler callback independently")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 12) { observation.fulfill() }
+        wait(for: [observation], timeout: 15)
+        // Launch is only the stimulus. Read host.continuedQueueCallback from
+        // App Group without relaunching to certify the exact registered entry.
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testContinuedFormalHostUniqueForegroundControl() throws {
+        application.launchArguments += ["-continuedFormalHostUniqueIdentifierControl"]
+        try testContinuedFormalHostForegroundControl()
+    }
+
+    func testContinuedProcessingForegroundMarkerControl() throws {
+        application.launchArguments += ["-continuedProcessingForegroundProbe"]
+        application.launch()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 30))
+        let observation = expectation(description: "Allow independent marker callback evidence")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 12) { observation.fulfill() }
+        wait(for: [observation], timeout: 15)
+        // UI launch is only the control stimulus; App Group acknowledgement
+        // is the independent acceptance gate, read without another launch.
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testContinuedProcessingPhotosMarkerSpike() throws {
+        application.launchArguments += ["-continuedProcessingSpike"]
+        application.launch()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 30))
+        XCUIDevice.shared.press(.home)
+        let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
+        photos.launch()
+        XCTAssertTrue(photos.wait(for: .runningForeground, timeout: 20))
+        let hierarchy = XCTAttachment(string: photos.debugDescription)
+        hierarchy.name = "continued-spike-photos-navigation"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        // Do not select arbitrary personal media. The named QA album is the
+        // only authorized input boundary for this system handoff probe.
+        let album = photos.staticTexts["MemoMark QA Inputs"].firstMatch
+        if !album.exists {
+            let collections = photos.buttons["CollectionsTab"]
+            if collections.exists { collections.tap() }
+            for _ in 0..<8 where !album.isHittable { photos.swipeUp() }
+        }
+        guard album.waitForExistence(timeout: 5), album.isHittable else {
+            XCTFail("Named QA album is not visible; Photos handoff remains NOT VERIFIED. No personal asset was selected.")
+            return
+        }
+        album.tap()
+        let select = photos.buttons["选择"]
+        XCTAssertTrue(select.waitForExistence(timeout: 10))
+        select.tap()
+        let cells = photos.images.matching(identifier: "PXGGridLayout-Info")
+        XCTAssertEqual(cells.count, 7)
+        for index in [0, 2, 4] { cells.element(boundBy: index).tap() }
+        // AssistiveTouch may cover the lower-left Photos Share control.
+        let assistiveTouch = photos.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.95))
+        let clearShareArea = photos.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.20))
+        assistiveTouch.press(forDuration: 0.35, thenDragTo: clearShareArea)
+        assistiveTouchWasMovedForShare = true
+        let share = photos.buttons.matching(NSPredicate(format: "label IN %@", ["共享", "分享", "Share"])).firstMatch
+        XCTAssertTrue(share.waitForExistence(timeout: 10))
+        share.tap()
+        let memoMark = photos.cells.matching(NSPredicate(format: "label IN %@", ["时光记", "MemoMark"])).firstMatch
+        XCTAssertTrue(memoMark.waitForExistence(timeout: 10))
+        memoMark.tap()
+        let confirm = photos.buttons["开始记录"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 15))
+        confirm.tap()
+        let submitting = photos.buttons["正在提交"]
+        _ = submitting.waitForExistence(timeout: 3)
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: submitting)], timeout: 30), .completed)
+        XCTAssertFalse(confirm.exists)
+        XCTAssertTrue(photos.wait(for: .runningForeground, timeout: 30))
+        XCTAssertNotEqual(application.state, .runningForeground)
+        let finalState = XCTAttachment(string: photos.debugDescription)
+        finalState.name = "continued-spike-share-return"
+        finalState.lifetime = .keepAlways
+        add(finalState)
+        let observation = expectation(description: "Observe Photos-origin marker without host activation")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 55) { observation.fulfill() }
+        wait(for: [observation], timeout: 60)
+        XCTAssertNotEqual(application.state, .runningForeground)
+        // Host callback/marker acknowledgement require independent App Group
+        // readback; foreground return alone never certifies background execution.
+    }
+
+    override func tearDownWithError() throws {
+        if assistiveTouchWasMovedForShare {
+            let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
+            if photos.state != .notRunning {
+                photos.activate()
+                let safe = photos.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.20))
+                let original = photos.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.95))
+                safe.press(forDuration: 0.35, thenDragTo: original)
+            }
+        }
+        try super.tearDownWithError()
+    }
+
+    func testContinuedProcessingPhotosMarkerColdProbe() throws {
+        XCTAssertNotEqual(application.state, .runningForeground)
+        let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
+        photos.launch()
+        XCTAssertTrue(photos.wait(for: .runningForeground, timeout: 20))
+        let hierarchy = XCTAttachment(string: photos.debugDescription)
+        hierarchy.name = "continued-spike-photos-navigation"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        // Do not select arbitrary personal media. The named QA album is the
+        // only authorized input boundary for this system handoff probe.
+        let album = photos.staticTexts["MemoMark QA Inputs"].firstMatch
+        if !album.exists {
+            let collections = photos.buttons["CollectionsTab"]
+            if collections.exists { collections.tap() }
+            for _ in 0..<8 where !album.isHittable { photos.swipeUp() }
+        }
+        guard album.waitForExistence(timeout: 5), album.isHittable else {
+            XCTFail("Named QA album is not visible; Photos handoff remains NOT VERIFIED. No personal asset was selected.")
+            return
+        }
+        album.tap()
+
+        func submitShare(_ indices: [Int]) {
+            let select = photos.buttons["选择"]
+            XCTAssertTrue(select.waitForExistence(timeout: 10))
+            select.tap()
+            let cells = photos.images.matching(identifier: "PXGGridLayout-Info")
+            XCTAssertEqual(cells.count, 7)
+            for index in indices { cells.element(boundBy: index).tap() }
+            // AssistiveTouch can float directly over Photos' lower-left Share
+            // button. Move it temporarily, then restore it from tearDown.
+            if !assistiveTouchWasMovedForShare {
+                let assistiveTouch = photos.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.95))
+                let clearShareArea = photos.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.20))
+                assistiveTouch.press(forDuration: 0.35, thenDragTo: clearShareArea)
+                assistiveTouchWasMovedForShare = true
+            }
+            let share = photos.buttons.matching(NSPredicate(format: "label IN %@", ["共享", "分享", "Share"])).firstMatch
+            XCTAssertTrue(share.waitForExistence(timeout: 10))
+            share.tap()
+            let memoMark = photos.cells.matching(NSPredicate(format: "label IN %@", ["时光记", "MemoMark"])).firstMatch
+            XCTAssertTrue(memoMark.waitForExistence(timeout: 10))
+            memoMark.tap()
+            let confirm = photos.buttons["开始记录"].firstMatch
+            XCTAssertTrue(confirm.waitForExistence(timeout: 15))
+            confirm.tap()
+            let submitting = photos.buttons["正在提交"]
+            _ = submitting.waitForExistence(timeout: 3)
+            XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: submitting)], timeout: 30), .completed)
+            XCTAssertFalse(confirm.exists)
+            XCTAssertTrue(photos.wait(for: .runningForeground, timeout: 30))
+            XCTAssertNotEqual(application.state, .runningForeground)
+        }
+
+        // Two disjoint groups make any repeated output attributable to the
+        // selected source set, while the first system task is still active.
+        submitShare([0, 3, 5])
+        submitShare([1, 2, 6])
+        let finalState = XCTAttachment(string: photos.debugDescription)
+        finalState.name = "continued-spike-two-share-return"
+        finalState.lifetime = .keepAlways
+        add(finalState)
+        let observation = expectation(description: "Observe queued Photos-origin markers without host activation")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 75) { observation.fulfill() }
+        wait(for: [observation], timeout: 80)
+        XCTAssertNotEqual(application.state, .runningForeground)
+        // Host callback/marker acknowledgement require independent App Group
+        // readback; foreground return alone never certifies background execution.
+    }
+
+    func testBackgroundNotificationCenterReadback() throws {
+        let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
+        photos.activate()
+        XCTAssertNotEqual(application.state, .runningForeground)
+        photos.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.01))
+            .press(forDuration: 0.1, thenDragTo: photos.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let count = springboard.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+个通知")).firstMatch
+        if count.exists, count.isHittable { count.tap() }
+        let memoMarkFocusGroup = springboard.buttons.matching(NSPredicate(
+            format: "label CONTAINS %@ AND label CONTAINS %@", "专注模式期间", "时光记"
+        )).firstMatch
+        if memoMarkFocusGroup.exists, memoMarkFocusGroup.isHittable { memoMarkFocusGroup.tap() }
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = "background-notification-center"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        let state = XCTAttachment(string: springboard.debugDescription)
+        state.name = "background-notification-center-state"
+        state.lifetime = .keepAlways
+        add(state)
+        XCTAssertNotEqual(application.state, .runningForeground)
+    }
+
+    func testMultiplePhotosBackgroundWithoutHostActivation() throws {
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 2, 4])
+    }
+
+    func testDismissOnlyMemoMarkSystemActivityResidue() throws {
+        try testBackgroundNotificationCenterReadback()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let title = springboard.staticTexts["时光记正在处理照片"].firstMatch
+        if title.exists {
+            title.swipeLeft()
+            let clear = springboard.buttons["清除"].firstMatch
+            if clear.exists, clear.isHittable { clear.tap() }
+        }
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = "memoMark-system-activity-residue-after-dismissal"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        let hierarchy = XCTAttachment(string: springboard.debugDescription)
+        hierarchy.name = "memoMark-system-activity-residue-after-dismissal-state"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        XCTAssertFalse(title.exists, "Dismiss only the MemoMark activity, preserving other applications' notifications.")
+        XCTAssertNotEqual(application.state, .runningForeground)
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.97))
+            .press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)))
+    }
+
+    func testContinuedProductionThreePhotosWithoutHostActivation() throws {
+        application.launchArguments += ["-continuedProductionPipelineProbe"]
+        application.launch()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 20))
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [1, 3, 5])
+    }
+
+    func testContinuedGlassThreePhotosWithDescriptionVariant() throws {
+        application.launchArguments += ["-continuedProductionPipelineProbe"]
+        launchHostAndWait()
+        try openDescriptionSettingsForQA()
+        let toggle = descriptionSupplementToggle()
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        let originalUsesCustom = toggle.value as? String == "1"
+        if !originalUsesCustom { toggle.tap() }
+        let field = descriptionSupplementField()
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        let originalValue = field.value as? String ?? ""
+        let originalText = originalValue == "写下想补充的话" || originalValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "" : originalValue
+        defer {
+            application.activate()
+            do {
+                try openDescriptionSettingsForQA()
+                let restoreToggle = descriptionSupplementToggle()
+                if restoreToggle.value as? String != "1" { restoreToggle.tap() }
+                try replaceDescriptionSupplement(with: originalText)
+                if !originalUsesCustom { restoreToggle.tap() }
+                try saveDescriptionConfigurationForQA()
+            } catch { XCTFail("Could not restore the user's description configuration: \(error)") }
+        }
+        try replaceDescriptionSupplement(with: "后台验证记录")
+        try saveDescriptionConfigurationForQA()
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [1, 3, 5])
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "fresh-glass-description-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 3)
+        try deleteOutputsAddedSince([], attachmentPrefix: "fresh-glass-description-cleanup")
+    }
+
+    func testContinuedGlassMixedMediaWithDescriptionVariant() throws {
+        application.launchArguments += ["-continuedProductionPipelineProbe"]
+        launchHostAndWait()
+        try openDescriptionSettingsForQA()
+        let toggle = descriptionSupplementToggle()
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        let originalUsesCustom = toggle.value as? String == "1"
+        if !originalUsesCustom { toggle.tap() }
+        let field = descriptionSupplementField()
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        let originalValue = field.value as? String ?? ""
+        let originalText = originalValue == "写下想补充的话" || originalValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "" : originalValue
+        defer {
+            application.activate()
+            do {
+                try openDescriptionSettingsForQA()
+                let restoreToggle = descriptionSupplementToggle()
+                if restoreToggle.value as? String != "1" { restoreToggle.tap() }
+                try replaceDescriptionSupplement(with: originalText)
+                if !originalUsesCustom { restoreToggle.tap() }
+                try saveDescriptionConfigurationForQA()
+            } catch { XCTFail("Could not restore the user's description configuration: \(error)") }
+        }
+        try replaceDescriptionSupplement(with: "后台混合素材验证")
+        try saveDescriptionConfigurationForQA()
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 2, 4])
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "fresh-glass-mixed-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 3)
+        XCTAssertEqual(outputs.assets.filter { $0.classification == "livePhoto" }.count, 1)
+        try deleteOutputsAddedSince([], attachmentPrefix: "fresh-glass-mixed-cleanup")
+    }
+
+    func testContinuedMixedAdmissionDiagnostics() throws {
+        application.launchArguments += ["-continuedProductionPipelineProbe"]
+        launchHostAndWait()
+        try openDescriptionSettingsForQA()
+        let toggle = descriptionSupplementToggle()
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        let originalUsesCustom = toggle.value as? String == "1"
+        if !originalUsesCustom { toggle.tap() }
+        let field = descriptionSupplementField()
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        let originalValue = field.value as? String ?? ""
+        let originalText = originalValue == "写下想补充的话" || originalValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "" : originalValue
+        defer {
+            application.activate()
+            do {
+                try openDescriptionSettingsForQA()
+                let restoreToggle = descriptionSupplementToggle()
+                if restoreToggle.value as? String != "1" { restoreToggle.tap() }
+                try replaceDescriptionSupplement(with: originalText)
+                if !originalUsesCustom { restoreToggle.tap() }
+                try saveDescriptionConfigurationForQA()
+            } catch { XCTFail("Could not restore the user's description configuration: \(error)") }
+        }
+        try replaceDescriptionSupplement(with: "后台资源诊断")
+        try saveDescriptionConfigurationForQA()
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 2, 4], expectedOutputCount: 0)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "fresh-glass-mixed-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 0)
+        try deleteOutputsAddedSince([], attachmentPrefix: "fresh-glass-mixed-cleanup")
+    }
+
+    func testContinuedMixedReadbackAndRepeatedIntent() throws {
+        application.launchArguments += ["-continuedProductionPipelineProbe"]
+        launchHostAndWait()
+        try openDescriptionSettingsForQA()
+        let toggle = descriptionSupplementToggle()
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        let originalUsesCustom = toggle.value as? String == "1"
+        if !originalUsesCustom { toggle.tap() }
+        let field = descriptionSupplementField()
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        let originalValue = field.value as? String ?? ""
+        let originalText = originalValue == "写下想补充的话" || originalValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "" : originalValue
+        defer {
+            application.activate()
+            do {
+                try openDescriptionSettingsForQA()
+                let restoreToggle = descriptionSupplementToggle()
+                if restoreToggle.value as? String != "1" { restoreToggle.tap() }
+                try replaceDescriptionSupplement(with: originalText)
+                if !originalUsesCustom { restoreToggle.tap() }
+                try saveDescriptionConfigurationForQA()
+            } catch { XCTFail("Could not restore the user's description configuration: \(error)") }
+        }
+        try replaceDescriptionSupplement(with: "后台配对读回验证")
+        try saveDescriptionConfigurationForQA()
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 2, 4])
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "fresh-glass-mixed-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 3)
+        XCTAssertEqual(outputs.assets.filter { $0.classification == "livePhoto" }.count, 1)
+        try testMemoMarkQA04LivePhotoOutputReadbackAndOriginalPreservation()
+        try verifySavedStillMetadata(outputs, expectedDescription: "后台配对读回验证")
+        let identifiers = Set(outputs.assets.map(\.localIdentifier))
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 2, 4], expectedBaselineCount: 3)
+        let repeated = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "mixed-repeated-intent-outputs.json")
+        XCTAssertEqual(Set(repeated.assets.map(\.localIdentifier)), identifiers)
+        try deleteOutputsAddedSince([], attachmentPrefix: "fresh-glass-mixed-cleanup")
+    }
+
+    func testContinuedMixedRepeatedIntent() throws {
+        application.launchArguments += ["-continuedProductionPipelineProbe"]
+        launchHostAndWait()
+        try openDescriptionSettingsForQA()
+        let toggle = descriptionSupplementToggle()
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        let originalUsesCustom = toggle.value as? String == "1"
+        if !originalUsesCustom { toggle.tap() }
+        let field = descriptionSupplementField()
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        let originalValue = field.value as? String ?? ""
+        let originalText = originalValue == "写下想补充的话" || originalValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "" : originalValue
+        defer {
+            application.activate()
+            do {
+                try openDescriptionSettingsForQA()
+                let restoreToggle = descriptionSupplementToggle()
+                if restoreToggle.value as? String != "1" { restoreToggle.tap() }
+                try replaceDescriptionSupplement(with: originalText)
+                if !originalUsesCustom { restoreToggle.tap() }
+                try saveDescriptionConfigurationForQA()
+            } catch { XCTFail("Could not restore the user's description configuration: \(error)") }
+        }
+        try replaceDescriptionSupplement(with: "后台配对读回验证")
+        try saveDescriptionConfigurationForQA()
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 2, 4])
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "fresh-glass-mixed-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 3)
+        XCTAssertEqual(outputs.assets.filter { $0.classification == "livePhoto" }.count, 1)
+        try testMemoMarkQA04LivePhotoOutputReadbackAndOriginalPreservation()
+        try verifySavedStillMetadata(outputs, expectedDescription: "后台配对读回验证", requireDescription: false)
+        let identifiers = Set(outputs.assets.map(\.localIdentifier))
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 2, 4], expectedBaselineCount: 3)
+        let repeated = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "mixed-repeated-intent-outputs.json")
+        XCTAssertEqual(Set(repeated.assets.map(\.localIdentifier)), identifiers)
+        try deleteOutputsAddedSince([], attachmentPrefix: "fresh-glass-mixed-cleanup")
+    }
+
+    func testContinuedFrozenDescriptionReadbackAndRepeatedIntent() throws {
+        application.launchArguments += ["-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", "后台配对读回验证"]
+        launchHostAndWait()
+        let roundStartedAt = Date().timeIntervalSince1970
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 2, 4])
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "frozen-description-mixed-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 3)
+        try testMemoMarkQA04LivePhotoOutputReadbackAndOriginalPreservation()
+        try verifySavedStillMetadata(outputs, expectedDescription: "后台配对读回验证")
+        let identifiers = Set(outputs.assets.map(\.localIdentifier))
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 2, 4], expectedBaselineCount: 3)
+        let repeated = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "frozen-description-repeated-outputs.json")
+        XCTAssertEqual(Set(repeated.assets.map(\.localIdentifier)), identifiers)
+        try observeContinuedCompletionWindow(requestCount: 2, since: roundStartedAt)
+        try deleteOutputsAddedSince([], attachmentPrefix: "frozen-description-mixed-cleanup")
+    }
+
+    func testContinuedSavedLivePhotoMoviePairing() throws {
+        application.launchArguments += ["-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", "后台配对与轨道验证"]
+        launchHostAndWait()
+        let roundStartedAt = Date().timeIntervalSince1970
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 5])
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "movie-pairing-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 3)
+        try verifySavedStillMetadata(outputs, expectedDescription: "后台配对与轨道验证")
+        verifySavedMoviePairingSynchronously(outputs)
+        try observeContinuedCompletionWindow(requestCount: 1, since: roundStartedAt)
+        try deleteOutputsAddedSince([], attachmentPrefix: "movie-pairing-cleanup")
+    }
+
+    func testSavedLivePhotoMoviePairingReadback() throws {
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "saved-pair-readback-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 3)
+        verifySavedMoviePairingSynchronously(outputs)
+        try deleteOutputsAddedSince([], attachmentPrefix: "saved-pair-readback-cleanup")
+    }
+
+    func testContinuedBackToBackOverlappingSourceShares() throws {
+        let caption = "连续会话执行完成验证 \(Int(Date().timeIntervalSince1970))"
+        application.launchArguments += ["-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", caption]
+        launchHostAndWait()
+        let roundStartedAt = Date().timeIntervalSince1970
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2, 3, 4, 5, 6], observeOutputs: false)
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [2, 3, 4, 5, 6],
+            expectedOutputCount: 7, expectedBaselineCount: nil)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "back-to-back-share-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 7, "Twelve selections contain seven distinct source intents.")
+        try verifySavedStillMetadata(outputs, expectedDescription: caption)
+        try observeContinuedCompletionWindow(requestCount: 2, since: roundStartedAt)
+        try deleteOutputsAddedSince([], attachmentPrefix: "back-to-back-share-cleanup")
+    }
+
+    func testContinuedSameSourcesWithDifferentFrozenDescription() throws {
+        let round = Int(Date().timeIntervalSince1970)
+        let firstCaption = "配置身份甲 \(round)"
+        let secondCaption = "配置身份乙 \(round)"
+        func configureProbe(_ caption: String) {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly",
+                "-continuedProductionPipelineProbe", "-continuedPhotoDescriptionOverrideProbe", caption]
+            launchHostAndWait()
+        }
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        configureProbe(firstCaption)
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2])
+        let first = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "different-config-first.json")
+        XCTAssertEqual(first.assetCount, 3)
+        try verifySavedStillMetadata(first, expectedDescription: firstCaption)
+        let firstIDs = Set(first.assets.map(\.localIdentifier))
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2], expectedBaselineCount: 3)
+        let repeated = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "different-config-repeated.json")
+        XCTAssertEqual(Set(repeated.assets.map(\.localIdentifier)), firstIDs)
+        // Intentional configuration phase between rounds, never during an active Share.
+        configureProbe(secondCaption)
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2],
+            expectedOutputCount: 6, expectedBaselineCount: 3)
+        let allOutputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "different-config-all.json")
+        let second = QAAlbumInventory(albumTitle: allOutputs.albumTitle,
+            albumLocalIdentifier: allOutputs.albumLocalIdentifier, authorization: allOutputs.authorization,
+            assetCount: 3, assets: allOutputs.assets.filter { !firstIDs.contains($0.localIdentifier) })
+        XCTAssertEqual(allOutputs.assetCount, 6)
+        XCTAssertTrue(firstIDs.isSubset(of: Set(allOutputs.assets.map(\.localIdentifier))))
+        XCTAssertEqual(second.assets.count, 3)
+        try verifySavedStillMetadata(second, expectedDescription: secondCaption)
+        verifySavedMoviePairingSynchronously(second)
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "different-config-originals.json").assetCount, 15)
+        try deleteOutputsAddedSince([], attachmentPrefix: "different-config-cleanup")
+    }
+
+    func testContinuedAppendNewSourcesAndDuplicate() throws {
+        let caption = "追加新素材会话验证 \(Int(Date().timeIntervalSince1970))"
+        application.launchArguments += ["-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", caption]
+        launchHostAndWait()
+        let roundStartedAt = Date().timeIntervalSince1970
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2], observeOutputs: false)
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [2, 3, 4],
+            expectedOutputCount: 5, expectedBaselineCount: nil)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "append-new-sources-outputs.json")
+        let sourceInventory = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "append-source-identity-readback.json")
+        XCTAssertEqual(outputs.assets.compactMap(\.creationDate).sorted(),
+                       Array(sourceInventory.assets.prefix(5)).compactMap(\.creationDate).sorted(),
+                       "Saved capture dates must match the five selected source assets.")
+        XCTAssertEqual(outputs.assetCount, 5, "A+B+C then C+D+E must save five distinct source intents.")
+        try verifySavedStillMetadata(outputs, expectedDescription: caption)
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Inputs",
+            attachmentName: "append-new-sources-originals.json").assetCount, 15)
+        verifySavedMoviePairingSynchronously(outputs)
+        try observeContinuedCompletionWindow(requestCount: 2, since: roundStartedAt)
+        try deleteOutputsAddedSince([], attachmentPrefix: "append-new-sources-cleanup")
+    }
+
+    func testContinuedAppendNewSourcesDuringSevenInputOwner() throws {
+        let caption = "七张处理中追加新素材验证 \(Int(Date().timeIntervalSince1970))"
+        application.launchArguments += ["-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", caption]
+        launchHostAndWait()
+        let roundStartedAt = Date().timeIntervalSince1970
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2, 3, 4, 5, 6], observeOutputs: false)
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [2, 7, 8],
+            expectedOutputCount: 9, expectedBaselineCount: nil)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "append-nine-new-sources-outputs.json")
+        let sourceInventory = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "append-nine-source-identity-readback.json")
+        XCTAssertEqual(outputs.assets.compactMap(\.creationDate).sorted(),
+                       Array(sourceInventory.assets.prefix(9)).compactMap(\.creationDate).sorted(),
+                       "Saved capture dates must match the nine selected source assets.")
+        XCTAssertEqual(outputs.assetCount, 9, "Seven initial sources plus one duplicate and two new sources must save nine distinct intents.")
+        try verifySavedStillMetadata(outputs, expectedDescription: caption)
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Inputs",
+            attachmentName: "append-nine-new-sources-originals.json").assetCount, 15)
+        verifySavedMoviePairingSynchronously(outputs)
+        try observeContinuedCompletionWindow(requestCount: 2, since: roundStartedAt)
+        try deleteOutputsAddedSince([], attachmentPrefix: "append-nine-new-sources-cleanup")
+    }
+
+    func testContinuedAppendNewSourcesDuringNineInputOwner() throws {
+        let caption = "九张处理中追加新素材验证 \(Int(Date().timeIntervalSince1970))"
+        application.launchArguments += ["-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", caption]
+        launchHostAndWait()
+        let roundStartedAt = Date().timeIntervalSince1970
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2, 3, 4, 5, 6, 7, 8], observeOutputs: false)
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [2, 9, 10],
+            expectedOutputCount: 11, expectedBaselineCount: nil)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "append-eleven-new-sources-outputs.json")
+        let sourceInventory = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "append-eleven-source-identity-readback.json")
+        XCTAssertEqual(outputs.assets.compactMap(\.creationDate).sorted(),
+                       Array(sourceInventory.assets.prefix(11)).compactMap(\.creationDate).sorted(),
+                       "Saved capture dates must match the eleven selected source assets.")
+        XCTAssertEqual(outputs.assetCount, 11, "Nine initial sources plus one duplicate and two new sources must save eleven distinct intents.")
+        try verifySavedStillMetadata(outputs, expectedDescription: caption)
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Inputs",
+            attachmentName: "append-eleven-new-sources-originals.json").assetCount, 15)
+        verifySavedMoviePairingSynchronously(outputs)
+        try observeContinuedCompletionWindow(requestCount: 2, since: roundStartedAt)
+        try deleteOutputsAddedSince([], attachmentPrefix: "append-eleven-new-sources-cleanup")
+    }
+
+    func testContinuedAppendDuplicateWhileOwnerRuns() throws {
+        let caption = "处理中追加重复素材验证 \(Int(Date().timeIntervalSince1970))"
+        application.launchArguments += ["-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", caption]
+        launchHostAndWait()
+        let roundStartedAt = Date().timeIntervalSince1970
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2, 3, 4, 5, 6], observeOutputs: false)
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [2],
+            expectedOutputCount: 7, expectedBaselineCount: nil)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "append-duplicate-share-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 7, "Eight selections contain seven distinct source intents.")
+        try verifySavedStillMetadata(outputs, expectedDescription: caption)
+        try observeContinuedCompletionWindow(requestCount: 2, since: roundStartedAt)
+        try deleteOutputsAddedSince([], attachmentPrefix: "append-duplicate-share-cleanup")
+    }
+
+    func testContinuedCanonicalFifteenSourcesWithoutHostActivation() throws {
+        // XCTest's stop-on-first-failure exception bypasses Swift defer. Keep
+        // assertions recording failures so the real configuration is restored.
+        continueAfterFailure = true
+        // This field also contributes visible GlassCard text. Keep the unique
+        // fixture within its layout budget instead of bypassing overflow checks.
+        let caption = "Q" + String(Int(Date().timeIntervalSince1970), radix: 36)
+        application.launchArguments += ["-continuedProductionPipelineProbe"]
+        launchHostAndWait()
+        try openDescriptionSettingsForQA()
+        let toggle = descriptionSupplementToggle()
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        let originalUsesCustom = toggle.value as? String == "1"
+        if !originalUsesCustom { toggle.tap() }
+        let field = descriptionSupplementField()
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        let originalValue = field.value as? String ?? ""
+        let originalText = originalValue == "写下想补充的话" ? "" : originalValue
+        defer {
+            application.activate()
+            do {
+                try openDescriptionSettingsForQA()
+                let restoreToggle = descriptionSupplementToggle()
+                if restoreToggle.value as? String != "1" { restoreToggle.tap() }
+                try replaceDescriptionSupplement(with: originalText)
+                if !originalUsesCustom { restoreToggle.tap() }
+                try saveDescriptionConfigurationForQA()
+            } catch { XCTFail("Could not restore the user's description configuration: \(error)") }
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try replaceDescriptionSupplement(with: caption)
+        try saveDescriptionConfigurationForQA()
+        let roundStartedAt = Date().timeIntervalSince1970
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [], expectedOutputCount: 15, selectAllInputs: true)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "canonical-fifteen-outputs.json")
+        let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "canonical-fifteen-originals.json")
+        XCTAssertEqual(inputs.assetCount, 15)
+        XCTAssertEqual(outputs.assetCount, 15)
+        XCTAssertEqual(outputs.assets.compactMap(\.creationDate).sorted(), inputs.assets.compactMap(\.creationDate).sorted())
+        try verifySavedStillMetadata(outputs, expectedDescription: caption)
+        verifySavedMoviePairingSynchronously(outputs)
+        try observeContinuedCompletionWindow(requestCount: 1, since: roundStartedAt)
+        XCTAssertNotEqual(application.state, .runningForeground)
+        try deleteOutputsAddedSince([], attachmentPrefix: "canonical-fifteen-cleanup")
+    }
+
+    func testContinuedAllFifteenSourcesWithoutHostActivation() throws {
+        let caption = "十五张混合素材后台验证 \(Int(Date().timeIntervalSince1970))"
+        application.launchArguments += ["-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", caption]
+        launchHostAndWait()
+        let roundStartedAt = Date().timeIntervalSince1970
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [], expectedOutputCount: 15,
+            selectAllInputs: true)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "all-fifteen-outputs.json")
+        let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "all-fifteen-originals.json")
+        XCTAssertEqual(inputs.assetCount, 15)
+        XCTAssertEqual(outputs.assetCount, 15)
+        XCTAssertEqual(outputs.assets.compactMap(\.creationDate).sorted(), inputs.assets.compactMap(\.creationDate).sorted())
+        try verifySavedStillMetadata(outputs, expectedDescription: caption)
+        verifySavedMoviePairingSynchronously(outputs)
+        try observeContinuedCompletionWindow(requestCount: 1, since: roundStartedAt)
+        try deleteOutputsAddedSince([], attachmentPrefix: "all-fifteen-cleanup")
+    }
+
+    func testContinuedNativeProgressSurfaceSevenPhotos() throws {
+        application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", "专注模式原生通知验证"]
+        launchHostAndWait()
+        let roundStartedAt = Date().timeIntervalSince1970
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2, 3, 4, 5, 6], observeOutputs: false)
+        let settled = expectation(description: "System Share dismissal animation settles before the top-status capture")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { settled.fulfill() }
+        wait(for: [settled], timeout: 3)
+        XCTAssertNotEqual(application.state, .runningForeground)
+        let island = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        island.name = "share-dismissed-dynamic-island"
+        island.lifetime = .keepAlways
+        add(island)
+        try testBackgroundNotificationCenterReadback()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        XCTAssertFalse(springboard.staticTexts["处理已完成"].exists,
+            "A historical custom ActivityKit completion card must not coexist with the system processing experiment.")
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.97))
+            .press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)))
+        try observeCompletedPhotoOutputs(expectedOutputCount: 7)
+        try observeContinuedCompletionWindow(requestCount: 1, since: roundStartedAt)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "native-progress-output-readback.json")
+        XCTAssertEqual(outputs.assetCount, 7)
+        try verifySavedStillMetadata(outputs, expectedDescription: "专注模式原生通知验证")
+        try testBackgroundNotificationCenterReadback()
+        XCTAssertTrue(springboard.descendants(matching: .any).matching(
+            NSPredicate(format: "label CONTAINS %@", "已保存到「MemoMark QA Outputs」。")).firstMatch.exists,
+            "The native result notification must identify the saved output album.")
+        let clock = DateFormatter()
+        clock.locale = Locale(identifier: "zh_CN")
+        clock.dateFormat = "HH:mm"
+        let firstMinute = Int(roundStartedAt / 60)
+        let lastMinute = Int(Date().timeIntervalSince1970 / 60)
+        let currentRoundTitles = (firstMinute...lastMinute).map { minute in
+            clock.string(from: Date(timeIntervalSince1970: Double(minute * 60))) + " 处理 7 张照片已完成"
+        }
+        let freshTitle = springboard.staticTexts.matching(NSPredicate(format: "label IN %@", currentRoundTitles)).firstMatch
+        XCTAssertTrue(freshTitle.exists && freshTitle.isHittable,
+            "A historical notification cannot certify this round; the current round's result must be visibly exposed.")
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.97))
+            .press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)))
+        try deleteOutputsAddedSince([], attachmentPrefix: "native-progress-cleanup")
+    }
+
+    func testContinuedDynamicIslandWithPhotosBackgrounded() throws {
+        let roundCaption = "灵动岛后台切换验证 \(Int(Date().timeIntervalSince1970))"
+        application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", roundCaption]
+        launchHostAndWait()
+        let roundStartedAt = Date().timeIntervalSince1970
+        defer {
+            application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+            launchHostAndWait()
+            XCUIDevice.shared.press(.home)
+        }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2, 3, 4, 5, 6], observeOutputs: false)
+        let settled = expectation(description: "Photos Share dismissal settles before comparison")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { settled.fulfill() }
+        wait(for: [settled], timeout: 3)
+        let photosScreenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        photosScreenshot.name = "continued-island-photos-foreground"
+        photosScreenshot.lifetime = .keepAlways
+        add(photosScreenshot)
+        XCUIDevice.shared.press(.home)
+        let homeSettled = expectation(description: "System Home transition settles while processing continues")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { homeSettled.fulfill() }
+        wait(for: [homeSettled], timeout: 4)
+        XCTAssertNotEqual(application.state, .runningForeground)
+        let homeScreenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        homeScreenshot.name = "continued-island-photos-background"
+        homeScreenshot.lifetime = .keepAlways
+        add(homeScreenshot)
+        let state = XCTAttachment(string: XCUIApplication(bundleIdentifier: "com.apple.springboard").debugDescription)
+        state.name = "continued-island-photos-background-state"
+        state.lifetime = .keepAlways
+        add(state)
+        try observeCompletedPhotoOutputs(expectedOutputCount: 7)
+        try observeContinuedCompletionWindow(requestCount: 1, since: roundStartedAt)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "island-round-output-readback.json")
+        XCTAssertEqual(outputs.assetCount, 7)
+        try verifySavedStillMetadata(outputs, expectedDescription: roundCaption)
+        try deleteOutputsAddedSince([], attachmentPrefix: "island-round-cleanup")
+    }
+
+    func testContinuedStopWaitingShareWithoutHostActivation() throws {
+        application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", "等待执行权停止 \(Int(Date().timeIntervalSince1970))"]
+        launchHostAndWait()
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [], expectedOutputCount: 15,
+            observeOutputs: false, selectAllInputs: true)
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 1, 2],
+            expectedBaselineCount: nil, observeOutputs: false)
+        XCUIDevice.shared.press(.home)
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let cards = springboard.otherElements.matching(NSPredicate(
+            format: "identifier == %@ AND label CONTAINS %@", "regular.view", "时光记正在处理照片"))
+        let pending = cards.containing(.staticText, identifier: "正在准备照片").firstMatch
+        let state = XCTAttachment(string: springboard.debugDescription)
+        state.name = "waiting-share-system-state-before-stop"
+        state.lifetime = .keepAlways
+        add(state)
+        XCTAssertTrue(pending.waitForExistence(timeout: 5), "Stop only the preparing request; never guess by card order.")
+        let pendingState = XCTAttachment(string: pending.debugDescription)
+        pendingState.name = "waiting-share-card-before-cancel"
+        pendingState.lifetime = .keepAlways
+        add(pendingState)
+        let visibleStop = NSPredicate(format: "exists == true AND hittable == true")
+        let ready = expectation(for: visibleStop, evaluatedWith: pending.buttons["取消"])
+        wait(for: [ready], timeout: 5)
+        XCTAssertTrue(pending.buttons["取消"].isHittable)
+        pending.buttons["取消"].tap()
+        XCTAssertNotEqual(application.state, .runningForeground)
+        try observeCompletedPhotoOutputs(expectedOutputCount: 15)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "waiting-stop-owner-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 15)
+        application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+        launchHostAndWait()
+        let resume = application.buttons["继续处理"]
+        XCTAssertTrue(resume.waitForExistence(timeout: 10), "Cancelled waiting intake must become a held job.")
+        application.terminate()
+        launchHostAndWait()
+        XCTAssertTrue(resume.waitForExistence(timeout: 10))
+        let held = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "waiting-stop-host-held-outputs.json")
+        XCTAssertEqual(Set(held.assets.map(\.localIdentifier)), Set(outputs.assets.map(\.localIdentifier)))
+        resume.tap()
+        waitForProcessingCompletionSurface(scenario: "waiting-share-explicit-resume", timeout: 240)
+        let resumed = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "waiting-stop-resumed-outputs.json")
+        XCTAssertEqual(Set(resumed.assets.map(\.localIdentifier)), Set(outputs.assets.map(\.localIdentifier)))
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "waiting-stop-originals.json").assetCount, 15)
+        try deleteOutputsAddedSince([], attachmentPrefix: "waiting-stop-cleanup")
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testContinuedStopThenResendWithoutHostActivation() throws {
+        let caption = "中断后重新分享验证 \(Int(Date().timeIntervalSince1970))"
+        application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", caption]
+        launchHostAndWait()
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "resend-empty-baseline.json").assetCount, 0)
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [], expectedOutputCount: 15,
+            observeOutputs: false, selectAllInputs: true)
+        XCUIDevice.shared.press(.home)
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let card = springboard.otherElements.matching(NSPredicate(
+            format: "identifier == %@ AND label CONTAINS %@", "regular.view", "时光记正在处理照片")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 10))
+        var savedCount = 0
+        for checkpoint in 1...10 {
+            let interval = expectation(description: "Wait for real partial output before stopping")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { interval.fulfill() }
+            wait(for: [interval], timeout: 5)
+            savedCount = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "resend-partial-\(checkpoint).json").assetCount
+            if savedCount > 0 { break }
+        }
+        XCTAssertGreaterThan(savedCount, 0, "A zero-output stop cannot prove partial-save idempotency.")
+        XCTAssertLessThan(savedCount, 15)
+        let stop = card.buttons["取消"]
+        XCTAssertTrue(stop.isHittable)
+        stop.tap()
+        let settle = expectation(description: "Settle native cancellation and submitted save")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { settle.fulfill() }
+        wait(for: [settle], timeout: 15)
+        let stopped = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "resend-stopped-assets.json")
+        let hold = expectation(description: "Cancelled work must stop independently")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { hold.fulfill() }
+        wait(for: [hold], timeout: 15)
+        let stable = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "resend-stable-assets.json")
+        XCTAssertEqual(Set(stopped.assets.map(\.localIdentifier)), Set(stable.assets.map(\.localIdentifier)))
+        XCTAssertNotEqual(application.state, .runningForeground)
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [], expectedOutputCount: 15,
+            expectedBaselineCount: nil, selectAllInputs: true)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "resend-final-assets.json")
+        XCTAssertEqual(outputs.assetCount, 15)
+        XCTAssertTrue(Set(stable.assets.map(\.localIdentifier)).isSubset(of: Set(outputs.assets.map(\.localIdentifier))))
+        try verifySavedStillMetadata(outputs, expectedDescription: caption)
+        verifySavedMoviePairingSynchronously(outputs)
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "resend-originals.json").assetCount, 15)
+        XCTAssertNotEqual(application.state, .runningForeground)
+        try deleteOutputsAddedSince([], attachmentPrefix: "resend-cleanup")
+        application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+        launchHostAndWait()
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testContinuedNativeStopWithoutHostActivation() throws {
+        application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", "原生停止验证 \(Int(Date().timeIntervalSince1970))"]
+        launchHostAndWait()
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [], expectedOutputCount: 15,
+            observeOutputs: false, selectAllInputs: true)
+        XCUIDevice.shared.press(.home)
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let card = springboard.otherElements.matching(NSPredicate(
+            format: "identifier == %@ AND label CONTAINS %@", "regular.view", "时光记正在处理照片")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 10), "Stop testing requires the actual MemoMark system card.")
+        let stop = card.buttons["取消"]
+        XCTAssertTrue(stop.isHittable)
+        let before = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        before.name = "continued-native-stop-before"
+        before.lifetime = .keepAlways
+        add(before)
+        stop.tap()
+        XCTAssertNotEqual(application.state, .runningForeground)
+        let settle = expectation(description: "Allow system stop and any already submitted save to settle")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { settle.fulfill() }
+        wait(for: [settle], timeout: 15)
+        let first = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "native-stop-first-output-check.json")
+        let observe = expectation(description: "Observe no further output without foreground recovery")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15) { observe.fulfill() }
+        wait(for: [observe], timeout: 20)
+        let second = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "native-stop-second-output-check.json")
+        XCTAssertEqual(Set(first.assets.map(\.localIdentifier)), Set(second.assets.map(\.localIdentifier)))
+        XCTAssertLessThan(second.assetCount, 15, "Stopping must interrupt the round before all inputs finish.")
+        XCTAssertNotEqual(application.state, .runningForeground)
+        let after = XCTAttachment(string: springboard.debugDescription)
+        after.name = "continued-native-stop-after-state"
+        after.lifetime = .keepAlways
+        add(after)
+        try testBackgroundNotificationCenterReadback()
+        let pausedNotice = springboard.staticTexts.matching(NSPredicate(
+            format: "label CONTAINS %@", "时光记处理已暂停")).firstMatch
+        XCTAssertTrue(pausedNotice.waitForExistence(timeout: 10),
+                      "System interruption must provide the native durable pause notice.")
+        XCUIDevice.shared.press(.home)
+        // Background stop proof ends above. Opening MemoMark must now expose
+        // explicit resume rather than automatically restarting the stopped work.
+        application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike", "-processingQueueSnapshotProbe"]
+        launchHostAndWait()
+        let resume = application.buttons["继续处理"]
+        XCTAssertTrue(resume.waitForExistence(timeout: 10))
+        let held = expectation(description: "Opening MemoMark must not resume system-stopped work")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15) { held.fulfill() }
+        wait(for: [held], timeout: 20)
+        let heldOutputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "native-stop-host-open-held-output-check.json")
+        XCTAssertEqual(Set(heldOutputs.assets.map(\.localIdentifier)), Set(second.assets.map(\.localIdentifier)))
+        application.terminate()
+        launchHostAndWait()
+        XCTAssertTrue(resume.waitForExistence(timeout: 10))
+        attachCurrentScreenshot(named: "native-stop-hold-survives-relaunch")
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testExplicitResumeOfSystemStoppedSessionFromHome() throws {
+        application.launchArguments = ["-uiTesting", "-uiTestingHarnessOnly", "-disableContinuedProcessingSpike"]
+        launchHostAndWait()
+        let before = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "explicit-system-stop-resume-before.json")
+        XCTAssertLessThan(before.assetCount, 15)
+        let resume = application.buttons["继续处理"]
+        XCTAssertTrue(resume.waitForExistence(timeout: 10), "A held session requires the explicit Home resume action.")
+        resume.tap()
+        waitForProcessingCompletionSurface(scenario: "explicit-system-stop-resume", timeout: 240)
+        let after = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "explicit-system-stop-resume-after.json")
+        XCTAssertEqual(after.assetCount, 15)
+        XCTAssertTrue(Set(before.assets.map(\.localIdentifier)).isSubset(of: Set(after.assets.map(\.localIdentifier))),
+            "Resume must retain previously saved assets rather than replacing or duplicating them.")
+        XCTAssertEqual(after.assets.filter { $0.classification == "livePhoto" }.count, 1)
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "explicit-resume-original-inputs.json").assetCount, 15)
+        try deleteOutputsAddedSince([], attachmentPrefix: "explicit-system-stop-resume-cleanup")
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testSavedPhotoKitDescriptionDiagnostics() throws {
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "saved-description-diagnostic-outputs.json")
+        XCTAssertEqual(outputs.assetCount, 3)
+        try verifySavedStillMetadata(outputs, expectedDescription: "后台配对读回验证", requireDescription: false)
+    }
+
+    func testRestoreOriginalQADescriptionConfiguration() throws {
+        launchHostAndWait()
+        try openDescriptionSettingsForQA()
+        let toggle = descriptionSupplementToggle()
+        if toggle.value as? String != "1" { toggle.tap() }
+        try replaceDescriptionSupplement(with: "")
+        if toggle.value as? String == "1" { toggle.tap() }
+        try saveDescriptionConfigurationForQA()
+        XCUIDevice.shared.press(.home)
+    }
+
+    private func openDescriptionSettingsForQA() throws {
+        let config = application.buttons["配置"]
+        XCTAssertTrue(config.waitForExistence(timeout: 10))
+        config.tap()
+        let expand = application.buttons.matching(NSPredicate(
+            format: "label == %@ OR label BEGINSWITH %@", "展开照片说明设置", "照片说明")).firstMatch
+        for _ in 0..<6 where !(expand.exists && expand.isHittable)
+            && !(descriptionSupplementToggle().exists && descriptionSupplementToggle().isHittable) {
+            let scroll = application.scrollViews.firstMatch
+            if scroll.exists { scroll.swipeUp() } else { application.swipeUp() }
+        }
+        if expand.exists && expand.isHittable && !descriptionSupplementToggle().exists { expand.tap() }
+        if !descriptionSupplementToggle().exists {
+            let state = XCTAttachment(string: application.debugDescription)
+            state.name = "description-settings-missing-control-hierarchy"
+            state.lifetime = .keepAlways
+            add(state)
+            attachCurrentScreenshot(named: "description-settings-missing-control")
+        }
+        XCTAssertTrue(descriptionSupplementToggle().waitForExistence(timeout: 10))
+    }
+
+    private func descriptionSupplementToggle() -> XCUIElement {
+        application.switches.matching(NSPredicate(format: "label CONTAINS %@", "补充一句话")).firstMatch
+    }
+
+    private func descriptionSupplementField() -> XCUIElement {
+        application.descendants(matching: .any).matching(identifier: "output-photo-description-input").firstMatch
+    }
+
+    private func replaceDescriptionSupplement(with text: String) throws {
+        let field = descriptionSupplementField()
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        if !application.keyboards.firstMatch.waitForExistence(timeout: 3) {
+            field.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)).tap()
+        }
+        XCTAssertTrue(application.keyboards.firstMatch.waitForExistence(timeout: 5))
+        let value = field.value as? String ?? ""
+        let current = value == "写下想补充的话" ? "" : value
+        if !current.isEmpty {
+            field.press(forDuration: 1.2)
+            var selectAll = application.menuItems.matching(NSPredicate(format: "label IN %@", ["全选", "Select All"])).firstMatch
+            if !selectAll.waitForExistence(timeout: 2) {
+                selectAll = application.buttons.matching(NSPredicate(format: "label IN %@", ["全选", "Select All"])).firstMatch
+            }
+            XCTAssertTrue(selectAll.waitForExistence(timeout: 5), "Clear the field through native selection rather than deleting at an unknown caret position.")
+            selectAll.tap()
+            field.typeText(XCUIKeyboardKey.delete.rawValue)
+        }
+        if !text.isEmpty { field.typeText(text) }
+        let replaced = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let value = field.value as? String ?? ""
+            return text.isEmpty ? value == "写下想补充的话" || value.isEmpty : value == text
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [replaced], timeout: 5), .completed)
+        // Temporarily removing the local FocusState field dismisses the
+        // keyboard without Return, page-switch guards or modifying its text.
+        let toggle = descriptionSupplementToggle()
+        toggle.tap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"), object: descriptionSupplementField()
+        )], timeout: 5), .completed)
+        toggle.tap()
+        XCTAssertTrue(descriptionSupplementField().waitForExistence(timeout: 5))
+
+    }
+
+    private func saveDescriptionConfigurationForQA() throws {
+        let save = application.buttons["保存配置"]
+        if save.waitForExistence(timeout: 5), save.isEnabled { save.tap() }
+        XCTAssertTrue(application.buttons["已保存"].waitForExistence(timeout: 15))
+    }
+
+    func testContinuedProductionRepeatedIntentAfterDismissal() throws {
+        application.launchArguments += ["-continuedProductionPipelineProbe"]
+        application.launch()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 20))
+        // These three exact source/configuration intents already completed.
+        // This only observes duplicate submission after the dismissal gate;
+        // zero outputs is not proof of fresh production processing completion.
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [1, 3, 5], expectedOutputCount: 0)
+    }
+
+    func testCleanupThreeHostMarkerOutputs() throws {
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "host-marker-originals.json").assetCount, 15)
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "host-marker-cleanup-before.json").assetCount, 3)
+        try deleteOutputsAddedSince([], attachmentPrefix: "host-marker-recovery-cleanup")
+    }
+
+    func testCleanupRootDiagnosisOutputs() throws {
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "root-originals.json").assetCount, 15)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "root-cleanup-before.json")
+        guard outputs.assetCount <= 3 else {
+            XCTFail("Root diagnosis cleanup must contain only this three-input round's QA outputs")
+            return
+        }
+        try deleteOutputsAddedSince([], attachmentPrefix: "root-diagnosis-cleanup")
+    }
+
+    func testHostQueueFixtureForegroundRecovery() throws {
+        let caption = "主程序恢复验证 \(Int(Date().timeIntervalSince1970))"
+        application.launchArguments += ["-continuedHostQueueProbe", "-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", caption]
+        launchHostAndWait()
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 3, 6],
+            expectedOutputCount: 3, observeOutputs: false)
+        application.activate()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 20))
+        var outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "host-fixture-first-readback.json")
+        for checkpoint in 1...12 where outputs.assetCount < 3 {
+            let interval = expectation(description: "Observe actual foreground saved outputs")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { interval.fulfill() }
+            wait(for: [interval], timeout: 8)
+            outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "host-fixture-output-\(checkpoint).json")
+        }
+        XCTAssertEqual(outputs.assetCount, 3)
+        try verifySavedStillMetadata(outputs, expectedDescription: caption)
+        verifySavedMoviePairingSynchronously(outputs)
+        try deleteOutputsAddedSince([], attachmentPrefix: "host-fixture-recovery-cleanup")
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testContinuedUniqueHostQueueWithoutHostActivation() throws {
+        application.launchArguments += ["-continuedHostUniqueQueueProbe"]
+        try testContinuedHostQueueWithoutHostActivation()
+    }
+
+    func testContinuedHostQueueWithoutHostActivation() throws {
+        application.launchArguments += ["-continuedHostQueueProbe", "-continuedProductionPipelineProbe",
+            "-continuedPhotoDescriptionOverrideProbe", "正式后台入口验证 \(Int(Date().timeIntervalSince1970))"]
+        launchHostAndWait()
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 3, 6], expectedOutputCount: 3)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "host-queue-output-readback.json")
+        XCTAssertEqual(outputs.assetCount, 3)
+        verifySavedMoviePairingSynchronously(outputs)
+        XCTAssertNotEqual(application.state, .runningForeground)
+        try deleteOutputsAddedSince([], attachmentPrefix: "host-queue-cleanup")
+    }
+
+    func testContinuedHostHandoffSubmissionWithoutHostActivation() throws {
+        application.launchArguments += ["-continuedHostHandoffProbe"]
+        application.launch()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 20))
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 3, 6], hostMarkerOnly: true)
+        // Submission/UI assertions alone are not certification. Independently
+        // read hostCallback + markerCompleted from the App Group after this test.
+    }
+
+    func testIsolatedContinuedHostSelfSubmission() throws {
+        application.launchArguments += ["-isolatedPrepare", "-isolatedSelfSubmit"]
+        application.launch()
+        XCTAssertTrue(application.staticTexts["host-handoff-isolated-home"].waitForExistence(timeout: 20))
+        let observation = expectation(description: "Observe isolated self-submission marker")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { observation.fulfill() }
+        wait(for: [observation], timeout: 10)
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testIsolatedContinuedHostHandoffAsync() throws {
+        try performIsolatedHostHandoff(arguments: [])
+    }
+
+    func testIsolatedContinuedHostHandoffLegacy() throws {
+        try performIsolatedHostHandoff(arguments: ["-isolatedLegacySubmission"])
+    }
+
+    func testIsolatedContinuedExtensionOwnerAsync() throws {
+        try performIsolatedHostHandoff(arguments: ["-isolatedExtensionOwner"])
+    }
+
+    private func performIsolatedHostHandoff(arguments: [String]) throws {
+        application.launchArguments += ["-isolatedPrepare"] + arguments
+        application.launch()
+        XCTAssertTrue(application.staticTexts["host-handoff-isolated-home"].waitForExistence(timeout: 20))
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 3, 6], hostMarkerOnly: true)
+    }
+
+    private func performMultiplePhotosBackgroundWithoutHostActivation(indices: [Int], hostMarkerOnly: Bool = false, expectedOutputCount: Int = 3, expectedBaselineCount: Int? = 0, observeOutputs: Bool = true, expectedInputCount: Int = 15, selectAllInputs: Bool = false) throws {
+        let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "background-input-baseline.json")
+        let baseline = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "background-output-baseline.json")
+        if let expectedBaselineCount {
+            XCTAssertEqual(baseline.assetCount, expectedBaselineCount, "Use the expected explicitly controlled QA album baseline.")
+        }
+        XCTAssertEqual(inputs.assetCount, expectedInputCount)
+        // Xcode starts the target when attaching the UI harness. Background
+        // it before submitting any intake; no host activation is allowed
+        // after submission. This proves warm background, not cold launch.
+        XCUIDevice.shared.press(.home)
+        let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
+        photos.activate()
+        XCTAssertTrue(photos.wait(for: .runningForeground, timeout: 10))
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in self.application.state != .runningForeground }, object: nil
+        )], timeout: 10), .completed, "MemoMark must leave the foreground before any Share is submitted.")
+        let cancelSelection = photos.buttons["取消"]
+        if cancelSelection.exists {
+            cancelSelection.tap()
+            XCTAssertTrue(photos.buttons["选择"].waitForExistence(timeout: 10))
+        }
+        let alreadyInInputs = photos.staticTexts.matching(NSPredicate(
+            format: "identifier == %@ AND label == %@", "collectionTitle", "MemoMark QA Inputs"
+        )).firstMatch.exists
+        if !alreadyInInputs {
+            let collections = photos.buttons["CollectionsTab"]
+            if !collections.exists {
+                let back = photos.navigationBars.buttons.matching(NSPredicate(
+                    format: "label IN %@", ["返回", "精选集", "Back", "Collections"]
+                )).firstMatch
+                if back.exists { back.tap() }
+            }
+            XCTAssertTrue(collections.waitForExistence(timeout: 10))
+            collections.tap()
+            let album = photos.buttons.matching(NSPredicate(format: "identifier == %@ AND label == %@", "bookmarks", "MemoMark QA Inputs")).firstMatch
+            for _ in 0..<8 where !album.isHittable { photos.swipeDown() }
+            XCTAssertTrue(album.isHittable)
+            album.tap()
+        }
+        let select = photos.buttons["选择"]
+        XCTAssertTrue(select.waitForExistence(timeout: 10))
+        select.tap()
+        let grid = photos.otherElements.matching(identifier: "PXGGridLayout-Group").firstMatch
+            .images.matching(identifier: "PXGGridLayout-Info")
+        let minimumGridCount = selectAllInputs ? 1 : (indices.max() ?? -1) + 1
+        let anchorDate = try XCTUnwrap(Self.date(from: inputs.assets.first?.creationDate))
+        let anchorFormatter = DateFormatter()
+        anchorFormatter.locale = Locale(identifier: "zh_CN")
+        anchorFormatter.dateFormat = "MM月dd日, HH:mm"
+        let anchor = anchorFormatter.string(from: anchorDate)
+        for _ in 0..<4 where grid.count > 0 && !grid.firstMatch.label.contains(anchor) {
+            photos.swipeDown()
+        }
+        for _ in 0..<3 where grid.count > 0 && grid.count < minimumGridCount {
+            photos.swipeUp()
+        }
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            grid.count >= minimumGridCount && grid.count <= inputs.assetCount
+                && grid.firstMatch.label.contains(anchor)
+        }, object: nil)
+        let readyResult = XCTWaiter.wait(for: [ready], timeout: 15)
+        if readyResult != .completed {
+            let state = XCTAttachment(string: photos.debugDescription)
+            state.name = "background-input-grid-not-ready"
+            state.lifetime = .keepAlways
+            add(state)
+        }
+        XCTAssertEqual(readyResult, .completed, "Wait for the named QA input grid before touching any asset.")
+        XCTAssertGreaterThanOrEqual(grid.count, minimumGridCount)
+        XCTAssertTrue(grid.firstMatch.label.contains(anchor), "Positional selection must start at the independently inventoried first asset.")
+        // Scope to one Photos grid and verify its first-source anchor.
+        // Visible-cell offsets alone must never stand in for global identity.
+        if let firstIndex = indices.first {
+            let firstItem = grid.element(boundBy: firstIndex)
+            for _ in 0..<4 where !firstItem.isHittable { photos.swipeDown() }
+        }
+        if selectAllInputs {
+            let selectAll = photos.buttons["全选"]
+            XCTAssertTrue(selectAll.isHittable)
+            selectAll.tap()
+        }
+        for index in indices {
+            let item = grid.element(boundBy: index)
+            if item.frame.maxY > photos.frame.maxY - 120 { photos.swipeUp() }
+            XCTAssertTrue(grid.firstMatch.label.contains(anchor), "Scrolling must retain the source-index anchor.")
+            XCTAssertTrue(item.isHittable, "Each intended QA input must be reachable before selection.")
+            item.tap()
+        }
+        let selectedState = XCTAttachment(string: photos.debugDescription)
+        selectedState.name = "background-selected-photos-state"
+        selectedState.lifetime = .keepAlways
+        add(selectedState)
+        let share = photos.buttons.matching(NSPredicate(format: "label IN %@", ["共享", "分享", "Share"])).firstMatch
+        XCTAssertTrue(share.waitForExistence(timeout: 10))
+        share.tap()
+        let receiver = photos.cells.matching(NSPredicate(format: "label IN %@", ["时光记", "MemoMark"])).firstMatch
+        XCTAssertTrue(receiver.waitForExistence(timeout: 10))
+        receiver.tap()
+        let confirm = photos.buttons["开始记录"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 15))
+        confirm.tap()
+        let submitting = photos.buttons["正在提交"]
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: submitting)], timeout: 120), .completed)
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"), object: photos.staticTexts["本次分享"]
+        )], timeout: 120), .completed, "Capture post-Share status only after the extension sheet has actually closed.")
+        XCTAssertNotEqual(application.state, .runningForeground)
+        if !observeOutputs { return }
+        try observeCompletedPhotoOutputs(expectedOutputCount: expectedOutputCount, hostMarkerOnly: hostMarkerOnly)
+    }
+
+    private func observeCompletedPhotoOutputs(expectedOutputCount: Int, hostMarkerOnly: Bool = false) throws {
+        var completed = false
+        for checkpoint in 1...8 {
+            XCTAssertNotEqual(application.state, .runningForeground, "Host foreground invalidates background certification.")
+            let pause = expectation(description: "Background observation interval")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 30) { pause.fulfill() }
+            wait(for: [pause], timeout: 35)
+            let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "background-output-checkpoint-\(checkpoint).json")
+            XCTAssertNotEqual(application.state, .runningForeground)
+            if hostMarkerOnly {
+                XCTAssertEqual(outputs.assetCount, 0, "The host handoff marker must not render or save Photos.")
+                return
+            }
+            if outputs.assetCount == expectedOutputCount { completed = true; break }
+        }
+        XCTAssertTrue(completed, "No foreground recovery is allowed: expected output count must be independently observed within the four-minute probe. Failure is evidence, not an iOS scheduling guarantee.")
+    }
+
+    func testPendingShareRequestsResumeAfterHostActivation() throws {
+        let baseline = try inventoryAlbum(
+            titled: "MemoMark QA Outputs",
+            attachmentName: "host-recovery-output-baseline.json"
+        )
+        XCTAssertEqual(baseline.assetCount, 0, "The named QA Outputs album must be empty before host recovery begins.")
+
+        // Prior marker rounds intentionally persisted intake without consuming
+        // it. Launching the host is the recovery action under test.
+        application.launchArguments += ["-disableContinuedProcessingSpike"]
+        launchHostAndWait()
+        waitForProcessingCompletionSurface(
+            scenario: "pending-share-host-recovery",
+            timeout: 240
+        )
+
+        let processed = try inventoryAlbum(
+            titled: "MemoMark QA Outputs",
+            attachmentName: "host-recovery-output-readback.json"
+        )
+        XCTAssertGreaterThan(processed.assetCount, 0, "Opening MemoMark should resume persisted Photos shares and save verified output.")
+        XCTAssertLessThanOrEqual(processed.assetCount, 7, "Global processing identity must not create more than one output per distinct QA source intent.")
+
+        let outputIdentifiers = processed.assets.map(\.localIdentifier)
+        let outputAssets = PHAsset.fetchAssets(
+            withLocalIdentifiers: outputIdentifiers,
+            options: nil
+        )
+        XCTAssertEqual(outputAssets.count, outputIdentifiers.count)
+        // Reuse the system-confirmation-aware cleanup instead of waiting on
+        // performChanges while the deletion permission alert is unanswered.
+        try deleteOutputsAddedSince([], attachmentPrefix: "host-recovery-output-cleanup")
+        let cleaned = try inventoryAlbum(
+            titled: "MemoMark QA Outputs",
+            attachmentName: "host-recovery-output-cleanup.json"
+        )
+        XCTAssertEqual(cleaned.assetCount, 0, "The QA output album must be empty after this round.")
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testMultiplePhotosShareAndRepeatIntent() throws {
+        let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "multi-input-baseline.json")
+        let baseline = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "multi-output-baseline.json")
+        XCTAssertGreaterThan(inputs.assetCount, 1)
+        application.launchArguments += ["-disableContinuedProcessingSpike"]
+        launchHostAndWait()
+        var previousOutputs = Set(baseline.assets.map(\.localIdentifier))
+        let selections = [[0, 1], [2, 3], [4, 5], [5, 6]]
+        XCTAssertEqual(inputs.assetCount, 7, "The prepared seven-input matrix must remain unchanged.")
+        for pass in 1...8 {
+            XCUIDevice.shared.press(.home)
+            let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
+            photos.launch()
+            let collections = photos.buttons["CollectionsTab"]
+            XCTAssertTrue(collections.waitForExistence(timeout: 10))
+            collections.tap()
+            let album = photos.staticTexts["MemoMark QA Inputs"].firstMatch
+            for _ in 0..<8 where !album.isHittable { photos.swipeUp() }
+            XCTAssertTrue(album.isHittable)
+            album.tap()
+            let select = photos.buttons["选择"]
+            XCTAssertTrue(select.waitForExistence(timeout: 10))
+            select.tap()
+            let grid = photos.images.matching(identifier: "PXGGridLayout-Info")
+            XCTAssertEqual(grid.count, inputs.assetCount)
+            for index in selections[(pass - 1) / 2] { grid.element(boundBy: index).tap() }
+            let share = photos.buttons.matching(NSPredicate(format: "label IN %@", ["共享", "分享", "Share"])).firstMatch
+            XCTAssertTrue(share.waitForExistence(timeout: 10))
+            share.tap()
+            let receiver = photos.cells.matching(NSPredicate(format: "label IN %@", ["时光记", "MemoMark"])).firstMatch
+            XCTAssertTrue(receiver.waitForExistence(timeout: 10))
+            receiver.tap()
+            let confirm = photos.buttons["开始记录"]
+            XCTAssertTrue(confirm.waitForExistence(timeout: 15))
+            confirm.tap()
+            let submitting = photos.buttons["正在提交"]
+            _ = submitting.waitForExistence(timeout: 5)
+            XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: submitting)], timeout: 120) == .completed)
+            application.activate()
+            waitForProcessingCompletionSurface(scenario: "multi-share-pass-\(pass)", timeout: 240)
+            let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "multi-output-pass-\(pass).json")
+            let identifiers = Set(outputs.assets.map(\.localIdentifier))
+            let added = identifiers.subtracting(previousOutputs)
+            if pass % 2 == 1 {
+                XCTAssertLessThanOrEqual(added.count, 2, "At most one fresh output per input is permitted.")
+                let addedAssets = outputs.assets.filter { added.contains($0.localIdentifier) }
+                if !addedAssets.isEmpty {
+                    for input in inputs.assets {
+                        XCTAssertLessThanOrEqual(addedAssets.filter { $0.creationDate == input.creationDate }.count, 1, "No input may add more than one output.")
+                    }
+                    XCTAssertLessThanOrEqual(addedAssets.filter { $0.classification == "livePhoto" }.count, inputs.assets.filter { $0.classification == "livePhoto" }.count)
+                }
+            } else {
+                XCTAssertTrue(added.isEmpty, "Repeating identical frozen intent must add no duplicate output.")
+            }
+            previousOutputs = identifiers
+        }
+        let preserved = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "multi-input-after.json")
+        XCTAssertEqual(Set(preserved.assets.map(\.localIdentifier)), Set(inputs.assets.map(\.localIdentifier)))
+    }
+
+    func testDeleteExistingInterruptedSessionWithoutCancelStep() throws {
+        application.launchArguments += ["-disableContinuedProcessingSpike", "-processingQueueSnapshotProbe"]
+        launchHostAndWait()
+        let record = application.otherElements.matching(NSPredicate(
+            format: "identifier BEGINSWITH %@", "home-activity-record-")).firstMatch
+        XCTAssertTrue(record.waitForExistence(timeout: 15))
+        let identifier = record.identifier
+        let delete = application.buttons["home-activity-delete-record"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 15))
+        attachCurrentScreenshot(named: "compact-home-before-direct-delete")
+        delete.tap()
+        let labels = ["删除任务记录", "Delete task record", "タスク履歴を削除", "작업 기록 삭제"]
+        let confirm = application.alerts.buttons.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10))
+        confirm.tap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"), object: application.otherElements[identifier])], timeout: 20), .completed)
+        application.terminate()
+        launchHostAndWait()
+        XCTAssertFalse(application.otherElements[identifier].exists)
+        attachCurrentScreenshot(named: "direct-delete-stays-deleted")
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testCancelDeleteExistingSessionWithoutNewShare() throws {
+        application.launchArguments += ["-disableContinuedProcessingSpike", "-processingQueueSnapshotProbe"]
+        launchHostAndWait()
+        let pauseLabels = ["暂停处理", "Pause processing", "処理を一時停止", "처리 일시 정지"]
+        let resumeLabels = ["继续处理", "Resume processing", "処理を再開", "처리 재개"]
+        let pause = application.buttons.matching(NSPredicate(format: "label IN %@", pauseLabels)).firstMatch
+        if pause.exists { pause.tap() }
+        let controlState = XCTAttachment(string: application.debugDescription)
+        controlState.name = "scoped-delete-current-home-state"
+        controlState.lifetime = .keepAlways
+        add(controlState)
+        let cancelLabels = ["取消本轮", "Cancel session", "セッションをキャンセル", "세션 취소"]
+        let cancel = application.buttons.matching(NSPredicate(format: "label IN %@", cancelLabels)).firstMatch
+        if cancel.waitForExistence(timeout: 5) {
+            cancel.tap()
+            let confirm = application.alerts.buttons.matching(NSPredicate(format: "label IN %@", cancelLabels)).firstMatch
+            XCTAssertTrue(confirm.waitForExistence(timeout: 10))
+            confirm.tap()
+        } else {
+            XCTAssertTrue(application.buttons["home-activity-delete-record"].exists,
+                "A session that has already terminated must expose its delete action.")
+        }
+        let controls = application.buttons.matching(NSPredicate(format: "label IN %@", pauseLabels + resumeLabels)).firstMatch
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: controls)], timeout: 60), .completed)
+        let delete = application.buttons["home-activity-delete-record"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 15))
+        attachCurrentScreenshot(named: "existing-session-cancelled-delete-enabled")
+        let record = application.otherElements.matching(NSPredicate(
+            format: "identifier BEGINSWITH %@", "home-activity-record-")).firstMatch
+        XCTAssertTrue(record.exists)
+        let deletedRecordIdentifier = record.identifier
+        delete.tap()
+        let deleteLabels = ["删除任务记录", "Delete task record", "タスク履歴を削除", "작업 기록 삭제"]
+        let deleteConfirm = application.alerts.buttons.matching(NSPredicate(format: "label IN %@", deleteLabels)).firstMatch
+        XCTAssertTrue(deleteConfirm.waitForExistence(timeout: 10))
+        deleteConfirm.tap()
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: application.otherElements[deletedRecordIdentifier])], timeout: 20), .completed)
+        attachCurrentScreenshot(named: "existing-session-history-deleted")
+        application.terminate()
+        launchHostAndWait()
+        // Other retained history may legitimately become the Home projection.
+        XCTAssertFalse(application.otherElements[deletedRecordIdentifier].exists)
+        attachCurrentScreenshot(named: "deleted-session-stays-deleted-after-relaunch")
+        XCUIDevice.shared.press(.home)
+    }
+
+    func testHomeActivityCancelWithAllFifteenQAInputs() throws {
+        let inputs = try inventoryAlbum(
+            titled: "MemoMark QA Inputs",
+            attachmentName: "home-controls-input-baseline.json"
+        )
+        XCTAssertEqual(inputs.assetCount, 15)
+        let outputsBefore = try inventoryAlbum(
+            titled: "MemoMark QA Outputs",
+            attachmentName: "home-controls-output-baseline.json"
+        )
+        XCTAssertEqual(outputsBefore.assetCount, 0)
+        let baselineIdentifiers = Set(outputsBefore.assets.map(\.localIdentifier))
+        var cleanupCompleted = false
+        defer {
+            if !cleanupCompleted {
+                do {
+                    try deleteOutputsAddedSince(
+                        baselineIdentifiers,
+                        attachmentPrefix: "home-controls-failure-cleanup"
+                    )
+                } catch {
+                    XCTFail("Could not clean this round's outputs: \(error)")
+                }
+            }
+        }
+
+        application.launchArguments += ["-disableContinuedProcessingSpike"]
+        launchHostAndWait()
+        XCUIDevice.shared.press(.home)
+
+        let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
+        photos.activate()
+        if !photos.buttons["CollectionsTab"].exists {
+            let cancelSelection = photos.buttons["取消"]
+            if cancelSelection.exists { cancelSelection.tap() }
+            let back = photos.navigationBars.buttons.firstMatch
+            if back.exists { back.tap() }
+        }
+        let collections = photos.buttons["CollectionsTab"]
+        XCTAssertTrue(collections.waitForExistence(timeout: 10))
+        collections.tap()
+        // Photos may restore a one-up viewer, and Featured Collections can
+        // expose an album title as a card caption. Only accept the actual
+        // album row in Collections; a title on the Featured page is not a
+        // navigation target for this test.
+        let album = photos.buttons.matching(
+            NSPredicate(format: "identifier == %@ AND label == %@", "bookmarks", "MemoMark QA Inputs")
+        ).firstMatch
+        // The restored Photos collection view can retain a deep scroll offset.
+        // The QA album is in the pinned shelf at the top, so scroll back up.
+        for _ in 0..<8 where !album.isHittable { photos.swipeDown() }
+        guard album.waitForExistence(timeout: 10), album.isHittable else {
+            attachCurrentScreenshot(named: "home-controls-qa-album-not-visible")
+            XCTFail("MemoMark QA Inputs album row was not visible in Collections; no media was selected.")
+            return
+        }
+        album.tap()
+
+        let select = photos.buttons["选择"]
+        XCTAssertTrue(select.waitForExistence(timeout: 10))
+        select.tap()
+        let cells = photos.images.matching(identifier: "PXGGridLayout-Info")
+        // Photos virtualizes offscreen cells; inventory above is the count authority.
+        // The named QA album is the only input boundary for Select All.
+        XCTAssertGreaterThan(cells.count, 0)
+        let selectAll = photos.buttons["全选"]
+        XCTAssertTrue(selectAll.waitForExistence(timeout: 10))
+        selectAll.tap()
+        let assistiveTouch = photos.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.95))
+        let clearShareArea = photos.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.20))
+        assistiveTouch.press(forDuration: 0.35, thenDragTo: clearShareArea)
+        assistiveTouchWasMovedForShare = true
+        let share = photos.buttons.matching(
+            NSPredicate(format: "label IN %@", ["共享", "分享", "Share"])
+        ).firstMatch
+        XCTAssertTrue(share.waitForExistence(timeout: 10))
+        share.tap()
+        let memoMark = photos.cells.matching(
+            NSPredicate(format: "label IN %@", ["时光记", "MemoMark"])
+        ).firstMatch
+        XCTAssertTrue(memoMark.waitForExistence(timeout: 10))
+        memoMark.tap()
+        let begin = photos.buttons["开始记录"].firstMatch
+        XCTAssertTrue(begin.waitForExistence(timeout: 15))
+        begin.tap()
+        let submitting = photos.buttons["正在提交"]
+        _ = submitting.waitForExistence(timeout: 5)
+        XCTAssertEqual(
+            XCTWaiter.wait(
+                for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: submitting)],
+                timeout: 60
+            ),
+            .completed
+        )
+        XCTAssertNotEqual(application.state, .runningForeground)
+
+        application.activate()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 30))
+        let pauseLabels = ["暂停处理", "Pause processing", "処理を一時停止", "처리 일시 정지"]
+        let pause = application.buttons.matching(
+            NSPredicate(format: "label IN %@", pauseLabels)
+        ).firstMatch
+        XCTAssertFalse(pause.exists, "The simple processing surface must not offer a manual pause action.")
+        let resumeLabels = ["继续处理", "Resume processing", "処理を再開", "처리 재개"]
+        XCTAssertFalse(application.buttons["home-activity-retry"].exists,
+            "Resending from Photos is the intended recovery action; Home must not add retry controls.")
+
+        let cancelLabels = ["取消本轮", "Cancel session", "セッションをキャンセル", "세션 취소"]
+        let cancel = application.buttons.matching(
+            NSPredicate(format: "label IN %@", cancelLabels)
+        ).firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 15))
+        cancel.tap()
+        let confirmationLabels = cancelLabels
+        let confirmation = application.alerts.buttons.matching(
+            NSPredicate(format: "label IN %@", confirmationLabels)
+        ).firstMatch
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 10))
+        confirmation.tap()
+        let processingControls = application.buttons.matching(
+            NSPredicate(format: "label IN %@", pauseLabels + resumeLabels)
+        ).firstMatch
+        let cancellationSettled = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: processingControls
+        )
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [cancellationSettled], timeout: 20),
+            .completed,
+            "Confirming cancel must durably move the task out of active processing and remove pause/resume controls."
+        )
+        XCTAssertFalse(
+            application.alerts.buttons.matching(
+                NSPredicate(format: "label IN %@", confirmationLabels)
+            ).firstMatch.exists,
+            "Cancel confirmation should dismiss after the command is accepted."
+        )
+        let cancelScreenshot = XCTAttachment(screenshot: application.screenshot())
+        cancelScreenshot.name = "home-controls-cancelled-seven-photos"
+        cancelScreenshot.lifetime = .keepAlways
+        add(cancelScreenshot)
+
+        let settled = expectation(description: "Let any already-submitted Photos write settle")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8) { settled.fulfill() }
+        wait(for: [settled], timeout: 10)
+        try deleteOutputsAddedSince(
+            baselineIdentifiers,
+            attachmentPrefix: "home-controls-success-cleanup"
+        )
+        cleanupCompleted = true
+        XCUIDevice.shared.press(.home)
     }
 
     func testHarnessLaunchesTheiOSHost() throws {
@@ -642,6 +2340,12 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             },
             "The output album contains an unsupported classification: \(inventory.assets.map(\.classification))"
         )
+    }
+
+    func testClearNamedQAOutputsBeforeBackgroundRound() throws {
+        // User-authorized disposable outputs only; never touch the input album.
+        try deleteOutputsAddedSince([], attachmentPrefix: "background-round-cleanup")
+        XCUIDevice.shared.press(.home)
     }
 
     func testMemoMarkQAInputMediaMatrix() throws {
@@ -1763,6 +3467,143 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         )
     }
 
+    private func verifySavedStillMetadata(_ inventory: QAAlbumInventory, expectedDescription: String, requireDescription: Bool = true) throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("PhotoKitReadback-\(UUID())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        for item in inventory.assets {
+            let asset = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [item.localIdentifier], options: nil).firstObject)
+            let resource = try XCTUnwrap(PHAssetResource.assetResources(for: asset).first { $0.type == .photo })
+            let url = folder.appendingPathComponent(UUID().uuidString).appendingPathExtension("image")
+            let options = PHAssetResourceRequestOptions()
+            options.isNetworkAccessAllowed = false
+            let ready = expectation(description: "Read saved PhotoKit image resource")
+            PHAssetResourceManager.default().writeData(for: resource, toFile: url, options: options) { error in
+                if let error { XCTFail("PhotoKit resource read failed: \(error)") }
+                ready.fulfill()
+            }
+            wait(for: [ready], timeout: 30)
+            let source = try XCTUnwrap(CGImageSourceCreateWithURL(url as CFURL, nil))
+            let properties = try XCTUnwrap(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
+            XCTAssertEqual((properties[kCGImagePropertyPixelWidth] as? NSNumber)?.intValue, item.pixelWidth)
+            XCTAssertEqual((properties[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue, item.pixelHeight)
+            let tiff = properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any]
+            let tiffDescription = tiff?[kCGImagePropertyTIFFImageDescription] as? String
+            let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any]
+            let comment = exif?[kCGImagePropertyExifUserComment] as? String
+            let evidence: [String: Any] = ["classification": item.classification,
+                "tiffDescriptionPresent": tiffDescription != nil,
+                "tiffDescriptionContainsExpected": tiffDescription?.contains(expectedDescription) == true,
+                "exifCommentPresent": comment != nil,
+                "exifCommentContainsExpected": comment?.contains(expectedDescription) == true,
+                "exifCommentLength": comment?.count ?? 0]
+            let attachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: evidence), uniformTypeIdentifier: "public.json")
+            attachment.name = "saved-image-metadata-fields-\(item.classification).json"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            if requireDescription {
+                XCTAssertTrue(tiffDescription?.contains(expectedDescription) == true)
+            }
+            if item.classification == "livePhoto" {
+                let apple = try XCTUnwrap(properties[kCGImagePropertyMakerAppleDictionary] as? [String: Any])
+                XCTAssertFalse((apple["17"] as? String ?? "").isEmpty)
+            }
+        }
+    }
+
+    private func observeContinuedCompletionWindow(requestCount: Int, since startedAt: TimeInterval) throws {
+        // The UI runner has no App Group entitlement. CoreDevice reads the
+        // submitted/completed records independently during this Photos-only
+        // window; a passing UI test alone does not certify owner completion.
+        let interval = expectation(description: "Observe owners before cleanup and host activation")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) { interval.fulfill() }
+        wait(for: [interval], timeout: 65)
+        XCTAssertNotEqual(application.state, .runningForeground)
+        let evidence: [String: Any] = ["expectedRequestCount": requestCount,
+            "roundStartedAt": startedAt, "observationEndedAt": Date().timeIntervalSince1970,
+            "hostForeground": application.state == .runningForeground]
+        let attachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: evidence), uniformTypeIdentifier: "public.json")
+        attachment.name = "external-owner-completion-observation-window.json"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    private func savedResourceURL(_ resource: PHAssetResource, in folder: URL) throws -> URL {
+        let url = folder.appendingPathComponent(UUID().uuidString).appendingPathExtension(resource.type == .pairedVideo ? "mov" : "image")
+        let options = PHAssetResourceRequestOptions()
+        options.isNetworkAccessAllowed = false
+        let ready = expectation(description: "Read saved pairing resource")
+        PHAssetResourceManager.default().writeData(for: resource, toFile: url, options: options) { error in
+            if let error { XCTFail("PhotoKit pairing resource read failed: \(error)") }
+            ready.fulfill()
+        }
+        wait(for: [ready], timeout: 30)
+        return url
+    }
+
+    private func verifySavedMoviePairingSynchronously(_ inventory: QAAlbumInventory) {
+        let ready = expectation(description: "Read saved Live Photo movie pairing")
+        let operation = Task { @MainActor in
+            defer { ready.fulfill() }
+            do { try await verifySavedMoviePairing(inventory) }
+            catch { XCTFail("Saved movie readback failed: \(error)") }
+        }
+        wait(for: [ready], timeout: 90)
+        operation.cancel()
+    }
+
+    @MainActor
+    private func verifySavedMoviePairing(_ inventory: QAAlbumInventory) async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("MoviePairReadback-\(UUID())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let pairs = inventory.assets.filter { $0.classification == "livePhoto" }
+        XCTAssertEqual(pairs.count, 1)
+        for item in pairs {
+            let asset = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [item.localIdentifier], options: nil).firstObject)
+            let resources = PHAssetResource.assetResources(for: asset)
+            let stillURL = try savedResourceURL(try XCTUnwrap(resources.first { $0.type == .photo }), in: folder)
+            let movieURL = try savedResourceURL(try XCTUnwrap(resources.first { $0.type == .pairedVideo }), in: folder)
+            let source = try XCTUnwrap(CGImageSourceCreateWithURL(stillURL as CFURL, nil))
+            let properties = try XCTUnwrap(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
+            let apple = try XCTUnwrap(properties[kCGImagePropertyMakerAppleDictionary] as? [String: Any])
+            let stillIdentifier = try XCTUnwrap(apple["17"] as? String)
+            XCTAssertFalse(stillIdentifier.isEmpty)
+            let movie = AVURLAsset(url: movieURL)
+            let metadata = try await movie.load(.metadata)
+            let identifier = try XCTUnwrap(metadata.first { $0.identifier == .quickTimeMetadataContentIdentifier })
+            let movieIdentifier = try await identifier.load(.stringValue)
+            XCTAssertEqual(movieIdentifier, stillIdentifier, "Saved still and movie must contain the same pairing identity.")
+            let duration = try await movie.load(.duration).seconds
+            XCTAssertTrue(duration.isFinite && duration > 0)
+            let videoTracks = try await movie.loadTracks(withMediaType: .video)
+            XCTAssertEqual(videoTracks.count, 1)
+            var markerTimes: [Double] = []
+            for track in try await movie.loadTracks(withMediaType: .metadata) {
+                let reader = try AVAssetReader(asset: movie)
+                let output = AVAssetReaderTrackOutput(track: track, outputSettings: nil)
+                XCTAssertTrue(reader.canAdd(output))
+                reader.add(output)
+                let adaptor = AVAssetReaderOutputMetadataAdaptor(assetReaderTrackOutput: output)
+                XCTAssertTrue(reader.startReading())
+                while let group = adaptor.nextTimedMetadataGroup() {
+                    if group.items.contains(where: { $0.identifier?.rawValue.hasSuffix("still-image-time") == true }) {
+                        markerTimes.append(group.timeRange.start.seconds)
+                    }
+                }
+                XCTAssertEqual(reader.status, .completed)
+            }
+            XCTAssertEqual(markerTimes.count, 1)
+            XCTAssertTrue(markerTimes.allSatisfy { $0.isFinite && $0 >= 0 && $0 < duration })
+            let evidence: [String: Any] = ["pairingIdentifiersEqual": movieIdentifier == stillIdentifier,
+                "videoTrackCount": videoTracks.count, "durationSeconds": duration, "stillMarkerTimesSeconds": markerTimes]
+            let attachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: evidence), uniformTypeIdentifier: "public.json")
+            attachment.name = "saved-movie-pairing-readback.json"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+    }
+
     private func inventoryAlbum(
         titled albumTitle: String,
         attachmentName: String
@@ -1860,7 +3701,56 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         return inventory
     }
 
+    private func deleteOutputsAddedSince(
+        _ baselineIdentifiers: Set<String>,
+        attachmentPrefix: String
+    ) throws {
+        let current = try inventoryAlbum(
+            titled: "MemoMark QA Outputs",
+            attachmentName: "\(attachmentPrefix)-before.json"
+        )
+        let addedIdentifiers = current.assets
+            .map(\.localIdentifier)
+            .filter { !baselineIdentifiers.contains($0) }
+        guard !addedIdentifiers.isEmpty else { return }
+
+        let assets = PHAsset.fetchAssets(
+            withLocalIdentifiers: addedIdentifiers,
+            options: nil
+        )
+        XCTAssertEqual(assets.count, addedIdentifiers.count)
+        let deletion = expectation(description: "Permanently delete only this run's QA outputs")
+        var succeeded = false
+        var deletionError: Error?
+        PHPhotoLibrary.shared().performChanges({
+            PHAssetChangeRequest.deleteAssets(assets)
+        }) { success, error in
+            succeeded = success
+            deletionError = error
+            deletion.fulfill()
+        }
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let confirmDelete = springboard.alerts.buttons.matching(
+            NSPredicate(format: "label IN %@", ["删除", "Delete", "允许", "Allow"])
+        ).firstMatch
+        if confirmDelete.waitForExistence(timeout: 5) { confirmDelete.tap() }
+        wait(for: [deletion], timeout: 60)
+        XCTAssertTrue(succeeded, "Could not delete this test's QA outputs: \(String(describing: deletionError))")
+
+        let after = try inventoryAlbum(
+            titled: "MemoMark QA Outputs",
+            attachmentName: "\(attachmentPrefix)-after.json"
+        )
+        XCTAssertTrue(
+            after.assets.allSatisfy { baselineIdentifiers.contains($0.localIdentifier) },
+            "QA Outputs still contains an asset created during this round."
+        )
+    }
+
     private func launchHostAndWait() {
+        // Explicitly discard Xcode's automatic host launch before applying
+        // this scenario's arguments; preserve the app's durable data.
+        application.terminate()
         application.launch()
 
         XCTAssertTrue(
@@ -1895,9 +3785,9 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             .descendants(matching: .any)
             .matching(identifier: "task-completed-card")
             .firstMatch
-        let completedValueBefore = completedCard.value as? String ?? ""
-        let completedLabelBefore = completedCard.label
         let hadCompletedCardBefore = completedCard.exists
+        let completedValueBefore = hadCompletedCardBefore ? (completedCard.value as? String ?? "") : ""
+        let completedLabelBefore = hadCompletedCardBefore ? completedCard.label : ""
         var sawProcessingCard = false
         var sawCompletedCardDisappear = !hadCompletedCardBefore
         let attentionCard = application
@@ -1923,9 +3813,10 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
                 sawCompletedCardDisappear = true
             }
 
-            let completedValue = completedCard.value as? String ?? ""
-            let completedLabel = completedCard.label
-            let currentSignature = "\(completedCard.identifier)|\(completedLabel)|\(completedValue)"
+            let hasCompletedCard = completedCard.exists
+            let completedValue = hasCompletedCard ? (completedCard.value as? String ?? "") : ""
+            let completedLabel = hasCompletedCard ? completedCard.label : ""
+            let currentSignature = "task-completed-card|\(completedLabel)|\(completedValue)"
             let publishedNewSurface = previousSignature.map {
                 currentSignature != $0
             } ?? false

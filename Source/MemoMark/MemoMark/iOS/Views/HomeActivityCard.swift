@@ -2,8 +2,8 @@
 import SwiftUI
 
 /// The Home-only presentation of an immutable queue-status projection.
-/// Queue ownership, background scheduling, and navigation stay outside this
-/// surface; it only manages the short visual lifetime of a received projection.
+/// Queue ownership and scheduling stay outside this surface; it renders the
+/// current projection and emits cancel and history deletion actions.
 struct HomeActivityCard: View {
 
     private var interfaceLanguage: MemoMarkLanguage {
@@ -15,6 +15,12 @@ struct HomeActivityCard: View {
 
     let projection: HomeActivityProjection
     let onOpenProcessing: () -> Void
+    let isPaused: Bool
+    let onCancel: () -> Void
+    let onDeleteRecord: () -> Void
+
+    @State private var showsCancelConfirmation = false
+    @State private var showsDeleteConfirmation = false
 
     @State
     private var isMounted =
@@ -34,57 +40,95 @@ struct HomeActivityCard: View {
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.primary)
 
-                    Button(action: onOpenProcessing) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack(alignment: .center, spacing: 12) {
-                                Text(projection.countText)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                    .monospacedDigit()
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.82)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Button(action: onOpenProcessing) {
+                                HStack(alignment: .center, spacing: 12) {
+                                    Text(projection.countText)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                        .monospacedDigit()
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.82)
 
-                                Spacer(minLength: 8)
+                                    Spacer(minLength: 8)
 
-                                Text(projection.statusText)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(statusColor)
-                                    .lineLimit(1)
+                                    Text(isPaused
+                                        ? localized("home.activity.status.interrupted")
+                                        : projection.statusText)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(statusColor)
+                                        .lineLimit(1)
+                                }
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("\(projection.countText)，\(isPaused ? localized("home.activity.status.interrupted") : projection.statusText)")
+                            .accessibilityValue(
+                                String(
+                                    format: localized("home.activity.progress"),
+                                    locale: interfaceLanguage.locale,
+                                    progressPercentText
+                                )
+                            )
 
-                            activityProgressBar
+                            if projection.state == .processing && !isPaused {
+                                Button { showsCancelConfirmation = true } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .frame(width: 44, height: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.borderless)
+                                .tint(.red)
+                                .accessibilityLabel(localized("home.activity.cancel"))
+                            } else {
+                                Button { showsDeleteConfirmation = true } label: {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .frame(width: 44, height: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.borderless)
+                                .tint(.red)
+                                .accessibilityLabel(localized("home.activity.delete"))
+                                .accessibilityIdentifier("home-activity-delete-record")
+                            }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, ConfigurationUI.innerPanelPadding)
-                        .padding(.vertical, ConfigurationUI.innerPanelPadding)
-                        .background(
-                            RoundedRectangle(
-                                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
-                                style: .continuous
-                            )
-                            .fill(ConfigurationUI.controlBackground)
-                        )
-                        .overlay(
-                            RoundedRectangle(
-                                cornerRadius: ConfigurationUI.innerPanelCornerRadius,
-                                style: .continuous
-                            )
-                            .stroke(ConfigurationUI.faintHairline)
-                        )
+                        activityProgressBar
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(
-                        "\(projection.countText)，\(projection.statusText)"
-                    )
-                    .accessibilityValue(
-                        String(
-                            format: localized("home.activity.progress"),
-                            locale: interfaceLanguage.locale,
-                            progressPercentText
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, ConfigurationUI.innerPanelPadding)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(
+                            cornerRadius: ConfigurationUI.innerPanelCornerRadius,
+                            style: .continuous
                         )
+                        .fill(ConfigurationUI.controlBackground)
                     )
+                    .overlay(
+                        RoundedRectangle(
+                            cornerRadius: ConfigurationUI.innerPanelCornerRadius,
+                            style: .continuous
+                        )
+                        .stroke(ConfigurationUI.faintHairline)
+                    )
+                    .alert(localized("home.activity.cancel.title"), isPresented: $showsCancelConfirmation) {
+                        Button(localized("home.activity.cancel.confirm"), role: .destructive, action: onCancel)
+                        Button(localized("home.activity.cancel.keep"), role: .cancel) {}
+                    } message: {
+                        Text(localized("home.activity.cancel.message"))
+                    }
+                    .alert(localized("home.activity.delete"), isPresented: $showsDeleteConfirmation) {
+                        Button(localized("home.activity.delete"), role: .destructive, action: onDeleteRecord)
+                        Button(localized("home.activity.cancel.keep"), role: .cancel) {}
+                    } message: {
+                        Text(localized("home.activity.delete.message"))
+                    }
                 }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("home-activity-record-\(projection.jobID.uuidString)")
                 .opacity(isVisible ? 1 : 0)
                 .offset(y: isVisible || accessibilityReduceMotion ? 0 : -6)
             }
@@ -113,6 +157,7 @@ struct HomeActivityCard: View {
     }
 
     private var statusColor: Color {
+        if isPaused { return .secondary }
         switch projection.state {
         case .processing:
             return .accentColor

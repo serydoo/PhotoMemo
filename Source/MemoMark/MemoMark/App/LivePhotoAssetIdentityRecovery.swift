@@ -1,6 +1,6 @@
 import Foundation
 import UniformTypeIdentifiers
-#if canImport(Photos) && !MEMOMARK_SHARE_EXTENSION
+#if canImport(Photos)
 import Photos
 #endif
 
@@ -250,7 +250,7 @@ enum LivePhotoStaticFallbackPolicy {
     }
 }
 
-#if canImport(Photos) && !MEMOMARK_SHARE_EXTENSION
+#if canImport(Photos)
 struct PhotoKitLivePhotoAssetIdentityResolver:
     LivePhotoAssetIdentityResolving {
 

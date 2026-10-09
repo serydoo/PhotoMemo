@@ -1,4 +1,4 @@
-#if os(iOS) && canImport(ActivityKit) && !MEMOMARK_SHARE_EXTENSION
+#if os(iOS) && canImport(ActivityKit)
 import Foundation
 import ActivityKit
 

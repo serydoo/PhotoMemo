@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// Finite task-state events emitted by media execution. Queue ownership
@@ -148,4 +147,3 @@ nonisolated enum BatchTaskExecutionEvent:
         }
     }
 }
-#endif

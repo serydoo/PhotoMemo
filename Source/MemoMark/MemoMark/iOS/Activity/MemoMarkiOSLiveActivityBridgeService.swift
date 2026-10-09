@@ -69,8 +69,9 @@ private extension MemoMarkiOSLiveActivityBridgeService {
             MemoMarkBackgroundJobSnapshot?
     ) {
 
-        let newJobID =
-            snapshot?.jobID
+        let newJobID = snapshot.map {
+            backgroundStatusService.currentExecutionSession?.id ?? $0.jobID
+        }
 
         var obsoleteJobIDs =
             bridgeState.obsoleteJobIDs
@@ -106,10 +107,16 @@ private extension MemoMarkiOSLiveActivityBridgeService {
             MemoMarkBackgroundJobSnapshot
     ) -> MemoMarkBackgroundLiveActivityPayload {
 
+        let session = backgroundStatusService.currentExecutionSession
+        let activityID = session?.id ?? snapshot.jobID
+        let isTerminal = session.map { $0.pendingCount == 0 } ?? (snapshot.presentationState != .active)
+        let fraction = session.map {
+            $0.totalCount == 0 ? 0 : Double($0.totalCount - $0.pendingCount) / Double($0.totalCount)
+        } ?? snapshot.progressFraction
         let progressPercent =
             Int(
                 (
-                    snapshot.progressFraction
+                    fraction
                     * 100
                 )
                 .rounded()
@@ -118,8 +125,7 @@ private extension MemoMarkiOSLiveActivityBridgeService {
         let attributes =
             MemoMarkBackgroundActivityAttributes(
                 jobID:
-                    snapshot.jobID
-                    .uuidString,
+                    activityID.uuidString,
                 jobTitle:
                     snapshot.title,
                 launchSourceTitle:
@@ -156,17 +162,16 @@ private extension MemoMarkiOSLiveActivityBridgeService {
                 currentFileName:
                     snapshot.currentFileName,
                 completedCount:
-                    snapshot.completedCount,
+                    session?.completedCount ?? snapshot.completedCount,
                 failedCount:
-                    snapshot.failedCount,
+                    session?.failedCount ?? snapshot.failedCount,
                 totalCount:
-                    snapshot.totalCount,
+                    session?.totalCount ?? snapshot.totalCount,
                 progressPercent:
                     progressPercent,
                 presentationStateRawValue:
                     presentationStateTitle(
-                        snapshot
-                        .presentationState
+                        isTerminal ? snapshot.presentationState : .active
                     ),
                 feedbackStateRawValue:
                     snapshot.feedbackState
@@ -175,19 +180,16 @@ private extension MemoMarkiOSLiveActivityBridgeService {
                     snapshot.updatedAt
             )
 
-        let isTerminal =
-            snapshot.presentationState
-            != .active
-
         return MemoMarkBackgroundLiveActivityPayload(
-            jobID: snapshot.jobID,
+            jobID: activityID,
             attributes: attributes,
             contentState:
                 contentState,
             staleDate:
                 resolvedStaleDate(
                     isTerminal:
-                        isTerminal
+                        isTerminal,
+                    updatedAt: snapshot.updatedAt
                 ),
             relevanceScore:
                 resolvedRelevanceScore(
@@ -201,16 +203,8 @@ private extension MemoMarkiOSLiveActivityBridgeService {
         )
     }
 
-    func resolvedStaleDate(
-        isTerminal: Bool
-    ) -> Date? {
-
-        if isTerminal {
-            return nil
-        }
-
-        return Date()
-            .addingTimeInterval(300)
+    func resolvedStaleDate(isTerminal: Bool, updatedAt: Date) -> Date? {
+        ProcessingProgressFreshness.staleDate(updatedAt: updatedAt, isTerminal: isTerminal)
     }
 
     func resolvedRelevanceScore(

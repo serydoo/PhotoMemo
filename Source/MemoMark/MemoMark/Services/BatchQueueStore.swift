@@ -11,6 +11,12 @@ final class BatchQueueStore:
 
     @Published private(set) var isProcessing = false
 
+    @Published private(set) var processingPaused = false
+
+    @Published private(set) var executionLease: ExecutionLease?
+    private let executionArbiter: BackgroundExecutionArbiter
+    private var systemExecutionLease: ExecutionLease?
+
     @Published private(set) var activeJobID: UUID?
 
     @Published private(set) var activeTaskID: UUID?
@@ -33,6 +39,8 @@ final class BatchQueueStore:
 
     private let automaticallyStartsProcessing:
         Bool
+
+    private let intakeControlStore: ExternalPhotoIntakeStore
 
     private let execution:
         BatchQueueExecution
@@ -83,6 +91,10 @@ final class BatchQueueStore:
 
     private var persistenceBlocked = false
 
+    private let executionControlDefaults: UserDefaults
+    private static let processingPausedStorageKey =
+        "memomark.processing.executionPaused"
+
     private var pendingCommerceSnapshot:
         MemoMarkCommerceSnapshot?
 
@@ -119,6 +131,7 @@ final class BatchQueueStore:
         productionDiagnostics:
             ProductionDiagnosticsRepository? = nil,
         automaticallyStartsProcessing: Bool = true,
+        executionFileLock: ProcessingExecutionFileLock? = nil,
         renderHealthValidator: @escaping
             @MainActor (RecordCard, BatchConfigurationSnapshot) async throws -> [CardTextBlock] = {
                 card,
@@ -129,6 +142,7 @@ final class BatchQueueStore:
                 )
             }
     ) {
+        self.executionArbiter = BackgroundExecutionArbiter(fileLock: executionFileLock)
         let resolvedDefaults =
             defaults
             ?? MemoMarkSharedContainer
@@ -140,8 +154,13 @@ final class BatchQueueStore:
             externalIntakeStore
             ?? .shared
 
+        self.intakeControlStore = resolvedExternalIntakeStore
         self.settingsService =
             resolvedSettingsService
+        self.executionControlDefaults = resolvedDefaults
+        self.processingPaused = resolvedDefaults.bool(
+            forKey: Self.processingPausedStorageKey
+        )
         self.automaticallyStartsProcessing =
             automaticallyStartsProcessing
         let resolvedExecution =
@@ -304,6 +323,55 @@ final class BatchQueueStore:
         defaultConfigurationSnapshot = snapshot
     }
 
+    func pauseProcessing() {
+        guard !processingPaused else { return }
+        setProcessingPaused(true)
+        let activeTaskPhase = jobs
+            .first(where: { $0.id == activeJobID })?
+            .tasks
+            .first(where: { $0.id == activeTaskID })?
+            .phase
+        if Self.shouldCancelActiveProcessingForPause(
+            activeTaskPhase: activeTaskPhase
+        ) {
+            processingTask?.cancel()
+        }
+    }
+
+    static func shouldCancelActiveProcessingForPause(
+        activeTaskPhase: BatchTaskPhase?
+    ) -> Bool {
+        activeTaskPhase != .savingToPhotoLibrary
+    }
+
+    func resumeProcessing(sessionID: UUID? = nil) async {
+        let held = jobs.first { job in
+            job.executionSuspendedAt != nil && job.historyDeletedAt == nil
+                && (sessionID == nil || (job.executionSessionID ?? job.id) == sessionID)
+        }
+        guard processingPaused || held != nil else { return }
+        let resumed = await withDurableCommand {
+            if let held {
+                let result = await durableLedger.resumeExecutionSession(held.executionSessionID ?? held.id)
+                guard await projectDurableTransaction(result) != nil else { return false }
+            }
+            if processingPaused { setProcessingPaused(false) }
+            return true
+        }
+        guard resumed else { return }
+        if let held { notifications.removeSessionStatusNotification(held.executionSessionID ?? held.id) }
+        await normalizeJobsForResume()
+        await startProcessingIfNeeded()
+    }
+
+    private func setProcessingPaused(_ paused: Bool) {
+        executionControlDefaults.set(
+            paused,
+            forKey: Self.processingPausedStorageKey
+        )
+        processingPaused = paused
+    }
+
     func enqueue(
         urls: [URL],
         launchSource: BatchJobLaunchSource = .inAppPreview,
@@ -349,7 +417,8 @@ final class BatchQueueStore:
             return nil
         }
         if admission.didInsert,
-           automaticallyStartsProcessing {
+           automaticallyStartsProcessing,
+           systemExecutionLease == nil {
             await startProcessingIfNeeded()
         }
         return admission.job
@@ -384,23 +453,14 @@ final class BatchQueueStore:
                 current: commerceSnapshot
             )
 
-        guard payloads.count
-                <= maximumAdmissionCount else {
-            lastErrorMessage =
-                maximumAdmissionCount == 0
-                ? commerceLocalized(
-                    "commerce.queue.allowance_completed",
-                    fallback: "免费成长记录额度已使用完，请在时光记中了解 MemoMark+。"
-                )
-                : commerceFormatted(
-                    "commerce.queue.maximum_admission_format",
-                    fallback: "当前一次最多可以加入 %lld 张照片。",
-                    Int64(maximumAdmissionCount)
-                )
+        let batchLimit = commerceAccounting.batchLimit(current: commerceSnapshot)
+        guard payloads.count <= batchLimit else {
+            lastErrorMessage = commerceFormatted("commerce.queue.maximum_admission_format",
+                fallback: "当前一次最多可以加入 %lld 张照片。", Int64(batchLimit))
             return nil
         }
 
-        guard let job =
+        guard var job =
             execution.enqueue(
                 payloads: payloads,
                 configuration: configuration,
@@ -415,12 +475,68 @@ final class BatchQueueStore:
             return nil
         }
 
-        let result = await durableLedger.admit(job)
-        guard let admission =
-                await projectDurableTransaction(result) else {
+        do {
+            job = try await BatchProcessingIdentityCompiler.prepare(job)
+        } catch is CancellationError {
+            return nil
+        } catch {
+            // Preserve old admission/recovery for unavailable legacy test or
+            // source paths; never invent an identity from a provider filename.
+            MemoMarkShareDiagnostics.record(stage: .appEnqueueFailed,
+                message: "processingIdentity=unavailable reason=sourceOrSemantics")
+            if job.tasks.contains(where: { FileManager.default.fileExists(atPath: $0.sourceURL.path) }) {
+                // New materialized inputs fail closed on malformed semantics or
+                // unavailable decoration bytes; no UUID-only production save.
+                return nil
+            }
+        }
+
+        guard job.tasks.count <= commerceAccounting.batchLimit(current: commerceSnapshot),
+              ProcessingReservationPolicy.newReservationCount(for: job, among: jobs) <= maximumAdmissionCount else {
+            lastErrorMessage =
+                maximumAdmissionCount == 0
+                ? commerceLocalized(
+                    "commerce.queue.allowance_completed",
+                    fallback: "免费成长记录额度已使用完，请在时光记中了解 MemoMark+。"
+                )
+                : commerceFormatted(
+                    "commerce.queue.maximum_admission_format",
+                    fallback: "当前一次最多可以加入 %lld 张照片。",
+                    Int64(maximumAdmissionCount)
+                )
             return nil
         }
 
+        if let intakeRequestID {
+            switch intakeControlStore.loadRequestsForProcessingResult() {
+            case .success(let requests):
+                let request = requests.first { $0.id == intakeRequestID }
+                job.executionSuspendedAt = request?.executionSuspendedAt
+                job.executionSessionID = request?.continuedExecutionSessionID ?? job.executionSessionID
+            case .noValue: break
+            case .decodingFailed: return nil
+            }
+        }
+        let totalCapacity = commerceAccounting.admissionCapacity(among: [], current: commerceSnapshot)
+        let result = await durableLedger.admit(job, maximumPendingTaskCount: totalCapacity)
+        guard let optionalAdmission = await projectDurableTransaction(result),
+              let admission = optionalAdmission else {
+            return nil
+        }
+
+        if let intakeRequestID {
+            switch intakeControlStore.loadRequestsForProcessingResult() {
+            case .success(let requests):
+                if let heldAt = requests.first(where: { $0.id == intakeRequestID })?.executionSuspendedAt {
+                    let held = await durableLedger.suspendExecutionSession(admission.job.executionSessionID ?? admission.job.id, now: heldAt)
+                    guard await projectDurableTransaction(held) != nil else { return nil }
+                    guard let current = jobs.first(where: { $0.id == admission.job.id }) else { return nil }
+                    return BatchQueueAdmission(job: current, didInsert: admission.didInsert)
+                }
+            case .noValue: break
+            case .decodingFailed: return nil
+            }
+        }
         guard admission.didInsert else {
             return admission
         }
@@ -508,9 +624,90 @@ final class BatchQueueStore:
         }
     }
 
+    func cancelExecutionSession(
+        _ sessionID: UUID
+    ) async {
+#if DEBUG
+        MemoMarkBackgroundProbe.record("queue.cancel.requested", detail: "session=\(sessionID)")
+#endif
+        await withDurableCommand {
+            await cancelExecutionSessionCommand(sessionID)
+        }
+#if DEBUG
+        MemoMarkBackgroundProbe.record("queue.cancel.returned", detail: "session=\(sessionID) pending=\(pendingTaskCount)")
+#endif
+    }
+
+    private func cancelExecutionSessionCommand(
+        _ sessionID: UUID
+    ) async {
+        let sessionJobs = jobs.filter {
+            ($0.executionSessionID ?? $0.id) == sessionID
+        }
+        guard !sessionJobs.isEmpty else {
+#if DEBUG
+            MemoMarkBackgroundProbe.record("queue.cancel.noMatchingSession", detail: "session=\(sessionID)")
+#endif
+            return
+        }
+
+        let sessionJobIDs = Set(sessionJobs.map(\.id))
+        let activeTaskPhase = jobs
+            .first(where: { $0.id == activeJobID })?
+            .tasks
+            .first(where: { $0.id == activeTaskID })?
+            .phase
+        let shouldStopActiveProcessor = activeJobID.map(sessionJobIDs.contains) == true
+            && activeTaskPhase != .savingToPhotoLibrary
+        let queuedSourceURLs = Set(
+            sessionJobs
+                .flatMap(\.tasks)
+                .filter { $0.phase == .queued }
+                .compactMap(\.sourceURL)
+        )
+
+        // A durable saving phase may outlive its process. Exclusive execution
+        // ownership distinguishes recovery records from an actual PhotoKit call.
+        let cancellationLease = executionLease == nil
+            ? executionArbiter.acquire(owner: .foreground) : nil
+        defer { if let cancellationLease { executionArbiter.release(cancellationLease) } }
+        let ownsExecution = executionLease != nil || cancellationLease != nil
+        let protectedSaveID = processingTask != nil ? activeTaskID : nil
+        let recoveredSaveIDs = ownsExecution ? Set(sessionJobs.flatMap(\.tasks).compactMap { task in
+            task.phase == .savingToPhotoLibrary && task.id != protectedSaveID ? task.id : nil
+        }) : []
+        let result = await durableLedger.cancelExecutionSession(sessionID,
+            cancellableRecoveredSaveTaskIDs: recoveredSaveIDs)
+        guard let didCancel = await projectDurableTransaction(result), didCancel else {
+            return
+        }
+        notifications.removeSessionStatusNotification(sessionID)
+
+#if DEBUG
+        MemoMarkBackgroundProbe.record("queue.cancel.committed", detail: "session=\(sessionID) active=\(String(describing: activeTaskPhase)) pending=\(pendingTaskCount) stop=\(shouldStopActiveProcessor)")
+#endif
+        if shouldStopActiveProcessor {
+            processingTask?.cancel()
+        }
+        if pendingTaskCount == 0, processingPaused {
+            setProcessingPaused(false)
+        }
+        for sourceURL in queuedSourceURLs {
+            cleanupUnreferencedManagedSource(at: sourceURL)
+        }
+    }
+
     private func cancelJobCommand(
         _ jobID: UUID
     ) async {
+
+        let activeTaskPhase = jobs
+            .first(where: { $0.id == activeJobID })?
+            .tasks
+            .first(where: { $0.id == activeTaskID })?
+            .phase
+        let shouldStopActiveProcessor = activeJobID == jobID
+            && activeTaskPhase != .savingToPhotoLibrary
 
         let queuedSourceURLs =
             jobs.first {
@@ -530,17 +727,22 @@ final class BatchQueueStore:
             return
         }
 
+        if shouldStopActiveProcessor {
+            processingTask?.cancel()
+        }
+
+        if pendingTaskCount == 0, processingPaused {
+            setProcessingPaused(false)
+        }
+
         for sourceURL in queuedSourceURLs {
-            execution
-                .cleanupManagedSourceIfNeeded(
-                    at: sourceURL
-                )
+            cleanupUnreferencedManagedSource(at: sourceURL)
         }
     }
 
     func startProcessingIfNeeded() async {
 
-        guard !persistenceBlocked else {
+        guard !persistenceBlocked, !processingPaused else {
             return
         }
 
@@ -561,6 +763,11 @@ final class BatchQueueStore:
             return
         }
 
+        if executionLease == nil {
+            executionLease = executionArbiter.acquire(owner: .foreground)
+        }
+        guard executionLease != nil else { return }
+
         processingTask = Task { @MainActor in
             await execution
                 .processingLoop(
@@ -569,8 +776,56 @@ final class BatchQueueStore:
         }
     }
 
+    func reserveSystemExecution(owner: BackgroundExecutionOwner) -> ExecutionLease? {
+        guard owner == .bgProcessing || owner == .continuedProcessing,
+              processingTask == nil, executionLease == nil,
+              let lease = executionArbiter.acquire(owner: owner) else { return nil }
+        systemExecutionLease = lease
+        executionLease = lease
+        return lease
+    }
+
+    func finishSystemExecution(_ lease: ExecutionLease) async {
+        guard systemExecutionLease == lease else { return }
+        // Quiescence precedes release; an old callback cannot touch a successor.
+        if let task = processingTask { await task.value }
+        guard systemExecutionLease == lease else { return }
+        systemExecutionLease = nil
+        executionArbiter.release(lease)
+        executionLease = nil
+    }
+
+    func stopProcessingForBackgroundExpiration(lease: ExecutionLease) async {
+        guard executionLease == lease else { return }
+        if lease.owner == .continuedProcessing {
+            // System stop/expiration ends this continued intent. Preserve its
+            // tasks and receipts without globally blocking a later Share.
+            if let sessionID = backgroundExecutionSession?.id {
+                _ = await withDurableCommand {
+                    await projectDurableTransaction(await durableLedger.suspendExecutionSession(sessionID))
+                }
+            }
+            processingTask?.cancel()
+        } else {
+            await stopProcessingForBackgroundExpiration()
+        }
+        if let task = processingTask { await task.value }
+    }
+
+    func transitionForegroundExecution(to owner: BackgroundExecutionOwner) -> ExecutionLease? {
+        guard owner == .foreground || owner == .backgroundGrace,
+              systemExecutionLease == nil, let lease = executionLease,
+              lease.owner == .foreground || lease.owner == .backgroundGrace else { return nil }
+        executionLease = executionArbiter.transfer(lease, to: owner)
+        return executionLease
+    }
+
     var canContinueProcessing: Bool {
-        !persistenceBlocked
+        !persistenceBlocked && !processingPaused
+    }
+
+    var executablePendingTaskCount: Int {
+        ExecutionSessionSuspensionPolicy.executablePendingTaskCount(in: jobs)
     }
 
     var pendingTaskCount: Int {
@@ -769,6 +1024,20 @@ final class BatchQueueStore:
         )
     }
 
+    func deleteExecutionSessionHistory(_ sessionID: UUID) async -> Bool {
+        await withDurableCommand {
+            // A held session can still contain interrupted export/save phases.
+            // Cancel through the existing ownership/receipt boundary before
+            // hiding it; never discard an in-flight PhotoKit transaction.
+            let snapshot = await durableLedger.refreshedSnapshot()
+            guard !snapshot.isPersistenceBlocked else { return false }
+            jobs = snapshot.jobs
+            await cancelExecutionSessionCommand(sessionID)
+            let result = await durableLedger.deleteExecutionSessionHistory(sessionID)
+            return await projectDurableTransaction(result) ?? false
+        }
+    }
+
     func clearTerminalExternalJobHistory(
         preserving preservedJobID: UUID?
     ) async {
@@ -859,9 +1128,7 @@ extension BatchQueueStore {
             execution.cleanupTemporaryFileIfNeeded(
                 at: resourceURLs.rendered
             )
-            execution.cleanupManagedSourceIfNeeded(
-                at: resourceURLs.source
-            )
+            cleanupUnreferencedManagedSource(at: resourceURLs.source)
         }
     }
 
@@ -925,9 +1192,7 @@ extension BatchQueueStore {
                 execution.cleanupTemporaryFileIfNeeded(
                     at: mutation.previous.renderedFileURL
                 )
-                execution.cleanupManagedSourceIfNeeded(
-                    at: mutation.previous.sourceURL
-                )
+                cleanupUnreferencedManagedSource(at: mutation.previous.sourceURL)
             }
         }
     }
@@ -1063,7 +1328,7 @@ extension BatchQueueStore {
         for task in jobs.flatMap(\.tasks)
         where task.phase == .savingToPhotoLibrary {
             if await saveReceiptLedger.hasRecoveryEvidence(
-                for: task.id.uuidString
+                for: task.photoLibraryIdempotencyKey
             ) {
                 taskIDs.insert(task.id)
             }
@@ -1139,7 +1404,7 @@ extension BatchQueueStore {
                     .filter {
                         !retainedTaskIDs.contains($0.id)
                     }
-                    .map { $0.id.uuidString }
+                    .map { $0.photoLibraryIdempotencyKey }
             )
             jobs = snapshot.jobs
             lastDurableJobs = snapshot.jobs
@@ -1190,7 +1455,7 @@ extension BatchQueueStore {
             retaining: Set(
                 jobs
                     .flatMap(\.tasks)
-                    .map { $0.id.uuidString }
+                    .map { $0.photoLibraryIdempotencyKey }
             )
         )
     }
@@ -1211,6 +1476,9 @@ extension BatchQueueStore {
         stage: String
     ) async {
 
+#if DEBUG
+        MemoMarkBackgroundProbe.record("queue.stage", detail: "job=\(jobID.uuidString) stage=\(stage)")
+#endif
         await notifications
             .deliverProgressNotificationIfNeeded(
                 for: jobID,
@@ -1233,11 +1501,16 @@ extension BatchQueueStore {
         shouldRestart: Bool = true
     ) async {
 
-        processingTask = nil
         clearProcessingIndicators()
-
         if !shouldRestart {
             await normalizeJobsForResume()
+        }
+        // Keep the owner throughout recovery normalization. Publishing idle
+        // must not open a handoff window while the old loop can still mutate.
+        processingTask = nil
+        if systemExecutionLease == nil, let lease = executionLease {
+            executionArbiter.release(lease)
+            executionLease = nil
         }
 
         if shouldRestart,
@@ -1317,13 +1590,28 @@ extension BatchQueueStore {
         )?.phase
     }
 
+    /// A cancelled/completed task does not own a file exclusively when another
+    /// admitted task still references it. Clean only after durable projection.
+    @discardableResult
+    private func cleanupUnreferencedManagedSource(at sourceURL: URL?) -> Bool {
+        guard let sourceURL else { return false }
+        let normalized = sourceURL.standardizedFileURL
+        guard !jobs.contains(where: { job in
+            job.tasks.contains(where: {
+                !$0.phase.isTerminal && $0.sourceURL.standardizedFileURL == normalized
+            })
+        }) else { return false }
+        execution.cleanupManagedSourceIfNeeded(at: sourceURL)
+        return true
+    }
+
     @discardableResult
     func cleanupManagedSourceForDurablyTerminalTask(
         at reference:
             BatchQueueExecution.TaskReference
     ) async -> Bool {
         await withDurableCommand {
-            let snapshot = await durableLedger.snapshot()
+            let snapshot = await durableLedger.refreshedSnapshot()
             guard !snapshot.isPersistenceBlocked,
                   let task = snapshot.jobs
                     .first(where: {
@@ -1337,11 +1625,7 @@ extension BatchQueueStore {
                 return false
             }
             jobs = snapshot.jobs
-            execution
-                .cleanupManagedSourceIfNeeded(
-                    at: task.sourceURL
-                )
-            return true
+            return cleanupUnreferencedManagedSource(at: task.sourceURL)
         }
     }
 

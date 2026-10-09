@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryExpressionEngine {
 
     private let subjectStrategy:
@@ -201,4 +200,3 @@ private extension MemoryExpressionEngine {
             : .afterAnchor
     }
 }
-#endif

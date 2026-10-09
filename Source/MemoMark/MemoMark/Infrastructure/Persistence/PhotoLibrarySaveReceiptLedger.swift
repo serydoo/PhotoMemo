@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// The only synchronous receipt capability exposed to PhotoKit's
@@ -175,4 +174,3 @@ actor PhotoLibrarySaveReceiptLedger {
         )
     }
 }
-#endif

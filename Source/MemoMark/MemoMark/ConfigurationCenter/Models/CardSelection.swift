@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 struct CardSelection:
@@ -35,4 +34,3 @@ struct CardSelection:
     static let defaultSelection =
         CardSelection(selectedRegion: .slotD)
 }
-#endif

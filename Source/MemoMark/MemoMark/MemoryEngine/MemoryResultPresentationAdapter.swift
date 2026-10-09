@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryResultPresentationAdapter {
 
     private let subjectStrategy:
@@ -188,4 +187,3 @@ private extension MemoryAnchorResult {
         )
     }
 }
-#endif

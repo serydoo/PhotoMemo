@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryExpressionContext {
 
     let subject: MemorySubject
@@ -24,4 +23,3 @@ struct MemoryExpressionContext {
         self.captureCalendar = captureCalendar
     }
 }
-#endif

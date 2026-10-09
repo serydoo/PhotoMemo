@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 struct MemoryExpression:
@@ -24,4 +23,3 @@ struct MemoryExpression:
         blocks.map(\.value).joined()
     }
 }
-#endif

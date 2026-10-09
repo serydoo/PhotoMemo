@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryProvider:
     ExpressionProvider {
 
@@ -58,4 +57,3 @@ struct MemoryProvider:
         )
     }
 }
-#endif

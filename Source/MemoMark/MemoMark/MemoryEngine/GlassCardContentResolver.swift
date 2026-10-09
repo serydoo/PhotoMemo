@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// Research bridge from the current RecordCard text engine into GlassCard's
@@ -24,4 +23,3 @@ enum GlassCardContentResolver {
         )
     }
 }
-#endif

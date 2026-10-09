@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 extension MemoryAnchorRelativeSnapshot {
 
     func ageText(
@@ -92,5 +91,3 @@ private func englishOrdinal(_ value: Int) -> String {
     }
     return "\(value)\(suffix)"
 }
-
-#endif

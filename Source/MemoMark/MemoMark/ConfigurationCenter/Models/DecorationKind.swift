@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 enum DecorationKind:
@@ -25,4 +24,3 @@ extension DecorationKind {
         }
     }
 }
-#endif

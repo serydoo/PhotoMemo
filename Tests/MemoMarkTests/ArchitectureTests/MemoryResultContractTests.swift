@@ -413,8 +413,8 @@ struct MemoryResultContractTests {
             )
         )
         #expect(
-            buildServiceSource.contains(
-                "configuration.legacyMemorySubjectText"
+            resolverSource.contains(
+                ".legacyMemorySubjectText"
             )
         )
         #expect(

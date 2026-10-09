@@ -92,6 +92,22 @@ final class QueueCoordinator {
         return .success(())
     }
 
+    func cancelExecutionSession(
+        _ sessionID: UUID
+    ) async -> MemoMarkResult<Void> {
+        await queueRepository
+            .cancelExecutionSession(sessionID)
+        return .success(())
+    }
+
+    func pauseProcessing() async {
+        await queueRepository.pauseProcessing()
+    }
+
+    func resumeProcessing(sessionID: UUID? = nil) async {
+        await queueRepository.resumeProcessing(sessionID: sessionID)
+    }
+
     func clearCompletedHistory(
         preserving jobID: UUID?
     ) async -> MemoMarkResult<Void> {

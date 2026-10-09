@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 nonisolated struct BatchQueueTaskMutation:
@@ -45,6 +44,43 @@ nonisolated struct BatchQueueTransitionPolicy:
             )
         }
 
+        var job = job
+        let activeSession = jobs.first { existing in
+            existing.executionSuspendedAt == nil && existing.historyDeletedAt == nil
+                && existing.tasks.contains { !$0.phase.isTerminal }
+        }
+        // A Share may wait for the exclusive owner before admission. Its
+        // durable received time still belongs to the session that was running
+        // then. Do not reopen failed, cancelled or deleted histories.
+        let receivedDuringCompletedSession = jobs.first { existing in
+            existing.historyDeletedAt == nil && !existing.tasks.isEmpty
+                && existing.tasks.allSatisfy { $0.phase == .completed }
+                && existing.createdAt <= job.createdAt && job.createdAt < existing.updatedAt
+        }
+        if job.executionSessionID == nil {
+            job.executionSessionID = job.executionSuspendedAt != nil
+                ? UUID()
+                : (activeSession ?? receivedDuringCompletedSession)
+                    .map { $0.executionSessionID ?? $0.id } ?? UUID()
+        }
+        // Late durable intake retains its original continuation membership.
+        // A user cancellation or deleted history must remain closed when it arrives.
+        if let sessionID = job.executionSessionID {
+            let members = jobs.filter { ($0.executionSessionID ?? $0.id) == sessionID }
+            let deletedAt = members.compactMap(\.historyDeletedAt).min()
+            let wasCancelled = members.contains { member in
+                !member.tasks.isEmpty && member.tasks.allSatisfy { $0.phase.isTerminal }
+                    && member.tasks.contains { $0.phase == .cancelled }
+            }
+            if wasCancelled || deletedAt != nil {
+                for index in job.tasks.indices where canCancel(phase: job.tasks[index].phase) {
+                    job.tasks[index].phase = .cancelled
+                    job.tasks[index].progress = BatchTaskProgress(currentUnit: 1, totalUnits: 1, stage: .cancelled)
+                }
+                job.state = derivedJobState(from: job.tasks.map(\.phase))
+                job.historyDeletedAt = deletedAt
+            }
+        }
         jobs.insert(job, at: 0)
         return BatchQueueAdmission(
             job: job,
@@ -120,7 +156,8 @@ nonisolated struct BatchQueueTransitionPolicy:
     func cancelJob(
         in jobs: inout [BatchJob],
         jobID: UUID,
-        now: Date
+        now: Date,
+        cancellableRecoveredSaveTaskIDs: Set<UUID> = []
     ) -> Bool {
         guard let jobIndex = jobs.firstIndex(where: {
             $0.id == jobID
@@ -131,9 +168,10 @@ nonisolated struct BatchQueueTransitionPolicy:
         var job = jobs[jobIndex]
         var didCancelTask = false
         for taskIndex in job.tasks.indices {
-            guard canCancel(
-                phase: job.tasks[taskIndex].phase
-            ) else {
+            let task = job.tasks[taskIndex]
+            let cancellableRecovery = task.phase == .savingToPhotoLibrary
+                && cancellableRecoveredSaveTaskIDs.contains(task.id)
+            guard canCancel(phase: task.phase) || cancellableRecovery else {
                 continue
             }
             job.tasks[taskIndex].phase = .cancelled
@@ -154,6 +192,30 @@ nonisolated struct BatchQueueTransitionPolicy:
         )
         jobs[jobIndex] = job
         return true
+    }
+
+    @discardableResult
+    func cancelExecutionSession(
+        in jobs: inout [BatchJob],
+        sessionID: UUID,
+        now: Date,
+        cancellableRecoveredSaveTaskIDs: Set<UUID> = []
+    ) -> Bool {
+        let memberJobIDs = jobs.compactMap { job in
+            (job.executionSessionID ?? job.id) == sessionID
+                ? job.id
+                : nil
+        }
+        var didCancelAnyTask = false
+        for jobID in memberJobIDs {
+            didCancelAnyTask = cancelJob(
+                in: &jobs,
+                jobID: jobID,
+                now: now,
+                cancellableRecoveredSaveTaskIDs: cancellableRecoveredSaveTaskIDs
+            ) || didCancelAnyTask
+        }
+        return didCancelAnyTask
     }
 
     @discardableResult
@@ -446,4 +508,3 @@ nonisolated struct BatchQueueTransitionPolicy:
         return true
     }
 }
-#endif

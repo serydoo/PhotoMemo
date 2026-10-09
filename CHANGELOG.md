@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.6 (124) Internal Source Checkpoint - 2026-10-10
+
+- Consolidated durable intake, processing identity, sessions, execution leases, capability boundaries, receipts and recovery with shared extension dependencies and regression tests.
+- Preserved GlassCard authored two-line content; refined Home status and interrupted-history deletion.
+- Release Share Continued Processing remains disabled; production certification is open. Version unchanged. See [sync manifest](Docs/07_Releases/2026-10-10-2.3.6-source-checkpoint-sync-manifest.md).
+
 ## 2.3.6 (124) Lifetime Unlock And Live Photo Repair - 2026-10-06
 
 - Baseline: public 2.3.5 (122), source 53b7edd3. Includes accepted subsequent GlassCard layout/material/SDR motion and configuration preview/bottom-control refinements.

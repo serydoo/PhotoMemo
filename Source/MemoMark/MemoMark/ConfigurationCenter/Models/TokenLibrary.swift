@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 struct TokenLibrary: Hashable {
@@ -34,4 +33,3 @@ struct TokenLibrary: Hashable {
         }
     }
 }
-#endif

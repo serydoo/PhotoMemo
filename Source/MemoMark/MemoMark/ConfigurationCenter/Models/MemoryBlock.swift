@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 struct MemoryTextBlock:
@@ -138,4 +137,3 @@ enum MemoryBlock:
         )
     }
 }
-#endif

@@ -9,7 +9,8 @@ struct MemoMarkBackgroundStatusProjection {
         externalJobs: [BatchJob],
         activeJobID: UUID?,
         activeTaskID: UUID?,
-        focusedJobID: UUID? = nil
+        focusedJobID: UUID? = nil,
+        isPaused: Bool = false
     ) -> MemoMarkBackgroundJobSnapshot? {
 
         guard !externalJobs.isEmpty else {
@@ -21,26 +22,29 @@ struct MemoMarkBackgroundStatusProjection {
             return snapshot(
                 for: focusedJob,
                 allExternalJobs: externalJobs,
-                activeTaskID: nil
+                activeTaskID: nil,
+                isPaused: isPaused
             )
         }
 
         if let activeJobID,
-           let activeJob = externalJobs.first(where: { $0.id == activeJobID }) {
+           let activeJob = externalJobs.first(where: { $0.id == activeJobID && $0.executionSuspendedAt == nil }) {
             return snapshot(
                 for: activeJob,
                 allExternalJobs: externalJobs,
-                activeTaskID: activeTaskID
+                activeTaskID: activeTaskID,
+                isPaused: isPaused
             )
         }
 
         if let runningJob = externalJobs.first(where: { job in
-            !job.tasks.allSatisfy(\.phase.isTerminal)
+            job.executionSuspendedAt == nil && !job.tasks.allSatisfy(\.phase.isTerminal)
         }) {
             return snapshot(
                 for: runningJob,
                 allExternalJobs: externalJobs,
-                activeTaskID: nil
+                activeTaskID: nil,
+                isPaused: isPaused
             )
         }
 
@@ -48,7 +52,8 @@ struct MemoMarkBackgroundStatusProjection {
             snapshot(
                 for: $0,
                 allExternalJobs: externalJobs,
-                activeTaskID: nil
+                activeTaskID: nil,
+                isPaused: isPaused
             )
         }
     }
@@ -62,7 +67,7 @@ struct MemoMarkBackgroundStatusProjection {
 
         return MemoMarkBackgroundTaskOverview(
             activeJobCount: jobs.filter { job in
-                job.tasks.contains { !$0.phase.isTerminal }
+                job.executionSuspendedAt == nil && job.tasks.contains { !$0.phase.isTerminal }
             }.count,
             completedPhotoCount: tasks.filter {
                 $0.phase == .completed
@@ -110,7 +115,8 @@ private extension MemoMarkBackgroundStatusProjection {
     func snapshot(
         for job: BatchJob,
         allExternalJobs: [BatchJob],
-        activeTaskID: UUID?
+        activeTaskID: UUID?,
+        isPaused: Bool = false
     ) -> MemoMarkBackgroundJobSnapshot {
         let activeTask = job.tasks.first {
             $0.id == activeTaskID
@@ -188,7 +194,8 @@ private extension MemoMarkBackgroundStatusProjection {
                 ?? resolvedHistoryPreviewURL(for: job)
                 ?? job.tasks.first(where: { !$0.phase.isTerminal })?.sourceURL,
             savedAlbumName: latestSavedTask(in: job)?.savedAlbumName,
-            savedAssetIdentifier: latestSavedTask(in: job)?.savedAssetIdentifier
+            savedAssetIdentifier: latestSavedTask(in: job)?.savedAssetIdentifier,
+            isPaused: isPaused || (job.executionSuspendedAt != nil && job.tasks.contains { !$0.phase.isTerminal })
         )
     }
 
@@ -258,6 +265,9 @@ private extension MemoMarkBackgroundStatusProjection {
     func resolvedPresentationState(
         for job: BatchJob
     ) -> MemoMarkBackgroundPresentationState {
+        if job.executionSuspendedAt != nil && job.tasks.contains(where: { !$0.phase.isTerminal }) {
+            return .needsAttention
+        }
         if !job.tasks.allSatisfy(\.phase.isTerminal) {
             return .active
         }
@@ -284,6 +294,9 @@ private extension MemoMarkBackgroundStatusProjection {
     func resolvedFeedbackState(
         for job: BatchJob
     ) -> MemoMarkBackgroundFeedbackState {
+        if job.executionSuspendedAt != nil && job.tasks.contains(where: { !$0.phase.isTerminal }) {
+            return .needsAttention
+        }
         if !job.tasks.allSatisfy(\.phase.isTerminal) {
             switch job.state {
             case .draft,

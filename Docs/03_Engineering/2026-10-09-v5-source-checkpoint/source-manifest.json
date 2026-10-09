@@ -1,0 +1,869 @@
+{
+  "status": "Draft source checkpoint; no staging, commit or push",
+  "baseline": "5073d7257c9e6d722c345d1cf440430ab0044fec",
+  "branch": "main",
+  "version": "2.3.6",
+  "build": "124",
+  "sourceCandidateCount": 202,
+  "documentCandidateCount": 8,
+  "excludedFileCount": 641,
+  "candidateHashes": [
+    {
+      "path": "Docs/03_Engineering/2026-10-07-processing-reliability-implementation.md",
+      "sha256": "9011df610009d4c3fee7999e492ea40a80c32fcd8d5b92c23e7efb5c30dbdb75"
+    },
+    {
+      "path": "Docs/03_Engineering/2026-10-08-fresh-install-background-validation.md",
+      "sha256": "b38a23715b7e2fc3f69d35146341e1fa9756814b1e4fb61ba6b1f79b3d968022"
+    },
+    {
+      "path": "Docs/03_Engineering/2026-10-08-host-handoff-next-steps.md",
+      "sha256": "921d5d15485f53d049803beaaf686e87dc02989dac9f68ab98d266254a0587a1"
+    },
+    {
+      "path": "Docs/03_Engineering/2026-10-09-host-continued-processing-release-boundary.md",
+      "sha256": "bdb56b85a1f377b352ceb3c36ae4f756a743baaa1e313ca64e7464fcabae666c"
+    },
+    {
+      "path": "Docs/03_Engineering/2026-10-09-native-processing-status-contract.md",
+      "sha256": "ea6564b3382c245e58f45d9c1c2485cb354e005d85a8c4680b512031495cd51a"
+    },
+    {
+      "path": "Docs/03_Engineering/2026-10-09-v5-acceptance-readiness.md",
+      "sha256": "66d1077f19fae1e396ffad4af30bda04d4d334b593a47c7e6266b7e481b0e065"
+    },
+    {
+      "path": "Docs/ADR/ADR-012-Processing-Intent-Session-And-Execution-Authority.md",
+      "sha256": "a7c939c0dc64b6ff09aa827b033aae912addea0056517c5b6bda01d264f2bacf"
+    },
+    {
+      "path": "Docs/ADR/INDEX.md",
+      "sha256": "1c679d3ba617179c642bce399439abd8a4c798776cffc633be167bef4724ebd8"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark.xcodeproj/project.pbxproj",
+      "sha256": "9123f06851d15f25050ae194e3f616e545e66a3ab176a199c2e15cef7222e462"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/BackgroundQueueRunResult.swift",
+      "sha256": "152501ad8edac8e83f18420aaff5ebd65f89d754e6ba6913d4ff22c62956d72f"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/ContinuedProcessingSpike.swift",
+      "sha256": "05765db03bd546f84bdfc96495eb5b0cb084ed78de8f8cf2a749ebd1ea1842ac"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/ContinuedProcessingSubmission.swift",
+      "sha256": "2b23b6b480ff654f0d68f793ccb3cb2e92e28dfb23c83381030c7793a61119a3"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/ExternalIntakeRequestStore.swift",
+      "sha256": "2533b7a55332a851d134298c1186a702d96598bf2ba0dda53687a30b3b5fa82a"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/ExternalPhotoIntakeRequest.swift",
+      "sha256": "ce2c3e01752615bc5ea8742d93837fb3191e2cbc66695097889b30324d1df8b9"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/HostHandoffMinimalProbe.swift",
+      "sha256": "8891dd6eb30c62adeeb8ef8ae1f270bab6db8c1f35e63b17ff20cb9783ee7e2a"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/LivePhotoAssetIdentityRecovery.swift",
+      "sha256": "eb81a918239d90b13c2f6fe7d8c963daa6910e48c9dee95a178f5d744c6ea766"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/MemoMarkAlbumSelection.swift",
+      "sha256": "d7a9f0b0a5a5078c890dcd556482a52e466938beeef10113966e846727a812f0"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/MemoMarkAppRuntime.swift",
+      "sha256": "bb420e2977c1e1a580fad57b17a9b0f8917ea4d0e4324269aa6d0516c09fd4e8"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/MemoMarkBackgroundStatusProjection.swift",
+      "sha256": "8b0450619f1c6c7661b82717019b9d5d297fc0dcda29fea7f55eae7522231bd7"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/MemoMarkBackgroundStatusService.swift",
+      "sha256": "3396d254e2b6799737c2e5bc3f6c1c2f1350f70e0a1e18900fdcaa180fefc0a3"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/MemoMarkQueueDisplayFormatter.swift",
+      "sha256": "c426a183824f32ef7a6fe5edd0e5de7eb3e82870410fd8ce67482e818982210a"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/MemoMarkShareDiagnostics.swift",
+      "sha256": "64de1bfb16f1472bdd3564b6c30b25dc502e3deeec645231ec0cc9e208e7bb6d"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/ProcessingExecutionFileLock.swift",
+      "sha256": "995abcdb4c1aabfbf620504405afe8866e34f5143cdd5c46e3af482118576710"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/ProcessingProgressFreshness.swift",
+      "sha256": "75ef24e7d0cf082b9e1508fbecf695d0ee4077fcc68e0d3540315bf9a249b28d"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/ShareIntakeCapacityPolicy.swift",
+      "sha256": "ac856b87432ab667ca7ba5e6d12dec91d01437445cc9de33b95cdf369513552c"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/App/SharedBatchConfigurationSnapshotService.swift",
+      "sha256": "b7202ad92dff7b2bf0c90ce4fcb627ac3585174f8732bebeaec14e61477ed43d"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Application/BackgroundQueueRuntime.swift",
+      "sha256": "3e50747bc7c2ad7c79763a4c71b199208cd46256a55e35896fe14a2b0dfcb8c2"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Application/BatchProcessingIdentityCompiler.swift",
+      "sha256": "822e21063e5a2ffa27b4abf9e3053d3d61fa0a614d178942be4fafac1f228013"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Application/BatchQueueProcessingRuntime.swift",
+      "sha256": "10223db5afb71e3476565a1c59f315edc0352ed9aa054d7cd33041c23923235e"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Application/BatchTaskExecutionEvent.swift",
+      "sha256": "36c2d33a7acea7c59f9a603a2bd30a9f719b2b60f1ddbfc5379167a387ca8638"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Application/BatchTaskExecutionRuntime.swift",
+      "sha256": "d9ae72191f7100ffa3535c447edb4fb6ace88229d70b05b971fd90d6a6e516d5"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Application/BuildRecordCardTransaction.swift",
+      "sha256": "85d6804169fac36dd379fc43eb62341b9af33c703e87b2f1ecbdef82d75aca26"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Application/DurableBatchTaskExecutionRuntime.swift",
+      "sha256": "f8bd181077df2ee7b439b9243e83e1aebc2c86bc9c75348bc6b84af9d88244f8"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Application/PhotoLibraryAlbumTransactions.swift",
+      "sha256": "b2da2c4f00e590c3ee5d74e55bfe1ca9c0d7795a3e729e49d504589acdbe7672"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Application/ShareIntakePayloadResolver.swift",
+      "sha256": "c315635396b07b13753fdcc911045d8ea462d850288f7bf0591da14cc004be74"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Architecture/AppEnvironment.swift",
+      "sha256": "d4e9747153f1aa5e7ec5c04a8db54116a22dfcb27995ff9f96d24ddde0fdd6b7"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/ConfigurationSnapshotBuilder.swift",
+      "sha256": "21dcbf40831c5ede733a95f7c20fb036ea8ff1c7e782eb4d02cd38c239cac6f6"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/CaptureTimeResolver.swift",
+      "sha256": "d12b103b03c6c94e2028c68427150f0c0823da74d8a7e368331bf06c3911bb44"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/CardRegion.swift",
+      "sha256": "7ddf73c5367f205824d86c1ed4d548ef714b3303904be39f5bd7fba64abb6336"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/CardRegionBehavior.swift",
+      "sha256": "ff19156e675ca1ca8e4f4f54582bd10bc69a877ae751240fa02f12666fbaa7c5"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/CardSelection.swift",
+      "sha256": "5d7f3ebad63e63e52ce127d3bacc9b7089163972473531499242e5201131e420"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/ConfigurationSnapshot.swift",
+      "sha256": "8ffe92263d433a583976d4e1954d97a2cbbc0066c80795238956ba1de07e9286"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/DecorationAsset.swift",
+      "sha256": "6ecb5708223e3471699a01bab2cd9b42431defbd84edf95bc08a2ab9d09de908"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/DecorationKind.swift",
+      "sha256": "49a098dd1f722fabc9513f94242b983c9c95683738055e01de1f53da009434d9"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/InteractiveMemoryCardSelection.swift",
+      "sha256": "8fff6ab34df67c2dfe141f10a5407899d3dda54891a1bd55bef7a9829690e095"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/MemoryBehavior.swift",
+      "sha256": "ae27394969c7a0a8f2924aa6c896b09a0649c2cace6923a2d3b1db258e538b97"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/MemoryBlock.swift",
+      "sha256": "6ec8c676947f37d88901bbeeaf64c94173a08fffb09887026e140f5a1217b4cb"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/MemoryBlockLibrary.swift",
+      "sha256": "7a160250a1e5dbbbaff309f6b9ba8d8d507a5d39f6d21014f904c84652ab4580"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/MemoryBlockType.swift",
+      "sha256": "02aa04e99439b662426e1cbedbfd9090520039c47e214f1387403393301d683e"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/MemoryExpression.swift",
+      "sha256": "9ed628105d0cb27d08d812d845db67eabb56f0a24343b5f5f18d956dfa07cb1b"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/MemorySubject+ExpressionStyle.swift",
+      "sha256": "44dfd518068e8b6cb38474c2148a8e199d65da306476b19537dfceeceb5f1c7c"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/MemorySubject.swift",
+      "sha256": "d9217f6e83b58af5243b4f26ab50276379ab6e6933ae8cbbaa1e0b1adbe2cc23"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/TokenCategory.swift",
+      "sha256": "52c9e5378cfb03c19ae4d492816723bf1092497cddc350de826e7b1c0d4ab5f1"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/Models/TokenLibrary.swift",
+      "sha256": "40351280e59049a5d17e25fc7c7921148d4053941625861873b38b284b1c9bf7"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Coordinators/ExportCoordinator.swift",
+      "sha256": "b2f684a470d3fd3297829c371d360272b9fedf2f91a2b0b93838b835d4e1329c"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Coordinators/QueueCoordinator.swift",
+      "sha256": "e16a86d912bb96152d6a9ca79e23dc90bf6a7750edf7ae394eff3fa6ba0aa6d8"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Coordinators/ShareCoordinator.swift",
+      "sha256": "3f2ed510ed8b443ebdc4d9662d05a53c2b6bd317944070ef1d2dd4ba4d20e384"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Domain/Processing/BackgroundExecutionArbiter.swift",
+      "sha256": "dba1f854c450f76bea934ea834ee96536811293d59b2d07091fcf2484f2beb56"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Domain/Processing/BatchQueueResumePolicy.swift",
+      "sha256": "8405723d751927006082eb5805e80a10b3d9047533b59ba6f9e881d011fd7f2b"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Domain/Processing/BatchQueueTransitionPolicy.swift",
+      "sha256": "458385376a3142ec92ae1db9e27159b3d7328667708145703c6dd0ed18a9fb49"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Domain/Processing/BatchTaskExecutionTransitionPolicy.swift",
+      "sha256": "707078fee215640549d16aee3c30dafaeeebac42f80a8634ecb5417036502c52"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Domain/Processing/BatchTaskReference.swift",
+      "sha256": "a1ca09c2e19f2da4f686b72a0c12caa8aa83812344d745a01ba926d9bf280efc"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Domain/Processing/ExecutionSessionSuspensionPolicy.swift",
+      "sha256": "de4c10fb1a93bcc3e311d668a5de87e495fcceaf8b4797797eb753ff08508955"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Engines/CardTextBlockEngine.swift",
+      "sha256": "4a1563c948b2a5ca7c0a3af9d2904a386eb926c555e91b98bed799d49f3bbf30"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Infrastructure/Persistence/BatchQueueDurableLedger.swift",
+      "sha256": "ff6e23c95cedad28ed41622920e371db22b627fb13e821bd37f677172d7f5354"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Infrastructure/Persistence/BatchQueueRetentionPolicy.swift",
+      "sha256": "0327990524aefcd43de34843688598b52e8493590ce9ca282665b406a064a79e"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Infrastructure/Persistence/PhotoLibrarySaveReceiptLedger.swift",
+      "sha256": "db78a1e806df7eedd58b641782184e9bdab24b3cc346d36d988abd8e162bf025"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Infrastructure/PhotoLibrary/PhotoLibraryCapability.swift",
+      "sha256": "4bf31155814249f28c3f08c5e8903a5af585740c289792b8d61beb23e5be3841"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Infrastructure/PhotoLibrary/PhotoLibraryTransactionGateway.swift",
+      "sha256": "d8ac86a537bc0de7a089a2c7208adb49832b58d17f6b6d18d158bcd28c8671f8"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Infrastructure/PhotoLibrary/ProcessingSourceVersionResolver.swift",
+      "sha256": "3b03fcd699e7586e0de0659d37150dfe9a401374d27de1ffe0953bd63ce6c3f2"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Intent/BuildPreviewIntent.swift",
+      "sha256": "8137015d1503fa3ce414f365db6cf449031a1fa2f8fd51f111fd470e495fc289"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Intent/ExportAlbumIntents.swift",
+      "sha256": "d5a9f0260cca8740005dad2136adf060fe0f6d5d8bf09fad0e6925cb51e00af4"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Intent/ImportBatchPhotoIntent.swift",
+      "sha256": "fda5faa4ef30a6f19749133dc0e17b397ac6ded7c08f7483196c186c98390509"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Intent/ProductionExportIntents.swift",
+      "sha256": "1e7d9ebd7bac61bdfc53502761714cd46dd66e51105b3a15aed049c1613c68fe"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Intent/ShareWorkflowIntents.swift",
+      "sha256": "ba2611650c5f7dbbe472aa5044c6aa601f7682c7d6e14d7f630ac0edd13fdb8c"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/LayoutEngine/GlassCardResolvedPresentation.swift",
+      "sha256": "32fd390e718b9b7f3df66eb4bcc0c674ed5a7c5a0d7895872625b87abb026fce"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MediaPipelineVNext/LivePhotoStillImageCompositionInput.swift",
+      "sha256": "71a0afef35d8061af01bd9d6655d619941ad2dd5311c66984c3b3ec97c82ec80"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MediaPipelineVNext/LivePhotoStillImageCompositionService.swift",
+      "sha256": "ce18dbd59ebda83b62e678622e57b7ddf5ce0e21b02884a0e6d993c7655390b7"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MediaPipelineVNext/LivePhotoVideoCompositionService.swift",
+      "sha256": "0759abd34c80b9b2dbdd6ae489d026847388c553d75c3bdf8917ab0a1acc873f"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MediaPipelineVNext/PhotoKitLivePhotoAssetWriter.swift",
+      "sha256": "1f7853733da8b03cd79676564019dfc6bc7780c567504d02562647306d347b63"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/BirthdayAgeCalculator.swift",
+      "sha256": "51a1710ba0873ab4624f01618bab89165e9628c3dd1618271c718b2604315b22"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/BirthdayAgeExpressionProvider.swift",
+      "sha256": "9c7449f2a87762398d8d4ee6839f6b761c3d26782357543e59b088368d7167bf"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/ConfiguredAnchorExpressionProvider.swift",
+      "sha256": "ea7fd4c742777df67c10ef51cbbf8c7a1f8813950ea9868d9c22cf05de0a9cde"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/GlassCardContentResolver.swift",
+      "sha256": "c987a2f272fc8f7791b56193d9dfdefbfcce81132fd98bf27a128198cee1e703"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryAnchor.swift",
+      "sha256": "4a2bd9b0fc8e59a36e6dd2e4edb1244d4a79a833feabe37c9c6884e5ff5cf96d"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryAnchorAnnualOccurrenceShared.swift",
+      "sha256": "dda9b75f64b106eb544de201f599122d75abc483c5b156bba6c05c0f956dbc3c"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryAnchorExpressionResolver.swift",
+      "sha256": "c83d1cf55be39b3977c8b6ff4f7d5b32599919b06fe990f8d8e8cf803984838b"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryAnchorTextFormatting.swift",
+      "sha256": "03d34539963504e6812ae748b9beedade6e99512abf272ee9b602eb055f5673d"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryAnchorTypeRegistry.swift",
+      "sha256": "60859d7cfe16a5b17600b673a2dd298b8244530f22d4ab07f6a10ab85337fb53"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryCalculationResult.swift",
+      "sha256": "cd8d9bc4583073e486a8fa7dd638a4c9d3165c2a482c856862fed9d14b817e60"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryContext.swift",
+      "sha256": "d41c06ad395c1f515cac6a77d11f076db63e33a276343a2fec6363cbf5497593"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryExpressionContext.swift",
+      "sha256": "26891c63b6d4a09611cad4ce448a668099df22f6c569688f41d34248c3361d7e"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryExpressionEngine.swift",
+      "sha256": "12816c6fd8d4db9cc90509cd826c148d6c0c998b2ebd08484669d72967f0dd70"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryExpressionProtocols.swift",
+      "sha256": "07728ae77465c278d26e6f0564b4cdb964d8fd6cbc828d9ef5164a4ac37fb3ab"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryModule.swift",
+      "sha256": "012b9925a9c60f3a3d893b2bf95a35d13d4e00fc8cf911c57fa706090f39d49f"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryProvider.swift",
+      "sha256": "5e66a47a8346df75176a9aca7030e692b3f125c716107a4f6fde5f1ceee1b133"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryResult.swift",
+      "sha256": "992c3d1a8026afe705ca4ee422f2131f88c005515a67ea40e603236f3a02da5e"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryResultPresentationAdapter.swift",
+      "sha256": "ce9228cf05f21957c130bcc38476655d913565116b83ed46316516591d6425bd"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemorySemanticResult.swift",
+      "sha256": "420c6020f79f646a9afededfbbbd71d127bc082e59066e49ccdfaeb5f2ef3f75"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemorySubjectAdapter.swift",
+      "sha256": "726e6ae6bb2dcb402495802eb1c32aae79f02efb81f9fea82fdf8dc18e59fa85"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemorySubjectStrategies.swift",
+      "sha256": "c094a4b0d2e56217d1cfe6fe34fec8d56249f36deedadb64a9185a893b054c1f"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/MemoryVariableProvider.swift",
+      "sha256": "353e7f5fd4f58ec02e70314cf0d19b7c2d754cbc8a596ca453157eaeaca219f0"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/ProductionMemoryResolver.swift",
+      "sha256": "0588306cc2b2437ea91cfb3dbce091ec8212466f45260ac78cc4449624778a06"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/MemoryEngine/RelativeTimeMemoryCalculator.swift",
+      "sha256": "8ca746e7c27bf2db8712eb9a645f23f8c10f26c7673128c4453cd159dc06e620"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/BatchProcessing.swift",
+      "sha256": "277f9f91b1f1482c356d0e3a1062c8e3eb222bc4b19659d909c53c9389e0f48c"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/CardVariableProvider.swift",
+      "sha256": "c31bd0dc4e15a928c363c6c45b5fd23e7f1ff6074aa110f647b65249e0160685"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/ExecutionSession.swift",
+      "sha256": "687053eaa808c5db001bc7759834e57c0ac51ab2816e21d2d7f784a25bf3e23c"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/MediaDecodeService.swift",
+      "sha256": "f65b43df7fabf17ae23e74a6bf009ba18de1be3686449a9413d07feb0f8eb31e"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/MediaOutputMode.swift",
+      "sha256": "0de4a4f3670d0a51ec63f6369e915ddc394c2bfdfd5b8b91515f4bd1bfe4a74b"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/MemoryAnchorVariableTextFormatter.swift",
+      "sha256": "085f1adef2a652c03edf3a3a454d7a80400fbbcd46c82cb3a08cb62fdf99b659"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/MemoryConfigurationRecord.swift",
+      "sha256": "0731ea4a89b606296480a22604fdcc42183055025e502d98a0292504e7c5a6f0"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/MemoryResultVariableProjector.swift",
+      "sha256": "e95cb3f2cb9585eb8225ce522c40e9559ddfa0b49bb8b7ab07a7b1f5108d9020"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/ProcessingIdentity.swift",
+      "sha256": "d59a9d3d38c55bfa4537401ee32b498ae1454df39abb58af8acaa6657d597917"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/ProcessingPresentationAuthority.swift",
+      "sha256": "aa395b95d888d0a6c99ec633ca062718ee0a4a07c8a64acd96a1881acd39c553"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/ProcessingReservationPolicy.swift",
+      "sha256": "3848b3cf9e45f548d3f5c05eb8252fec546abe36890c9a0524b69032f48d748a"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/ProcessingSourceAdjustmentIdentity.swift",
+      "sha256": "9eff47756f39c6b5cbf3c52d2b851eabfb882e4585b1f67f5bdd5e57605d616a"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/ProductionConfigurationContract.swift",
+      "sha256": "8ede0d792c3039e010dc1371132433d28ab209804fe49d9e68f721fe5958daa4"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Models/RecordCard.swift",
+      "sha256": "3e8300988d850e52de51bc485ad7a35fbba46658d0b07587294f1bdfb4174cbd"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Renderers/GlassCardCardRenderer.swift",
+      "sha256": "35f6f5291e369ec8ce204ce1b70beabaed3a234c96ce604f3323af8dfbced7fd"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Renderers/NativeBackdropMaterialRenderer.swift",
+      "sha256": "870892f7690f3cc20c529c913f569257a0157860ce099978d39cd25fb14470ea"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Repositories/PhotoLibraryRepository.swift",
+      "sha256": "c63776b5ca6f11f4f8b8513277b35c19d3f93db589543472aa93e739ddbd1689"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Repositories/PhotoRepository.swift",
+      "sha256": "eac048cf54047e941e47e4b7b93e66dafcce207434cebf93dcae65f541f28abe"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Repositories/ProductionDiagnosticsStore.swift",
+      "sha256": "fb1d15e52400ac5a5b61bc5161be68c81b38402541f31bca1bb0a97de73b5191"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Repositories/QueueRepository.swift",
+      "sha256": "0ae6db6d5b72cb394938b62f5311be88386ef923b4e9622251b59be6b9fcd0a8"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchNotificationMessageFormatter.swift",
+      "sha256": "5a9cfc0d22cd7efdeae171e0ffce6781b8fa960213b1022e82c8af18e6e805ab"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchNotificationService.swift",
+      "sha256": "170e290c841934ef75b3fe71a844c384f193bfc91430bbb4308ba3fcd3bf611a"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchQueueBootstrapReceiptReconciler.swift",
+      "sha256": "520dcb1cfe33eeeedc4d2990219cc79c928cbc028415874412ed5f57d07b1952"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchQueueCommerceAccounting.swift",
+      "sha256": "eca923efe9b58ddabd2bc18891bc01f7c137965cd98188e0df29e52dcacd39d9"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchQueueCoordinator.swift",
+      "sha256": "f7d42f00e1b14c0116eb6636f75fe2eaf9168d58d156050061bade7104bc06d4"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchQueueExecution.swift",
+      "sha256": "2d5527e5de946e3a9f3125a05bb0c6ac3a403804efabe0d3cc53f47b412910ed"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchQueueNotifications.swift",
+      "sha256": "fc8b32b9f20d2666126da4841b250f2bddf5fbcb7cb416ee4e8982dcc20c2970"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchQueuePersistence.swift",
+      "sha256": "be154d6bb25f92201a6b80869f56233e7582c73d765dbf7d969601b253707549"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchQueueResumeSourceInspector.swift",
+      "sha256": "cac6712b37896d580c0f5bc1d37afdf794f1a13fac3e84e7ecd9c557b6e6eefe"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchQueueStore.swift",
+      "sha256": "f9d06d8232c788abe8d7d75be5103d25e056d2891a69af6884dd96b8bc4a0482"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchTaskDiagnosticsRecorder.swift",
+      "sha256": "f9a4f51435fe7c42daf1fe546bc9f80e752a786fea6c2cbfff11969f5914d0e6"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchTaskFailurePolicy.swift",
+      "sha256": "077df33b0dffb13006e555012915118a2eaaef97e4a399a3dae005d877492dcd"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchTaskMemoryPolicy.swift",
+      "sha256": "2c2aa268c8ee5b82395602253b3b231197f8d041570f3641c8bc16816da0042d"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchTaskProcessor.swift",
+      "sha256": "6dc73b9ad8b14f69cc17be786f0f6d4d3cbf55b34632491dd5d9e218ca814c68"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/BatchTaskResourceLifecycle.swift",
+      "sha256": "60e116cdb61ccbaf456a04b40f24e5e37ed26700f3af7e6d3cdfedd7962ab480"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/CPUFileRasterExport.swift",
+      "sha256": "f79e6bda7319f18955988583ae474dd3a310015506e9577f690640a538e4d947"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/CPUStillImageExportExperiment.swift",
+      "sha256": "d0932bb6760fdf27e7363d250fd7e425cc777fe550929aba564ed9362e4263d3"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/ContinuedProcessingMessageFormatter.swift",
+      "sha256": "4ce9302632a794445527f099e92d6e00fd7325851d3424724a44065ef310148d"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/ExecutionSessionCompletionNotification.swift",
+      "sha256": "d63445779da04982453d8e9ed08f620a92be0e537bc3de84446c72beaaa8c4c5"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/ExecutionSessionSuspensionNotification.swift",
+      "sha256": "804ad9dfe08df225634c50441666faa02938f420c6501c3be6172dbb99d66287"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/LivePhotoBatchTaskProcessor.swift",
+      "sha256": "65478e9ba1dd3f9cbddf577a7d0f9cd6e7e0d311c95d81b6dc99ed55a58418b9"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/MemoMarkRenderedImageArtifactGuard.swift",
+      "sha256": "297750c554bce083441cfeda302c9d76098fd019dc93dd32204b7da13f3ac578"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/MetadataPreservingImageWriter.swift",
+      "sha256": "c9ee53238cfd2f85fb9ff9b936536eaf5be08ec0e0e6964b0c1923a049e21192"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/PhotoImportService.swift",
+      "sha256": "de8ca0ae3c32e00f399d2017eb592ca0c6ef45861e34a7d2de35308e0d377a43"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/PhotoKitResourceFileName.swift",
+      "sha256": "aaaba1887a01efe6eb3ab7a49066cff91cc6b50ac689fa189822cfd40fad3843"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/PhotoLibraryExportService.swift",
+      "sha256": "5bdc758797311517f08e1bbd4f3ccd8bb7443c37f3a7a64336f3a487dff7b11b"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/PhotoLibraryReceiptResumeRecoveryPlanner.swift",
+      "sha256": "c7ed72136ddd39f76bb6353e142a047ef14744109ec6634ef004dbac02132c86"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/PhotoLibrarySaveReceiptStore.swift",
+      "sha256": "5df1c98768f17f1e4a92692570723631c9b7ad59c0d68be46c31e64dc3ad1b37"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/RecordCardBuildService.swift",
+      "sha256": "a3e80888e1d27765bc85449f3c8b4e15fb6866fdfc47c69fc927e75bc3f70763"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/Services/RecordCardExportPipeline.swift",
+      "sha256": "d773e87457f8cb63c691f723bacdd078b8e6ec013933e4f67b8ebdbccb6ff368"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/en.lproj/Localizable.strings",
+      "sha256": "00284c30147833c446f913d3dd6ab7261fb2e37ccaab2ab37e0f87c2fb3ee33f"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/Activity/MemoMarkBackgroundLiveActivityPayload.swift",
+      "sha256": "a76255814386ce3eab0c4d9804f36d414efbee3d1804e424b0167aa04c36ecb4"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/Activity/MemoMarkLiveActivityPresentation.swift",
+      "sha256": "e9062c2ce0aac45d7cf201d23e21bfe095c7a3ad8eb6147a71cd2b21f6816f0c"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/Activity/MemoMarkiOSLiveActivityBridgeService.swift",
+      "sha256": "3f79013e49ab4700977341f8a6a73cb0ce45991193f07c363f086cc1b8f88d10"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/Activity/MemoMarkiOSLiveActivityDriverService.swift",
+      "sha256": "edd5bf0d9ecef22953c2f8013bee56bcd74642cc6c24f2bae3f7369495dd384b"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/App/BackgroundBatchQueueWorker.swift",
+      "sha256": "c345fed59a851fdf3ecf099cfcf730cee1ab3fb43156d6fd3e5525fed8cf9593"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/App/HostHandoffMinimalApp.swift",
+      "sha256": "052763fac4554f3ac267fca4c20e22098fb8897e6e126ab46f3432a698a6be53"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/App/MemoMarkBackgroundTaskCoordinator.swift",
+      "sha256": "cde4b6c3d10100c60987da5e8ec25ace8aaec541e7544b770513863631ad33d2"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/App/MemoMarkiOSApp.swift",
+      "sha256": "0ae4f37fe56e9d141da787bb142f64a0dd6b0fce93bc4c43cfa68c0fe64975a6"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/App/MemoMarkiOSBackgroundExecutionService.swift",
+      "sha256": "74bb8b612914d61974b02b170028cee7ef27fb1e5ede03975de859284d054846"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/ShareExtension/HostHandoffMinimalShareController.swift",
+      "sha256": "aad981f4cb59169356b20df54fea70c193235da27632bd5fdb523d0afc5a0445"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/ShareExtension/MemoMarkBackgroundTaskSubmission.swift",
+      "sha256": "967b081bc1432af002a073af2cf6f282e04f65ea95b1b38b4cce370d2f4cb7f7"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/ShareExtension/MemoMarkShareExtensionViewController.swift",
+      "sha256": "aa4b1732edc83acd4be95bf3daa60baec1a68997f38d9d4a80ebeb53a3532efe"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareContinuedCompletionNotification.swift",
+      "sha256": "6a1f9ba0babcca2891faed3d2cbb0f6f238fa460f9742f2a7c4e7dc2dfe74990"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareContinuedProductionWorker.swift",
+      "sha256": "663cedd4eb7e78e49e149506c419d4954ffec09aaa84811786c59a0834a8ce1c"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionIntakeCoordinator.swift",
+      "sha256": "868dd2ef1a7a9baf5f85299b46a1dc16d7dd2eaa707a3a26d19a472a1aca3b5d"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareManagedImportMaterializer.swift",
+      "sha256": "6341d7c817df518d62b02d19a866348a4f26529f2272b3d91c399196fb312ee2"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/Views/HomeActivityCard.swift",
+      "sha256": "33d9df26feb9c5ae2db7ee29d36de2b769c230287f11606034a5d1c489d20533"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift",
+      "sha256": "2bb6a007bbde141b4501f2b0efa66020489d680a6015dba96a85ee5070b2b40d"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift",
+      "sha256": "d731ba24c51e9fb837b4be22650861570883a29ffc32fab628b20c4f5591d492"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ja.lproj/Localizable.strings",
+      "sha256": "3373b67c79ce16071d446cdea47fd7897b8f1dfce49b8377495120d235aa0757"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/ko.lproj/Localizable.strings",
+      "sha256": "a5ae3243839069507adf3659eb2a344f109e4f29df591b6f08b50a386a59f60b"
+    },
+    {
+      "path": "Source/MemoMark/MemoMark/zh-Hans.lproj/Localizable.strings",
+      "sha256": "e5f50d10c716a90829021806153f215635a64fac139db3ae094a3c5cfe08d6b5"
+    },
+    {
+      "path": "Source/MemoMark/MemoMarkiOS-Info.plist",
+      "sha256": "48550f152d3a4ec7d19964419ea16333135dd9bd5147b15d305abf19ffc69e5f"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ArchitectureTests/ActiveLocalizationUsageAuditTests.swift",
+      "sha256": "2828bda6d10c0bb922dac50564be9bb396a92c80962d12e43ea04405ded8fdc0"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ArchitectureTests/BackgroundProcessingContractTests.swift",
+      "sha256": "b82e222418a900d3b1b2eb74fb45e4a6b0afb5706019d74e15c9017797191ac6"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ArchitectureTests/BackgroundQueueRunResultTests.swift",
+      "sha256": "535d3fb300196ddd77128891e251358248bdd68d4a6fdffe909077327a2a36a8"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ArchitectureTests/CoreArchitectureDependencyContractTests.swift",
+      "sha256": "054572046a6b2dc6818e770d614912d6d3bff55bc5619962af8f4d7da8ef0641"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ArchitectureTests/HomeActivityCardSurfaceContractTests.swift",
+      "sha256": "f2b027bf569f328e91474271cfa9a65a5b61ababf5120303479d3f9983cf3218"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ArchitectureTests/MediaGeometryArchitectureTests.swift",
+      "sha256": "048bd3566e107088dfa30e98681119b33e5446413ee457e7ce45461ee9aa114e"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ArchitectureTests/MemoMarkBackgroundStatusServiceTests.swift",
+      "sha256": "f8b95fbfcf8b5762ed5854a66e38a4ba2fe54f45889e7e6ca307873d073c711f"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ArchitectureTests/MemoryResultContractTests.swift",
+      "sha256": "4d2577bca6e6264f32029545102dbc14f6ba850caf466fa3cdbbeaf341baee3c"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ArchitectureTests/ProductionDiagnosticsTests.swift",
+      "sha256": "064b9d981509fb5244779e01ec65e64216ebbee424035227dfb3fe3759aff1ca"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ArchitectureTests/ProductionMemoryResolverTests.swift",
+      "sha256": "bc32e679b43a15498fdbb687f5b5b1689982fd2eb19da127df9dd2b259654aad"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/BackgroundBatchQueueWorkerTests.swift",
+      "sha256": "fd337461fcccf3f8238a7e203176a6716f6b8b70b548f79309dc6d1c76e2cdf5"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/BackgroundProbeRetentionTests.swift",
+      "sha256": "f3e2f1c763d31544812b4fa4d026f2a7cb2a9a798147f1919cb8840cf995241f"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/BatchQueueCommerceAccountingTests.swift",
+      "sha256": "e09d1dd7271ec150c9ff44cf762676a2aa2f56e9bf909360d4433826a3f68eb7"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/BatchQueueDurableLedgerTests.swift",
+      "sha256": "242012359e210da64edc2cbfc5abe53d28fce22437ccd04cb85fe8342f897e59"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/BatchQueueStorePersistenceTests.swift",
+      "sha256": "fc6531b07e09128050725661aafea18989e335f0edb442cd756df55eca5d090b"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/BatchQueueTransitionPolicyTests.swift",
+      "sha256": "ec43a39da44ae4fc5338c2f66133d1e1d100d88717352b82640ebfb039d3fdb1"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ContinuedProcessingMessageFormatterTests.swift",
+      "sha256": "bdb4cd8c8f6d545deb3c3dc4e2c0cb217471e14ab0f42d32f0844a0bd723e674"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/DurableBatchTaskExecutionRuntimeTests.swift",
+      "sha256": "4d0fb96fdc34ba0cb681d984f356f6f4e4c97493daed4c0b73ded31a4ac5f568"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ExecutionLeaseTests.swift",
+      "sha256": "5ef40b49da0f723caeb82e303b739aadcafc5863cfcaea09f8f96fce2b416109"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ExecutionSessionCompletionNotificationTests.swift",
+      "sha256": "d1db29cf1cbf267eabfb9c5cb21786e48ffa2014b4f4267f753f01681d89003b"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ExecutionSessionSuspensionNotificationTests.swift",
+      "sha256": "faf5f61f90c53d080be13e3f52d580a65a36daa5094a05fea90e2217a4f7b67e"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ExecutionSessionSuspensionTests.swift",
+      "sha256": "f85e8943e1fa60c69658402b5eea6aaa9a9bd6bc01997852db2d1efde41c0a26"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ExternalIntakeResponsibilityLayerTests.swift",
+      "sha256": "bdb3133606a5539920001236bb68eb5d171e1a728b74539399a2240a9cc4779f"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ProcessingExecutionFileLockTests.swift",
+      "sha256": "c90565ec0d8f9f510edf6d5df6be2f4d96d3d63041b0c99aca7a77b82756fbef"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ProcessingIdentityTests.swift",
+      "sha256": "5afb8915ffa143e96a9e61944d302b5b22036c99fbf8e5b15729e125c7599614"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ProcessingPresentationAuthorityTests.swift",
+      "sha256": "63a0a6c7f16babf175e45d58c0d29e774071dacf7a06a16feb6206f019f624f9"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ProcessingProgressFreshnessTests.swift",
+      "sha256": "cde149a04a60631ef55e06145e99c61170e961bf2edd35f5d5b6c8d3da3848f8"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ProcessingSourceAdjustmentIdentityTests.swift",
+      "sha256": "8f95a40eeb7c1a32d68fe81e5c089b9f843a9ea61f7b1e01efaac42a5577f0df"
+    },
+    {
+      "path": "Tests/MemoMarkTests/BatchTests/ShareIntakeCapacityPolicyTests.swift",
+      "sha256": "12decdd29fdadf5165256ac37011c79fce6e25efa4af1b6d28df30d9c2910619"
+    },
+    {
+      "path": "Tests/MemoMarkTests/ExportTests/PhotoLibraryCapabilityTests.swift",
+      "sha256": "62fcfd230e2b4df25ed232fc72bc177eca6b1c6237b50f36482d0da645d82352"
+    },
+    {
+      "path": "Tests/MemoMarkTests/RendererTests/GlassCardIntegrationTests.swift",
+      "sha256": "b2ff8203bb577f8c34674d77550c8c18879e90d73bb3bb7336565b25c3fa2005"
+    },
+    {
+      "path": "Tests/MemoMarkUITests/MemoMarkDeviceQAHarnessTests.swift",
+      "sha256": "a90efd013b08d45b429f05626f4a4317c28646e56e9469ac7a2d6c1dd7bff02b"
+    }
+  ],
+  "knownMixedFiles": [
+    "Source/MemoMark/MemoMark.xcodeproj/project.pbxproj",
+    "Source/MemoMark/MemoMark/Renderers/GlassCardCardRenderer.swift",
+    "Tests/MemoMarkUITests/MemoMarkDeviceQAHarnessTests.swift"
+  ],
+  "releaseAccepted": false,
+  "manualWholeDiffReviewComplete": false,
+  "remoteTipVerified": false,
+  "preparationFiles": [
+    "Docs/03_Engineering/2026-10-09-v5-source-checkpoint/README.md",
+    "Docs/03_Engineering/2026-10-09-v5-source-checkpoint/candidate-files.txt",
+    "Docs/03_Engineering/2026-10-09-v5-source-checkpoint/canonical-fifteen-device.json",
+    "Docs/03_Engineering/2026-10-09-v5-source-checkpoint/direct-delete-device.json",
+    "Docs/03_Engineering/2026-10-09-v5-source-checkpoint/full-tests.json",
+    "Docs/03_Engineering/2026-10-09-v5-source-checkpoint/share-reliability-device.json",
+    "Docs/03_Engineering/2026-10-09-v5-source-checkpoint/source-manifest.json"
+  ]
+}

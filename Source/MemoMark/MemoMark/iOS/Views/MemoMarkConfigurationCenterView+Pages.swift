@@ -158,6 +158,22 @@ extension MemoMarkConfigurationCenterView {
                             entryFlowState
                     )
             },
+            onCancelProcessing: {
+#if DEBUG
+                MemoMarkBackgroundProbe.record("home.cancel.invoked", detail: "session=\(String(describing: backgroundStatusService.currentExecutionSession?.id)) job=\(String(describing: backgroundStatusService.currentSnapshot?.jobID))")
+#endif
+                guard let sessionID = backgroundStatusService.currentExecutionSession?.id
+                    ?? backgroundStatusService.currentSnapshot?.jobID else { return }
+                Task { @MainActor in
+                    await queueCoordinator?.cancelExecutionSession(sessionID)
+                }
+            },
+            onDeleteProcessingRecord: {
+                guard let sessionID = backgroundStatusService.currentExecutionSession?.id else { return }
+                Task { @MainActor in
+                    await backgroundStatusService.deleteExecutionSessionHistory(sessionID)
+                }
+            },
             onCommitMemoryPresetTitle: commitMemoryPresetTitle,
             onOpenWorkflowGuide: {
                 entryFlowState.showsWorkflowGuide = true

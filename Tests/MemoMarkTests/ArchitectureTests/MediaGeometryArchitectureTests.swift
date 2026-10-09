@@ -4,6 +4,16 @@ import Testing
 @Suite("Media Geometry architecture")
 struct MediaGeometryArchitectureTests {
 
+    @Test("pure frozen output projections do not fork for the Share executable")
+    func frozenOutputProjectionIsExecutionIndependent() throws {
+        for path in ["Models/CardVariableProvider.swift", "Engines/CardTextBlockEngine.swift"] {
+            let url = try repositoryRoot().appendingPathComponent("Source/MemoMark/MemoMark/" + path)
+            let source = try String(contentsOf: url, encoding: .utf8)
+            #expect(!source.contains("MEMOMARK_SHARE_EXTENSION"),
+                "Pure frozen output semantics must be the same in app and Share: \(path)")
+        }
+    }
+
     @Test("Live Photo composers never observe media geometry")
     func livePhotoComposersNeverObserveMediaGeometry() throws {
         let sourceRoot =

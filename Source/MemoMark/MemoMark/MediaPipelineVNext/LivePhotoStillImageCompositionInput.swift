@@ -375,3 +375,30 @@ private extension ImageIOLivePhotoStillImageWriter {
         ] = makerApple
     }
 }
+
+#if DEBUG
+/// Experimental media input adapter; the composer consumes canonical geometry.
+@MainActor
+enum CPULivePhotoStillImageExperiment {
+    static func export(sourceStillURL: URL, overlay: PresentationArtifact,
+                       outputURL: URL, outputType: UTType,
+                       pairingIdentifier: String?, outputDescription: String?,
+                       writer: any LivePhotoStillImageWriting) throws -> URL {
+        try Task.checkCancellation()
+        guard outputType.conforms(to: .jpeg) || outputType.conforms(to: .heic),
+              let source = CGImageSourceCreateWithURL(sourceStillURL as CFURL,
+                  [kCGImageSourceShouldCache: false] as CFDictionary) else {
+            throw LivePhotoStillImageCompositionError.sourceStillUnreadable
+        }
+        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] ?? [:]
+        let rasterWriter = MetadataPreservingImageWriter()
+        let recipe = try CPUStillImageExportExperiment.recipe(sourceURL: sourceStillURL,
+            artifact: overlay, writer: rasterWriter)
+        return try rasterWriter.withCPUMappedRaster(image: recipe, to: outputURL) { raster in
+            try writer.writeComposedStillImage(raster, sourceProperties: properties,
+                outputURL: outputURL, outputType: outputType,
+                outputDescription: outputDescription, pairingIdentifier: pairingIdentifier)
+        }
+    }
+}
+#endif

@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// Application boundary for producing the immutable card consumed by the
@@ -71,4 +70,3 @@ struct BuildRecordCardTransaction {
         )
     }
 }
-#endif

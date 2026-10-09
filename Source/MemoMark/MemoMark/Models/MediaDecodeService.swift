@@ -10,8 +10,19 @@ final class MediaDecodeService {
     }
 
     nonisolated func previewImage(
-        for mediaAsset: MediaAsset
+        for mediaAsset: MediaAsset,
+        maxPixelDimension: Int? = nil
     ) throws -> PlatformImage {
+
+        if let maxPixelDimension {
+            // A bounded preview must never fall through to a full Data/UIImage
+            // decode, including RAW. Export still reads the original asset.
+            guard let image = imageIODisplayImage(from: mediaAsset.fileURL,
+                                                 maxPixelDimension: maxPixelDimension) else {
+                throw PhotoImportError.imageLoadFailed
+            }
+            return image
+        }
 
         if mediaAsset.isRAW {
             return try rawDisplayImage(

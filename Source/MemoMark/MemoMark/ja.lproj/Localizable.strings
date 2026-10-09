@@ -690,6 +690,14 @@
 "home.activity.status.processing" = "処理中";
 "home.activity.status.completed" = "完了";
 "home.activity.status.failed" = "失敗";
+"home.activity.status.paused" = "一時停止中";
+"home.activity.pause" = "処理を一時停止";
+"home.activity.resume" = "処理を再開";
+"home.activity.cancel" = "セッションをキャンセル";
+"home.activity.cancel.title" = "この処理セッションをキャンセルしますか？";
+"home.activity.cancel.message" = "完了した写真は保存されたままです。保存中の写真は完了する場合があり、このセッションの残りの処理は停止します。";
+"home.activity.cancel.confirm" = "セッションをキャンセル";
+"home.activity.cancel.keep" = "処理を続ける";
 "home.workflow.title" = "記録方法";
 "home.workflow.detail" = "Apple Photosで写真を選び、MemoMarkに共有します。現在のプリセットで端末内処理を行い、新しい写真をApple Photosに保存します。";
 "home.workflow.note" = "普段の記録にはApple Photosから共有し、必要なときだけMemoMark内で写真を選べます。";
@@ -1890,3 +1898,17 @@
 "commerce.purchase.lifetime.subscription_notice" = "永久アクセスを取得しても既存のサブスクリプションは自動解約されません。Apple の設定で更新を管理してください。";
 "commerce.purchase.lifetime.claim" = "永久アクセスを無料で取得";
 "commerce.purchase.lifetime.buy_format" = "永久アクセス · %@";
+
+"home.activity.delete" = "タスク履歴を削除";
+"home.activity.delete.message" = "終了したセッションのタスク履歴を削除します。保存済みの写真は残ります。";
+
+/* System continued-processing status */
+"notification.continued.processing.title" = "MemoMarkで写真を処理中";
+"notification.continued.preparing" = "写真を準備中";
+"notification.continued.completed.title" = "MemoMarkの写真処理が完了";
+"notification.continued.completed.subtitle" = "写真の処理が完了しました。";
+"notification.continued.progress.subtitle" = "%@ · %d/%d 枚完了 · %@";
+"notification.continued.suspended.title" = "MemoMarkの処理は一時停止中";
+"notification.continued.suspended.body" = "保存確認済み：%d枚。未完了：%d件。MemoMarkで処理を再開するか、今回の処理をキャンセルできます。";
+
+"home.activity.status.interrupted" = "処理が中断されました";

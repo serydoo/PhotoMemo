@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 enum MemoMarkQueueDisplayFormatter {
@@ -97,4 +96,3 @@ enum MemoMarkQueueDisplayFormatter {
         )
     }
 }
-#endif

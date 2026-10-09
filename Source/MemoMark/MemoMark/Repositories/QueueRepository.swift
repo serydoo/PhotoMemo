@@ -88,6 +88,21 @@ final class QueueRepository {
             .cancelJob(jobID)
     }
 
+    func cancelExecutionSession(
+        _ sessionID: UUID
+    ) async {
+        await batchQueueStore
+            .cancelExecutionSession(sessionID)
+    }
+
+    func pauseProcessing() async {
+        batchQueueStore.pauseProcessing()
+    }
+
+    func resumeProcessing(sessionID: UUID? = nil) async {
+        await batchQueueStore.resumeProcessing(sessionID: sessionID)
+    }
+
     func clearCompletedHistory(
         preserving jobID: UUID?
     ) async {

@@ -297,13 +297,11 @@ struct RecordCard: Identifiable, Hashable {
 
     var story: String
 
-#if !MEMOMARK_SHARE_EXTENSION
     var memoryResult: MemoryResult? = nil
 
     var memoryModule: MemoryModule? = nil
 
     var productionExpressionContext: ExpressionContext? = nil
-#endif
 
     var tags: [String]
 

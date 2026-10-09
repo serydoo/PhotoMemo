@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 @MainActor
@@ -102,4 +101,3 @@ final class ExportCoordinator {
             )
     }
 }
-#endif

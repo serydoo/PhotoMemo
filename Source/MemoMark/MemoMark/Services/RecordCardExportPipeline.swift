@@ -1,4 +1,5 @@
 import Foundation
+import UniformTypeIdentifiers
 import SwiftUI
 import ImageIO
 import CoreGraphics
@@ -37,19 +38,36 @@ final class RecordCardExportPipeline {
                     photo.image.photoMemoSize
             )
 
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        MemoMarkBackgroundProbe.record("extension.export.beforeArtifact", detail: "width=\(Int(renderSize.width)) height=\(Int(renderSize.height))")
+#endif
         let artifact = try presentationPlanner.artifact(
             for: card,
             canvasSize: renderSize
         )
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        MemoMarkBackgroundProbe.record("extension.export.artifactReady")
+        if UTType(filenameExtension: resolvedSaveURL.pathExtension)?.conforms(to: .jpeg) == true {
+            return try CPUStillImageExportExperiment.export(photo: photo, artifact: artifact,
+                to: resolvedSaveURL, writer: imageWriter,
+                exportDescription: CardVariableProvider.exportDescription(from: card))
+        }
+#endif
         guard let sourceImage = sourcePhotoCGImage(for: photo) else {
             throw RecordCardExportError.renderFailed
         }
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        MemoMarkBackgroundProbe.record("extension.export.sourceDecoded")
+#endif
         guard let cgImage = MemoMarkRenderedImageArtifactGuard.composingSourcePhotoWithMaterial(
             sourceImage,
             with: artifact
         ) else {
             throw RecordCardExportError.renderFailed
         }
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        MemoMarkBackgroundProbe.record("extension.export.compositionReady")
+#endif
         let exportDescription = CardVariableProvider.exportDescription(from: card)
         return try imageWriter.write(
             cgImage: cgImage,
@@ -110,6 +128,19 @@ final class RecordCardExportPipeline {
             return nil
         }
 
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        // The full-size thumbnail path eagerly allocates a transformed raster.
+        // An upright source can remain deferred; rotated input retains the
+        // established transform path until separately verified.
+        let orientation = (CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])?[kCGImagePropertyOrientation] as? Int ?? 1
+        if orientation == 1,
+           let image = CGImageSourceCreateImageAtIndex(source, 0,
+               [kCGImageSourceShouldCache: false,
+                kCGImageSourceShouldCacheImmediately: false] as CFDictionary) {
+            MemoMarkBackgroundProbe.record("extension.export.deferredUprightSource")
+            return image
+        }
+#endif
         let maxPixelSize =
             max(
                 photo.metadata.imageWidth ?? 0,

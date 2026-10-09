@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryAnchorRelativeSnapshot:
     Codable,
     Hashable {
@@ -1082,4 +1081,3 @@ private extension MemoryAnchorAnnualOccurrence {
         )
     }
 }
-#endif

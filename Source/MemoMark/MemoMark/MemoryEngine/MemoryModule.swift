@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryModule:
     Identifiable,
     Codable,
@@ -29,4 +28,3 @@ struct MemoryModule:
         self.preferredRegion = preferredRegion
     }
 }
-#endif

@@ -5,6 +5,113 @@ import Testing
 @Suite("Batch queue durable ledger", .serialized)
 struct BatchQueueDurableLedgerTests {
 
+    @Test("Legacy jobs decode with visible history after the optional deletion-field migration")
+    func legacyHistoryDeletionMigration() throws {
+        let job = makeJob(title: "Legacy")
+        let data = try JSONEncoder().encode(job)
+        var object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        object.removeValue(forKey: "historyDeletedAt")
+        let legacy = try JSONSerialization.data(withJSONObject: object)
+        let decoded = try JSONDecoder().decode(BatchJob.self, from: legacy)
+        #expect(decoded.historyDeletedAt == nil)
+        #expect(decoded.id == job.id)
+        #expect(decoded.tasks == job.tasks)
+    }
+
+    @Test("Deleting terminal session history retains the durable task evidence")
+    func deletesSessionHistoryWithoutDroppingEvidence() async throws {
+        var job = makeJob(title: "Cancelled")
+        job.executionSessionID = UUID()
+        job.tasks[0].phase = .cancelled
+        job.state = .cancelled
+        let backend = LedgerPersistenceBackend(data: try JSONEncoder().encode([job]))
+        let ledger = BatchQueueDurableLedger.bootstrap(persistence: BatchQueuePersistence(backend: backend)).ledger
+        #expect(await ledger.deleteExecutionSessionHistory(job.executionSessionID ?? job.id).committedValue == true)
+        let restored = try #require(BatchQueuePersistence(backend: backend).loadPersistedJobsResult().value?.first)
+        #expect(restored.historyDeletedAt != nil)
+        #expect(restored.tasks == job.tasks)
+        var active = job
+        active.historyDeletedAt = nil
+        active.tasks[0].phase = .savingToPhotoLibrary
+        let activeBackend = LedgerPersistenceBackend(data: try JSONEncoder().encode([active]))
+        let activeLedger = BatchQueueDurableLedger.bootstrap(persistence: BatchQueuePersistence(backend: activeBackend)).ledger
+        #expect(await activeLedger.deleteExecutionSessionHistory(active.executionSessionID ?? active.id).committedValue != true)
+        #expect(await activeLedger.snapshot().jobs.first?.historyDeletedAt == nil)
+    }
+
+    @Test("independent file-backed ledgers cannot overwrite simultaneous admissions")
+    func independentAdmissions() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let persistence = BatchQueuePersistence(backend: FileBatchQueuePersistenceBackend(baseDirectoryURL: directory))
+        let first = BatchQueueDurableLedger.bootstrap(persistence: persistence).ledger
+        let second = BatchQueueDurableLedger.bootstrap(persistence: persistence).ledger
+        let a = makeJob(title: "Share A")
+        let b = makeJob(title: "Share B")
+        async let firstResult = first.admit(a)
+        async let secondResult = second.admit(b)
+        _ = await (firstResult, secondResult)
+        let persisted = try #require(persistence.loadPersistedJobsResult().value)
+        #expect(Set(persisted.map(\.id)) == Set([a.id, b.id]))
+    }
+
+    @Test("Independent Share admissions reserve capacity within the file transaction")
+    func independentAdmissionsRespectCapacity() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let persistence = BatchQueuePersistence(backend: FileBatchQueuePersistenceBackend(baseDirectoryURL: directory))
+        let first = BatchQueueDurableLedger.bootstrap(persistence: persistence).ledger
+        let second = BatchQueueDurableLedger.bootstrap(persistence: persistence).ledger
+        let a = makeJob(title: "A"), b = makeJob(title: "B")
+        async let firstResult = first.admit(a, maximumPendingTaskCount: 1)
+        async let secondResult = second.admit(b, maximumPendingTaskCount: 1)
+        _ = await (firstResult, secondResult)
+        #expect(try #require(persistence.loadPersistedJobsResult().value).count == 1)
+    }
+
+    @Test("Resending a held intent shares its durable reservation without bypassing other intents")
+    func repeatedHeldIntentUsesOneReservation() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let persistence = BatchQueuePersistence(backend: FileBatchQueuePersistenceBackend(baseDirectoryURL: directory))
+        let ledger = BatchQueueDurableLedger.bootstrap(persistence: persistence).ledger
+        var held = makeJob(title: "Held")
+        held.executionSuspendedAt = Date()
+        held.tasks[0].processingIdentity = ProcessingIdentity(sourceDigest: "source", semanticsDigest: "frozen-config")
+        _ = await ledger.admit(held, maximumPendingTaskCount: 1)
+        var resend = makeJob(title: "Resend")
+        resend.tasks[0].processingIdentity = held.tasks[0].processingIdentity
+        let retried = await ledger.admit(resend, maximumPendingTaskCount: 1)
+        switch retried {
+        case .committed(let admission, _): #expect(admission?.didInsert == true)
+        default: Issue.record("The same held intent must be readmitted without a second reservation")
+        }
+        var different = makeJob(title: "Different configuration")
+        different.tasks[0].processingIdentity = ProcessingIdentity(sourceDigest: "source", semanticsDigest: "other-config")
+        let other = await ledger.admit(different, maximumPendingTaskCount: 1)
+        if case .unchanged(let admission, _) = other { #expect(admission == nil) }
+        else { Issue.record("Different output semantics still require fresh capacity") }
+        #expect(await ledger.snapshot().jobs.count == 2)
+    }
+
+    @Test("A file-backed commit rejects a projection made before another writer's admission")
+    func independentWriterInvalidatesRevision() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let persistence = BatchQueuePersistence(backend: FileBatchQueuePersistenceBackend(baseDirectoryURL: directory))
+        let first = BatchQueueDurableLedger.bootstrap(persistence: persistence).ledger
+        let second = BatchQueueDurableLedger.bootstrap(persistence: persistence).ledger
+        let job = makeJob(title: "Other writer")
+        _ = await first.admit(job)
+        let result = await second.commit([], expectedRevision: 0)
+        guard case .conflict(let snapshot) = result else {
+            Issue.record("Stale independent writer must conflict")
+            return
+        }
+        #expect(snapshot.jobs.map(\.id) == [job.id])
+        #expect(persistence.loadPersistedJobsResult().value?.map(\.id) == [job.id])
+    }
+
     @Test("Bootstrap exposes the persisted queue as revision zero")
     func bootstrapLoadsPersistedQueue() async throws {
         let job = makeJob(title: "Persisted")
@@ -54,6 +161,34 @@ struct BatchQueueDurableLedgerTests {
                 .loadPersistedJobsResult().value
             == [secondJob, firstJob]
         )
+    }
+
+    @Test("Cancel execution session persists cancellation and preserves a PhotoKit commit")
+    func cancelExecutionSessionPersists() async throws {
+        let sessionID = UUID()
+        var queued = makeJob(title: "Queued")
+        queued.executionSessionID = sessionID
+        var saving = makeJob(title: "Saving")
+        saving.executionSessionID = sessionID
+        saving.tasks[0].phase = .savingToPhotoLibrary
+        var other = makeJob(title: "Other session")
+        other.executionSessionID = UUID()
+        let jobs = [queued, saving, other]
+        let backend = LedgerPersistenceBackend(
+            data: try JSONEncoder().encode(jobs)
+        )
+        let ledger = BatchQueueDurableLedger.bootstrap(
+            persistence: BatchQueuePersistence(backend: backend)
+        ).ledger
+
+        let result = await ledger.cancelExecutionSession(sessionID)
+
+        #expect(result.committedValue == true)
+        let committed = await ledger.snapshot()
+        #expect(committed.jobs.first(where: { $0.id == queued.id })?.state == .cancelled)
+        #expect(committed.jobs.first(where: { $0.id == saving.id })?.tasks[0].phase == .savingToPhotoLibrary)
+        #expect(committed.jobs.first(where: { $0.id == other.id })?.state == .queued)
+        #expect(BatchQueuePersistence(backend: backend).loadPersistedJobsResult().value == committed.jobs)
     }
 
     @Test("A stale commit cannot overwrite a newer durable snapshot")
@@ -201,6 +336,8 @@ struct BatchQueueDurableLedgerTests {
 
         let admitted = try #require(first.committedValue)
         #expect(admitted.didInsert)
+        #expect(admitted.job.executionSessionID != nil)
+        job.executionSessionID = admitted.job.executionSessionID
         #expect(admitted.job == job)
         let existing = try #require(second.unchangedValue)
         #expect(!existing.didInsert)

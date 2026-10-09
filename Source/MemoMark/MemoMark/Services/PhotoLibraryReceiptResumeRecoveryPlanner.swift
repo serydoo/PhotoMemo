@@ -40,7 +40,7 @@ struct PhotoLibraryReceiptResumeRecoveryPlanner {
         for job in jobs {
             for task in job.tasks
             where task.phase == .savingToPhotoLibrary {
-                let idempotencyKey = task.id.uuidString
+                let idempotencyKey = task.photoLibraryIdempotencyKey
                 let reference = BatchTaskReference(
                     jobID: job.id,
                     taskID: task.id

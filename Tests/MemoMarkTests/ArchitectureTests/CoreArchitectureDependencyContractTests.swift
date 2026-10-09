@@ -860,7 +860,7 @@ struct CoreArchitectureDependencyContractTests {
     @Test("media output mode uses a responsibility-based declaration")
     func mediaOutputModeUsesResponsibilityBasedDeclaration() throws {
         let source = try Self.source(
-            at: "Source/MemoMark/MemoMark/Intent/ExportAlbumIntents.swift"
+            at: "Source/MemoMark/MemoMark/Models/MediaOutputMode.swift"
         )
         let transportSource = try Self.source(
             at: "Source/MemoMark/MemoMark/Application/ConfigurationTransportTypes.swift"

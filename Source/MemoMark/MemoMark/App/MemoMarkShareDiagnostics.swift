@@ -66,6 +66,8 @@ struct MemoMarkShareDiagnosticStage:
         Self(rawValue: "batch.task.route")
     nonisolated static let batchTaskDuration =
         Self(rawValue: "batch.task.duration")
+    nonisolated static let batchTaskFailure =
+        Self(rawValue: "batch.task.failure")
     nonisolated static let batchTaskStageDuration =
         Self(rawValue: "batch.task.stageDuration")
 
@@ -603,3 +605,33 @@ extension MemoMarkShareDiagnosticEvent {
         )
     }
 }
+
+#if DEBUG
+/// Append-only development evidence. Unique keys avoid extension/host overwrite.
+/// Reading these records never launches the host or advances its queue.
+enum MemoMarkBackgroundProbe {
+    static func record(_ event: String, detail: String = "",
+                       defaults: UserDefaults = MemoMarkSharedContainer.sharedUserDefaults,
+                       now: Date = Date()) {
+        let prefix = "processingBackgroundProbe."
+        let key = prefix + UUID().uuidString
+        defaults.set([
+            "event": event,
+            "detail": detail,
+            "timestamp": now.timeIntervalSince1970
+        ], forKey: key)
+        let previous = defaults.dictionaryRepresentation().filter {
+            $0.key.hasPrefix(prefix) && $0.key != key
+        }
+        if previous.count >= 512 {
+            let oldest = previous.sorted { left, right in
+                let leftTime = (left.value as? [String: Any])?["timestamp"] as? Double ?? 0
+                let rightTime = (right.value as? [String: Any])?["timestamp"] as? Double ?? 0
+                return leftTime == rightTime ? left.key < right.key : leftTime < rightTime
+            }
+            for record in oldest.prefix(previous.count - 511) { defaults.removeObject(forKey: record.key) }
+        }
+        defaults.synchronize()
+    }
+}
+#endif

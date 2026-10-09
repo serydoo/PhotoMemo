@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 final class PhotoLibraryRepository {
@@ -176,4 +175,3 @@ private extension PhotoLibraryRepository {
         return trimmedIdentifier
     }
 }
-#endif

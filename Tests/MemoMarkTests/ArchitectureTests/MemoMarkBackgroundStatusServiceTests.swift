@@ -551,6 +551,26 @@ struct MemoMarkBackgroundStatusServiceTests {
         #expect(snapshot.queueLines.count == 2)
     }
 
+    @Test("A suspended historical session cannot mask a newer completed job as processing")
+    func suspendedSessionDoesNotMaskCompletion() throws {
+        let configuration = BatchConfigurationSnapshot(template: .classicWhite, badge: nil, anchor: nil,
+            shouldWritePhotoDescription: true, photoDescriptionOverride: "", selectedAlbumIdentifier: "")
+        var held = makeJob(title: "Interrupted", source: .shareExtension, phase: .queued,
+            updatedAt: 100, configuration: configuration)
+        held.executionSuspendedAt = Date(timeIntervalSince1970: 100)
+        let completed = makeJob(title: "New completion", source: .shareExtension, phase: .completed,
+            updatedAt: 200, configuration: configuration)
+        let projection = MemoMarkBackgroundStatusProjection(textCatalog: .init(language: .english))
+        let current = try #require(projection.resolvedSnapshot(externalJobs: [completed, held],
+            activeJobID: nil, activeTaskID: nil))
+        #expect(current.jobID == completed.id)
+        #expect(current.presentationState == .completed)
+        #expect(projection.taskOverview(from: [held, completed]).activeJobCount == 0)
+        let focused = try #require(projection.resolvedSnapshot(externalJobs: [completed, held],
+            activeJobID: nil, activeTaskID: nil, focusedJobID: held.id))
+        #expect(focused.presentationState == .needsAttention)
+    }
+
     private func makeJob(
         id: UUID = UUID(),
         title: String,

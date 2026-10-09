@@ -1,4 +1,4 @@
-#if canImport(Photos) && !MEMOMARK_SHARE_EXTENSION
+#if canImport(Photos)
 import Photos
 
 enum PhotoKitResourceFileName {

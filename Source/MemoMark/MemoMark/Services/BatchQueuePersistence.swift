@@ -1,7 +1,8 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 nonisolated protocol BatchQueuePersistenceBackend {
+
+    var transactionLockURL: URL? { get }
 
     func loadData(
         forKey key: String
@@ -11,6 +12,10 @@ nonisolated protocol BatchQueuePersistenceBackend {
         _ data: Data,
         forKey key: String
     ) throws
+}
+
+nonisolated extension BatchQueuePersistenceBackend {
+    var transactionLockURL: URL? { nil }
 }
 
 nonisolated struct UserDefaultsBatchQueuePersistenceBackend:
@@ -66,6 +71,10 @@ nonisolated struct FileBatchQueuePersistenceBackend:
     /// contract, not a product-stage label, and must remain compatible.
     private static let schemaV1Filename =
         "jobs-v1.json"
+
+    var transactionLockURL: URL? {
+        baseDirectoryURL.appendingPathComponent("BatchQueue/.ledger.lock")
+    }
 
     private let baseDirectoryURL: URL
 
@@ -176,6 +185,8 @@ nonisolated private enum BatchQueuePersistenceVerificationError:
 }
 
 nonisolated struct BatchQueuePersistence {
+
+    var transactionLockURL: URL? { backend.transactionLockURL }
 
     static let storageKey =
         "photomemo.batchQueue.jobs"
@@ -455,5 +466,3 @@ nonisolated struct BatchQueuePersistence {
         }
     }
 }
-
-#endif

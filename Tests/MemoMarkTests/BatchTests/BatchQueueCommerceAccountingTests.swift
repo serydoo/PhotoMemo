@@ -40,6 +40,22 @@ struct BatchQueueCommerceAccountingTests {
         #expect(!duplicateResult.requiresRecovery)
     }
 
+    @Test("repeated shares of one intent consume one free record")
+    @MainActor func repeatedIntentCountsOnce() throws {
+        let suite = "IntentAccounting-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let accounting = BatchQueueCommerceAccounting(persistence: MemoMarkCommercePersistence(defaults: defaults))
+        var first = completedTask()
+        var second = completedTask()
+        first.processingIdentity = ProcessingIdentity(sourceDigest: "same", semanticsDigest: "same")
+        second.processingIdentity = first.processingIdentity
+        let result = accounting.recordSuccessfulSave(for: first, current: freeSnapshot())
+        let updated = try #require(result.updatedSnapshot)
+        #expect(updated.successfulRecordCount == 1)
+        #expect(accounting.recordSuccessfulSave(for: second, current: updated).updatedSnapshot == nil)
+    }
+
     @Test("Retry admission reserves incomplete work before offering a free retry")
     func retryAdmissionReservesIncompleteWork() {
         let accounting = BatchQueueCommerceAccounting(

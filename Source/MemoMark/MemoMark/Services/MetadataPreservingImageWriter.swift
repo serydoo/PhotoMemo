@@ -1,6 +1,9 @@
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
+#if DEBUG
+import CoreImage
+#endif
 
 nonisolated final class MetadataPreservingImageWriter {
 
@@ -49,6 +52,47 @@ nonisolated final class MetadataPreservingImageWriter {
             throw RecordCardExportError.writeFailed
         }
 
+        return try finishWrittenImage(at: url, type: type,
+                                      exportDescription: exportDescription, captureDate: captureDate)
+    }
+
+#if DEBUG
+    // Experimental CPU file path; full-size pixels are file-backed, with only strip buffers owned in memory.
+    // This is not selected by the normal app export pipeline.
+    @MainActor private lazy var cpuJPEGContext = CIContext(options: [.useSoftwareRenderer: true, .cacheIntermediates: false, .memoryTarget: 32])
+
+    @MainActor
+    func renderCPURegion(image: CIImage, bounds: CGRect) -> CGImage? {
+        guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
+        let result = cpuJPEGContext.createCGImage(image, from: bounds, format: .RGBA8, colorSpace: colorSpace)
+        cpuJPEGContext.clearCaches()
+        return result
+    }
+
+    @MainActor
+    func withCPUMappedRaster(image: CIImage, to url: URL,
+                            encode: (CGImage) throws -> URL) throws -> URL {
+        try CPUFileRasterExport.withMappedRaster(image: image, context: cpuJPEGContext,
+            to: url, encode: encode)
+    }
+
+    @MainActor
+    func writeCPUJPEG(image: CIImage, to url: URL, sourceProperties: [CFString: Any],
+                      exportDescription: String, captureDate: Date?) throws -> URL {
+        guard outputType(for: url).conforms(to: .jpeg),
+              image.extent.width > 0, image.extent.height > 0,
+              image.extent.width.isFinite, image.extent.height.isFinite,
+              CGColorSpace(name: CGColorSpace.sRGB) != nil else {
+            throw RecordCardExportError.writeFailed
+        }
+        return try CPUFileRasterExport.writeJPEG(image: image, context: cpuJPEGContext, to: url,
+            sourceProperties: sourceProperties, exportDescription: exportDescription,
+            captureDate: captureDate, writer: self)
+    }
+#endif
+
+    private func finishWrittenImage(at url: URL, type: UTType,
+                                    exportDescription: String, captureDate: Date?) throws -> URL {
         let patched = JPEGExifUserCommentPatcher.patchIfNeeded(
             at: url,
             outputType: type,

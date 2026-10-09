@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryVariableProvider {
 
     func build(
@@ -179,4 +178,3 @@ private extension MemoryAnchorRelativeSnapshot {
         max(totalDays, 0) / 7
     }
 }
-#endif

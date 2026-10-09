@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 struct InteractiveMemoryCardSelection:
@@ -18,4 +17,3 @@ struct InteractiveMemoryCardSelection:
             CardSelection(selectedRegion: region)
     }
 }
-#endif

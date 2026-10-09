@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// Semantic transitions accepted from a media task executor. This value is
@@ -66,4 +65,3 @@ nonisolated struct BatchTaskExecutionTransitionPolicy:
         }
     }
 }
-#endif

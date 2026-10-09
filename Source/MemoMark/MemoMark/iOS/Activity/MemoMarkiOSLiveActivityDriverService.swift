@@ -246,6 +246,7 @@ final class MemoMarkiOSLiveActivityDriverService {
 
     private let bridgeService:
         MemoMarkiOSLiveActivityBridgeService
+    private weak var batchQueueStore: BatchQueueStore?
 
     private var trackedActivities:
         [UUID:
@@ -287,17 +288,35 @@ final class MemoMarkiOSLiveActivityDriverService {
 
     init(
         bridgeService:
-            MemoMarkiOSLiveActivityBridgeService
+            MemoMarkiOSLiveActivityBridgeService,
+        batchQueueStore: BatchQueueStore? = nil
     ) {
         self.bridgeService =
             bridgeService
 
+        self.batchQueueStore = batchQueueStore
         bootstrapExistingActivities()
         bind()
     }
 }
 
 private extension MemoMarkiOSLiveActivityDriverService {
+
+    var usesSystemProcessingPresentation: Bool {
+        #if DEBUG
+        // The signed Share experiment must retire host-owned activities before
+        // Photos takes the foreground. The extension cannot reliably enumerate
+        // ActivityKit activities created under the host's bundle identity.
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-continuedProductionPipelineProbe"),
+           !arguments.contains("-disableContinuedProcessingSpike") {
+            return true
+        }
+        #endif
+        return batchQueueStore?.executionLease?.owner == .continuedProcessing
+            || ProcessingPresentationAuthority.current(defaults: MemoMarkSharedContainer.sharedUserDefaults) == .systemContinuedProcessing
+    }
+
 
     func bootstrapExistingActivities() {
 
@@ -401,6 +420,12 @@ private extension MemoMarkiOSLiveActivityDriverService {
     }
 
     func bind() {
+        batchQueueStore?.$executionLease.sink { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                await self.apply(bridgeState: self.bridgeService.bridgeState)
+            }
+        }.store(in: &cancellables)
 
         bridgeService.$bridgeState
             .sink { [weak self] state in
@@ -421,6 +446,12 @@ private extension MemoMarkiOSLiveActivityDriverService {
     ) async {
 
         guard #available(iOS 16.2, *) else {
+            return
+        }
+
+        if usesSystemProcessingPresentation {
+            cancelRequestRetries(except: nil)
+            await endAllTrackedActivities(dismissalPolicy: .immediate)
             return
         }
 
@@ -503,6 +534,7 @@ private extension MemoMarkiOSLiveActivityDriverService {
         payload:
             MemoMarkBackgroundLiveActivityPayload
     ) async {
+        guard !usesSystemProcessingPresentation else { return }
 
         if payload.isTerminal {
             MemoMarkShareDiagnostics.record(
@@ -653,7 +685,8 @@ private extension MemoMarkiOSLiveActivityDriverService {
         MemoMarkBackgroundActivityAttributes
     >? {
 
-        guard !hasDisabledRequestsForRun,
+        guard !usesSystemProcessingPresentation,
+              !hasDisabledRequestsForRun,
               !suppressedRequestJobIDs.contains(payload.jobID),
               !requestRetryRegistry.hasScheduledRetry(
                 for: payload.jobID

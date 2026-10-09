@@ -240,7 +240,7 @@ final class PhotoLibraryExportService:
 
         let status = await requestAuthorizationIfNeeded()
 
-        guard isAuthorized(status) else {
+        guard PhotoLibraryCapability(readWrite: status, addOnly: .notDetermined).canManageAlbums else {
             throw PhotoLibraryExportError.unauthorized
         }
 
@@ -288,7 +288,7 @@ final class PhotoLibraryExportService:
 
         let status = await requestAuthorizationIfNeeded()
 
-        guard isAuthorized(status) else {
+        guard PhotoLibraryCapability(readWrite: status, addOnly: .notDetermined).canManageAlbums else {
             throw PhotoLibraryExportError.unauthorized
         }
 
@@ -687,8 +687,8 @@ private extension PhotoLibraryExportService {
         _ status: PHAuthorizationStatus
     ) -> Bool {
 
-        status == .authorized
-            || status == .limited
+        PhotoLibraryCapability(readWrite: status, addOnly: .notDetermined)
+            .canReadVisibleAssets
     }
 
     func requestAuthorizationIfNeeded() async -> PHAuthorizationStatus {
@@ -700,6 +700,12 @@ private extension PhotoLibraryExportService {
     func resolvedAlbum(
         _ localIdentifier: String?
     ) async throws -> PHAssetCollection? {
+
+        switch PhotoLibraryCapability.current.albumDisposition(preferredIdentifier: localIdentifier) {
+        case .systemLibrary: return nil
+        case .requiresFullAccess: throw PhotoLibraryExportError.unauthorized
+        case .resolveAlbum: break
+        }
 
         let destination = try PhotoLibraryOutputDestinationResolver.resolve(
             preferredAlbumIdentifier: localIdentifier,

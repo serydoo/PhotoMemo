@@ -30073,3 +30073,14 @@ final Home/icon-selection captures inspected during this pass. Full keyboard,
 rotation, localization/accessibility matrix and native Duo integration remain
 open. Version2.3.6(124) unchanged. No renderer/media/schema or Store mutation.
 Unrelated release/Outreach/research/config edits and private assets remain local.
+
+
+## 2026-10-10 — 2.3.6 (124) GitHub source checkpoint
+
+Owner-authorized Engineering Loop source synchronization from 5073d725. Consolidates the prepared processing reliability code, shared extension dependencies, regression tests, ADR-012 and engineering evidence; updates README/CHANGELOG and adds an internal checkpoint material set. Product stage remains V4; V5 in scoped processing documents is not a product-stage transition. Version/build unchanged.
+
+Scope is the prepared 217-path allowlist plus checkpoint documentation. Existing unrelated chronicle edits, research, outreach, configuration, work artifacts and private/device material remain local. Only this new chronicle entry is included in the index. Release Share Continued Processing remains disabled; stable/older-system, failure-injection, resource-pressure and superseding production certification gates stay open. Earlier physical evidence is retained with its exact Beta/DEBUG and configuration boundaries; no new device installation or manual acceptance is claimed.
+
+See `Docs/07_Releases/2026-10-10-2.3.6-source-checkpoint-sync-manifest.md` for current verification and authorization. No TestFlight upload or App Store action is included.
+
+Checkpoint validation: formal Xcode 27.0 iOS Release build passed. Exact staged-tree export full macOS tests: 2088 passed, 1 skipped, 0 failed; two existing fixture QoS warnings retained. Two desktop-path runs stalled on fixture file operations and were stopped; isolated candidate run passed. Four-language format/key parity and staged whitespace checks passed. Final source fingerprints and sanitized test summary accompany the checkpoint.

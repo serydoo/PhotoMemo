@@ -30,7 +30,7 @@ struct ShareIntakeCapacityPolicyTests {
         let snapshot = MemoMarkCommerceSnapshot(
             environment: .xcode,
             accessSource: .free,
-            successfulRecordCount: 0,
+            successfulRecordCount: 250,
             totalAllowance: nil,
             batchLimit: 40,
             firstRecorderDate: nil,

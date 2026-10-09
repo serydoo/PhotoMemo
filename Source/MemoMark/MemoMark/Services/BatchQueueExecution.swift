@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 @MainActor
@@ -93,6 +92,10 @@ final class BatchQueueExecution {
         )
     }
 
+    func process(context: BatchTaskExecutionContext, runtime: any BatchTaskExecutionRuntime) async {
+        await queueCoordinator.process(context: context, runtime: runtime)
+    }
+
     func enqueue(
         payloads: [BatchTaskIntakePayload],
         configuration: BatchConfigurationSnapshot,
@@ -165,4 +168,3 @@ final class BatchQueueExecution {
         queueCoordinator.mediaMemoryBudget(for: task)
     }
 }
-#endif

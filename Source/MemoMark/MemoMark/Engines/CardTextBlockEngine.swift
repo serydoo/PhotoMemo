@@ -23,7 +23,6 @@ final class CardTextBlockEngine {
         var metadataContext =
             baseContext
 
-#if !MEMOMARK_SHARE_EXTENSION
         let hasProductionLocationExpression =
             card
             .productionExpressionContext?
@@ -32,10 +31,7 @@ final class CardTextBlockEngine {
                     LocationExpressionProvider
                     .locationToken
             ) != nil
-#else
-        let hasProductionLocationExpression =
-            false
-#endif
+
 
         if let modelExpressionValue =
             MetadataProvider()
@@ -58,7 +54,6 @@ final class CardTextBlockEngine {
             )
         }
 
-#if !MEMOMARK_SHARE_EXTENSION
         if let productionExpressionContext =
             card.productionExpressionContext {
 
@@ -69,7 +64,6 @@ final class CardTextBlockEngine {
                     base: metadataContext
                 )
         }
-#endif
 
         if !hasProductionLocationExpression,
            let locationExpressionValue =

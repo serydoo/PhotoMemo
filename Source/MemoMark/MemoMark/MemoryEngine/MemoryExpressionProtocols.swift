@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 protocol MemoryCalculator {
 
     func calculate(
@@ -25,4 +24,3 @@ protocol SubjectStrategy {
         from subject: MemorySubject
     ) -> String
 }
-#endif

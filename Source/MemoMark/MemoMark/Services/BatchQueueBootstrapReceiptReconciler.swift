@@ -35,7 +35,7 @@ struct BatchQueueBootstrapReceiptReconciler {
                     return nil
                 }
 
-                let idempotencyKey = task.id.uuidString
+                let idempotencyKey = task.photoLibraryIdempotencyKey
                 let recordedAssetIdentifier =
                     saveReceiptStore.assetIdentifier(
                         for: idempotencyKey
@@ -87,7 +87,7 @@ struct BatchQueueBootstrapReceiptReconciler {
             retaining: Set(
                 jobs
                     .flatMap(\.tasks)
-                    .map { $0.id.uuidString }
+                    .map { $0.photoLibraryIdempotencyKey }
             )
         )
     }
@@ -103,7 +103,7 @@ struct BatchQueueBootstrapReceiptReconciler {
                         return nil
                     }
 
-                    let idempotencyKey = task.id.uuidString
+                    let idempotencyKey = task.photoLibraryIdempotencyKey
                     guard saveReceiptStore.assetIdentifier(
                         for: idempotencyKey
                     ) != nil

@@ -261,6 +261,16 @@ actor ProductionDiagnosticsStore {
                 "errorCode": isInteger,
                 "reason": isReadbackReason
             ]
+        case MemoMarkShareDiagnosticStage
+            .batchTaskFailure
+            .rawValue:
+            validators = [
+                "phase": isSafeIdentifier,
+                "errorCode": isSafeIdentifier,
+                "systemDomain": isSafeIdentifier,
+                "systemCode": isInteger,
+                "supportID": isSafeIdentifier
+            ]
         default:
             return nil
         }

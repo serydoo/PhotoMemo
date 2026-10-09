@@ -456,7 +456,7 @@ nonisolated enum MemoMarkRenderedImageArtifactGuard {
 
 private extension MemoMarkRenderedImageArtifactGuard {
 
-    static func aspectFillRect(
+    nonisolated static func aspectFillRect(
         sourceSize: CGSize,
         targetFrame: CGRect
     ) -> CGRect {
@@ -480,7 +480,7 @@ private extension MemoMarkRenderedImageArtifactGuard {
 
 private extension MemoMarkRenderedImageArtifactGuard {
 
-    static func columnLooksLikeBlackArtifact(
+    nonisolated static func columnLooksLikeBlackArtifact(
         pixels: [UInt8],
         x: Int,
         height: Int,
@@ -525,7 +525,7 @@ private extension MemoMarkRenderedImageArtifactGuard {
             >= 0.96
     }
 
-    static func averageBrightness(
+    nonisolated static func averageBrightness(
         pixels: [UInt8],
         x: Int,
         height: Int,

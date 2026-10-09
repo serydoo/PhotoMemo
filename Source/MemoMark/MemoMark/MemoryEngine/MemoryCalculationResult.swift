@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 struct MemoryCalculationResult: Hashable {
 
     let daysSince: String
@@ -31,4 +30,3 @@ struct MemoryCalculationResult: Hashable {
         self.memorySummary = memorySummary
     }
 }
-#endif

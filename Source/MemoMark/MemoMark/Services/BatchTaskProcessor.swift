@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 nonisolated enum BatchTaskProcessingRoute: String {
@@ -14,7 +13,7 @@ nonisolated enum BatchTaskProcessingRoute: String {
 /// The context carries no UI state and therefore must remain usable from an
 /// actor or detached media worker as the execution pipeline is decomposed.
 nonisolated struct BatchTaskExecutionContext {
-    let taskReference: BatchQueueExecution.TaskReference
+    let taskReference: BatchTaskReference
     let taskSnapshot: BatchTask
     let configuration: BatchConfigurationSnapshot
     let memoryBudget: MediaMemoryBudget
@@ -354,7 +353,7 @@ final class BatchTaskProcessor {
                         metadata: importedPhoto.metadata,
                         preferredAlbumIdentifier: configuration.selectedAlbumIdentifier,
                         coordinator: exportCoordinator,
-                        idempotencyKey: task.id.uuidString
+                        idempotencyKey: task.photoLibraryIdempotencyKey
                     ).execute()
                 )
             }
@@ -548,7 +547,7 @@ final class BatchTaskProcessor {
 
     private func processLivePhotoTask(
         task: BatchTask,
-        at reference: BatchQueueExecution.TaskReference,
+        at reference: BatchTaskReference,
         runtime: any BatchTaskExecutionRuntime,
         totalProgressUnits: Int,
         configuration: BatchConfigurationSnapshot
@@ -702,4 +701,3 @@ private enum BatchTaskProcessorError: LocalizedError {
         }
     }
 }
-#endif

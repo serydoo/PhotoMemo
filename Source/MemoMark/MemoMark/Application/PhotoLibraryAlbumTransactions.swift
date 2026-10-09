@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 /// Narrow application port for reading the user's Photo Library albums.
@@ -61,4 +60,3 @@ struct LoadPhotoLibraryAlbumsTransaction {
         }
     }
 }
-#endif

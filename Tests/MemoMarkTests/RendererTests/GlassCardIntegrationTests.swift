@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreImage
 import Foundation
 import ImageIO
 import SwiftUI
@@ -8,6 +9,29 @@ import Testing
 
 @Suite("GlassCard integration")
 struct GlassCardIntegrationTests {
+    @Test("GlassCard preserves a short memory supplement with its explicit line break")
+    @MainActor
+    func memorySupplementFits() {
+        let text = MemoryWriteTextComposer.compose(smartText: "今天是第 100 天", usesCustomText: true, customText: "此刻")!
+        var input = card(text: text)
+        input.template.leftTopArea.items = []
+        input.template.rightBottomArea.items = [.story]
+        let plan = GlassCardProductionRenderer.resolve(card: input, canvasSize: CGSize(width: 1080, height: 1440))
+        #expect(plan.slots[3].text == text)
+        #expect(plan.slots[3].fit.outcome == .fits)
+        #expect(!plan.isContentOverflowing)
+    }
+
+    @Test("GlassCard retains overflow protection for more than two authored lines")
+    @MainActor
+    func memorySupplementTooManyLines() {
+        var input = card(text: "第一行\n第二行\n第三行")
+        input.template.leftTopArea.items = []
+        input.template.rightBottomArea.items = [.story]
+        let plan = GlassCardProductionRenderer.resolve(card: input, canvasSize: CGSize(width: 1080, height: 1440))
+        #expect(plan.isContentOverflowing)
+    }
+
     @Test("Motion color fallback retains layout and readable foreground without native backdrop")
     @MainActor
     func motionColorFallbackArtifact() throws {
@@ -315,6 +339,241 @@ struct GlassCardIntegrationTests {
         let top = try #require(output.cropping(to: CGRect(x: size.width * 0.2, y: size.width * 0.07, width: 1, height: 1)))
         #expect(try ImageEdgeAssertionSupport.bottomRows(in: bottom, count: 1)[0].maximumRGB < 170)
         #expect(try ImageEdgeAssertionSupport.bottomRows(in: top, count: 1)[0].minimumRGB > 190)
+    }
+
+    @Test("Bounded preview preserves original GlassCard export geometry and source bytes")
+    @MainActor
+    func boundedPreviewPreservesOriginalExport() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("BoundedGlassExport-\(UUID())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let sourceURL = folder.appendingPathComponent("source.jpg")
+        let source = try ImageEdgeAssertionSupport.solidImage(width: 1080, height: 1440, red: 200, green: 200, blue: 200)
+        try ImageEdgeAssertionSupport.writeJPEG(source, to: sourceURL)
+        let originalBytes = try Data(contentsOf: sourceURL)
+        let asset = MediaAsset(fileURL: sourceURL,
+            sourceInfo: PhotoSourceInfo(originalFileName: "source.jpg"),
+            sourceProperties: [:], contentType: .jpeg)
+        let preview = try MediaDecodeService().previewImage(for: asset, maxPixelDimension: 128)
+        #expect(preview.photoMemoSize.width <= 128)
+        #expect(preview.photoMemoSize.height <= 128)
+        let metadata = PhotoMetadata(imageWidth: 1080, imageHeight: 1440)
+        let photo = SelectedPhoto(sourceURL: sourceURL, image: preview, metadata: metadata)
+        var card = card(text: "此刻")
+        card.metadata = metadata
+        let outputURL = try RecordCardExportPipeline(namingResolver: OutputFileNamingResolver())
+            .export(photo: photo, card: card, to: folder.appendingPathComponent("output.jpg"))
+        let output = try ImageEdgeAssertionSupport.image(at: outputURL)
+        #expect(output.width == 1080)
+        #expect(output.height == 1440)
+        #expect(try Data(contentsOf: sourceURL) == originalBytes)
+    }
+
+    @Test("CPU file export retains dimensions, EXIF and Unicode description")
+    @MainActor
+    func cpuJPEGMetadataReadback() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("CPUJPEG-\(UUID())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let sourceURL = folder.appendingPathComponent("source.jpg")
+        let source = try ImageEdgeAssertionSupport.solidImage(width: 1080, height: 1440, red: 160, green: 170, blue: 180)
+        try ImageEdgeAssertionSupport.writeJPEG(source, to: sourceURL)
+        let originalBytes = try Data(contentsOf: sourceURL)
+        let image = try #require(CIImage(contentsOf: sourceURL, options: [.cacheImmediately: false]))
+        let properties: [CFString: Any] = [
+            kCGImagePropertyExifDictionary: [kCGImagePropertyExifDateTimeOriginal: "2020:01:02 03:04:05", kCGImagePropertyExifISOSpeedRatings: [100]],
+            kCGImagePropertyTIFFDictionary: [kCGImagePropertyTIFFMake: "Apple"]
+        ]
+        let description = "成长的一天 🌱"
+        let outputURL = try MetadataPreservingImageWriter().writeCPUJPEG(image: image,
+            to: folder.appendingPathComponent("output.jpg"), sourceProperties: properties,
+            exportDescription: description, captureDate: nil)
+        let outputSource = try #require(CGImageSourceCreateWithURL(outputURL as CFURL, nil))
+        let output = try #require(CGImageSourceCopyPropertiesAtIndex(outputSource, 0, nil) as? [CFString: Any])
+        #expect(output[kCGImagePropertyPixelWidth] as? Int == 1080)
+        #expect(output[kCGImagePropertyPixelHeight] as? Int == 1440)
+        let exif = try #require(output[kCGImagePropertyExifDictionary] as? [CFString: Any])
+        #expect(exif[kCGImagePropertyExifDateTimeOriginal] as? String == "2020:01:02 03:04:05")
+        #expect(exif[kCGImagePropertyExifISOSpeedRatings] as? [Int] == [100])
+        #expect(exif[kCGImagePropertyExifUserComment] as? String == description)
+        let tiff = try #require(output[kCGImagePropertyTIFFDictionary] as? [CFString: Any])
+        #expect(tiff[kCGImagePropertyTIFFMake] as? String == "Apple")
+        #expect(tiff[kCGImagePropertyTIFFImageDescription] as? String == description)
+        #expect(try Data(contentsOf: sourceURL) == originalBytes)
+        let originalPixel = try ImageEdgeAssertionSupport.bottomRows(in: ImageEdgeAssertionSupport.image(at: sourceURL), count: 1)[0]
+        let outputPixel = try ImageEdgeAssertionSupport.bottomRows(in: ImageEdgeAssertionSupport.image(at: outputURL), count: 1)[0]
+        #expect(abs(Int(originalPixel.minimumRed) - Int(outputPixel.minimumRed)) <= 3)
+        #expect(abs(Int(originalPixel.minimumGreen) - Int(outputPixel.minimumGreen)) <= 3)
+        #expect(abs(Int(originalPixel.minimumBlue) - Int(outputPixel.minimumBlue)) <= 3)
+        let scratch = folder.appendingPathComponent(".cpu-raster-work")
+        #expect(try FileManager.default.contentsOfDirectory(atPath: scratch.path).isEmpty)
+    }
+
+    @Test("CPU lazy GlassCard export preserves native rail and full canvas")
+    @MainActor
+    func cpuNativeGlassExportReadback() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("CPUGlass-\(UUID())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let sourceURL = folder.appendingPathComponent("source.jpg")
+        let source = try ImageEdgeAssertionSupport.solidImage(width: 1080, height: 1440, red: 200, green: 200, blue: 200)
+        try ImageEdgeAssertionSupport.writeJPEG(source, to: sourceURL)
+        let metadata = PhotoMetadata(imageWidth: 1080, imageHeight: 1440)
+        let preview = try #require(MediaDecodeService().thumbnailImage(from: sourceURL, maxPixelDimension: 128))
+        let photo = SelectedPhoto(sourceURL: sourceURL, image: preview, metadata: metadata)
+        var card = card(text: "成长的一天")
+        card.metadata = metadata
+        let artifact = try RecordCardPresentationPlanner().artifact(for: card, canvasSize: CGSize(width: 1080, height: 1440))
+        let outputURL = try CPUStillImageExportExperiment.export(photo: photo, artifact: artifact,
+            to: folder.appendingPathComponent("cpu.jpg"), writer: MetadataPreservingImageWriter(),
+            exportDescription: "成长的一天")
+        let output = try ImageEdgeAssertionSupport.image(at: outputURL)
+        #expect(output.width == 1080)
+        #expect(output.height == 1440)
+        let bottom = try #require(output.cropping(to: CGRect(x: 216, y: 1365, width: 1, height: 1)))
+        let top = try #require(output.cropping(to: CGRect(x: 216, y: 75, width: 1, height: 1)))
+        #expect(try ImageEdgeAssertionSupport.bottomRows(in: bottom, count: 1)[0].maximumRGB < 170)
+        #expect(try ImageEdgeAssertionSupport.bottomRows(in: top, count: 1)[0].minimumRGB > 190)
+    }
+
+    @Test("mapped JPEG strips retain asymmetric pixels and upright EXIF orientation", arguments: [1, 6, 8])
+    @MainActor
+    func cpuAsymmetricOrientationReadback(orientation: Int) throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("CPUOrientation-\(UUID())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let context = try #require(CGContext(data: nil, width: 96, height: 64, bitsPerComponent: 8,
+            bytesPerRow: 96 * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(CGColor(red: 0.8, green: 0.1, blue: 0.1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 96, height: 32))
+        context.setFillColor(CGColor(red: 0.1, green: 0.1, blue: 0.8, alpha: 1))
+        context.fill(CGRect(x: 0, y: 32, width: 96, height: 32))
+        let original = try #require(context.makeImage())
+        let sourceURL = folder.appendingPathComponent("source.jpg")
+        let destination = try #require(CGImageDestinationCreateWithURL(sourceURL as CFURL, UTType.jpeg.identifier as CFString, 1, nil))
+        CGImageDestinationAddImage(destination, original, [kCGImagePropertyOrientation: orientation,
+            kCGImageDestinationLossyCompressionQuality: 1] as CFDictionary)
+        #expect(CGImageDestinationFinalize(destination))
+        let sourceBytes = try Data(contentsOf: sourceURL)
+        let upright = try #require(CIImage(contentsOf: sourceURL, options: [.applyOrientationProperty: true]))
+        let reference = try #require(CIContext(options: [.useSoftwareRenderer: true]).createCGImage(upright, from: upright.extent))
+        let outputURL = try MetadataPreservingImageWriter().writeCPUJPEG(image: upright,
+            to: folder.appendingPathComponent("output.jpg"), sourceProperties: [kCGImagePropertyOrientation: orientation],
+            exportDescription: "", captureDate: nil)
+        let output = try ImageEdgeAssertionSupport.image(at: outputURL)
+        #expect(output.width == reference.width && output.height == reference.height)
+        for x in [16, output.width - 17] {
+            for y in [16, output.height - 17] {
+                let rectangle = CGRect(x: x, y: y, width: 1, height: 1)
+                let actualCrop = try #require(output.cropping(to: rectangle))
+                let expectedCrop = try #require(reference.cropping(to: rectangle))
+                let actual = try ImageEdgeAssertionSupport.bottomRows(in: actualCrop, count: 1)[0]
+                let expected = try ImageEdgeAssertionSupport.bottomRows(in: expectedCrop, count: 1)[0]
+                #expect(abs(Int(actual.minimumRed) - Int(expected.minimumRed)) <= 3)
+                #expect(abs(Int(actual.minimumBlue) - Int(expected.minimumBlue)) <= 3)
+            }
+        }
+        let outputSource = try #require(CGImageSourceCreateWithURL(outputURL as CFURL, nil))
+        let properties = try #require(CGImageSourceCopyPropertiesAtIndex(outputSource, 0, nil) as? [CFString: Any])
+        #expect((properties[kCGImagePropertyOrientation] as? NSNumber)?.intValue == 1)
+        #expect(try Data(contentsOf: sourceURL) == sourceBytes)
+    }
+
+    @Test("mapped Live Photo still keeps pairing metadata and full dimensions", arguments: ["jpg", "heic"])
+    func cpuLivePhotoStillPairing(extensionName: String) throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("CPULiveStill-\(UUID())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let sourceURL = folder.appendingPathComponent("source.jpg")
+        let source = try ImageEdgeAssertionSupport.solidImage(width: 1080, height: 1440, red: 200, green: 200, blue: 200)
+        try ImageEdgeAssertionSupport.writeJPEG(source, to: sourceURL)
+        let original = try Data(contentsOf: sourceURL)
+        let artifact = try RecordCardPresentationPlanner().artifact(for: card(text: "成长的一天"), canvasSize: CGSize(width: 1080, height: 1440))
+        let pairing = UUID().uuidString
+        let output = try LivePhotoStillImageCompositionService().composeCPUStillImage(
+            sourceStillURL: sourceURL, overlay: artifact,
+            outputURL: folder.appendingPathComponent("paired").appendingPathExtension(extensionName),
+            outputType: extensionName == "jpg" ? .jpeg : .heic,
+            pairingIdentifier: pairing, outputDescription: "成长的一天")
+        let image = try ImageEdgeAssertionSupport.image(at: output)
+        #expect(image.width == 1080 && image.height == 1440)
+        let imageSource = try #require(CGImageSourceCreateWithURL(output as CFURL, nil))
+        let properties = try #require(CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [CFString: Any])
+        let apple = try #require(properties[kCGImagePropertyMakerAppleDictionary] as? [String: Any])
+        #expect(apple["17"] as? String == pairing)
+        #expect(try Data(contentsOf: sourceURL) == original)
+        let scratch = folder.appendingPathComponent(".cpu-raster-work")
+        #expect(try FileManager.default.contentsOfDirectory(atPath: scratch.path).isEmpty)
+    }
+
+    @Test("mapped encoder failure removes only its scratch raster")
+    func cpuRasterFailureCleanup() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("RasterFailure-\(UUID())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let image = CIImage(color: .white).cropped(to: CGRect(x: 0, y: 0, width: 16, height: 16))
+        let context = CIContext(options: [.useSoftwareRenderer: true, .cacheIntermediates: false])
+        #expect(throws: CocoaError.self) {
+            try CPUFileRasterExport.withMappedRaster(image: image, context: context,
+                to: folder.appendingPathComponent("failed.jpg")) { _ in throw CocoaError(.fileWriteUnknown) }
+        }
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.appendingPathComponent(".cpu-raster-work").path).isEmpty)
+    }
+
+    @Test("CPU raster strips reduce render calls while retaining a two MiB buffer limit", arguments: [4032, 8064, 16384])
+    func cpuRasterStripBudget(width: Int) {
+        let rows = CPUFileRasterExport.stripRows(forWidth: width)
+        #expect(rows > 8 && rows <= 64)
+        #expect(width * 4 * rows <= 2 * 1024 * 1024)
+    }
+
+    @Test("Mapped bitmap retains individual row order and the partial final strip")
+    func cpuRasterIndividualRows() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("RasterRows-\(UUID())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let context = try #require(CGContext(data: nil, width: 96, height: 70, bitsPerComponent: 8,
+            bytesPerRow: 96 * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        for row in 0..<70 {
+            let value = CGFloat(25 + row * 3) / 255
+            context.setFillColor(CGColor(gray: value, alpha: 1))
+            context.fill(CGRect(x: 0, y: row, width: 96, height: 1))
+        }
+        let image = CIImage(cgImage: try #require(context.makeImage()))
+        let reference = try #require(CIContext(options: [.useSoftwareRenderer: true]).createCGImage(image, from: image.extent))
+        let outputURL = try MetadataPreservingImageWriter().writeCPUJPEG(image: image,
+            to: folder.appendingPathComponent("rows.jpg"), sourceProperties: [:], exportDescription: "", captureDate: nil)
+        let output = try ImageEdgeAssertionSupport.image(at: outputURL)
+        #expect(output.width == 96 && output.height == 70)
+        for row in 0..<70 {
+            let rectangle = CGRect(x: 32, y: row, width: 1, height: 1)
+            let actual = try ImageEdgeAssertionSupport.bottomRows(in: #require(output.cropping(to: rectangle)), count: 1)[0]
+            let expected = try ImageEdgeAssertionSupport.bottomRows(in: #require(reference.cropping(to: rectangle)), count: 1)[0]
+            #expect(abs(Int(actual.minimumRed) - Int(expected.minimumRed)) <= 3)
+        }
+    }
+
+    @Test("interrupted Live Photo rasters clean only owned regular files")
+    func cpuOrphanCleanupScope() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("RasterOrphans-\(UUID())")
+        let processing = root.appendingPathComponent("processing")
+        let job = processing.appendingPathComponent(UUID().uuidString)
+        let scratch = job.appendingPathComponent(".cpu-raster-work")
+        try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let outside = root.appendingPathComponent("source.rgba")
+        try Data("original".utf8).write(to: outside)
+        let owned = scratch.appendingPathComponent(UUID().uuidString).appendingPathExtension("rgba")
+        try Data("interrupted".utf8).write(to: owned)
+        let unrelated = scratch.appendingPathComponent("notes.txt")
+        try Data("keep".utf8).write(to: unrelated)
+        let link = scratch.appendingPathComponent(UUID().uuidString).appendingPathExtension("rgba")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: outside)
+        try CPUFileRasterExport.cleanupInterruptedRasters(inProcessingRoot: processing)
+        #expect(!FileManager.default.fileExists(atPath: owned.path))
+        #expect(FileManager.default.fileExists(atPath: unrelated.path))
+        #expect(FileManager.default.fileExists(atPath: link.path))
+        #expect(try Data(contentsOf: outside) == Data("original".utf8))
     }
 
     private func card(text: String) -> RecordCard {

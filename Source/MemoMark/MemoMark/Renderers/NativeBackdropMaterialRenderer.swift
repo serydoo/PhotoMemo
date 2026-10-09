@@ -8,6 +8,22 @@ nonisolated enum NativeBackdropMaterialRenderer {
         return false
     }
 
+#if DEBUG
+    @MainActor
+    static func renderRegion(sourceRegion: CGImage, regionFrame: CGRect,
+                             material: PresentationArtifact.BackdropMaterial) -> CGImage? {
+        guard regionFrame.contains(material.renderFrame),
+              Int(regionFrame.width) == sourceRegion.width,
+              Int(regionFrame.height) == sourceRegion.height else { return nil }
+        let translation = CGAffineTransform(translationX: -regionFrame.minX, y: -regionFrame.minY)
+        let local = PresentationArtifact.BackdropMaterial(
+            frame: material.frame.applying(translation),
+            renderFrame: material.renderFrame.applying(translation),
+            cornerRadius: material.cornerRadius)
+        return render(sourceCanvas: sourceRegion, canvasSize: regionFrame.size, material: local)
+    }
+#endif
+
     @MainActor
     static func render(sourceCanvas: CGImage, canvasSize: CGSize,
                        material: PresentationArtifact.BackdropMaterial) -> CGImage? {

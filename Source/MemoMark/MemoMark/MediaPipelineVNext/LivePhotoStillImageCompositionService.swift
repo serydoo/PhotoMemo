@@ -341,6 +341,13 @@ final class LivePhotoStillImageCompositionService:
     ) async throws -> URL {
         let preparedOverlay = try overlay.replacingGeometry(canvasSize: geometry.canvas.canvasSize,
             photoFrame: geometry.canvas.photoFrame, footerFrame: geometry.canvas.footerFrame).validatedForEncoder()
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        return try await MainActor.run {
+            try self.composeCPUStillImage(sourceStillURL: sourceStillURL, overlay: preparedOverlay,
+                outputURL: outputURL, outputType: outputType,
+                pairingIdentifier: pairingIdentifier, outputDescription: outputDescription)
+        }
+#else
         guard preparedOverlay.backdropMaterial != nil else {
             return try composeStillImage(sourceStillURL: sourceStillURL, overlay: preparedOverlay,
                 outputURL: outputURL, outputType: outputType, outputDescription: outputDescription,
@@ -357,7 +364,19 @@ final class LivePhotoStillImageCompositionService:
         return try writer.writeComposedStillImage(image, sourceProperties: source.properties,
             outputURL: outputURL, outputType: outputType,
             outputDescription: outputDescription, pairingIdentifier: pairingIdentifier)
+#endif
     }
+
+#if DEBUG
+    @MainActor
+    func composeCPUStillImage(sourceStillURL: URL, overlay: PresentationArtifact,
+                              outputURL: URL, outputType: UTType,
+                              pairingIdentifier: String?, outputDescription: String?) throws -> URL {
+        try CPULivePhotoStillImageExperiment.export(sourceStillURL: sourceStillURL,
+            overlay: overlay, outputURL: outputURL, outputType: outputType,
+            pairingIdentifier: pairingIdentifier, outputDescription: outputDescription, writer: writer)
+    }
+#endif
 }
 
 private extension LivePhotoStillImageCompositionService {

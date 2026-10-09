@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 nonisolated struct BatchTaskExecutionState:
@@ -67,6 +66,7 @@ nonisolated extension BatchTaskExecutionRuntime {
 
 }
 
+#if !MEMOMARK_SHARE_EXTENSION
 extension BatchQueueStore {
 
     func executionState(

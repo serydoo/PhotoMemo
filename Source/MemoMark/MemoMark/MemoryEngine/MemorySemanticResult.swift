@@ -1,6 +1,5 @@
 import Foundation
 
-#if !MEMOMARK_SHARE_EXTENSION
 enum MemorySemanticKind:
     String,
     Codable,
@@ -45,4 +44,3 @@ struct MemorySemanticResult:
         }
     }
 }
-#endif

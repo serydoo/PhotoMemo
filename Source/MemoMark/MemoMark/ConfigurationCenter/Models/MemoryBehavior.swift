@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 struct MemoryBehavior:
@@ -22,4 +21,3 @@ struct MemoryBehavior:
         self.memoryExpression = memoryExpression
     }
 }
-#endif

@@ -7,6 +7,47 @@ import Testing
 @Suite("Production memory resolver", .serialized)
 struct ProductionMemoryResolverTests {
 
+    @Test("opaque Share transport retains frozen subject and anchor semantics", arguments: ["classicWhite", "minimal", "filmMark", "glassCard"])
+    func opaqueShareTransportRetainsCanonicalMemory(route: String) throws {
+        let anchorDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let photo = selectedPhoto(captureDate: anchorDate.addingTimeInterval(18 * 86_400))
+        let subject = MemorySubjectAdapter.adapt(
+            profile: PersonalProfile(relationshipRole: .custom, customRelationshipLabel: "爸爸", babyNickname: "冻结对象"),
+            anchors: [Anchor(type: .birthday, title: "冻结生日", date: anchorDate)],
+            referenceDate: anchorDate
+        )
+        let canonical = ConfigurationSnapshotBuilder.build(from: subject)
+        var configuration = BatchConfigurationSnapshot(
+            template: .classicWhite, badge: nil, anchor: nil,
+            shouldWritePhotoDescription: false, photoDescriptionOverride: "", selectedAlbumIdentifier: "qa-output"
+        ).withCanonicalProductionSnapshot(canonical)
+        configuration.presentationRouteRawValue = route
+        var transport = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(configuration)) as? [String: Any])
+        transport.removeValue(forKey: "frozenMemorySubject")
+        transport.removeValue(forKey: "frozenConfigurationSnapshot")
+        transport["frozenCanonicalSnapshotData"] = try JSONEncoder().encode(canonical).base64EncodedString()
+        let restored = try JSONDecoder().decode(BatchConfigurationSnapshot.self, from: JSONSerialization.data(withJSONObject: transport))
+
+        #expect(restored.canonicalProductionSnapshot == canonical)
+        let resolver = ProductionMemoryResolver()
+        let expected = resolver.resolveLegacyBatchConfiguration(photo: photo, configuration: configuration)
+        let actual = resolver.resolveLegacyBatchConfiguration(photo: photo, configuration: restored)
+        #expect(actual.subject == expected.subject)
+        #expect(actual.result.subjectID == expected.result.subjectID)
+        #expect(actual.result.captureDate == expected.result.captureDate)
+        #expect(actual.result.anchorResults.count == expected.result.anchorResults.count)
+        for (actualAnchor, expectedAnchor) in zip(actual.result.anchorResults, expected.result.anchorResults) {
+            #expect(actualAnchor.anchorID == expectedAnchor.anchorID)
+            #expect(actualAnchor.anchorTitle == expectedAnchor.anchorTitle)
+            #expect(actualAnchor.anchorDate == expectedAnchor.anchorDate)
+            #expect(actualAnchor.elapsed == expectedAnchor.elapsed)
+            #expect(actualAnchor.status == expectedAnchor.status)
+            #expect(actualAnchor.direction == expectedAnchor.direction)
+        }
+        #expect(actual.module.renderedText == expected.module.renderedText)
+        #expect(actual.productionExpressionContext?.value(for: MemoryProvider.memoryToken)?.resolvedText == expected.productionExpressionContext?.value(for: MemoryProvider.memoryToken)?.resolvedText)
+    }
+
     @Test("resolves directly from frozen ConfigurationSnapshot")
     func resolvesDirectlyFromFrozenConfigurationSnapshot() throws {
         let suite =

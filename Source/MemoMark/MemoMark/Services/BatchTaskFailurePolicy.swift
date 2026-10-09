@@ -1,4 +1,3 @@
-#if !MEMOMARK_SHARE_EXTENSION
 import Foundation
 
 enum BatchTaskFailurePolicy {
@@ -132,4 +131,3 @@ enum BatchTaskFailurePolicy {
         )
     }
 }
-#endif

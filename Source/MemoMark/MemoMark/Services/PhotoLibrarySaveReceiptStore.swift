@@ -130,11 +130,7 @@ struct PhotoLibrarySaveReceiptAssetLocator:
     PhotoLibraryReceiptAssetLocating {
 
     func isReadbackAuthorized() -> Bool {
-        let status = PHPhotoLibrary.authorizationStatus(
-            for: .readWrite
-        )
-        return status == .authorized
-            || status == .limited
+        PhotoLibraryCapability.current.canReadVisibleAssets
     }
 
     func visibleAssetIdentifier(
@@ -635,6 +631,7 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
 
         Self.persistenceLock.withLock {
             for key in keys {
+                guard !key.contains(ProcessingIdentity.receiptPrefix) else { continue }
                 defaults.removeObject(forKey: key)
                 defaults.removeObject(
                     forKey:
@@ -680,7 +677,8 @@ nonisolated final class PhotoLibrarySaveReceiptStore:
                 .dictionaryRepresentation()
                 .keys
                 .filter {
-                    (
+                    !$0.contains(ProcessingIdentity.receiptPrefix)
+                    && (
                         $0.hasPrefix(receiptSchemaV1KeyPrefix + ".")
                         || $0.hasPrefix(intentSchemaV1KeyPrefix + ".")
                     )

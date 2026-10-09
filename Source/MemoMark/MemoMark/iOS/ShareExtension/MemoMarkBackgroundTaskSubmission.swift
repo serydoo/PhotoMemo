@@ -7,6 +7,8 @@ enum MemoMarkBackgroundTaskSubmission {
     static let taskIdentifier =
         "com.serydoo.PhotoMemo.batch-processing"
 
+    static let continuedTaskIdentifier = "com.serydoo.PhotoMemo.iOS.continued-processing.default"
+
     static var requiresHostAppForPhotoAuthorization: Bool {
         switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
         case .authorized,
