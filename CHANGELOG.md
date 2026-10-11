@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.6 (124) Internal Source Checkpoint - 2026-10-11
+
+- Restored conditional Photos Share background continuation with durable intake/recovery and existing permission/system fallback.
+- Consolidated bounded software original-source still export and direct CPU presentation layers; repaired missing/black Classic text while retaining output dimensions, metadata and Live Photo pairing.
+- Prevented terminal history from creating a new Live Activity. Kept the paused four-card physical matrix explicit; no new Store release or global certification. See [sync manifest](Docs/07_Releases/2026-10-11-2.3.6-source-checkpoint-sync-manifest.md).
+
 ## 2.3.6 (124) Internal Source Checkpoint - 2026-10-10
 
 - Consolidated durable intake, processing identity, sessions, execution leases, capability boundaries, receipts and recovery with shared extension dependencies and regression tests.

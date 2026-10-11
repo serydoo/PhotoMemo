@@ -6,7 +6,7 @@ enum ShareContinuedProcessingDiagnostics {
 #if DEBUG
         MemoMarkBackgroundProbe.record(event, detail: detail())
 #else
-        _ = event
+        MemoMarkShareDiagnostics.record(stage: .init(rawValue: event), message: detail())
 #endif
     }
 
@@ -14,9 +14,8 @@ enum ShareContinuedProcessingDiagnostics {
 #if DEBUG
         MemoMarkBackgroundProbe.record(event, detail: "identifier=\(identifier);code=\((error as NSError).code)")
 #else
-        _ = event
-        _ = identifier
-        _ = error
+        MemoMarkShareDiagnostics.record(stage: .init(rawValue: event),
+            message: "identifier=\(identifier);domain=\((error as NSError).domain);code=\((error as NSError).code)")
 #endif
     }
 }

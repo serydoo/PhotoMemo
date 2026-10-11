@@ -409,6 +409,129 @@ struct GlassCardIntegrationTests {
         #expect(try FileManager.default.contentsOfDirectory(atPath: scratch.path).isEmpty)
     }
 
+    private func copiedFixturePixels(from image: CGImage) -> CGImage? {
+        guard image.width > 0, image.height > 0,
+              image.width <= 16_384, image.height <= 16_384,
+              let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(data: nil, width: image.width, height: image.height,
+                  bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                  space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        return context.makeImage()
+    }
+
+    @Test("Fixture raster readback retains dimensions, colored pixels and transparency")
+    func softwareLayerPixelOwnership() throws {
+        let bytes: [UInt8] = [128, 0, 0, 128, 0, 64, 0, 64,
+                             0, 0, 0, 0, 10, 20, 30, 255]
+        let provider = try #require(CGDataProvider(data: Data(bytes) as CFData))
+        let source = try #require(CGImage(width: 2, height: 2, bitsPerComponent: 8,
+            bitsPerPixel: 32, bytesPerRow: 8, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+            provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent))
+        let result = try #require(copiedFixturePixels(from: source))
+        #expect(result.width == 2 && result.height == 2)
+        let data = try #require(result.dataProvider?.data)
+        #expect(Array((data as Data).prefix(16)) == bytes)
+    }
+
+    @Test("Direct CPU SwiftUI layers preserve visible classic content across repeated renders")
+    @MainActor
+    func directSoftwareClassicLayers() throws {
+        for width in [1080, 2268, 4032] {
+            var input = card(text: "成长的一天")
+            input.presentationStyle = .classicWhite
+            input.metadata = PhotoMetadata(imageWidth: width, imageHeight: width * 4 / 3)
+            let planner = RecordCardPresentationPlanner()
+            let size = planner.outputPixelSize(for: input, fallbackSize: CGSize(width: width, height: width * 4 / 3))
+            let artifact = try planner.artifact(for: input, canvasSize: size)
+            for _ in 0..<3 {
+                let renderer = ImageRenderer(content: ClassicWhiteInformationBarRenderer(card: input,
+                    width: artifact.footerFrame.width, height: artifact.footerFrame.height)
+                    .frame(width: artifact.footerFrame.width, height: artifact.footerFrame.height))
+                renderer.scale = 1
+                renderer.proposedSize = .init(artifact.footerFrame.size)
+                renderer.isOpaque = true
+                let raster = try #require(SoftwarePresentationLayerRasterizer.renderPixels(renderer))
+                #expect(raster.width == artifact.footerImage.width && raster.height == artifact.footerImage.height)
+                let rows = try ImageEdgeAssertionSupport.bottomRows(in: raster, count: raster.height)
+                let expected = try ImageEdgeAssertionSupport.bottomRows(in: artifact.footerImage, count: artifact.footerImage.height)
+                #expect(rows.contains { $0.minimumRGB < 100 })
+                #expect(rows.filter { $0.maximumRGB > 200 }.count > rows.count / 2)
+                // The CGContext and cgImage backends can differ by one edge
+                // antialiasing pixel; compare occupied bounds, not threshold noise.
+                let occupied = rows.indices.filter { rows[$0].minimumRGB < 170 }
+                let reference = expected.indices.filter { expected[$0].minimumRGB < 170 }
+                let first = try #require(occupied.first)
+                let last = try #require(occupied.last)
+                #expect(abs(first - (try #require(reference.first))) <= 1)
+                #expect(abs(last - (try #require(reference.last))) <= 1)
+            }
+        }
+    }
+
+    @Test("Software classic export reads full source despite a small preview")
+    @MainActor
+    func softwareClassicFullSourceReadback() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("SoftwareClassic-\(UUID())")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let sourceURL = folder.appendingPathComponent("source.jpg")
+        let source = try ImageEdgeAssertionSupport.solidImage(width: 1080, height: 1440, red: 210, green: 110, blue: 60)
+        try ImageEdgeAssertionSupport.writeJPEG(source, to: sourceURL)
+        let originalBytes = try Data(contentsOf: sourceURL)
+        let preview = try #require(MediaDecodeService().thumbnailImage(from: sourceURL, maxPixelDimension: 128))
+        let metadata = PhotoMetadata(imageWidth: 1080, imageHeight: 1440)
+        let photo = SelectedPhoto(sourceURL: sourceURL, image: preview, metadata: metadata)
+        var input = card(text: "成长的一天")
+        input.presentationStyle = .classicWhite
+        input.metadata = metadata
+        let planner = RecordCardPresentationPlanner()
+        let size = planner.outputPixelSize(for: input, fallbackSize: preview.photoMemoSize)
+        let artifact = try planner.artifact(for: input, canvasSize: size)
+        let directRenderer = ImageRenderer(content: ClassicWhiteInformationBarRenderer(card: input,
+            width: artifact.footerFrame.width, height: artifact.footerFrame.height)
+            .frame(width: artifact.footerFrame.width, height: artifact.footerFrame.height))
+        directRenderer.scale = 1
+        directRenderer.proposedSize = .init(artifact.footerFrame.size)
+        directRenderer.isOpaque = true
+        let stableFooter = try #require(SoftwarePresentationLayerRasterizer.renderPixels(directRenderer))
+        let stableArtifact = try PresentationArtifact(canvasSize: artifact.canvasSize, photoFrame: artifact.photoFrame,
+            footerFrame: artifact.footerFrame, footerImage: stableFooter, canvasBackground: artifact.canvasBackground)
+        let url = try SoftwareStillImageExporter.export(photo: photo, artifact: stableArtifact,
+            to: folder.appendingPathComponent("output.jpg"), writer: MetadataPreservingImageWriter(),
+            exportDescription: "成长的一天")
+        let output = try ImageEdgeAssertionSupport.image(at: url)
+        #expect(output.width == 1080)
+        #expect(output.height == Int(size.height))
+        #expect(output.height >= 1440)
+        let footer = try #require(copiedFixturePixels(from: artifact.footerImage))
+        #expect(footer.width == artifact.footerImage.width && footer.height == artifact.footerImage.height)
+        let footerRows = try ImageEdgeAssertionSupport.bottomRows(in: footer, count: footer.height)
+        let originalFooterRows = try ImageEdgeAssertionSupport.bottomRows(in: artifact.footerImage, count: artifact.footerImage.height)
+        #expect(footerRows.map(\.minimumRGB) == originalFooterRows.map(\.minimumRGB), "Glyph and logo rows must stay in the same geometry.")
+        #expect(footerRows.contains { $0.minimumRGB < 100 }, "The resolved footer must contain visible text or logo pixels.")
+        let savedFooter = try #require(output.cropping(to: CGRect(x: 0, y: 1440,
+            width: output.width, height: output.height - 1440)))
+        let savedRows = try ImageEdgeAssertionSupport.bottomRows(in: savedFooter, count: savedFooter.height)
+        #expect(savedRows.contains { $0.minimumRGB < 100 }, "Saving an empty white footer is not a successful render.")
+        #expect(savedRows.filter { $0.maximumRGB > 200 }.count > savedRows.count / 2,
+            "A black raster must not satisfy the foreground check.")
+        for (name, raster) in [("classic-footer", footer), ("classic-saved-footer", savedFooter)] {
+            let data = NSMutableData()
+            let destination = try #require(CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil))
+            CGImageDestinationAddImage(destination, raster, nil)
+            #expect(CGImageDestinationFinalize(destination))
+            Attachment.record(data as Data, named: name + ".png")
+        }
+        let sourceInfo = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+        let properties = try #require(CGImageSourceCopyPropertiesAtIndex(sourceInfo, 0, nil) as? [CFString: Any])
+        let tiff = try #require(properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any])
+        #expect(tiff[kCGImagePropertyTIFFImageDescription] as? String == "成长的一天")
+        #expect(try Data(contentsOf: sourceURL) == originalBytes)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.appendingPathComponent(".cpu-raster-work").path).isEmpty)
+    }
+
     @Test("CPU lazy GlassCard export preserves native rail and full canvas")
     @MainActor
     func cpuNativeGlassExportReadback() throws {
@@ -490,7 +613,7 @@ struct GlassCardIntegrationTests {
         let original = try Data(contentsOf: sourceURL)
         let artifact = try RecordCardPresentationPlanner().artifact(for: card(text: "成长的一天"), canvasSize: CGSize(width: 1080, height: 1440))
         let pairing = UUID().uuidString
-        let output = try LivePhotoStillImageCompositionService().composeCPUStillImage(
+        let output = try LivePhotoStillImageCompositionService().composeSoftwareStillImage(
             sourceStillURL: sourceURL, overlay: artifact,
             outputURL: folder.appendingPathComponent("paired").appendingPathExtension(extensionName),
             outputType: extensionName == "jpg" ? .jpeg : .heic,

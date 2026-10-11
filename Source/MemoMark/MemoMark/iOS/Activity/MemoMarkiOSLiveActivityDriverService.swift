@@ -602,15 +602,13 @@ private extension MemoMarkiOSLiveActivityDriverService {
             trackedActivities[
                 payload.jobID
             ] else {
-            guard await requestActivity(
-                for: payload
-            ) != nil else {
-                return
-            }
-
-            await scheduleTerminalEnd(
-                for: payload
-            )
+            // A terminal projection can be restored history. Only a real
+            // tracked activity is updated and ended; history must not start
+            // a new Live Activity when the host next opens.
+            cancelRequestRetry(for: payload.jobID)
+            lastAppliedPayloads[payload.jobID] = payload
+            MemoMarkShareDiagnostics.record(stage: .liveActivityPayloadTerminal,
+                message: "reason=untrackedTerminal;activityNotCreated", jobID: payload.jobID)
             return
         }
 
@@ -685,7 +683,8 @@ private extension MemoMarkiOSLiveActivityDriverService {
         MemoMarkBackgroundActivityAttributes
     >? {
 
-        guard !usesSystemProcessingPresentation,
+        guard !payload.isTerminal,
+              !usesSystemProcessingPresentation,
               !hasDisabledRequestsForRun,
               !suppressedRequestJobIDs.contains(payload.jobID),
               !requestRetryRegistry.hasScheduledRetry(

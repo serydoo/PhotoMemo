@@ -99,30 +99,39 @@ final class ShareExtensionIntakeCoordinator {
             let hostAppRequiresPhotoAuthorization =
                 MemoMarkBackgroundTaskSubmission
                 .requiresHostAppForPhotoAuthorization
-            let fallbackReason =
-                hostAppRequiresPhotoAuthorization
-                ? "Host app requires Apple Photos authorization"
-                : backgroundRequestSubmitted
-                    ? "Foreground processing owns configuration resolution and progress"
-                    : "Background scheduling failed; foreground processing is required"
-            MemoMarkShareDiagnostics.record(
-                stage: .extensionHandoffRequested,
-                message:
-                    "\(fallbackReason); requesting host app handoff. recoveryScheduled=\(backgroundRequestSubmitted)",
-                requestID: result.requestID
+            let route = await ShareProcessingHandoff.perform(
+                requiresPhotoAuthorization: hostAppRequiresPhotoAuthorization,
+                submitContinued: {
+                    guard #available(iOS 26.0, *) else { return false }
+                    return await ShareContinuedProcessingAdapter.submit(requestID: result.requestID)
+                },
+                openHost: {
+                    MemoMarkShareDiagnostics.record(
+                        stage: .extensionHandoffRequested,
+                        message: "Continued processing unavailable or photo authorization required; requesting host app handoff. recoveryScheduled=\(backgroundRequestSubmitted)",
+                        requestID: result.requestID
+                    )
+                    return await handoffCoordinator.requestMainAppRefresh().opened
+                }
             )
-            let fallbackHandoff =
-                await handoffCoordinator.requestMainAppRefresh()
-            guard fallbackHandoff.opened else {
+            switch route {
+            case .background:
+                MemoMarkShareDiagnostics.record(
+                    stage: .extensionHandoffConfirmed,
+                    message: "Continued processing accepted; closing Share without foreground handoff.",
+                    requestID: result.requestID
+                )
+                return .received(result)
+            case .foreground:
+                return .received(result)
+            case .handoffFailed:
                 MemoMarkShareDiagnostics.record(
                     stage: .extensionHandoffFailed,
-                    message:
-                        "Task is durably queued; host app handoff was unavailable.",
+                    message: "Task is durably queued; host app handoff was unavailable.",
                     requestID: result.requestID
                 )
                 return .handoffFailed(result)
             }
-            return .received(result)
         } catch let shareError as MemoMarkShareExtensionError {
             MemoMarkShareIntakeLog.error(
                 "Share extension caught a categorized intake error."

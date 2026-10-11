@@ -57,8 +57,8 @@ struct BackgroundProcessingContractTests {
         #expect(executionService.contains("processingBackgroundExpired"))
     }
 
-    @Test("Share always requests foreground host app processing after durable intake")
-    func shareAlwaysRequestsForegroundHostAppProcessing() throws {
+    @Test("Share prefers Continued processing after durable intake with host recovery")
+    func sharePrefersContinuedProcessingWithHostRecovery() throws {
         let coordinator = try sourceText(
             "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionIntakeCoordinator.swift"
         )
@@ -66,10 +66,10 @@ struct BackgroundProcessingContractTests {
         #expect(coordinator.contains("Task is durably queued"))
         #expect(coordinator.contains("return .received(result)"))
         #expect(coordinator.contains("return .handoffFailed(result)"))
-        #expect(coordinator.contains("guard fallbackHandoff.opened else"))
+        #expect(coordinator.contains("case .handoffFailed:"))
         #expect(coordinator.contains("hostAppRequiresPhotoAuthorization"))
         #expect(coordinator.contains("requesting host app handoff"))
-        #expect(!coordinator.contains("ShareContinuedProcessingAdapter.submit"))
+        #expect(coordinator.contains("ShareContinuedProcessingAdapter.submit"))
 
         let renderer = try sourceText(
             "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionViewStateRenderer.swift"
@@ -94,16 +94,16 @@ struct BackgroundProcessingContractTests {
         #expect(statusService.contains("func focus(jobID: UUID)"))
     }
 
-    @Test("Share foreground handoff owns processing and retains durable recovery")
-    func shareForegroundHandoffOwnsProcessing() throws {
+    @Test("Share system processing retains durable recovery and conditional host handoff")
+    func shareSystemProcessingRetainsDurableRecovery() throws {
         let intake = try sourceText(
             "Source/MemoMark/MemoMark/iOS/ShareExtension/ShareExtensionIntakeCoordinator.swift"
         )
 
         #expect(intake.contains("MemoMarkBackgroundTaskSubmission.submit()"))
         #expect(intake.contains("handoffCoordinator.requestMainAppRefresh()"))
-        #expect(intake.contains("guard fallbackHandoff.opened else"))
-        #expect(!intake.contains("ShareContinuedProcessingAdapter.submit"))
+        #expect(intake.contains("ShareProcessingHandoff.perform"))
+        #expect(intake.contains("ShareContinuedProcessingAdapter.submit"))
         if let recoveryIndex = intake.range(of: "MemoMarkBackgroundTaskSubmission.submit()")?.lowerBound,
            let handoffIndex = intake.range(of: "handoffCoordinator.requestMainAppRefresh()")?.lowerBound {
             #expect(recoveryIndex < handoffIndex)

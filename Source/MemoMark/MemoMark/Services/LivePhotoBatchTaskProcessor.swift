@@ -574,8 +574,8 @@ private extension LivePhotoBatchTaskProcessor {
                 .exportDescription(
                     from: card
                 )
-#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
-            MemoMarkBackgroundProbe.record("extension.livePhoto.beforeOverlay")
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION
+            ShareContinuedProcessingDiagnostics.record("extension.livePhoto.beforeOverlay")
 #endif
             var overlay =
                 try exportService
@@ -614,8 +614,8 @@ private extension LivePhotoBatchTaskProcessor {
                     "MemoMark-LivePhoto"
                 )
                 .appendingPathExtension("mov")
-#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
-            MemoMarkBackgroundProbe.record("extension.livePhoto.beforePairComposition")
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION
+            ShareContinuedProcessingDiagnostics.record("extension.livePhoto.beforePairComposition")
 #endif
             let composedPair =
                 try await pairComposer.composePair(

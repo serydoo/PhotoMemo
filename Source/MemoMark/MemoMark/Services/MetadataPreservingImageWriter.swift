@@ -1,9 +1,7 @@
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
-#if DEBUG
 import CoreImage
-#endif
 
 nonisolated final class MetadataPreservingImageWriter {
 
@@ -56,9 +54,7 @@ nonisolated final class MetadataPreservingImageWriter {
                                       exportDescription: exportDescription, captureDate: captureDate)
     }
 
-#if DEBUG
-    // Experimental CPU file path; full-size pixels are file-backed, with only strip buffers owned in memory.
-    // This is not selected by the normal app export pipeline.
+    // File-backed software export keeps only bounded strips in owned memory.
     @MainActor private lazy var cpuJPEGContext = CIContext(options: [.useSoftwareRenderer: true, .cacheIntermediates: false, .memoryTarget: 32])
 
     @MainActor
@@ -89,7 +85,6 @@ nonisolated final class MetadataPreservingImageWriter {
             sourceProperties: sourceProperties, exportDescription: exportDescription,
             captureDate: captureDate, writer: self)
     }
-#endif
 
     private func finishWrittenImage(at url: URL, type: UTType,
                                     exportDescription: String, captureDate: Date?) throws -> URL {

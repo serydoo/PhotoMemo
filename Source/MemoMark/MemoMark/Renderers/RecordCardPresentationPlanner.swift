@@ -124,7 +124,7 @@ struct RecordCardPresentationPlanner {
         renderer.scale = 1
         renderer.proposedSize = .init(layerFrame.size)
         renderer.isOpaque = false
-        guard let overlay = renderer.cgImage else { throw RecordCardExportError.renderFailed }
+        guard let overlay = resolvedLayerPixels(renderer) else { throw RecordCardExportError.renderFailed }
         return try PresentationArtifact(
             canvasSize: canvasSize, photoFrame: CGRect(origin: .zero, size: canvasSize),
             layers: [.init(frame: plan.artifactOverlayFrame, image: overlay, zIndex: 100)],
@@ -162,7 +162,7 @@ struct RecordCardPresentationPlanner {
         renderer.proposedSize = .init(layerFrame.size)
         renderer.isOpaque = false
 
-        guard let overlayImage = renderer.cgImage else {
+        guard let overlayImage = resolvedLayerPixels(renderer) else {
             throw RecordCardExportError.renderFailed
         }
 
@@ -222,6 +222,17 @@ struct RecordCardPresentationPlanner {
     }
 
     @MainActor
+    private func resolvedLayerPixels<Content: View>(_ renderer: ImageRenderer<Content>) -> CGImage? {
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION
+        // Render directly into an owned CPU bitmap. Reading cgImage first can
+        // yield a background graphics-backed raster with missing or black pixels.
+        return SoftwarePresentationLayerRasterizer.renderPixels(renderer)
+#else
+        return renderer.cgImage
+#endif
+    }
+
+    @MainActor
     private func classicWhiteArtifact(
         for card: RecordCard,
         canvasSize: CGSize
@@ -259,7 +270,7 @@ struct RecordCardPresentationPlanner {
         )
         renderer.isOpaque = true
 
-        guard let footerImage = renderer.cgImage else {
+        guard let footerImage = resolvedLayerPixels(renderer) else {
             throw RecordCardExportError.renderFailed
         }
 
@@ -291,4 +302,28 @@ struct RecordCardPresentationPlanner {
             ]
         )
     }
+}
+
+/// Materializes only a canonical presentation layer, never the original photo.
+/// Its dimensions and alpha are retained; the export raster already uses sRGB.
+nonisolated enum SoftwarePresentationLayerRasterizer {
+    @MainActor
+    static func renderPixels<Content: View>(_ renderer: ImageRenderer<Content>) -> CGImage? {
+        var result: CGImage?
+        renderer.render(rasterizationScale: 1) { size, draw in
+            guard size.width.isFinite, size.height.isFinite,
+                  size.width >= 1, size.height >= 1,
+                  size.width <= 16_384, size.height <= 16_384,
+                  let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+                  let context = CGContext(data: nil, width: Int(size.width.rounded()),
+                      height: Int(size.height.rounded()), bitsPerComponent: 8,
+                      bytesPerRow: Int(size.width.rounded()) * 4, space: colorSpace,
+                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+            draw(context)
+            result = context.makeImage()
+        }
+        return result
+    }
+
+
 }

@@ -1,26 +1,63 @@
 # MemoMark Current Brief
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
-2026-10-11 Share regression repair: ordinary Photos Share again hands off to
-MemoMark so its `ShareCoordinator` resolves the canonical configuration,
-admits the durable request, and presents in-app progress. The Release
-extension-owned Continued Processing route is no longer selected: the recorded
-physical QA failure was `missingCanonicalSnapshot`, because the extension's
-transport snapshot cannot perform the app-owned canonical configuration
-resolution. BGProcessing remains a durable recovery request. Signed Release
-install/launch and focused Share contracts pass. The physical UI test runner
-exited with code 74 before connecting, so automatic real-Photos handoff/progress
-acceptance remains unverified. See
-`Docs/03_Engineering/2026-10-11-share-foreground-handoff-regression.md`.
+Owner accepts the current version for their needs and authorizes a scoped source
+consolidation/commit/GitHub push, retaining2.3.6(124). The four-style physical
+Share matrix is paused and incomplete; only current Classic actual-content
+evidence is established. Resume by checking current configuration/output
+ownership and visually confirmed notification baseline before further device
+work. See `Docs/03_Engineering/2026-10-11-four-card-share-physical-acceptance.md`
+and `Docs/07_Releases/2026-10-11-2.3.6-source-checkpoint-sync-manifest.md`.
 
-2026-10-10 Engineering update: the extension-owned Share Continued Processing
-adapter and worker remain implementation/evidence history, with durable
-BGProcessing recovery and lifecycle findings documented in
-`Docs/03_Engineering/2026-10-10-release-share-continued-processing.md` and
-ADR-012. They are not the current ordinary production Share route after the
-2026-10-11 regression repair. Successful completion notifications remain
-visible but silent; interruption notifications remain actionable.
+2026-10-11 Share background route closure: ordinary Photos Share persists
+intake and submits BGProcessing recovery before continuing. On supported iOS,
+with sufficient Photos permission, an accepted Continued Processing request
+closes Share without opening MemoMark. Permission recovery, unsupported systems
+and rejected submissions retain the foreground fallback. The canonical frozen
+configuration projection already exists; historical revision41 rejection does
+not describe this candidate.
+
+Signed Release build26 on the paired iPhone17ProMax (iOS27.2Beta) now passes
+`MemoMarkPinnedAllDirectLayer20261011`: 15 pinned inputs produce 15 real outputs
+without host foreground after Share through readback. All 15 Classic footers
+were individually read and visually inspected: Chinese text, date/location,
+anchor result and logo visible on the intended light background. Static layers
+use ImageRenderer.render directly into a CPU bitmap; the prior cgImage-copy
+candidate produced 14 black footers, and its dark-pixel-only QA was rejected.
+The strengthened light-background plus foreground gate correctly rejects that
+old candidate. No final size, format, layout or media standard was lowered.
+
+Current pinned repeated-share intent also completed all15 tasks independently
+(processed=true, no cancellation/pause); output asset identifiers stayed equal.
+Live output retained its full-size HEIC/MOV pair, matching identifiers and valid
+unique still marker. Photos supplied 14 static JPEG representations, including
+RAW-backed assets; this is not original RAW decoding certification. Input
+content identity/catalogue stayed equal; this optimized input round did not
+hash every original byte. The earlier local-five repeat failure is retained as
+a distinct historical open finding, not rewritten by this pinned scenario.
+
+Latest full macOS suite: 2111 definitions / 2181 executions passed, 1 existing
+skip, zero failures. Native expanded progress was observed while the host stayed
+background. The old failed system card was subsequently dismissed with a scoped physical
+UI gate (1passed) and before/after screenshots, preserving other notifications.
+The driver subsequently stopped creating Live Activities from untracked
+terminal/history projections. Signed Release build27 is installed; physical
+host launch independently logged the current completed repeat session and
+untrackedTerminal;activityNotCreated, with zero new ActivityKit requests.
+Existing tracked activities still update/end. Latest full suite remains
+2111 definitions / 2181 executions passed, 1skip, zero failures. Media batch
+evidence is build26; this final main-driver-only change has its own build27
+physical launch evidence. Latest native completion-banner timing and
+stable-system/cold-host/pressure/other-style certification remain separate gates. Every round preserves evidence then deletes only the named QA
+Outputs after terminal state, checking Inputs unchanged and Outputs zero.
+See `Docs/03_Engineering/2026-10-11-share-background-route-closure.md`.
+
+The earlier foreground-only repair is superseded by the owner's explicit
+background requirement. The route uses the existing ADR-012 system-granted
+extension callback and canonical pipeline; this does not imply a permanently
+running or automatically awakened host. Wider production certification remains
+open. Submission alone is never saved-output evidence.
 
 2026-10-07 research execution: use
 `Docs/03_Engineering/2026-10-07-post-2.3.6-research-execution-plan.md` for the

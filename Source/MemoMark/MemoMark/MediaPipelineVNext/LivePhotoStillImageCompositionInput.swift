@@ -376,10 +376,9 @@ private extension ImageIOLivePhotoStillImageWriter {
     }
 }
 
-#if DEBUG
-/// Experimental media input adapter; the composer consumes canonical geometry.
+/// File-backed still composition consumes the existing canonical geometry.
 @MainActor
-enum CPULivePhotoStillImageExperiment {
+enum SoftwareLivePhotoStillExporter {
     static func export(sourceStillURL: URL, overlay: PresentationArtifact,
                        outputURL: URL, outputType: UTType,
                        pairingIdentifier: String?, outputDescription: String?,
@@ -392,13 +391,26 @@ enum CPULivePhotoStillImageExperiment {
         }
         let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] ?? [:]
         let rasterWriter = MetadataPreservingImageWriter()
-        let recipe = try CPUStillImageExportExperiment.recipe(sourceURL: sourceStillURL,
+        let recipe = try SoftwareStillImageExporter.recipe(sourceURL: sourceStillURL,
             artifact: overlay, writer: rasterWriter)
         return try rasterWriter.withCPUMappedRaster(image: recipe, to: outputURL) { raster in
             try writer.writeComposedStillImage(raster, sourceProperties: properties,
                 outputURL: outputURL, outputType: outputType,
                 outputDescription: outputDescription, pairingIdentifier: pairingIdentifier)
         }
+    }
+}
+
+#if DEBUG
+@MainActor
+enum CPULivePhotoStillImageExperiment {
+    static func export(sourceStillURL: URL, overlay: PresentationArtifact,
+                       outputURL: URL, outputType: UTType,
+                       pairingIdentifier: String?, outputDescription: String?,
+                       writer: any LivePhotoStillImageWriting) throws -> URL {
+        try SoftwareLivePhotoStillExporter.export(sourceStillURL: sourceStillURL,
+            overlay: overlay, outputURL: outputURL, outputType: outputType,
+            pairingIdentifier: pairingIdentifier, outputDescription: outputDescription, writer: writer)
     }
 }
 #endif

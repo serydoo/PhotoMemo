@@ -1,5 +1,38 @@
 # MemoMark Current Status
 
+## 2026-10-11 — User-authorized source consolidation and GitHub sync
+
+User accepts the current version for their needs and authorizes local consolidation, commit and push. Version stays 2.3.6 (124); four-card physical acceptance remains paused/incomplete. Consolidate the shared software exporter and direct CPU layers, handoff route and terminal activity guard. Legacy landscape branch is already integrated; preserve the older material research branch without overwriting current code. Stage source/test and scoped documentation by explicit allowlist, test the exported index, then push main. No Store/TestFlight actions. Manifest: `Docs/07_Releases/2026-10-11-2.3.6-source-checkpoint-sync-manifest.md`.
+
+- 同步收口：暂存源码导出完整 macOS 回归2111定义/2181执行通过、1skip、0fail；iOS Release 与 DeviceQA 编译通过，四语言1899键一致。补齐被忽略的项目验证 skill，确保导出后的治理检查可运行；四卡片真机矩阵继续暂停，版本仍2.3.6(124)，本次仅源码同步。
+
+## 2026-10-11 Share 后台路由恢复与真实素材验收
+
+- 17:59最终安装build27：ActivityKit driver不再为untracked terminal历史投影request新卡，已有活动仍update/end且延迟retry不能在终态后create。真机host启动1PASS，当前最新重复会话BD93C042…completed/progress100，独立前后日志untrackedTerminal;activityNotCreated、new request.created=0、app.drain=0。full 2111定义/2181执行/1skip/0fail；媒体/后台整批证据为build26，此最后main-driver-only改动单独build27物理验证，非重复跑一轮媒体。源码/文档/diff/governance已检查。
+
+- 收尾：cleanup9 1PASS，保存证据后仅清本轮QA Outputs 15→0、Inputs15内容身份前后相同。系统残留卡清理1PASS，前后截图确认旧时光记“任务失败”卡消失、其他通知保留。通知中心另一个自有ActivityKit仍显示17:32历史会话，未借它声称17:45新轮完成UI；新轮后台终态/顶部处理中进度/最终15图实际可见内容分别有证据，最新完成banner逐字及持久时序仍保留手工门槛。
+
+- 17:51 最新闭环：formal signed Release build26已在配对iPhone17ProMax/iOS27.2Beta通过 `MemoMarkPinnedAllDirectLayer20261011`（1passed/0failed）。15固定输入首批及相同配置重复均completed/processed=true、未取消/暂停，输出同15个asset ID，无host前台直到读回结束。逐张独立查看15个保存footer PNG：中文标题/日期/地点/时间表达/Apple标识及浅色底正常；此前黑色静态footer已被直接ImageRenderer.render→CPU CGContext路径修复，旧cgImage-copy候选及dark-only假阳性明确保留为失败历史。
+- 最新全量 `MemoMarkDirectLayerFull20261011`：2111定义/2181执行通过、1既有skip、0失败；signed Release与严格签名通过。最终尺寸/格式/布局、metadata、Live视频路径未降低或改写：14个Photos JPEG representation输出及1个HEIC/MOV Live，最大宽8064px；Live配对ID一致、3秒视频有唯一1.4666667s still marker。输入内容身份/资源目录保持；未声称本轮所有iCloud原件SHA或直接RAW解码验收。
+- 本轮原生展开进度显示13%准备照片、15%已完成2/15正在读取原图；旧失败OS卡同时存在，不能把旧卡当新任务失败，也不能宣称已清除。实际完成终态与保存图分别校验。附件保留`/tmp/MemoMarkShareRestore20261011/all-direct-layer-attachments`；按用户规则随后仅清本轮15个QA Outputs，输入15不动（见收尾记录）。所有测试描述配置通过UI恢复；未上传照片/commit/push/Store发布。稳定系统、冷启动/强杀/锁屏资源压力、其他样式的物理验证及原先local-five重复失败仍有单独边界。
+
+以下为前序观察，以上最新候选只替代本次固定素材/经典样式闭环结论，不抹除旧失败证据。
+
+- 最新整批人工附件复核：build25首批及重复均15项completed、相同输出ID无新增，但14张静态footer黑色，Live可见内容正常。旧darkPixel>0门槛误判黑底，撤销本轮最终内容PASS；输出保留。已加经典浅色背景+深色文字双门槛，改为评估ImageRenderer.render直接CPU CGContext绘制，布局/原照片/最终尺寸/格式不变；待新候选真机验证。2110定义/2180执行宏观测试通过不能替代该物理内容门槛。
+
+- 用户最新内容缺陷：静态结果原照片正常，新增白条文字/模块/标识为空白，实际解码附件复核一致。physical3整批15张保存/元数据/重复分享gate虽PASS，旧验收漏检可见内容，最终输出仍REJECTED；停止扩大或清当前输出，补有前景的footer像素验收并定位后台SwiftUI图层生成/合成。Mac前景内容回归26定义/36执行通过，不替代真机后台。
+
+- 17:00最新：build21已让固定输入首张Live Photo在关闭Share且主程序不前台时完整处理保存，真机单Live gate 1 passed/0 failed；2268×4410 HEIC/MOV配对、拍摄时间/配置描述/解码、唯一有效still marker通过，顶部原生系统实际显示处理完成（旧失败卡仍同时保留）。最新全量2109定义/2179执行通过、1既有skip。用户明确最终尺寸/格式规范不降低；每轮证据导出后仅清QA Outputs并核对0及Inputs不变。cleanup3通过后正在运行固定15张混合及重复意图验收，不能提前认定整批/去重闭环。
+
+- 最新收口：预览限制为内部2048px表示、仍按原始sourceURL导出；共享扩展JPEG采用同一artifact的软件配方与磁盘条带光栅。签名Release单张4480万像素物理验收完整PASS，新增8064×6808结果、captureDate/配置描述/解码读回、原始资源SHA一致、Share后主程序不前台；结果 `/tmp/MemoMarkShareRestoreSinglePhysical4_20261011.xcresult`。前序失败保留为历史，尚不能宣称多媒体/系统三态或生产认证通过。最新full macOS2109通过/1跳过，五静态内容第一批5/5真实保存通过；重复相同意图额外新增1张，重复门槛FAIL，保留定位。
+
+- 按用户最新要求，恢复已授权 iOS 26+ 的 Continued Processing 条件路由；durable intake 与 BGProcessing 恢复请求先落地，系统接受后关闭 Share，不请求主 App 前台。权限不足、不支持或 submission 失败保留原有 foreground fallback。当前 canonical frozen configuration publication 已存在，不重复修复历史 revision 41 问题。后面的 foreground-only 记录保留为历史，现由本条及 `Docs/03_Engineering/2026-10-11-share-background-route-closure.md` 取代。
+- Focused 7 次执行通过；完整 macOS 测试最新2109 passed / 1 skipped / 0 failed；正式 Xcode 27.0 signed Release physical build、严格签名、governance 与 diff 检查通过。编辑器真机旋转焦点/文本保留检查通过，完整视觉及辅助功能未人工验收。
+- 原有 iCloud 优化 QA 素材原件准备被离线状态阻断；转用用户本地 7 张真实 JPEG/HEIC/Live Photo 输入，在设备建立独立相簿，准备检查通过，本地九个资源 SHA 不变。普通 Share 已实测接收 7 项并进入系统任务/生产队列，但四分钟输出仍为基线 4 项（新增 0）；该早期手机截图顶部显示「时光记正在处理照片 / 任务失败」。该早期轮 FAIL，未完成认证。用户要求后已覆盖安装最新签名 Release；新增有界 Release 阶段/内存诊断，并按单张、ID 与新增输出方案重新测试。
+- 原生展开截图已确认历史「任务失败」与新任务「39% · 已完成1/5张 · 正在保存到Apple Photos」同屏；AX同步证实生成→保存阶段。处理中进度可见，完成文案仍未独立确认。重复额外输出定位至静态HEIC源（3214×5712，输出3214×6246）；整轮static1 XCTest仍FAIL，原始配置已恢复。build19最终签名Release重建/严格签名/覆盖安装成功，仅移除共享扩展DEBUG中被生产JPEG分支遮蔽的旧实验调用、QA超额输出立即失败；不改变已验收Release处理行为。
+- 保留 mixed dirty 工作树与原件；用户最新授权仅在每轮证据保存后删除指定QA Outputs测试图，输入及非测试照片不删除。无 staging/commit/push、外部发布或照片上传。
+
+
 ## 2026-10-02 LP-TIME-001 source keyframe timing closure
 
 - Owner authorized immediate correction and prior scoped sync/device acceptance. Paired media composition now selects still-image-time only, retains exact source CMTime start/duration and Int8 value through a native metadata-only track, and verifies exported timing before success. Stale source orientation/transform tracks are excluded; generic video and markerless compatibility remain intact. No Layout/configuration/durable-data change or original edit.
@@ -30084,3 +30117,8 @@ Scope is the prepared 217-path allowlist plus checkpoint documentation. Existing
 See `Docs/07_Releases/2026-10-10-2.3.6-source-checkpoint-sync-manifest.md` for current verification and authorization. No TestFlight upload or App Store action is included.
 
 Checkpoint validation: formal Xcode 27.0 iOS Release build passed. Exact staged-tree export full macOS tests: 2088 passed, 1 skipped, 0 failed; two existing fixture QoS warnings retained. Two desktop-path runs stalled on fixture file operations and were stopped; isolated candidate run passed. Four-language format/key parity and staged whitespace checks passed. Final source fingerprints and sanitized test summary accompany the checkpoint.
+
+
+### 2026-10-11 — Four-card Share acceptance paused by product owner
+
+Started the bounded four-style physical Release matrix recorded in `Docs/03_Engineering/2026-10-11-four-card-share-physical-acceptance.md`. Classic White produced 15/15 real outputs with visible text/logo, verified Live Photo pairing and unchanged input identity, then QA Outputs cleanup Passed. Its initial XCTest run had a pre-Share activation-state race and is not the final matrix pass. Minimal attempts and notification-center baseline automation require correction and current-device recheck; FilmMark/GlassCard rounds remain pending. User explicitly paused; no continued device operation or automatic resumption. Resume from current configuration/output inventory, establish a visually confirmed notification baseline, then continue the four-style matrix. Final media contracts unchanged.

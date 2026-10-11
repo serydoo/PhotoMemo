@@ -1,5 +1,11 @@
 # Share foreground handoff regression — 2026-10-11
 
+> Superseded for the ordinary production route by the owner's later explicit
+> background requirement and the current canonical frozen-snapshot publication.
+> See `2026-10-11-share-background-route-closure.md` for the new route and evidence.
+> This document preserves the earlier observed scenario and checkpoint.
+
+
 ## Decision record before implementation
 
 - **Observed scenario:** A Photos Share reaches MemoMark, reports a task failure, and returning to the main app shows no active progress. The owner explicitly requests the established foreground route: Share opens MemoMark, the app admits the durable request and shows its own progress.

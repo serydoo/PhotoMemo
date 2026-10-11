@@ -4,6 +4,7 @@ import Photos
 import ImageIO
 import AVFoundation
 import XCTest
+import UIKit
 
 final class MemoMarkDeviceQAHarnessTests: XCTestCase {
 
@@ -287,14 +288,23 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
     func testBackgroundNotificationCenterReadback() throws {
         let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
         photos.activate()
+        let hostBackground = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            self.application.state != .runningForeground
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [hostBackground], timeout: 10), .completed)
         XCTAssertNotEqual(application.state, .runningForeground)
         photos.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.01))
             .press(forDuration: 0.1, thenDragTo: photos.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        // Reveal notification history from the large-clock cover sheet before
+        // querying groups. Stay inside the list, away from the Home gesture.
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.76))
+            .press(forDuration: 0.1, thenDragTo: springboard.coordinate(
+                withNormalizedOffset: CGVector(dx: 0.5, dy: 0.40)))
         let count = springboard.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+个通知")).firstMatch
         if count.exists, count.isHittable { count.tap() }
         let memoMarkFocusGroup = springboard.buttons.matching(NSPredicate(
-            format: "label CONTAINS %@ AND label CONTAINS %@", "专注模式期间", "时光记"
+            format: "(label CONTAINS %@ OR label CONTAINS %@) AND label CONTAINS %@", "专注模式期间", "来自", "时光记"
         )).firstMatch
         if memoMarkFocusGroup.exists, memoMarkFocusGroup.isHittable { memoMarkFocusGroup.tap() }
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
@@ -306,6 +316,77 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         state.lifetime = .keepAlways
         add(state)
         XCTAssertNotEqual(application.state, .runningForeground)
+    }
+
+    private func attachSystemScreenshot(named name: String) {
+        let evidence = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        evidence.name = name
+        evidence.lifetime = .keepAlways
+        add(evidence)
+    }
+
+    func testClearMemoMarkNotificationHistoryForCardRound() throws {
+        try clearMemoMarkNotificationHistoryForCardRound()
+    }
+
+    private func clearMemoMarkNotificationHistoryForCardRound() throws {
+        try testBackgroundNotificationCenterReadback()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let notification = springboard.buttons.matching(NSPredicate(
+            format: "identifier == %@ AND label BEGINSWITH %@", "ListCell", "时光记,"))
+        let activity = springboard.buttons.matching(identifier: "ListCell").containing(
+            .staticText, identifier: "时光记")
+        for _ in 0..<80 {
+            let target = notification.allElementsBoundByIndex.first { $0.isHittable }
+                ?? activity.allElementsBoundByIndex.first { $0.isHittable }
+            guard let target else {
+                if notification.count == 0 && activity.count == 0 { break }
+                springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72))
+                    .press(forDuration: 0.1, thenDragTo: springboard.coordinate(
+                        withNormalizedOffset: CGVector(dx: 0.5, dy: 0.40)))
+                continue
+            }
+            target.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5))
+                .press(forDuration: 0.1, thenDragTo: target.coordinate(
+                    withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5)))
+            let rowFrame = target.frame
+            let clear = springboard.buttons.matching(NSPredicate(
+                format: "label IN %@", ["清除", "删除", "Clear"])).allElementsBoundByIndex.first {
+                    $0.isHittable && $0.identifier != "clear-button"
+                        && abs($0.frame.midY - rowFrame.midY) <= rowFrame.height / 2 + 8
+                }
+            guard let clear else {
+                attachSystemScreenshot(named: "notification-clear-control-missing")
+                throw CocoaError(.userCancelled)
+            }
+            clear.tap()
+        }
+        guard springboard.otherElements["lockscreen-date-view"].exists else {
+            attachSystemScreenshot(named: "notification-center-unexpectedly-dismissed")
+            throw CocoaError(.userCancelled)
+        }
+        let evidence = XCTAttachment(string: springboard.debugDescription)
+        evidence.name = "four-card-notification-clean-baseline-state"
+        evidence.lifetime = .keepAlways
+        add(evidence)
+        attachSystemScreenshot(named: "four-card-notification-clean-baseline")
+        XCTAssertEqual(notification.count, 0, "MemoMark notification history must be cleared before Share.")
+        XCTAssertEqual(activity.count, 0, "MemoMark activity history must be cleared before Share.")
+        guard notification.count == 0, activity.count == 0 else { throw CocoaError(.userCancelled) }
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.97))
+            .press(forDuration: 0.1, thenDragTo: springboard.coordinate(
+                withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)))
+    }
+
+    func testFourCardConfigurationSurfaceReadback() throws {
+        launchHostAndWait()
+        application.buttons["配置"].tap()
+        for _ in 0..<5 { application.scrollViews.firstMatch.swipeDown() }
+        attachCurrentScreenshot(named: "four-card-configuration-surface")
+        let evidence = XCTAttachment(string: application.debugDescription)
+        evidence.name = "four-card-configuration-surface-state"
+        evidence.lifetime = .keepAlways
+        add(evidence)
     }
 
     func testMultiplePhotosBackgroundWithoutHostActivation() throws {
@@ -335,51 +416,272 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             .press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)))
     }
 
-    func testReleaseShareOneQAPhotoWithoutHostActivation() throws {
+    func testReleaseFourCardClassicShare() throws { try verifyFourCardShare(style: "经典白") }
+    func testReleaseFourCardMinimalShare() throws { try verifyFourCardShare(style: "极简") }
+    func testReleaseFourCardFilmMarkShare() throws { try verifyFourCardShare(style: "胶片时间") }
+    func testReleaseFourCardGlassShare() throws { try verifyFourCardShare(style: "玻璃卡片") }
+
+    private func cardStyleHeaderForQA() -> XCUIElement {
+        application.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "卡片样式、")).firstMatch
+    }
+
+    private func selectCardStyleForQA(_ style: String) throws {
+        application.buttons["配置"].tap()
+        for _ in 0..<6 where !cardStyleHeaderForQA().isHittable {
+            application.scrollViews.firstMatch.swipeDown()
+        }
+        let header = cardStyleHeaderForQA()
+        XCTAssertTrue(header.waitForExistence(timeout: 10))
+        if header.value as? String == style { return }
+        let picker = application.segmentedControls.firstMatch
+        if !picker.exists { header.tap() }
+        let choice = application.segmentedControls.buttons[style].firstMatch
+        guard choice.waitForExistence(timeout: 5), choice.isHittable else {
+            attachCurrentScreenshot(named: "four-card-style-choice-missing")
+            let evidence = XCTAttachment(string: application.debugDescription)
+            evidence.name = "four-card-style-choice-missing-state"
+            evidence.lifetime = .keepAlways
+            add(evidence)
+            throw CocoaError(.userCancelled)
+        }
+        choice.tap()
+        try saveDescriptionConfigurationForQA()
+        XCTAssertEqual(header.value as? String, style)
+        attachCurrentScreenshot(named: "four-card-saved-style-" + style)
+    }
+
+    private func verifyFourCardShare(style: String) throws {
+        continueAfterFailure = true
+        let baseline = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "four-card-empty-output-baseline.json")
+        guard baseline.assetCount == 0 else { throw CocoaError(.fileWriteFileExists) }
+        launchHostAndWait()
+        application.buttons["配置"].tap()
+        for _ in 0..<6 where !cardStyleHeaderForQA().isHittable {
+            application.scrollViews.firstMatch.swipeDown()
+        }
+        let originalStyle = try XCTUnwrap(cardStyleHeaderForQA().value as? String)
+        var restored = false
+        let restore = { [self] in
+            guard !restored else { return }
+            application.activate()
+            do { try selectCardStyleForQA(originalStyle); restored = true }
+            catch { XCTFail("Could not restore the user's card style: \(error)") }
+            XCUIDevice.shared.press(.home)
+        }
+        addTeardownBlock { restore() }
+        defer { restore() }
+        try selectCardStyleForQA(style)
+        try verifyReleaseMixedShare(selectAllInputs: true, cardStyle: style)
+    }
+
+    func testReleaseMixedShareWithoutHostActivation() throws {
+        try verifyReleaseMixedShare(selectAllInputs: false)
+    }
+
+    func testReadPinnedClassicOutputContent() throws {
+        let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "visible-content-source-inventory.json")
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "visible-content-output-inventory.json")
+        XCTAssertEqual(outputs.assetCount, inputs.assetCount)
+        try verifySavedClassicFooter(outputs, sources: inputs.assets)
+    }
+
+    func testReleaseAllPreparedSourcesWithoutHostActivation() throws {
+        try verifyReleaseMixedShare(selectAllInputs: true)
+    }
+
+    func testReleaseLocalMaterialShareWithoutHostActivation() throws {
+        try verifyReleaseMixedShare(selectAllInputs: true, inputAlbum: "MemoMark QA Local Inputs", verifyOriginalBytes: true)
+    }
+
+    func testReleaseLocalStaticSourcesWithoutHostActivation() throws {
+        try verifyReleaseMixedShare(selectAllInputs: false, inputAlbum: "MemoMark QA Local Inputs", verifyOriginalBytes: true, staticInputsOnly: true)
+    }
+
+    func testReleaseSinglePreparedStaticSourceWithoutHostActivation() throws {
+        try verifyReleaseMixedShare(selectAllInputs: false, singleInput: true, staticInputsOnly: true)
+    }
+
+    func testReleaseSinglePreparedSourceWithoutHostActivation() throws {
+        try verifyReleaseMixedShare(selectAllInputs: false, singleInput: true)
+    }
+
+    func testReleaseSingleLocalSourceWithoutHostActivation() throws {
+        try verifyReleaseMixedShare(selectAllInputs: false, inputAlbum: "MemoMark QA Local Inputs", verifyOriginalBytes: true, singleInput: true)
+    }
+
+    func testPrepareLocalMaterialQAAlbum() throws {
+        struct Fixture: Decodable {
+            let stillFilename: String
+            let movieFilename: String?
+        }
+        let folder = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
+            appropriateFor: nil, create: false).appendingPathComponent("MemoMarkQA Local20261011")
+        let manifest = folder.appendingPathComponent("manifest.json")
+        guard FileManager.default.fileExists(atPath: manifest.path) else {
+            throw XCTSkip("Copy explicitly selected private local materials to the QA runner before preparing this album.")
+        }
+        let fixtures = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: manifest))
+        let options = PHFetchOptions()
+        options.predicate = NSPredicate(format: "title == %@", "MemoMark QA Local Inputs")
+        if let existing = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .any, options: options).firstObject {
+            XCTAssertEqual(PHAsset.fetchAssets(in: existing, options: nil).count, fixtures.count)
+            return
+        }
+        XCTAssertEqual(PHPhotoLibrary.authorizationStatus(for: .readWrite), .authorized)
+        for fixture in fixtures {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent(fixture.stillFilename).path))
+            if let movie = fixture.movieFilename {
+                XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent(movie).path))
+            }
+        }
+        let prepared = expectation(description: "Prepare isolated real local Photos materials")
+        PHPhotoLibrary.shared().performChanges {
+            let album = PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: "MemoMark QA Local Inputs")
+            var placeholders: [PHObjectPlaceholder] = []
+            for fixture in fixtures {
+                let request = PHAssetCreationRequest.forAsset()
+                request.addResource(with: .photo, fileURL: folder.appendingPathComponent(fixture.stillFilename), options: nil)
+                if let movie = fixture.movieFilename {
+                    request.addResource(with: .pairedVideo, fileURL: folder.appendingPathComponent(movie), options: nil)
+                }
+                if let placeholder = request.placeholderForCreatedAsset { placeholders.append(placeholder) }
+            }
+            album.addAssets(placeholders as NSArray)
+        } completionHandler: { success, error in
+            XCTAssertTrue(success, "Local QA preparation failed: \(String(describing: error))")
+            prepared.fulfill()
+        }
+        wait(for: [prepared], timeout: 120)
+        let inventory = try inventoryAlbum(titled: "MemoMark QA Local Inputs", attachmentName: "prepared-local-materials.json")
+        XCTAssertEqual(inventory.assetCount, fixtures.count)
+        XCTAssertEqual(inventory.assets.filter { $0.classification == "livePhoto" }.count,
+            fixtures.filter { $0.movieFilename != nil }.count)
+    }
+
+    private func verifyReleaseMixedShare(selectAllInputs: Bool, inputAlbum: String = "MemoMark QA Inputs", verifyOriginalBytes: Bool = false, singleInput: Bool = false, staticInputsOnly: Bool = false, cardStyle: String? = nil) throws {
 #if DEBUG
         throw XCTSkip("This gate requires the signed Release export path.")
 #else
+        // Keep restoration running after a recorded assertion failure. Every
+        // changed setting is read before editing and restored through the UI.
+        continueAfterFailure = true
         XCUIDevice.shared.orientation = .portrait
-        let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "release-source-baseline.json")
+        let inputs = try inventoryAlbum(titled: inputAlbum, attachmentName: "release-source-baseline.json")
         let baseline = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "release-output-baseline.json")
-        let index = try XCTUnwrap(inputs.assets.firstIndex { $0.classification == "jpegStill" })
-        let input = inputs.assets[index]
-        let original = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [input.localIdentifier], options: nil).firstObject)
-        let sourceResource = try XCTUnwrap(PHAssetResource.assetResources(for: original).first { $0.type == .photo })
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("ReleaseShareReadback-" + UUID().uuidString)
+        let eligible = staticInputsOnly ? inputs.assets.indices.filter { inputs.assets[$0].classification != "livePhoto" } : Array(inputs.assets.indices)
+        let indices = singleInput ? [try XCTUnwrap(eligible.first)] : staticInputsOnly ? eligible : selectAllInputs ? Array(inputs.assets.indices) : try [
+            XCTUnwrap(inputs.assets.firstIndex { $0.classification == "livePhoto" }),
+            XCTUnwrap(inputs.assets.firstIndex { $0.classification == "rawWithJPEGRepresentation" }),
+            XCTUnwrap(inputs.assets.firstIndex { $0.classification == "jpegStill" })
+        ]
+        let selected = indices.map { inputs.assets[$0] }
+        launchHostAndWait()
+        try openDescriptionSettingsForQA()
+        let toggle = descriptionSupplementToggle()
+        let originalUsesCustom = toggle.value as? String == "1"
+        var originalText: String?
+        var configurationRestored = false
+        let restoreConfiguration = { [self] in
+            guard !configurationRestored else { return }
+            application.activate()
+            do {
+                try openDescriptionSettingsForQA()
+                let restoreToggle = descriptionSupplementToggle()
+                if restoreToggle.value as? String != "1" { restoreToggle.tap() }
+                if let originalText { try replaceDescriptionSupplement(with: originalText) }
+                if !originalUsesCustom { restoreToggle.tap() }
+                try saveDescriptionConfigurationForQA()
+                configurationRestored = true
+            } catch { XCTFail("Could not restore the user's description configuration: \(error)") }
+            XCUIDevice.shared.press(.home)
+        }
+        // XCTest UI exceptions can bypass Swift defers. Keep an independent
+        // test teardown recovery as well as restoration after normal return.
+        addTeardownBlock { restoreConfiguration() }
+        defer { restoreConfiguration() }
+        if !originalUsesCustom { toggle.tap() }
+        let field = descriptionSupplementField()
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        let configurationState = XCTAttachment(string: application.debugDescription)
+        configurationState.name = "release-configuration-before-edit"
+        configurationState.lifetime = .keepAlways
+        add(configurationState)
+        // An empty native text field exposes its placeholder without a value.
+        let originalValue = try XCTUnwrap((field.value as? String) ?? field.placeholderValue)
+        originalText = originalValue == field.placeholderValue ? "" : originalValue
+        let caption = "Q" + String(Int(Date().timeIntervalSince1970), radix: 36)
+        try replaceDescriptionSupplement(with: caption)
+        try saveDescriptionConfigurationForQA()
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("ReleaseMixedReadback-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
-        let beforeURL = try savedResourceURL(sourceResource, in: folder)
-        let sourceData = try Data(contentsOf: beforeURL)
-        let sourceHash = SHA256.hash(data: sourceData)
-        launchHostAndWait()
-        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [index],
-            expectedOutputCount: baseline.assetCount + 1, expectedBaselineCount: baseline.assetCount)
+        func sourceHashes() throws -> [String: SHA256.Digest] {
+            var hashes: [String: SHA256.Digest] = [:]
+            for item in selected {
+                let asset = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [item.localIdentifier], options: nil).firstObject)
+                // Hash original image/movie bytes rather than Photos' internal
+                // adjustment envelopes. Inventory preserves the full catalogue.
+                for resource in PHAssetResource.assetResources(for: asset) where
+                    [.photo, .pairedVideo, .alternatePhoto].contains(resource.type) {
+                    let url = try savedResourceURL(resource, in: folder)
+                    let stream = try XCTUnwrap(InputStream(url: url))
+                    stream.open()
+                    defer { stream.close(); try? FileManager.default.removeItem(at: url) }
+                    var digest = SHA256()
+                    var buffer = [UInt8](repeating: 0, count: 65536)
+                    while true {
+                        let count = stream.read(&buffer, maxLength: buffer.count)
+                        if count == 0 { break }
+                        guard count > 0 else { throw stream.streamError ?? CocoaError(.fileReadUnknown) }
+                        digest.update(data: Data(buffer.prefix(count)))
+                    }
+                    hashes[item.localIdentifier + ":" + String(resource.type.rawValue) + ":" + resource.originalFilename] = digest.finalize()
+                }
+            }
+            return hashes
+        }
+        // Existing QA inputs may have optimized-away iCloud originals. This
+        // gate always verifies identity/catalogue, and requires byte equality
+        // separately for the locally prepared material album.
+        let before = verifyOriginalBytes ? try sourceHashes() : nil
+        let expectedCount = baseline.assetCount + selected.count
+        if cardStyle != nil { try clearMemoMarkNotificationHistoryForCardRound() }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: selectAllInputs ? [] : indices,
+            expectedOutputCount: expectedCount, expectedBaselineCount: baseline.assetCount,
+            expectedInputCount: inputs.assetCount, selectAllInputs: selectAllInputs, inputAlbumTitle: inputAlbum)
         let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "release-new-output-readback.json")
         let baselineIDs = Set(baseline.assets.map(\.localIdentifier))
         let added = outputs.assets.filter { !baselineIDs.contains($0.localIdentifier) }
-        XCTAssertEqual(added.count, 1)
-        let output = try XCTUnwrap(added.first)
-        XCTAssertNotEqual(output.localIdentifier, input.localIdentifier)
-        let outputAsset = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [output.localIdentifier], options: nil).firstObject)
-        let outputResource = try XCTUnwrap(PHAssetResource.assetResources(for: outputAsset).first { $0.type == .photo })
-        let outputURL = try savedResourceURL(outputResource, in: folder)
-        let decoded = try XCTUnwrap(CGImageSourceCreateWithURL(outputURL as CFURL, nil))
-        let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(decoded, 0, nil))
-        XCTAssertGreaterThanOrEqual(image.width, min(input.pixelWidth, input.pixelHeight))
-        XCTAssertGreaterThan(image.height, 0)
-        let sourceImage = try XCTUnwrap(CGImageSourceCreateWithData(sourceData as CFData, nil))
-        let sourceProperties = CGImageSourceCopyPropertiesAtIndex(sourceImage, 0, nil) as? [String: Any]
-        let outputProperties = CGImageSourceCopyPropertiesAtIndex(decoded, 0, nil) as? [String: Any]
-        let sourceEXIF = sourceProperties?[kCGImagePropertyExifDictionary as String] as? [String: Any]
-        let outputEXIF = outputProperties?[kCGImagePropertyExifDictionary as String] as? [String: Any]
-        if let captureDate = sourceEXIF?[kCGImagePropertyExifDateTimeOriginal as String] as? String {
-            XCTAssertEqual(outputEXIF?[kCGImagePropertyExifDateTimeOriginal as String] as? String, captureDate)
-        }
-        let afterURL = try savedResourceURL(sourceResource, in: folder)
-        XCTAssertEqual(SHA256.hash(data: try Data(contentsOf: afterURL)), sourceHash)
+        let newOutputs = QAAlbumInventory(albumTitle: outputs.albumTitle, albumLocalIdentifier: outputs.albumLocalIdentifier,
+            authorization: outputs.authorization, assetCount: added.count, assets: added)
+        XCTAssertEqual(added.count, selected.count)
+        guard added.count == selected.count else { throw CocoaError(.fileReadUnknown) }
+        XCTAssertEqual(added.compactMap(\.creationDate).sorted(), selected.compactMap(\.creationDate).sorted())
+        try verifySavedStillMetadata(newOutputs, expectedDescription: caption)
+        if cardStyle == nil || cardStyle == "经典白" { try verifySavedClassicFooter(newOutputs, sources: selected) }
+        if let cardStyle { try attachSavedCardCompositions(newOutputs, style: cardStyle) }
+        verifySavedMoviePairingSynchronously(newOutputs, expectedPairCount: selected.filter { $0.classification == "livePhoto" }.count)
+        if let before { XCTAssertEqual(try sourceHashes(), before, "All selected original resource bytes must remain unchanged.") }
+        let originalReadback = try inventoryAlbum(titled: inputAlbum, attachmentName: "release-original-identity-readback.json")
+        // PhotoKit modificationDate is catalogue state, and changed during
+        // this Photos Share even though every original resource SHA matched.
+        // Keep it in both evidence attachments; require all content/identity
+        // fields plus the separate original-byte gate to remain equal.
+        XCTAssertEqual(originalReadback.assets.map(\.contentIdentity), inputs.assets.map(\.contentIdentity))
         XCTAssertNotEqual(application.state, .runningForeground)
-        // Retain this newly created QA result for inspection; never delete originals.
+        if singleInput || cardStyle != nil { return }
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: selectAllInputs ? [] : indices,
+            expectedOutputCount: outputs.assetCount, expectedBaselineCount: outputs.assetCount,
+            expectedInputCount: inputs.assetCount, selectAllInputs: selectAllInputs, inputAlbumTitle: inputAlbum,
+            minimumObservationCheckpoints: 4)
+        let repeated = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "release-repeat-identity-readback.json")
+        XCTAssertEqual(Set(repeated.assets.map(\.localIdentifier)), Set(outputs.assets.map(\.localIdentifier)))
+        if let before { XCTAssertEqual(try sourceHashes(), before) }
+        let finalSurface = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        finalSurface.name = "ordinary-share-completion-system-surface"
+        finalSurface.lifetime = .keepAlways
+        add(finalSurface)
+        // Keep all existing and newly generated QA outputs for inspection.
 #endif
     }
 
@@ -1148,8 +1450,11 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
     }
 
     private func openDescriptionSettingsForQA() throws {
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 15))
         let config = application.buttons["配置"]
         XCTAssertTrue(config.waitForExistence(timeout: 10))
+        let configReady = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: config)
+        XCTAssertEqual(XCTWaiter.wait(for: [configReady], timeout: 10), .completed)
         config.tap()
         let expand = application.buttons.matching(NSPredicate(
             format: "label == %@ OR label BEGINSWITH %@", "展开照片说明设置", "照片说明")).firstMatch
@@ -1174,7 +1479,16 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
     }
 
     private func descriptionSupplementField() -> XCUIElement {
-        application.descendants(matching: .any).matching(identifier: "output-photo-description-input").firstMatch
+        let identifier = "output-photo-description-input"
+        let textView = application.textViews.matching(identifier: identifier).firstMatch
+        if textView.exists { return textView }
+        let textField = application.textFields.matching(identifier: identifier).firstMatch
+        if textField.exists { return textField }
+        let container = application.descendants(matching: .any).matching(identifier: identifier).firstMatch
+        let nestedTextField = container.descendants(matching: .textField).firstMatch
+        if nestedTextField.exists { return nestedTextField }
+        let nestedTextView = container.descendants(matching: .textView).firstMatch
+        return nestedTextView.exists ? nestedTextView : container
     }
 
     private func replaceDescriptionSupplement(with text: String) throws {
@@ -1325,11 +1639,12 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 3, 6], hostMarkerOnly: true)
     }
 
-    private func performMultiplePhotosBackgroundWithoutHostActivation(indices: [Int], hostMarkerOnly: Bool = false, expectedOutputCount: Int = 3, expectedBaselineCount: Int? = 0, observeOutputs: Bool = true, expectedInputCount: Int = 15, selectAllInputs: Bool = false, activateHostAfterSubmission: Bool = false) throws {
-        let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "background-input-baseline.json")
+    private func performMultiplePhotosBackgroundWithoutHostActivation(indices: [Int], hostMarkerOnly: Bool = false, expectedOutputCount: Int = 3, expectedBaselineCount: Int? = 0, observeOutputs: Bool = true, expectedInputCount: Int = 15, selectAllInputs: Bool = false, activateHostAfterSubmission: Bool = false, inputAlbumTitle: String = "MemoMark QA Inputs", minimumObservationCheckpoints: Int = 1) throws {
+        let inputs = try inventoryAlbum(titled: inputAlbumTitle, attachmentName: "background-input-baseline.json")
         let baseline = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "background-output-baseline.json")
         if let expectedBaselineCount {
             XCTAssertEqual(baseline.assetCount, expectedBaselineCount, "Use the expected explicitly controlled QA album baseline.")
+            guard baseline.assetCount == expectedBaselineCount else { throw CocoaError(.fileReadUnknown) }
         }
         XCTAssertEqual(inputs.assetCount, expectedInputCount)
         // Xcode starts the target when attaching the UI harness. Background
@@ -1339,6 +1654,9 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
         photos.activate()
         XCTAssertTrue(photos.wait(for: .runningForeground, timeout: 10))
+        if photos.otherElements["photosSearchBar"].exists, photos.buttons["关闭"].exists {
+            photos.buttons["关闭"].tap()
+        }
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(
             predicate: NSPredicate { _, _ in self.application.state != .runningForeground }, object: nil
         )], timeout: 10), .completed, "MemoMark must leave the foreground before any Share is submitted.")
@@ -1353,8 +1671,15 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             }
             XCTAssertTrue(photos.buttons["选择"].waitForExistence(timeout: 10))
         }
+        // A one-up photo surface can retain the album's AX subtree. Close
+        // that surface before treating collectionTitle as an active grid.
+        if photos.buttons["PUOneUpBarButtonItemIdentifierShare"].exists {
+            let back = photos.buttons["BackButton"]
+            guard back.isHittable else { throw CocoaError(.fileReadUnknown) }
+            back.tap()
+        }
         let alreadyInInputs = photos.staticTexts.matching(NSPredicate(
-            format: "identifier == %@ AND label == %@", "collectionTitle", "MemoMark QA Inputs"
+            format: "identifier == %@ AND label == %@", "collectionTitle", inputAlbumTitle
         )).firstMatch.exists
         if !alreadyInInputs {
             let collections = photos.buttons["CollectionsTab"]
@@ -1364,23 +1689,67 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
                 )).firstMatch
                 if back.exists { back.tap() }
             }
-            XCTAssertTrue(collections.waitForExistence(timeout: 10))
+            guard collections.waitForExistence(timeout: 10) else { throw CocoaError(.fileReadUnknown) }
             collections.tap()
-            let album = photos.buttons.matching(NSPredicate(format: "identifier == %@ AND label == %@", "bookmarks", "MemoMark QA Inputs")).firstMatch
-            for _ in 0..<8 where !album.isHittable { photos.swipeDown() }
-            XCTAssertTrue(album.isHittable)
-            album.tap()
+            let album = photos.buttons.matching(NSPredicate(format: "identifier == %@ AND label == %@", "bookmarks", inputAlbumTitle)).firstMatch
+            if album.exists {
+                for _ in 0..<8 where !album.isHittable { photos.swipeDown() }
+                guard album.isHittable else { throw CocoaError(.fileReadUnknown) }
+                album.tap()
+            } else {
+                // A new isolated QA album is not in the user's pinned shelf.
+                // Search its exact title without changing Photos preferences.
+                let search = photos.buttons["SearchTab"]
+                guard search.waitForExistence(timeout: 10) else { throw CocoaError(.fileReadUnknown) }
+                search.tap()
+                // Current iOS 27 Photos exposes its focused search bar as an
+                // Other element rather than SearchField/TextField.
+                let field = photos.otherElements["photosSearchBar"]
+                guard field.waitForExistence(timeout: 10) else { throw CocoaError(.fileReadUnknown) }
+                field.tap()
+                guard photos.keyboards.firstMatch.waitForExistence(timeout: 5) else { throw CocoaError(.fileReadUnknown) }
+                if photos.buttons["清除"].exists { photos.buttons["清除"].tap() }
+                photos.typeText(inputAlbumTitle + "\n")
+                // Album matches appear under Collections, while Photos is
+                // selected by default even when its result count is zero.
+                let collectionResults = photos.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "精选集(")).firstMatch
+                if collectionResults.waitForExistence(timeout: 5) { collectionResults.tap() }
+                let result = photos.staticTexts[inputAlbumTitle].firstMatch
+                guard result.waitForExistence(timeout: 30) else {
+                    let state = XCTAttachment(string: photos.debugDescription)
+                    state.name = "named-qa-album-search-not-ready"
+                    state.lifetime = .keepAlways
+                    add(state)
+                    throw CocoaError(.fileReadUnknown)
+                }
+                result.tap()
+            }
         }
         let select = photos.buttons["选择"]
-        XCTAssertTrue(select.waitForExistence(timeout: 10))
-        select.tap()
+        guard select.waitForExistence(timeout: 10), select.isHittable else {
+            throw CocoaError(.fileReadUnknown)
+        }
+        // Photos' synthesized AX tap has entered one-up instead of selection
+        // on a second visit. Use the observed control's own current frame.
+        select.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let selectionReady = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            photos.buttons["全选"].isHittable || photos.buttons["取消"].isHittable
+        }, object: nil)
+        guard XCTWaiter.wait(for: [selectionReady], timeout: 10) == .completed else {
+            let state = XCTAttachment(string: photos.debugDescription)
+            state.name = "background-selection-mode-not-ready"
+            state.lifetime = .keepAlways
+            add(state)
+            throw CocoaError(.fileReadUnknown)
+        }
         let grid = photos.otherElements.matching(identifier: "PXGGridLayout-Group").firstMatch
             .images.matching(identifier: "PXGGridLayout-Info")
         let minimumGridCount = selectAllInputs ? 1 : (indices.max() ?? -1) + 1
         let anchorDate = try XCTUnwrap(Self.date(from: inputs.assets.first?.creationDate))
         let anchorFormatter = DateFormatter()
         anchorFormatter.locale = Locale(identifier: "zh_CN")
-        anchorFormatter.dateFormat = "MM月dd日, HH:mm"
+        anchorFormatter.dateFormat = Calendar.current.component(.year, from: anchorDate) == Calendar.current.component(.year, from: Date())
+            ? "M月dd日, HH:mm" : "yyyy年M月d日, HH:mm"
         let anchor = anchorFormatter.string(from: anchorDate)
         for _ in 0..<4 where grid.count > 0 && !grid.firstMatch.label.contains(anchor) {
             photos.swipeDown()
@@ -1400,6 +1769,7 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             add(state)
         }
         XCTAssertEqual(readyResult, .completed, "Wait for the named QA input grid before touching any asset.")
+        guard readyResult == .completed else { throw CocoaError(.fileReadUnknown) }
         XCTAssertGreaterThanOrEqual(grid.count, minimumGridCount)
         XCTAssertTrue(grid.firstMatch.label.contains(anchor), "Positional selection must start at the independently inventoried first asset.")
         // Scope to one Photos grid and verify its first-source anchor.
@@ -1410,11 +1780,16 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         }
         if selectAllInputs {
             let selectAll = photos.buttons["全选"]
-            XCTAssertTrue(selectAll.isHittable)
+            guard selectAll.isHittable else { throw CocoaError(.fileReadUnknown) }
             selectAll.tap()
         }
         for index in indices {
-            let item = grid.element(boundBy: index)
+            let date = try XCTUnwrap(Self.date(from: inputs.assets[index].creationDate))
+            anchorFormatter.dateFormat = Calendar.current.component(.year, from: date) == Calendar.current.component(.year, from: Date())
+                ? "M月dd日, HH:mm" : "yyyy年M月d日, HH:mm"
+            let matches = grid.matching(NSPredicate(format: "label CONTAINS %@", anchorFormatter.string(from: date)))
+            guard matches.count == 1 else { throw CocoaError(.fileReadUnknown) }
+            let item = matches.firstMatch
             if item.frame.maxY > photos.frame.maxY - 120 { photos.swipeUp() }
             XCTAssertTrue(grid.firstMatch.label.contains(anchor), "Scrolling must retain the source-index anchor.")
             XCTAssertTrue(item.isHittable, "Each intended QA input must be reachable before selection.")
@@ -1458,11 +1833,34 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             return
         }
         XCTAssertNotEqual(application.state, .runningForeground)
+        let systemSurface = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        systemSurface.name = "ordinary-share-system-progress"
+        systemSurface.lifetime = .keepAlways
+        add(systemSurface)
+        let systemState = XCTAttachment(string: XCUIApplication(bundleIdentifier: "com.apple.springboard").debugDescription)
+        systemState.name = "ordinary-share-system-progress-state"
+        systemState.lifetime = .keepAlways
+        add(systemState)
         if !observeOutputs { return }
-        try observeCompletedPhotoOutputs(expectedOutputCount: expectedOutputCount, hostMarkerOnly: hostMarkerOnly)
+        XCUIDevice.shared.press(.home)
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        // The actual paired-device screenshot places the task's compact bubble
+        // at this normalized point, to the right of the microphone activity.
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.70, dy: 0.034)).press(forDuration: 1)
+        let expanded = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        expanded.name = "ordinary-share-expanded-system-surface"
+        expanded.lifetime = .keepAlways
+        add(expanded)
+        let expandedState = XCTAttachment(string: springboard.debugDescription)
+        expandedState.name = "ordinary-share-expanded-system-state"
+        expandedState.lifetime = .keepAlways
+        add(expandedState)
+        XCTAssertNotEqual(application.state, .runningForeground)
+        try observeCompletedPhotoOutputs(expectedOutputCount: expectedOutputCount, hostMarkerOnly: hostMarkerOnly,
+            minimumCheckpoints: minimumObservationCheckpoints)
     }
 
-    private func observeCompletedPhotoOutputs(expectedOutputCount: Int, hostMarkerOnly: Bool = false) throws {
+    private func observeCompletedPhotoOutputs(expectedOutputCount: Int, hostMarkerOnly: Bool = false, minimumCheckpoints: Int = 1) throws {
         var completed = false
         for checkpoint in 1...8 {
             XCTAssertNotEqual(application.state, .runningForeground, "Host foreground invalidates background certification.")
@@ -1470,14 +1868,25 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             DispatchQueue.main.asyncAfter(deadline: .now() + 30) { pause.fulfill() }
             wait(for: [pause], timeout: 35)
             let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "background-output-checkpoint-\(checkpoint).json")
+            if checkpoint == 1 {
+                let progressSurface = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                progressSurface.name = "ordinary-share-observed-progress"
+                progressSurface.lifetime = .keepAlways
+                add(progressSurface)
+            }
             XCTAssertNotEqual(application.state, .runningForeground)
             if hostMarkerOnly {
                 XCTAssertEqual(outputs.assetCount, 0, "The host handoff marker must not render or save Photos.")
                 return
             }
-            if outputs.assetCount == expectedOutputCount { completed = true; break }
+            if outputs.assetCount > expectedOutputCount {
+                XCTFail("Unexpected extra output identity; stop this acceptance round immediately.")
+                throw CocoaError(.fileReadUnknown)
+            }
+            if outputs.assetCount == expectedOutputCount && checkpoint >= minimumCheckpoints { completed = true; break }
         }
         XCTAssertTrue(completed, "No foreground recovery is allowed: expected output count must be independently observed within the four-minute probe. Failure is evidence, not an iOS scheduling guarantee.")
+        guard completed else { throw CocoaError(.fileReadUnknown) }
     }
 
     func testPendingShareRequestsResumeAfterHostActivation() throws {
@@ -2573,8 +2982,19 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
     }
 
     func testClearNamedQAOutputsBeforeBackgroundRound() throws {
-        // User-authorized disposable outputs only; never touch the input album.
+        // Owner explicitly authorizes clearing this fixed output test album.
+        // Keep independent before/after evidence and refuse any input overlap.
+        let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "cleanup-original-inputs-before.json")
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "cleanup-output-identity-before.json")
+        guard inputs.albumLocalIdentifier != outputs.albumLocalIdentifier,
+              Set(inputs.assets.map(\.localIdentifier)).isDisjoint(with: outputs.assets.map(\.localIdentifier)) else {
+            XCTFail("Refusing cleanup: output selection overlaps protected original inputs.")
+            throw CocoaError(.fileWriteNoPermission)
+        }
         try deleteOutputsAddedSince([], attachmentPrefix: "background-round-cleanup")
+        let preserved = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "cleanup-original-inputs-after.json")
+        XCTAssertEqual(preserved.assets.map(\.contentIdentity), inputs.assets.map(\.contentIdentity))
+        XCTAssertEqual(try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "cleanup-zero-output-baseline.json").assetCount, 0)
         XCUIDevice.shared.press(.home)
     }
 
@@ -3697,6 +4117,76 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         )
     }
 
+    /// The controlled current classic-white fixture must contain foreground
+    /// in its newly added footer; EXIF text and a decodable white bar do not pass.
+    private func attachSavedCardCompositions(_ inventory: QAAlbumInventory, style: String) throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("SavedCards-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        for item in inventory.assets {
+            let asset = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [item.localIdentifier], options: nil).firstObject)
+            let resource = try XCTUnwrap(PHAssetResource.assetResources(for: asset).first { $0.type == .photo })
+            let url = try savedResourceURL(resource, in: folder)
+            let source = try XCTUnwrap(CGImageSourceCreateWithURL(url as CFURL, nil))
+            let image = try XCTUnwrap(CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: 2048,
+                kCGImageSourceCreateThumbnailWithTransform: true
+            ] as CFDictionary))
+            let evidence = XCTAttachment(image: UIImage(cgImage: image))
+            evidence.name = "saved-card-composition-" + style + "-" + item.localIdentifier.replacingOccurrences(of: "/", with: "-")
+            evidence.lifetime = .keepAlways
+            add(evidence)
+            try? FileManager.default.removeItem(at: url)
+        }
+        // These real saved compositions require per-image visual acceptance.
+        // Decode alone is deliberately not a nonblank-content assertion.
+    }
+
+    private func verifySavedClassicFooter(_ inventory: QAAlbumInventory, sources: [QAAlbumInventoryAsset]) throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("VisibleFooter-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        for item in inventory.assets {
+            let matches = sources.filter { $0.creationDate == item.creationDate }
+            guard matches.count == 1, let original = matches.first,
+                  item.pixelWidth == original.pixelWidth, item.pixelHeight > original.pixelHeight else {
+                throw CocoaError(.fileReadUnknown)
+            }
+            let asset = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [item.localIdentifier], options: nil).firstObject)
+            let resource = try XCTUnwrap(PHAssetResource.assetResources(for: asset).first { $0.type == .photo })
+            let url = try savedResourceURL(resource, in: folder)
+            let source = try XCTUnwrap(CGImageSourceCreateWithURL(url as CFURL, nil))
+            let thumbnail = try XCTUnwrap(CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: 2048,
+                kCGImageSourceCreateThumbnailWithTransform: true
+            ] as CFDictionary))
+            let photoHeight = Int((CGFloat(original.pixelHeight) / CGFloat(item.pixelHeight) * CGFloat(thumbnail.height)).rounded(.up))
+            let footer = try XCTUnwrap(thumbnail.cropping(to: CGRect(x: 0, y: photoHeight,
+                width: thumbnail.width, height: thumbnail.height - photoHeight)))
+            let evidence = XCTAttachment(image: UIImage(cgImage: footer))
+            evidence.name = "saved-classic-footer-" + item.localIdentifier.replacingOccurrences(of: "/", with: "-")
+            evidence.lifetime = .keepAlways
+            add(evidence)
+            let context = try XCTUnwrap(CGContext(data: nil, width: footer.width, height: footer.height,
+                bitsPerComponent: 8, bytesPerRow: footer.width * 4,
+                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(footer, in: CGRect(x: 0, y: 0, width: footer.width, height: footer.height))
+            let bytes = try XCTUnwrap(context.data).assumingMemoryBound(to: UInt8.self)
+            var foreground = 0
+            var background = 0
+            for i in stride(from: 0, to: footer.width * footer.height * 4, by: 4) {
+                if bytes[i] < 170 && bytes[i + 1] < 170 && bytes[i + 2] < 170 && bytes[i + 3] > 127 { foreground += 1 }
+                if bytes[i] > 200 && bytes[i + 1] > 200 && bytes[i + 2] > 200 && bytes[i + 3] > 127 { background += 1 }
+            }
+            XCTAssertGreaterThan(background, footer.width * footer.height / 2,
+                "Classic footer must retain its light background; a black raster is not visible content.")
+            XCTAssertGreaterThan(foreground, 0, "Blank Renderer footer for output \(item.localIdentifier); metadata-only success is invalid.")
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
+
     private func verifySavedStillMetadata(_ inventory: QAAlbumInventory, expectedDescription: String, requireDescription: Bool = true) throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("PhotoKitReadback-\(UUID())")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -3714,6 +4204,18 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             }
             wait(for: [ready], timeout: 30)
             let source = try XCTUnwrap(CGImageSourceCreateWithURL(url as CFURL, nil))
+            let thumbnailOptions: [CFString: Any] = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: 256,
+                kCGImageSourceCreateThumbnailWithTransform: true
+            ]
+            let decoded = try XCTUnwrap(CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions as CFDictionary))
+            XCTAssertGreaterThan(decoded.width, 0)
+            XCTAssertGreaterThan(decoded.height, 0)
+            let raster = XCTAttachment(image: UIImage(cgImage: decoded))
+            raster.name = "saved-photo-decoded-\(item.classification)"
+            raster.lifetime = .keepAlways
+            add(raster)
             let properties = try XCTUnwrap(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
             XCTAssertEqual((properties[kCGImagePropertyPixelWidth] as? NSNumber)?.intValue, item.pixelWidth)
             XCTAssertEqual((properties[kCGImagePropertyPixelHeight] as? NSNumber)?.intValue, item.pixelHeight)
@@ -3771,11 +4273,11 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         return url
     }
 
-    private func verifySavedMoviePairingSynchronously(_ inventory: QAAlbumInventory) {
+    private func verifySavedMoviePairingSynchronously(_ inventory: QAAlbumInventory, expectedPairCount: Int = 1) {
         let ready = expectation(description: "Read saved Live Photo movie pairing")
         let operation = Task { @MainActor in
             defer { ready.fulfill() }
-            do { try await verifySavedMoviePairing(inventory) }
+            do { try await verifySavedMoviePairing(inventory, expectedPairCount: expectedPairCount) }
             catch { XCTFail("Saved movie readback failed: \(error)") }
         }
         wait(for: [ready], timeout: 90)
@@ -3783,12 +4285,12 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
     }
 
     @MainActor
-    private func verifySavedMoviePairing(_ inventory: QAAlbumInventory) async throws {
+    private func verifySavedMoviePairing(_ inventory: QAAlbumInventory, expectedPairCount: Int = 1) async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("MoviePairReadback-\(UUID())")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         let pairs = inventory.assets.filter { $0.classification == "livePhoto" }
-        XCTAssertEqual(pairs.count, 1)
+        XCTAssertEqual(pairs.count, expectedPairCount)
         for item in pairs {
             let asset = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [item.localIdentifier], options: nil).firstObject)
             let resources = PHAssetResource.assetResources(for: asset)
@@ -3851,17 +4353,11 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             options: nil
         )
 
-        var matchedAlbum: PHAssetCollection?
-        albums.enumerateObjects { album, _, stop in
-            guard album.localizedTitle == albumTitle else {
-                return
-            }
-
-            matchedAlbum = album
-            stop.pointee = true
+        var matches: [PHAssetCollection] = []
+        albums.enumerateObjects { album, _, _ in
+            if album.localizedTitle == albumTitle { matches.append(album) }
         }
-
-        guard let matchedAlbum else {
+        guard matches.count == 1, let matchedAlbum = matches.first else {
             XCTFail("The PhotoKit album was not found: \(albumTitle)")
             throw QAInventoryError.albumNotFound(albumTitle)
         }
@@ -4799,7 +5295,7 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         let assets: [QAAlbumInventoryAsset]
     }
 
-    private struct QAAlbumInventoryAsset: Codable {
+    private struct QAAlbumInventoryAsset: Codable, Equatable {
         let localIdentifier: String
         let originalAssetIdentifier: String
         let classification: String
@@ -4811,9 +5307,16 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         let creationDate: String?
         let modificationDate: String?
         let resources: [QAAlbumInventoryResource]
+
+        var contentIdentity: Self {
+            Self(localIdentifier: localIdentifier, originalAssetIdentifier: originalAssetIdentifier,
+                 classification: classification, mediaType: mediaType, mediaSubtypes: mediaSubtypes,
+                 pixelWidth: pixelWidth, pixelHeight: pixelHeight, duration: duration,
+                 creationDate: creationDate, modificationDate: nil, resources: resources)
+        }
     }
 
-    private struct QAAlbumInventoryResource: Codable {
+    private struct QAAlbumInventoryResource: Codable, Equatable {
         let type: String
         let originalFilename: String
         let uniformTypeIdentifier: String

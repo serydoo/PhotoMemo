@@ -341,9 +341,9 @@ final class LivePhotoStillImageCompositionService:
     ) async throws -> URL {
         let preparedOverlay = try overlay.replacingGeometry(canvasSize: geometry.canvas.canvasSize,
             photoFrame: geometry.canvas.photoFrame, footerFrame: geometry.canvas.footerFrame).validatedForEncoder()
-#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION
         return try await MainActor.run {
-            try self.composeCPUStillImage(sourceStillURL: sourceStillURL, overlay: preparedOverlay,
+            try self.composeSoftwareStillImage(sourceStillURL: sourceStillURL, overlay: preparedOverlay,
                 outputURL: outputURL, outputType: outputType,
                 pairingIdentifier: pairingIdentifier, outputDescription: outputDescription)
         }
@@ -367,14 +367,22 @@ final class LivePhotoStillImageCompositionService:
 #endif
     }
 
+    @MainActor
+    func composeSoftwareStillImage(sourceStillURL: URL, overlay: PresentationArtifact,
+                              outputURL: URL, outputType: UTType,
+                              pairingIdentifier: String?, outputDescription: String?) throws -> URL {
+        try SoftwareLivePhotoStillExporter.export(sourceStillURL: sourceStillURL,
+            overlay: overlay, outputURL: outputURL, outputType: outputType,
+            pairingIdentifier: pairingIdentifier, outputDescription: outputDescription, writer: writer)
+    }
 #if DEBUG
     @MainActor
     func composeCPUStillImage(sourceStillURL: URL, overlay: PresentationArtifact,
                               outputURL: URL, outputType: UTType,
                               pairingIdentifier: String?, outputDescription: String?) throws -> URL {
-        try CPULivePhotoStillImageExperiment.export(sourceStillURL: sourceStillURL,
-            overlay: overlay, outputURL: outputURL, outputType: outputType,
-            pairingIdentifier: pairingIdentifier, outputDescription: outputDescription, writer: writer)
+        try composeSoftwareStillImage(sourceStillURL: sourceStillURL, overlay: overlay,
+            outputURL: outputURL, outputType: outputType,
+            pairingIdentifier: pairingIdentifier, outputDescription: outputDescription)
     }
 #endif
 }

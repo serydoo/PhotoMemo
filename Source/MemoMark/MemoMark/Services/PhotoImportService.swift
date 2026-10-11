@@ -1,5 +1,8 @@
 import Foundation
 import UniformTypeIdentifiers
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION
+import os
+#endif
 
 final class PhotoImportService {
 
@@ -231,10 +234,17 @@ final class PhotoImportService {
         MemoMarkBackgroundProbe.record("extension.import.beforeDecode")
 #endif
 
-#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION
+        // This is an internal preview. Export continues to read the original
+        // source URL and dimensions; a full raster here exhausts the bounded
+        // extension before the canonical export pipeline can run.
         let previewDecodeLimit: Int? = 2048
 #else
         let previewDecodeLimit: Int? = nil
+#endif
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION
+        ShareContinuedProcessingDiagnostics.record("extension.import.beforePreviewDecode",
+            detail: "availableMemory=\(os_proc_available_memory());maxPixelDimension=\(previewDecodeLimit.map(String.init) ?? "full")")
 #endif
         let image =
             try mediaDecodeService
@@ -243,6 +253,10 @@ final class PhotoImportService {
                 maxPixelDimension: previewDecodeLimit
             )
             .removingMemoMarkLeftEdgeArtifact()
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION
+        ShareContinuedProcessingDiagnostics.record("extension.import.previewDecoded",
+            detail: "availableMemory=\(os_proc_available_memory());width=\(Int(image.photoMemoSize.width));height=\(Int(image.photoMemoSize.height))")
+#endif
 #if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
         MemoMarkBackgroundProbe.record("extension.import.decoded", detail: "width=\(Int(image.photoMemoSize.width)) height=\(Int(image.photoMemoSize.height))")
 #endif

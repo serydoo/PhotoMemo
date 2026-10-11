@@ -8,7 +8,6 @@ nonisolated enum NativeBackdropMaterialRenderer {
         return false
     }
 
-#if DEBUG
     @MainActor
     static func renderRegion(sourceRegion: CGImage, regionFrame: CGRect,
                              material: PresentationArtifact.BackdropMaterial) -> CGImage? {
@@ -22,7 +21,6 @@ nonisolated enum NativeBackdropMaterialRenderer {
             cornerRadius: material.cornerRadius)
         return render(sourceCanvas: sourceRegion, canvasSize: regionFrame.size, material: local)
     }
-#endif
 
     @MainActor
     static func render(sourceCanvas: CGImage, canvasSize: CGSize,

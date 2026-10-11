@@ -1,4 +1,3 @@
-#if DEBUG
 import CoreGraphics
 import CoreImage
 import Darwin
@@ -7,7 +6,7 @@ import Foundation
 import os
 #endif
 
-/// Experimental disk-backed raster. The only owned pixel buffer is one strip.
+/// Bounded disk-backed raster. The only owned pixel buffer is one strip.
 /// ImageIO consumes the read-only map synchronously before it is unmapped.
 @MainActor
 enum CPUFileRasterExport {
@@ -77,6 +76,9 @@ enum CPUFileRasterExport {
                 translationX: -image.extent.minX, y: -image.extent.minY))
             for row in stride(from: 0, to: height, by: rowsPerStrip) {
                 try Task.checkCancellation()
+                if row % (rowsPerStrip * 32) == 0 {
+                    record("extension.cpuRaster.stripCheckpoint", detail: "row=\(row);height=\(height)")
+                }
                 let rows = min(rowsPerStrip, height - row)
                 try pixels.withUnsafeMutableBytes { bytes in
                     guard let address = bytes.baseAddress else { throw RecordCardExportError.renderFailed }
@@ -115,10 +117,9 @@ enum CPUFileRasterExport {
         }
     }
 
-    private static func record(_ event: String) {
+    private static func record(_ event: String, detail: String = "") {
 #if os(iOS) && MEMOMARK_SHARE_EXTENSION
-        MemoMarkBackgroundProbe.record(event, detail: "availableMemory=\(os_proc_available_memory())")
+        ShareContinuedProcessingDiagnostics.record(event, detail: "availableMemory=\(os_proc_available_memory());\(detail)")
 #endif
     }
 }
-#endif

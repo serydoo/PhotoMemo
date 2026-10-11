@@ -45,15 +45,16 @@ final class RecordCardExportPipeline {
             for: card,
             canvasSize: renderSize
         )
-#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
-        MemoMarkBackgroundProbe.record("extension.export.artifactReady")
-        if CPUStillImageExportExperiment.isEnabledForShareExport(
-            defaults: MemoMarkSharedContainer.sharedUserDefaults),
-           UTType(filenameExtension: resolvedSaveURL.pathExtension)?.conforms(to: .jpeg) == true {
-            return try CPUStillImageExportExperiment.export(photo: photo, artifact: artifact,
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION
+        if UTType(filenameExtension: resolvedSaveURL.pathExtension)?.conforms(to: .jpeg) == true {
+            return try SoftwareStillImageExporter.export(photo: photo, artifact: artifact,
                 to: resolvedSaveURL, writer: imageWriter,
                 exportDescription: CardVariableProvider.exportDescription(from: card))
         }
+#endif
+#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+        MemoMarkBackgroundProbe.record("extension.export.artifactReady")
+
 #endif
         guard let sourceImage = sourcePhotoCGImage(for: photo) else {
             throw RecordCardExportError.renderFailed
