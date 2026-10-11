@@ -59,6 +59,18 @@ enum ProductionConfigurationSnapshotFactory {
         reference: ProductionConfigurationReference,
         from aggregate: ConfigurationLibraryRecord
     ) throws -> BatchConfigurationSnapshot {
+        let snapshot = try compatibilitySnapshot(reference: reference, from: aggregate)
+        try ProductionConfigurationSnapshotContract.validate(snapshot)
+        return snapshot
+    }
+
+    /// Durable editing may precede choosing a time anchor. Publish its complete
+    /// canonical transport so compatibility repair works; admission/readiness
+    /// still require the strict production contract before any photo runs.
+    static func compatibilitySnapshot(
+        reference: ProductionConfigurationReference,
+        from aggregate: ConfigurationLibraryRecord
+    ) throws -> BatchConfigurationSnapshot {
         guard reference.contractVersion
             == ProductionConfigurationReference
             .currentContractVersion,
@@ -206,8 +218,6 @@ enum ProductionConfigurationSnapshotFactory {
             canonicalSnapshot
         )
 
-        try ProductionConfigurationSnapshotContract
-            .validate(snapshot)
         return snapshot
     }
 

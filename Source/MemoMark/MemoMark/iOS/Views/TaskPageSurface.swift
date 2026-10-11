@@ -47,23 +47,29 @@ struct TaskPageSurface: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                pageHeader
-                currentTaskCard
-                recentTasksSection
+        GeometryReader { viewport in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    pageHeader
+                    currentTaskCard
+                    recentTasksSection
+                }
+                .padding(.top, 10)
+                .padding(
+                    .bottom,
+                    AdaptivePageLayout
+                        .scrollBottomPadding(
+                            for: navigationStyle
+                        )
+                )
+                .adaptiveScrollContent(
+                    horizontalPadding: ConfigurationUI.contentColumnPadding,
+                    viewportWidth: viewport.size.width,
+                    trailingReservedWidth: navigationStyle == .floatingRail
+                        ? AdaptiveFloatingRailMetrics.reservedWidth
+                        : 0
+                )
             }
-            .padding(.top, 10)
-            .padding(
-                .bottom,
-                AdaptivePageLayout
-                    .scrollBottomPadding(
-                        for: navigationStyle
-                    )
-            )
-            .adaptiveScrollContent(
-                horizontalPadding: ConfigurationUI.contentColumnPadding
-            )
         }
         .scrollDismissesKeyboard(.interactively)
         .simultaneousGesture(

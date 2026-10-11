@@ -82,3 +82,20 @@ struct ExecutionSessionCompletionNotificationTests {
                 savedAlbumName: "QA", savedAssetIdentifier: asset)])
     }
 }
+
+@MainActor extension ExecutionSessionCompletionNotificationTests {
+    @Test("An unrelated held intake does not suppress this session's success")
+    func unrelatedHeldIntakeDoesNotBlock() throws {
+        let member = job(phase: .completed, asset: "A")
+        var held = ExternalPhotoIntakeRequest(launchSource: .shareExtension, urls: [],
+            configurationSnapshot: member.configuration)
+        held.continuedExecutionSessionID = UUID()
+        held.executionSuspendedAt = Date()
+        let pending = ExecutionSessionCompletionNotification.pendingRequestIDs(for: member.id, requests: [held])
+        #expect(pending.isEmpty)
+        #expect(ExecutionSessionCompletionNotification.make(id: member.id, jobs: [member], language: .english,
+            pendingIntakeRequestIDs: pending) != nil)
+        held.continuedExecutionSessionID = member.id
+        #expect(ExecutionSessionCompletionNotification.pendingRequestIDs(for: member.id, requests: [held]) == [held.id])
+    }
+}

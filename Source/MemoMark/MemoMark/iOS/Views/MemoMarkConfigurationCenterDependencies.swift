@@ -19,6 +19,9 @@ struct MemoMarkConfigurationCenterDependencies {
     let refreshExternalIntake:
         () -> Void
 
+    let resumeExternalShareSessions:
+        ([UUID]) -> Void
+
     let previewCoordinator:
         PreviewCoordinator?
 
@@ -62,6 +65,7 @@ struct MemoMarkConfigurationCenterDependencies {
         runtime: MemoMarkAppRuntime,
         refreshExternalIntake:
             @escaping () -> Void = {},
+        resumeExternalShareSessions: @escaping ([UUID]) -> Void = { _ in },
         notificationDeepLink: MemoMarkDeepLink? = nil,
         onNotificationDeepLinkHandled:
             @escaping () -> Void = {}
@@ -70,6 +74,7 @@ struct MemoMarkConfigurationCenterDependencies {
         backgroundStatusService = runtime.backgroundStatusService
         commerceStore = runtime.commerceStore
         self.refreshExternalIntake = refreshExternalIntake
+        self.resumeExternalShareSessions = resumeExternalShareSessions
         previewCoordinator = runtime.environment.coordinators.preview
         exportCoordinator = runtime.environment.coordinators.export
         loadPhotoLibraryAlbums =

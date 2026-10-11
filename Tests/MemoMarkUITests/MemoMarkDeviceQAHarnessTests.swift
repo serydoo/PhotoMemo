@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import Photos
 import ImageIO
 import AVFoundation
@@ -332,6 +333,70 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         XCTAssertNotEqual(application.state, .runningForeground)
         springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.97))
             .press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)))
+    }
+
+    func testReleaseShareOneQAPhotoWithoutHostActivation() throws {
+#if DEBUG
+        throw XCTSkip("This gate requires the signed Release export path.")
+#else
+        XCUIDevice.shared.orientation = .portrait
+        let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "release-source-baseline.json")
+        let baseline = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "release-output-baseline.json")
+        let index = try XCTUnwrap(inputs.assets.firstIndex { $0.classification == "jpegStill" })
+        let input = inputs.assets[index]
+        let original = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [input.localIdentifier], options: nil).firstObject)
+        let sourceResource = try XCTUnwrap(PHAssetResource.assetResources(for: original).first { $0.type == .photo })
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("ReleaseShareReadback-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let beforeURL = try savedResourceURL(sourceResource, in: folder)
+        let sourceData = try Data(contentsOf: beforeURL)
+        let sourceHash = SHA256.hash(data: sourceData)
+        launchHostAndWait()
+        try performMultiplePhotosBackgroundWithoutHostActivation(indices: [index],
+            expectedOutputCount: baseline.assetCount + 1, expectedBaselineCount: baseline.assetCount)
+        let outputs = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "release-new-output-readback.json")
+        let baselineIDs = Set(baseline.assets.map(\.localIdentifier))
+        let added = outputs.assets.filter { !baselineIDs.contains($0.localIdentifier) }
+        XCTAssertEqual(added.count, 1)
+        let output = try XCTUnwrap(added.first)
+        XCTAssertNotEqual(output.localIdentifier, input.localIdentifier)
+        let outputAsset = try XCTUnwrap(PHAsset.fetchAssets(withLocalIdentifiers: [output.localIdentifier], options: nil).firstObject)
+        let outputResource = try XCTUnwrap(PHAssetResource.assetResources(for: outputAsset).first { $0.type == .photo })
+        let outputURL = try savedResourceURL(outputResource, in: folder)
+        let decoded = try XCTUnwrap(CGImageSourceCreateWithURL(outputURL as CFURL, nil))
+        let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(decoded, 0, nil))
+        XCTAssertGreaterThanOrEqual(image.width, min(input.pixelWidth, input.pixelHeight))
+        XCTAssertGreaterThan(image.height, 0)
+        let sourceImage = try XCTUnwrap(CGImageSourceCreateWithData(sourceData as CFData, nil))
+        let sourceProperties = CGImageSourceCopyPropertiesAtIndex(sourceImage, 0, nil) as? [String: Any]
+        let outputProperties = CGImageSourceCopyPropertiesAtIndex(decoded, 0, nil) as? [String: Any]
+        let sourceEXIF = sourceProperties?[kCGImagePropertyExifDictionary as String] as? [String: Any]
+        let outputEXIF = outputProperties?[kCGImagePropertyExifDictionary as String] as? [String: Any]
+        if let captureDate = sourceEXIF?[kCGImagePropertyExifDateTimeOriginal as String] as? String {
+            XCTAssertEqual(outputEXIF?[kCGImagePropertyExifDateTimeOriginal as String] as? String, captureDate)
+        }
+        let afterURL = try savedResourceURL(sourceResource, in: folder)
+        XCTAssertEqual(SHA256.hash(data: try Data(contentsOf: afterURL)), sourceHash)
+        XCTAssertNotEqual(application.state, .runningForeground)
+        // Retain this newly created QA result for inspection; never delete originals.
+#endif
+    }
+
+    func testReleaseShareProgressIsVisibleAfterReturningToHost() throws {
+#if DEBUG
+        throw XCTSkip("This gate requires the signed Release export path.")
+#else
+        XCUIDevice.shared.orientation = .portrait
+        let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "host-progress-source-baseline.json")
+        let index = try XCTUnwrap(inputs.assets.firstIndex { $0.classification == "jpegStill" })
+        launchHostAndWait()
+        try performMultiplePhotosBackgroundWithoutHostActivation(
+            indices: [index],
+            observeOutputs: false,
+            activateHostAfterSubmission: true
+        )
+#endif
     }
 
     func testContinuedProductionThreePhotosWithoutHostActivation() throws {
@@ -1260,7 +1325,7 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         try performMultiplePhotosBackgroundWithoutHostActivation(indices: [0, 3, 6], hostMarkerOnly: true)
     }
 
-    private func performMultiplePhotosBackgroundWithoutHostActivation(indices: [Int], hostMarkerOnly: Bool = false, expectedOutputCount: Int = 3, expectedBaselineCount: Int? = 0, observeOutputs: Bool = true, expectedInputCount: Int = 15, selectAllInputs: Bool = false) throws {
+    private func performMultiplePhotosBackgroundWithoutHostActivation(indices: [Int], hostMarkerOnly: Bool = false, expectedOutputCount: Int = 3, expectedBaselineCount: Int? = 0, observeOutputs: Bool = true, expectedInputCount: Int = 15, selectAllInputs: Bool = false, activateHostAfterSubmission: Bool = false) throws {
         let inputs = try inventoryAlbum(titled: "MemoMark QA Inputs", attachmentName: "background-input-baseline.json")
         let baseline = try inventoryAlbum(titled: "MemoMark QA Outputs", attachmentName: "background-output-baseline.json")
         if let expectedBaselineCount {
@@ -1280,6 +1345,12 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         let cancelSelection = photos.buttons["取消"]
         if cancelSelection.exists {
             cancelSelection.tap()
+            if !photos.buttons["选择"].waitForExistence(timeout: 3), cancelSelection.exists {
+                // Photos can expose a valid navigation-button frame while
+                // XCTest's automatic scrolling computes the hit point (-1,-1).
+                // Retry only this observed, non-destructive selection control.
+                cancelSelection.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
             XCTAssertTrue(photos.buttons["选择"].waitForExistence(timeout: 10))
         }
         let alreadyInInputs = photos.staticTexts.matching(NSPredicate(
@@ -1367,6 +1438,25 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "exists == false"), object: photos.staticTexts["本次分享"]
         )], timeout: 120), .completed, "Capture post-Share status only after the extension sheet has actually closed.")
+        if activateHostAfterSubmission {
+            XCTAssertTrue(
+                application.wait(for: .runningForeground, timeout: 30),
+                "Share must open MemoMark through the foreground handoff without a manual app switch."
+            )
+            let activityCard = application.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier BEGINSWITH %@", "home-activity-record-"))
+                .firstMatch
+            XCTAssertTrue(
+                activityCard.waitForExistence(timeout: 30),
+                "Returning to MemoMark after Share must publish the active processing record on Home."
+            )
+            attachCurrentScreenshot(named: "share-return-home-activity-progress")
+            let hierarchy = XCTAttachment(string: application.debugDescription)
+            hierarchy.name = "share-return-home-activity-progress-hierarchy"
+            hierarchy.lifetime = .keepAlways
+            add(hierarchy)
+            return
+        }
         XCTAssertNotEqual(application.state, .runningForeground)
         if !observeOutputs { return }
         try observeCompletedPhotoOutputs(expectedOutputCount: expectedOutputCount, hostMarkerOnly: hostMarkerOnly)
@@ -2006,8 +2096,148 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         add(screenshot)
     }
 
+    func testAdaptiveNavigationAndHomeRestoreAfterPhysicalRotation() throws {
+        XCUIDevice.shared.orientation = .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        launchHostAndWait()
+
+        let home = application.buttons["首页"]
+        XCTAssertTrue(home.waitForExistence(timeout: 15))
+        if !home.isSelected { home.tap() }
+        let portraitTabs = application.tabBars.firstMatch
+        XCTAssertTrue(portraitTabs.waitForExistence(timeout: 10))
+        XCTAssertTrue(portraitTabs.isHittable)
+        let homeViewport = application.scrollViews.firstMatch
+        XCTAssertTrue(homeViewport.waitForExistence(timeout: 10))
+        let homePortraitWidth = homeViewport.frame.width
+        attachCurrentScreenshot(named: "adaptive-home-portrait-before-rotation")
+
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let landscapeRailHome = application.buttons.matching(
+            NSPredicate(format: "label == %@", "首页")
+        )
+        let landscapeRailProgress = application.buttons.matching(
+            NSPredicate(format: "label == %@", "进展")
+        )
+        XCTAssertTrue(landscapeRailHome.firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(landscapeRailProgress.firstMatch.waitForExistence(timeout: 10))
+        let landscapeRailIsVisible = landscapeRailHome.allElementsBoundByIndex.contains(where: \.isHittable)
+            && landscapeRailProgress.allElementsBoundByIndex.contains(where: \.isHittable)
+        let landscapeTabsHidden = !portraitTabs.isHittable
+        attachCurrentScreenshot(named: "adaptive-home-landscape-rail")
+
+        XCUIDevice.shared.orientation = .portrait
+        let portraitViewport = application.scrollViews.firstMatch
+        let portraitRestored = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in
+                portraitTabs.isHittable
+                    && !landscapeRailProgress.allElementsBoundByIndex.contains(where: \.isHittable)
+                    && abs(portraitViewport.frame.width - homePortraitWidth) < 2
+            },
+            object: nil
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [portraitRestored], timeout: 10), .completed)
+        attachCurrentScreenshot(named: "adaptive-home-portrait-restored")
+        let hierarchy = XCTAttachment(string: application.debugDescription)
+        hierarchy.name = "adaptive-home-portrait-restored-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        XCTAssertTrue(landscapeRailIsVisible, "Landscape must expose the side rail controls.")
+        XCTAssertTrue(landscapeTabsHidden, "Landscape must hide the system tab bar while the side rail is active.")
+
+        for (tabTitle, label) in [("配置", "configuration"), ("进展", "progress")] {
+            let tab = application.buttons[tabTitle]
+            XCTAssertTrue(tab.waitForExistence(timeout: 10), "Missing (tabTitle) navigation action.")
+            if !tab.isSelected { tab.tap() }
+            let viewport = application.scrollViews.firstMatch
+            XCTAssertTrue(viewport.waitForExistence(timeout: 10))
+            let portraitWidth = viewport.frame.width
+
+            XCUIDevice.shared.orientation = .landscapeLeft
+            let landscapeTab = application.buttons[tabTitle]
+            let landscapeReady = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in
+                    landscapeTab.exists && landscapeTab.isHittable
+                        && viewport.frame.width > portraitWidth * 1.35
+                },
+                object: nil
+            )
+            XCTAssertEqual(XCTWaiter.wait(for: [landscapeReady], timeout: 10), .completed,
+                           "(tabTitle) should use the wide content viewport in landscape.")
+            attachCurrentScreenshot(named: "adaptive-\(label)-landscape")
+
+            XCUIDevice.shared.orientation = .portrait
+            let restored = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in
+                    portraitTabs.isHittable && abs(viewport.frame.width - portraitWidth) < 2
+                },
+                object: nil
+            )
+            XCTAssertEqual(XCTWaiter.wait(for: [restored], timeout: 10), .completed,
+                           "\(tabTitle) did not recover its portrait viewport width.")
+            attachCurrentScreenshot(named: "adaptive-\(label)-portrait-restored")
+        }
+        XCTAssertEqual(application.state, .runningForeground)
+    }
+
+    func testCardEditorFocusSurvivesPhysicalRotation() throws {
+        XCUIDevice.shared.orientation = .portrait
+        defer {
+            XCUIDevice.shared.orientation = .portrait
+            let dismiss = application.buttons["card-editor-dismiss-keyboard"]
+            if dismiss.exists { dismiss.tap() }
+            let done = application.buttons["card-editor-done"]
+            if done.exists { done.tap() }
+        }
+        launchHostAndWait()
+        let config = application.buttons.matching(NSPredicate(format: "label IN %@", ["配置", "Configuration", "設定", "설정"])).firstMatch
+        XCTAssertTrue(config.waitForExistence(timeout: 15))
+        config.tap()
+        let edit = application.buttons.matching(NSPredicate(format: "label IN %@", ["卡片内容", "Card Content", "カード内容", "카드 내용"])).firstMatch
+        if !edit.exists, let layout = configurationButton(titles: ["卡片布局与内容", "布局与内容", "Card Layout & Content", "Layout & Content", "カードのレイアウトと内容", "レイアウトと内容", "레이아웃 및 콘텐츠"]) {
+            revealConfigurationOption(layout)
+            layout.tap()
+        }
+        revealConfigurationOption(edit)
+        XCTAssertTrue(edit.waitForExistence(timeout: 10))
+        edit.tap()
+        let field = application.textViews.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        XCTAssertTrue(application.keyboards.firstMatch.waitForExistence(timeout: 5))
+        let originalValue = field.value as? String
+        let before = XCTAttachment(string: application.debugDescription)
+        before.name = "editor-native-identity-before-rotation"
+        before.lifetime = .keepAlways
+        add(before)
+        attachCurrentScreenshot(named: "editor-before-rotation")
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let landscapeKeepsKeyboard = application.keyboards.firstMatch.waitForExistence(timeout: 5)
+        let landscapeValue = application.textViews.firstMatch.value as? String
+        let after = XCTAttachment(string: application.debugDescription)
+        after.name = "editor-native-identity-after-rotation"
+        after.lifetime = .keepAlways
+        add(after)
+        attachCurrentScreenshot(named: "editor-landscape-focus")
+        XCUIDevice.shared.orientation = .portrait
+        let portraitKeepsKeyboard = application.keyboards.firstMatch.waitForExistence(timeout: 5)
+        let portraitValue = application.textViews.firstMatch.value as? String
+        attachCurrentScreenshot(named: "editor-restored-portrait-focus")
+        let dismiss = application.buttons["card-editor-dismiss-keyboard"]
+        if dismiss.exists { dismiss.tap() }
+        let done = application.buttons["card-editor-done"]
+        if done.exists { done.tap() }
+        // Restore the physical pose before assertions: XCTest can stop a
+        // failed UI test without unwinding Swift defer blocks.
+        XCTAssertTrue(landscapeKeepsKeyboard, "Rotation must retain the TextKit first responder.")
+        XCTAssertTrue(portraitKeepsKeyboard)
+        XCTAssertEqual(landscapeValue, originalValue)
+        XCTAssertEqual(portraitValue, originalValue)
+    }
+
     func testConfigurationPreviewAndAccessoryLifecycle() throws {
         launchHostAndWait()
+        XCUIDevice.shared.orientation = .portrait
         let config = application.buttons["配置"]
         XCTAssertTrue(config.waitForExistence(timeout: 10))
         config.tap()

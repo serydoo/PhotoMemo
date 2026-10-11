@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The Home-only presentation of an immutable queue-status projection.
 /// Queue ownership and scheduling stay outside this surface; it renders the
-/// current projection and emits cancel and history deletion actions.
+/// current projection, opens processing details, and deletes terminal history.
 struct HomeActivityCard: View {
 
     private var interfaceLanguage: MemoMarkLanguage {
@@ -16,10 +16,8 @@ struct HomeActivityCard: View {
     let projection: HomeActivityProjection
     let onOpenProcessing: () -> Void
     let isPaused: Bool
-    let onCancel: () -> Void
     let onDeleteRecord: () -> Void
 
-    @State private var showsCancelConfirmation = false
     @State private var showsDeleteConfirmation = false
 
     @State
@@ -72,17 +70,7 @@ struct HomeActivityCard: View {
                                 )
                             )
 
-                            if projection.state == .processing && !isPaused {
-                                Button { showsCancelConfirmation = true } label: {
-                                    Image(systemName: "xmark")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .frame(width: 44, height: 44)
-                                        .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.borderless)
-                                .tint(.red)
-                                .accessibilityLabel(localized("home.activity.cancel"))
-                            } else {
+                            if projection.state != .processing {
                                 Button { showsDeleteConfirmation = true } label: {
                                     Image(systemName: "trash")
                                         .font(.system(size: 12, weight: .semibold))
@@ -114,12 +102,6 @@ struct HomeActivityCard: View {
                         )
                         .stroke(ConfigurationUI.faintHairline)
                     )
-                    .alert(localized("home.activity.cancel.title"), isPresented: $showsCancelConfirmation) {
-                        Button(localized("home.activity.cancel.confirm"), role: .destructive, action: onCancel)
-                        Button(localized("home.activity.cancel.keep"), role: .cancel) {}
-                    } message: {
-                        Text(localized("home.activity.cancel.message"))
-                    }
                     .alert(localized("home.activity.delete"), isPresented: $showsDeleteConfirmation) {
                         Button(localized("home.activity.delete"), role: .destructive, action: onDeleteRecord)
                         Button(localized("home.activity.cancel.keep"), role: .cancel) {}
@@ -250,6 +232,54 @@ struct HomeActivityCard: View {
         }
 
         isMounted = false
+    }
+}
+
+struct HomePendingShareCard: View {
+    private var language: MemoMarkLanguage { .interfaceStored }
+
+    let projection: HomePendingShareProjection
+    let onResume: ([UUID]) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(localized("home.shareRecovery.title"), systemImage: "pause.circle.fill")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.orange)
+
+            Text(String(
+                format: localized("home.shareRecovery.count"),
+                locale: language.locale,
+                projection.itemCount
+            ))
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+            Button { onResume(projection.sessionIDs) } label: {
+                Label(localized("home.shareRecovery.action"), systemImage: "arrow.clockwise")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+            .accessibilityIdentifier("home-share-recovery-action")
+        }
+        .padding(ConfigurationUI.innerPanelPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: ConfigurationUI.innerPanelCornerRadius, style: .continuous)
+                .fill(ConfigurationUI.controlBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: ConfigurationUI.innerPanelCornerRadius, style: .continuous)
+                .stroke(ConfigurationUI.faintHairline)
+        )
+        .accessibilityIdentifier("home-share-recovery-card")
+    }
+
+    private func localized(_ key: String) -> String {
+        language.localized(key: key, fallback: key)
     }
 }
 #endif

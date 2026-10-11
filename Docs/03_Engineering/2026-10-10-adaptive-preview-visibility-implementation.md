@@ -1,0 +1,39 @@
+# 大屏编辑预览：展开与简洁模式
+
+2026-10-10。所有者明确：大屏卡片编辑保留同一个预览开关，用户自由选择实时预览或简洁编辑。本说明修正上一投入审查中隐藏/禁用按钮的候选方向。
+
+Product Loop，P1。仅改显示策略与调用一致性，不修改配置Session、持久快照、输入几何、Renderer、后台执行或Photos资源。rail导航允许编辑时折叠；普通手机竖屏沿用原有编辑显示策略。两个调用点使用同一个导航策略，不按高度分别判断。预览继续以零高度/透明保留视图，AnyLayout保持编辑节点；不承诺仅凭此已证明IME/undo连续性。
+
+验证：四种尺寸组合的显示策略及开关往返；编译真实源文件；签名真机构建与安装；大屏运行检查若本地环境可用。完整UI矩阵和键盘容量后续按共享空间策略推进。
+
+
+实现：Pages中两个isVisible调用从compact-height条件改为floatingRail条件；preview状态仍是临时观看偏好，未写入Preset。新增四种size-class组合的编辑折叠/恢复测试；独立编译实际策略源文件的8项状态检查通过。签名MemoMarkiOS Debug构建退出0并已覆盖安装配对iPhone，不清空数据；启动结果另记。专项测试初次选用MemoMark scheme无test action，修正为MemoMarkTests后运行中，未提前计通过。
+
+下一容量薄片：先记录扣除右侧控制区、键盘与安全区后的实际宽高、卡片纵横比及检查区最低容量，再制定并排/上下安排和比例适配边界；不以修改字段高度或裁切输出解决溢出。大屏与小屏均应保留明确预览开关；旋转不覆写观看选择。当前片不声称解决键盘裁切或证明完整IME/undo连续性。
+
+
+最终专项结果：MemoMarkPreviewChoiceFocusedRetry.xcresult读取最终摘要，12通过、0失败、0跳过、无runtime warnings，测试命令退出0。签名iPhone候选安装及launch成功。未执行新的大屏运行/IME/VoiceOver人工验收；这项保持待验。源差异检查通过。没有提交、推送或商店动作。
+
+## 第二片：大屏预览服从实际剩余高度
+
+Product Loop / P1。源码证据：MemoryCardPreviewSection以宽度推算高度且fixedSize(vertical:true)；键盘出现时固定2.4比例裁切并清除放大状态。regular/regular页面虽并排，预览仍可能忽略键盘后的高度提案。此证据是布局约束问题，尚不是新运行截图验收。
+
+界限：只调整大屏并排预览的显示几何。regular/regular采用完整画布比例，接受SwiftUI扣除键盘/安全区后的高度提案，以min(宽度约束,高度×画布比例)等比适应；不再自动清除大屏放大选择。compact原有局部预览与输入规范保持。只在PreviewViewportSpec、MemoryCardPreviewSection及对应几何测试中落实。不修改渲染尺寸、输出内容、配置持久化、AnyLayout节点身份。大屏不足时预览缩小，检查区继续独立滚动；右侧开关仍可释放整块预览。
+
+验证：横/竖画布在宽高约束内完整等比、零空间不产生负值；专项测试、签名配对iPhone构建安装。大屏键盘/旋转视觉、IME、VoiceOver保持人工待验，不以数学测试替代。
+
+第二片实现与验证：MemoryCardPreviewSection仅在regular/regular并排条件下接受高度提案，完整画布等比适应；compact保持原有视口、fixedSize和键盘局部定位。新增fittedCanvasWidth纯显示几何函数及横/竖/方形、零高度、负尺寸和无效比例测试。MemoMarkPreviewCapacityFocused.xcresult最终40通过、0失败、0跳过、无runtime warnings；签名MemoMarkiOS Debug构建退出0，已覆盖安装配对iPhone。治理检查与git diff --check通过。未执行大屏UI或IME/VoiceOver人工验收，因此仍为待视觉验收候选，未提交或推送。当前策略依赖系统size class；狭窄多窗口和Duo真实reserved-region表现尚未覆盖，不宣称Duo验收完成。
+
+## 2026-10-10 所有者拒绝第二片并要求回退
+
+IMG_7006与所有者反馈明确：横屏应允许向上滑动预览，将下方空间交给录入与键盘。剩余高度固定适配方案不符合已接受交互，第二片全部回退，包括MemoryCardPreviewSection、ViewportSpec新增函数及对应测试。保留第一片floatingRail编辑预览开关修复和此前已接受悬浮导航。不将前述40项测试通过视为视觉接受。后续以可向上滑动让出编辑空间为要求，未经新验证不声称此回退已解决截图中的滑动问题。
+
+回退验证：三个第二片文件与HEAD一致，无残余源差异。签名MemoMarkiOS Debug重新构建退出0，回退版已覆盖安装配对iPhone。MemoMarkPreviewRollbackFocused.xcresult专项测试12通过、0失败、0跳过；差异检查通过。实际横屏滑动是否恢复预期仍需手机视觉验收，不以安装证明。
+
+## 第三片：横屏编辑预览可向上滚动
+
+所有者反馈回退后仍不能滑动。源码确认：MemoryCardEditorPageSurface的预览在editorScrollView外；CardContentInspector内层滚动不能移动上方预览。MemoryCardPreviewSection的highPriorityGesture同时争抢预览拖动。Product Loop/P1：仅compact-height卡片编辑启用外层纵向ScrollView，预览与完整可用高度的检查区同行滚动；内层编辑继续负责字段与焦点滚动，不缩放预览，不改变输入几何。预览扩展手势改为同时识别，允许外层滚动收到拖动。regular大屏并排保留现有结构；旋转跨分支的焦点/undo连续性需实机验收，不据此承诺。验证签名真机构建安装、已有预览与布局/选项契约专项；实际触摸滑动待设备人工验收。
+
+第三片在所有者再次澄清“不重新设计，只回退”后取消，新增外层ScrollView和simultaneousGesture全部撤销，对应源码契约测试恢复。当前预览/页面结构与本轮前HEAD一致。已检查5073d725、e83c7e70、06eebcd2、53b7edd3以及更早45466834/935f5b29历史：这些页面版本均把预览置于编辑ScrollView外，不能据此声称已找到所有者描述的可整体上滑版本。需定位准确正常基线再恢复，禁止以新交互代替回退。
+
+最终所有者定位：今天优化之前。撤销第一片Pages两处floatingRail条件改动与新测试，今天所有预览交互生产代码和测试恢复HEAD 008e3d6e。保留之前已提交横屏/大屏与后台审计。第二/第三片亦已撤销。恢复原版本不是滑动实机验收结论。

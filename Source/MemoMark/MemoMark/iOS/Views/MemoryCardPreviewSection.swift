@@ -2,7 +2,19 @@
 import SwiftUI
 import UIKit
 
+struct CardEditorRetainedPreviewHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 struct MemoryCardPreviewSection: View {
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    private var usesScrollingPreview: Bool {
+        verticalSizeClass == .compact
+    }
 
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
@@ -33,10 +45,15 @@ struct MemoryCardPreviewSection: View {
     let onTap: (() -> Void)?
 
     private var usesEditingViewport: Bool {
-        isEditingCardContent && isKeyboardVisible && !isExpanded
+        isEditingCardContent && isKeyboardVisible && !isExpanded && !usesScrollingPreview
     }
 
     private var viewportAspectRatio: CGFloat {
+        if usesScrollingPreview {
+            let ratio = ConfigurationPreviewViewportSpec.canvasAspectRatio(for: presentationStyle, orientation: orientation)
+            let scale = isExpanded ? 1 : ConfigurationPreviewViewportSpec.landscapeFitScale
+            return ratio / scale
+        }
         let restingAspectRatio = ConfigurationPreviewViewportSpec.viewportAspectRatio(
             canvasAspectRatio: ConfigurationPreviewViewportSpec.canvasAspectRatio(
                 for: presentationStyle,
@@ -116,7 +133,7 @@ struct MemoryCardPreviewSection: View {
                         setOrientation(alternateOrientation)
                     }
 
-                if orientation == .portrait && !isExpanded {
+                if orientation == .portrait && !isExpanded && !usesScrollingPreview {
                     VStack {
                         LinearGradient(
                             colors: [
@@ -171,7 +188,10 @@ struct MemoryCardPreviewSection: View {
             }
             .frame(width: width, height: viewportHeight)
             .contentShape(Rectangle())
-            .highPriorityGesture(previewExpandGesture)
+            .highPriorityGesture(
+                previewExpandGesture,
+                including: usesScrollingPreview ? .none : .all
+            )
             .overlay(alignment: .leading) {
                 orientationArrowButton(systemImage: "chevron.left")
                     .padding(.leading, 6)
@@ -201,6 +221,12 @@ struct MemoryCardPreviewSection: View {
                 value: isExpanded
             )
             .accessibilityIdentifier("configuration.preview.production")
+            .preference(
+                key: CardEditorRetainedPreviewHeightKey.self,
+                value: usesScrollingPreview
+                    ? retainedEditingHeight(canvasWidth: activeCanvasWidth, canvasHeight: activeCanvasHeight)
+                    : 0
+            )
         }
         .aspectRatio(viewportAspectRatio, contentMode: .fit)
         .animation(
@@ -222,7 +248,7 @@ struct MemoryCardPreviewSection: View {
             for: UIResponder.keyboardWillShowNotification
         )) { _ in
             guard isEditingCardContent else { return }
-            isExpanded = false
+            if !usesScrollingPreview { isExpanded = false }
             isKeyboardVisible = true
         }
         .onReceive(NotificationCenter.default.publisher(
@@ -272,10 +298,25 @@ struct MemoryCardPreviewSection: View {
             )
             return top + canvasHeight / 2
         }
-        guard canvasOrientation == .portrait, !isExpanded else {
+        guard canvasOrientation == .portrait, !isExpanded, !usesScrollingPreview else {
             return viewportHeight / 2
         }
         return viewportHeight - canvasHeight / 2
+    }
+
+    private func retainedEditingHeight(canvasWidth: CGFloat, canvasHeight: CGFloat) -> CGFloat {
+        let sourceSize = presentationStyle == .filmMark
+            ? FilmMarkPreviewGeometrySpec.canvasSize(for: orientation)
+            : CGSize(width: canvasWidth, height: canvasHeight)
+        let region = ConfigurationPreviewViewportSpec.editingRegionFrame(
+            for: presentationStyle, orientation: orientation, canvasSize: sourceSize,
+            filmMarkText: filmMarkOutputText, filmMarkConfiguration: filmMarkConfiguration
+        )
+        let scale = sourceSize.width > 0 ? canvasWidth / sourceSize.width : 1
+        return ConfigurationPreviewViewportSpec.retainedEditingHeight(
+            canvasHeight: canvasHeight, regionMinY: region.minY * scale,
+            contextPadding: ConfigurationUI.innerPanelPadding
+        )
     }
 
     private func contentFraction(

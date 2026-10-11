@@ -23,6 +23,8 @@ struct MemoryCardEditorPageSurface<
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
 
+    @State private var retainedPreviewHeight: CGFloat = 0
+
     let previewPinProgress: CGFloat
     let editorRevealProgress: CGFloat
     let pageTitle: String?
@@ -89,30 +91,58 @@ struct MemoryCardEditorPageSurface<
     }
 
     private var adaptiveContent: some View {
-        // AnyLayout preserves the preview's inspection state when a wide
-        // configuration changes between split and collapsed presentation.
-        let usesSplit = usesSplitConfigurationLayout && isPreviewVisible
+        let compact = verticalSizeClass == .compact
+        let usesSplit = !compact && usesSplitConfigurationLayout && isPreviewVisible
         let layout = usesSplit
             ? AnyLayout(HStackLayout(alignment: .top, spacing: 0))
             : AnyLayout(VStackLayout(spacing: 0))
 
-        return layout {
-            previewPane
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: usesSplit ? .infinity : nil,
-                    alignment: .top
-                )
-                .zIndex(1)
+        // Keep the same TextKit editor subtree across rotation. A conditional
+        // ScrollView wrapper would destroy its selection, IME and undo owner.
+        return GeometryReader { geometry in
+            ScrollViewReader { proxy in
+                ScrollView(.vertical) {
+                    layout {
+                        previewPane(viewportWidth: geometry.size.width)
+                            .frame(maxWidth: .infinity,
+                                   maxHeight: usesSplit ? .infinity : nil, alignment: .top)
+                            .zIndex(1)
+                            .id("card-editor-preview-origin")
 
-            if usesSplit {
-                Rectangle()
-                    .fill(ConfigurationUI.faintHairline)
-                    .frame(width: 0.5)
+                        Rectangle()
+                            .fill(ConfigurationUI.faintHairline)
+                            .frame(width: usesSplit ? 0.5 : 0,
+                                   height: usesSplit ? geometry.size.height : 0)
+                            .accessibilityHidden(true)
+
+                        editorPane
+                            .frame(height: compact
+                                ? max(0, geometry.size.height - (isPreviewVisible ? retainedPreviewHeight + 10 : 0))
+                                : nil)
+                            .frame(maxWidth: .infinity, maxHeight: compact ? nil : .infinity)
+                            .id("card-editor-scroll-destination")
+                    }
+                    .frame(height: compact ? nil : geometry.size.height, alignment: .top)
+                }
+                .scrollDismissesKeyboard(.never)
+                .onPreferenceChange(CardEditorRetainedPreviewHeightKey.self) { retainedPreviewHeight = $0 }
+                .onChange(of: verticalSizeClass) { _, sizeClass in
+                    if sizeClass != .compact {
+                        proxy.scrollTo("card-editor-preview-origin", anchor: .top)
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+                    guard compact && editorContentOwnsScrolling else { return }
+                    if reduceMotion {
+                        proxy.scrollTo("card-editor-scroll-destination", anchor: .bottom)
+                    } else {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            proxy.scrollTo("card-editor-scroll-destination", anchor: .bottom)
+                        }
+                    }
+                }
+                .accessibilityIdentifier("card-editor-scrolling-preview")
             }
-
-            editorPane
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -123,15 +153,15 @@ struct MemoryCardEditorPageSurface<
         )
     }
 
-    private var previewPane: some View {
-        previewPaneContent
+    private func previewPane(viewportWidth: CGFloat) -> some View {
+        previewPaneContent(viewportWidth: viewportWidth)
             .background(
                 ConfigurationUI.appBackground
             )
     }
 
     @ViewBuilder
-    private var previewPaneContent: some View {
+    private func previewPaneContent(viewportWidth: CGFloat) -> some View {
         if usesCompactLandscapeFullWidthPreview {
             previewPaneCore
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -140,10 +170,13 @@ struct MemoryCardEditorPageSurface<
                     ConfigurationUI.contentColumnPadding
                 )
         } else {
-            previewPaneCore
-                .adaptivePageContent(
-                    horizontalPadding: ConfigurationUI.contentColumnPadding
-                )
+            previewPaneCore.adaptiveScrollContent(
+                horizontalPadding: ConfigurationUI.contentColumnPadding,
+                viewportWidth: viewportWidth,
+                trailingReservedWidth: navigationStyle == .floatingRail
+                    ? AdaptiveFloatingRailMetrics.reservedWidth
+                    : 0
+            )
         }
     }
 
@@ -184,40 +217,46 @@ struct MemoryCardEditorPageSurface<
 
     private var editorScrollView: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                VStack(spacing: 14) {
-                    editorContent
-                }
-                .padding(.top, 8)
-                .padding(
-                    .bottom,
-                    AdaptivePageLayout
-                        .scrollBottomPadding(
-                            for: navigationStyle
-                        )
-                )
-                .adaptiveScrollContent(
-                    horizontalPadding: ConfigurationUI.contentColumnPadding
-                )
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .onChange(of: editorScrollRequest) { _, request in
-                guard let request else { return }
-
-                Task { @MainActor in
-                    // Wait for the disclosure and expanded calibration canvas
-                    // to settle, then present its controls directly below the
-                    // fixed preview. The person owns scrolling after this.
-                    if !reduceMotion {
-                        try? await Task.sleep(nanoseconds: 220_000_000)
+            GeometryReader { viewport in
+                ScrollView {
+                    VStack(spacing: 14) {
+                        editorContent
                     }
-                    guard editorScrollRequest == request else { return }
+                    .padding(.top, 8)
+                    .padding(
+                        .bottom,
+                        AdaptivePageLayout
+                            .scrollBottomPadding(
+                                for: navigationStyle
+                            )
+                    )
+                    .adaptiveScrollContent(
+                        horizontalPadding: ConfigurationUI.contentColumnPadding,
+                        viewportWidth: viewport.size.width,
+                        trailingReservedWidth: navigationStyle == .floatingRail
+                            ? AdaptiveFloatingRailMetrics.reservedWidth
+                            : 0
+                    )
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .onChange(of: editorScrollRequest) { _, request in
+                    guard let request else { return }
 
-                    if reduceMotion {
-                        proxy.scrollTo(request.targetID, anchor: .top)
-                    } else {
-                        withAnimation(.easeInOut(duration: 0.22)) {
+                    Task { @MainActor in
+                        // Wait for the disclosure and expanded calibration canvas
+                        // to settle, then present its controls directly below the
+                        // fixed preview. The person owns scrolling after this.
+                        if !reduceMotion {
+                            try? await Task.sleep(nanoseconds: 220_000_000)
+                        }
+                        guard editorScrollRequest == request else { return }
+
+                        if reduceMotion {
                             proxy.scrollTo(request.targetID, anchor: .top)
+                        } else {
+                            withAnimation(.easeInOut(duration: 0.22)) {
+                                proxy.scrollTo(request.targetID, anchor: .top)
+                            }
                         }
                     }
                 }

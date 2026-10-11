@@ -263,6 +263,24 @@ final class MemoMarkAppRuntime:
             )
     }
 
+    func resumeExternalShareSessions(_ sessionIDs: [UUID]) async {
+        // A Share activation can overlap the scene's automatic intake drain.
+        // Wait for that durable admission attempt to settle before resuming
+        // the exact suspended sessions represented by the recovery action.
+        for _ in 0..<100 where externalIntakeDrainCoordinator.isDraining {
+            do {
+                try await Task.sleep(for: .milliseconds(50))
+            } catch {
+                return
+            }
+        }
+        guard !externalIntakeDrainCoordinator.isDraining else { return }
+        await refreshExternalIntakeState()
+        for sessionID in sessionIDs {
+            await batchQueueStore.resumeProcessing(sessionID: sessionID)
+        }
+    }
+
     func refreshPermissionsAndResume() async {
         await permissionCenter.refreshStatuses()
         if permissionCenter.canAccessPhotoLibrary {

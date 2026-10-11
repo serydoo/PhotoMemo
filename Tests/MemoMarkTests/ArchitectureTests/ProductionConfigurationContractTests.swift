@@ -1589,3 +1589,48 @@ struct ProductionConfigurationContractTests {
     }
 }
 #endif
+
+#if !MEMOMARK_SHARE_EXTENSION
+extension ProductionConfigurationContractTests {
+    @Test("An incomplete durable editing configuration repairs compatibility but remains unready for processing")
+    @MainActor func incompleteEditingConfigurationStillProjects() throws {
+        let fixture = try Self.makeFixture()
+        var aggregate = fixture.aggregate
+        aggregate.subjects[0].subject.timeAnchors = []
+        aggregate.subjects[0].subject.activeTimeAnchorID = nil
+        aggregate.subjects[0].configurations[0].selectedTimeAnchorID = nil
+        let suite = "IncompleteShareProjection-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let provider = BatchConfigurationSnapshotProvider(defaults: defaults)
+        let service = ConfigurationProjectionService(legacyStore: LegacySettingsStore(defaults: defaults), snapshotProvider: provider)
+        let projection = try service.projectAndPersist(aggregate)
+        #expect(projection.frozenShareSnapshot?.canonicalProductionSnapshot != nil)
+        #expect(defaults.data(forKey: "photomemo.v1.subjectLibrary") != nil)
+        #expect(!provider.loadConfigurationReadiness().isReady)
+        #expect(throws: ProductionConfigurationContractError.missingPrimaryAnchor) {
+            try ProductionConfigurationSnapshotContract.validate(provider.loadSnapshot())
+        }
+    }
+
+    @Test("every active style must publish a complete Share snapshot", arguments: [RecordCardPresentationStyle.classicWhite, .minimal, .filmMark, .glassCard])
+    @MainActor func everyStylePublishesCanonicalShareSnapshot(style: RecordCardPresentationStyle) throws {
+        let fixture = try Self.makeFixture()
+        var aggregate = fixture.aggregate
+        aggregate.subjects[0].configurations[0].presentation.route = style
+        if style == .filmMark {
+            aggregate.subjects[0].configurations[0].editor.filmMarkContent = .init(
+                primaryOutputItems: [.init(type: .text, name: "FM", value: "冻结内容")])
+        }
+        let suite = "MemoMark.AuditSnapshot." + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let service = ConfigurationProjectionService(legacyStore: LegacySettingsStore(defaults: defaults),
+            snapshotProvider: BatchConfigurationSnapshotProvider(defaults: defaults))
+        let projection = try service.projectAndPersist(aggregate)
+        #expect(BatchConfigurationSnapshotProvider(defaults: defaults).loadConfigurationReadiness().isReady)
+        #expect(projection.frozenShareSnapshot != nil)
+        #expect(defaults.data(forKey: BatchConfigurationSnapshotProvider.frozenShareSnapshotStorageKey) != nil)
+    }
+}
+#endif

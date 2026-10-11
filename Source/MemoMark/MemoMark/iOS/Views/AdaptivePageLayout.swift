@@ -16,6 +16,17 @@ enum AdaptivePageLayout {
     static let maximumReadableContentWidth:
         CGFloat = 720
 
+    static func scrollContentWidth(
+        viewportWidth: CGFloat,
+        horizontalPadding: CGFloat,
+        trailingReservedWidth: CGFloat = 0
+    ) -> CGFloat {
+        min(
+            maximumReadableContentWidth,
+            max(0, viewportWidth - trailingReservedWidth - horizontalPadding * 2)
+        )
+    }
+
     static func navigationStyle(
         hasRegularHorizontalSizeClass: Bool,
         hasCompactVerticalSizeClass: Bool
@@ -52,31 +63,28 @@ enum AdaptivePageLayout {
 
 }
 
-#if os(iOS) && !MEMOMARK_SHARE_EXTENSION
-import SwiftUI
+enum AdaptiveFloatingRailMetrics {
+    static let width: CGFloat = 56
+    static let trailingMargin: CGFloat = 10
 
-private struct AdaptiveScrollContentViewportModifier: ViewModifier {
+    static var contentSpacing: CGFloat {
+        ConfigurationUI.innerPanelPadding
+    }
 
-    @Environment(\.horizontalSizeClass)
-    private var horizontalSizeClass
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if horizontalSizeClass == .regular {
-            content
-        } else {
-            content
-                .containerRelativeFrame(.horizontal)
-        }
+    static var reservedWidth: CGFloat {
+        width + trailingMargin + contentSpacing
     }
 }
+
+#if os(iOS) && !MEMOMARK_SHARE_EXTENSION
+import SwiftUI
 
 extension View {
 
     func adaptivePageContent(
         horizontalPadding: CGFloat
     ) -> some View {
-        self
+        return self
             .frame(
                 maxWidth:
                     AdaptivePageLayout
@@ -95,11 +103,35 @@ extension View {
     func adaptiveScrollContent(
         horizontalPadding: CGFloat
     ) -> some View {
-        adaptivePageContent(
-            horizontalPadding:
-                horizontalPadding
-        )
-        .modifier(AdaptiveScrollContentViewportModifier())
+        adaptivePageContent(horizontalPadding: horizontalPadding)
     }
+
+    func adaptiveScrollContent(
+        horizontalPadding: CGFloat,
+        viewportWidth: CGFloat,
+        trailingReservedWidth: CGFloat = 0
+    ) -> some View {
+        let contentViewportWidth = max(
+            0,
+            viewportWidth - trailingReservedWidth
+        )
+        return self
+            .frame(
+                width: AdaptivePageLayout.scrollContentWidth(
+                    viewportWidth: viewportWidth,
+                    horizontalPadding: horizontalPadding,
+                    trailingReservedWidth: trailingReservedWidth
+                )
+            )
+            .frame(
+                width: contentViewportWidth,
+                alignment: .center
+            )
+            .frame(
+                width: viewportWidth,
+                alignment: .leading
+            )
+    }
+
 }
 #endif

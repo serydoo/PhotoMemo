@@ -23,6 +23,14 @@ struct MemoMarkCommercePolicyTests {
         )
     }
 
+    @Test("StoreKit 2 verified distribution works without a legacy receipt")
+    func verifiedRuntimeDoesNotRequireLegacyReceipt() async {
+        #expect(await MemoMarkCommerceEnvironment.resolveRuntime(verifiedEnvironment: { .sandbox }) == .sandbox)
+        #expect(await MemoMarkCommerceEnvironment.resolveRuntime(verifiedEnvironment: { .production }) == .production)
+        #expect(await MemoMarkCommerceEnvironment.resolveRuntime(verifiedEnvironment: { .xcode }) == .xcode)
+        #expect(await MemoMarkCommerceEnvironment.resolveRuntime(verifiedEnvironment: { nil }) == .currentRuntime)
+    }
+
     @Test("First Recorder identity follows purchase date and direct ownership")
     func firstRecorderIdentityUsesCampaignBoundary() {
         let deadline = Date(timeIntervalSince1970: 200)

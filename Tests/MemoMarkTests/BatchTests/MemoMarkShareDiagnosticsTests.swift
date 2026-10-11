@@ -196,6 +196,40 @@ struct MemoMarkShareDiagnosticsTests {
         )
     }
 
+    @Test("Release continued-processing failures persist only system error identity")
+    func persistsContinuedProcessingFailure() throws {
+        let suiteName = "MemoMark.ShareDiagnostics.ContinuedFailure.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let requestID = UUID()
+        let result = MemoMarkShareDiagnostics.recordContinuedProcessingFailure(
+            NSError(domain: "BGTaskSchedulerErrorDomain", code: 7),
+            requestID: requestID,
+            defaults: defaults
+        )
+
+        switch result {
+        case .success:
+            break
+        case .encodingFailed:
+            Issue.record("Expected the failure event to be stored.")
+        }
+        let events: [MemoMarkShareDiagnosticEvent]
+        switch MemoMarkShareDiagnostics.loadEventsResult(defaults: defaults) {
+        case .success(let storedEvents):
+            events = storedEvents
+        case .noValue, .decodingFailed:
+            Issue.record("Expected stored continued-processing diagnostics.")
+            return
+        }
+        let event = try #require(events.last)
+        #expect(event.stage == .extensionContinuedProcessingFailure)
+        #expect(event.requestID == requestID)
+        #expect(event.message == "domain=BGTaskSchedulerErrorDomain;code=7")
+    }
+
     @Test("Diagnostics retain a full 20-photo mixed evidence matrix")
     func retainsFullTwentyPhotoMixedEvidenceMatrix() throws {
 

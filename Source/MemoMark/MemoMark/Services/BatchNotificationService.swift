@@ -121,7 +121,7 @@ final class BatchNotificationService:
                     ),
                 language: MemoMarkLanguage.interfaceStored
             )
-        content.sound = .default
+        content.sound = deliverySummary.needsAttentionCount > 0 ? .default : nil
         content.attachments =
             notificationAttachments(
                 for: job

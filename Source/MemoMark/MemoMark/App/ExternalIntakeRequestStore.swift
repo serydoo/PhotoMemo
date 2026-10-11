@@ -39,9 +39,11 @@ final class ExternalIntakeRequestStore {
 
     /// Routing is serialized with intake persistence. A joined Share never
     /// creates a second system task that would merely wait for the same owner.
-    func reserveContinuation(requestID: UUID, identifier: String, now: Date = Date()) throws -> String {
+    func reserveContinuation(requestID: UUID, identifier: String, now: Date = Date(),
+                             pendingSystemIdentifiers: Set<String> = []) throws -> String {
         try withCriticalSection {
-            if var active = try readContinuation(), active.expiresAt > now {
+            if var active = try readContinuation(),
+               active.expiresAt > now || pendingSystemIdentifiers.contains(active.identifier) {
                 guard active.acceptedRequestIDs.count < 1024 else { throw CocoaError(.fileWriteOutOfSpace) }
                 if !active.acceptedRequestIDs.contains(requestID) {
                     active.acceptedRequestIDs.append(requestID)

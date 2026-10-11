@@ -117,6 +117,10 @@ extension MemoMarkConfigurationCenterView {
             subject: session.state.selectedSubject,
             activitySnapshot:
                 backgroundStatusService.currentSnapshot,
+            pendingShareItemCount:
+                externalIntakeCenter.pendingShareItemCount,
+            pendingShareSessionIDs:
+                externalIntakeCenter.pendingShareSessionIDs,
             completedPhotoCount:
                 backgroundStatusService
                 .taskOverview
@@ -158,15 +162,10 @@ extension MemoMarkConfigurationCenterView {
                             entryFlowState
                     )
             },
-            onCancelProcessing: {
-#if DEBUG
-                MemoMarkBackgroundProbe.record("home.cancel.invoked", detail: "session=\(String(describing: backgroundStatusService.currentExecutionSession?.id)) job=\(String(describing: backgroundStatusService.currentSnapshot?.jobID))")
-#endif
-                guard let sessionID = backgroundStatusService.currentExecutionSession?.id
-                    ?? backgroundStatusService.currentSnapshot?.jobID else { return }
-                Task { @MainActor in
-                    await queueCoordinator?.cancelExecutionSession(sessionID)
-                }
+            onResumePendingShare: {
+                sessionIDs in
+                resumeExternalShareSessions(sessionIDs)
+                entryFlowState = EntryFlowCoordinator.openTasksTab(from: entryFlowState)
             },
             onDeleteProcessingRecord: {
                 guard let sessionID = backgroundStatusService.currentExecutionSession?.id else { return }

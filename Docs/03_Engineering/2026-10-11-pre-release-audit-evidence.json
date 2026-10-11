@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-11",
+  "scope": "current local worktree on 008e3d6e3866f99e1a5cbd7bd268ef991f407670",
+  "source_test_manifest_entries": 979,
+  "source_test_manifest_sha256": "d8ef5346d1d697d4c4a64fe2be64fdcc22b683ff65afe6a4836d6521efde32b9",
+  "original_source_tests_changed_by_audit": false,
+  "ios_release_build_exit_code": 0,
+  "toolchain": "/Applications/Xcode.app/Contents/Developer",
+  "installed_device_acceptance": false,
+  "runs": {
+    "full": {
+      "result": "Passed",
+      "passedTests": 2090,
+      "failedTests": 0,
+      "skippedTests": 1,
+      "totalTestCount": 2091,
+      "testFailures": [],
+      "statistics": [
+        {
+          "subtitle": "84 test runs",
+          "title": "21 tests ran with dynamic parameters"
+        }
+      ],
+      "runtimeWarnings": [
+        {
+          "issueType": "Runtime Warning",
+          "message": "[Internal] Thread running at User-interactive quality-of-service class waiting on a lower QoS thread running at Default quality-of-service class. Investigate ways to avoid priority inversions",
+          "sourceURL": "file:///tmp/MemoMarkAuditSnapshot20261011/Tests/MemoMarkTests/ExportTests/FixtureExportReadbackTests.swift"
+        },
+        {
+          "issueType": "Runtime Warning",
+          "message": "[Internal] Thread running at User-interactive quality-of-service class waiting on a lower QoS thread running at Default quality-of-service class. Investigate ways to avoid priority inversions",
+          "sourceURL": "file:///tmp/MemoMarkAuditSnapshot20261011/Tests/MemoMarkTests/ExportTests/FixtureExportReadbackTests.swift"
+        }
+      ],
+      "xcresult_path": "/tmp/MemoMarkPreReleaseAuditFull20261011.xcresult",
+      "parameter_execution_counts": [
+        {
+          "passedTests": 2153,
+          "failedTests": 0,
+          "skippedTests": 1
+        }
+      ]
+    },
+    "snapshot_and_accounting_reproduction": {
+      "result": "Failed",
+      "passedTests": 38,
+      "failedTests": 2,
+      "skippedTests": 0,
+      "totalTestCount": 40,
+      "testFailures": [
+        {
+          "failureText": "Expectation failed: projection.frozenShareSnapshot != nil\nprojection.frozenShareSnapshot → nil",
+          "targetName": "MemoMarkTests",
+          "testIdentifier": 11,
+          "testIdentifierString": "ProductionConfigurationContractTests/auditCompleteSharePublication(style:)",
+          "testIdentifierURL": "test://com.apple.xcode/MemoMark/MemoMarkTests/ProductionConfigurationContractTests/auditCompleteSharePublication(style:)",
+          "testName": "AUDIT: every active style must publish a complete Share snapshot"
+        },
+        {
+          "failureText": "Expectation failed: count == 1\ncount → 2",
+          "targetName": "MemoMarkTests",
+          "testIdentifier": 38,
+          "testIdentifierString": "BatchQueueCommerceAccountingTests/auditIdentityReconciliationCountsOnce()",
+          "testIdentifierURL": "test://com.apple.xcode/MemoMark/MemoMarkTests/BatchQueueCommerceAccountingTests/auditIdentityReconciliationCountsOnce()",
+          "testName": "AUDIT: startup reconciliation must preserve identity accounting count"
+        }
+      ],
+      "statistics": [
+        {
+          "subtitle": "2 test runs",
+          "title": "1 test ran with dynamic parameters"
+        }
+      ],
+      "runtimeWarnings": [],
+      "xcresult_path": "/tmp/MemoMarkPreReleaseAuditReproSuites20261011.xcresult",
+      "parameter_execution_counts": [
+        {
+          "passedTests": 38,
+          "failedTests": 3,
+          "skippedTests": 0
+        }
+      ]
+    },
+    "notification_reproduction": {
+      "result": "Failed",
+      "passedTests": 5,
+      "failedTests": 1,
+      "skippedTests": 0,
+      "totalTestCount": 6,
+      "testFailures": [
+        {
+          "failureText": "Expectation failed: message != nil\nmessage → nil",
+          "targetName": "MemoMarkTests",
+          "testIdentifier": 1,
+          "testIdentifierString": "ExecutionSessionCompletionNotificationTests/auditUnrelatedSuspendedIntakeDoesNotBlockCompletion()",
+          "testIdentifierURL": "test://com.apple.xcode/MemoMark/MemoMarkTests/ExecutionSessionCompletionNotificationTests/auditUnrelatedSuspendedIntakeDoesNotBlockCompletion()",
+          "testName": "AUDIT: a suspended intake from another session must not suppress current completion"
+        }
+      ],
+      "statistics": [
+        {
+          "subtitle": "4 test runs",
+          "title": "1 test ran with dynamic parameters"
+        }
+      ],
+      "runtimeWarnings": [],
+      "xcresult_path": "/tmp/MemoMarkPreReleaseAuditNotificationRepro20261011.xcresult",
+      "parameter_execution_counts": [
+        {
+          "passedTests": 8,
+          "failedTests": 1,
+          "skippedTests": 0
+        }
+      ]
+    }
+  }
+}

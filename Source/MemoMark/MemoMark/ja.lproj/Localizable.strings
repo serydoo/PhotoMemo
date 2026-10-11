@@ -684,6 +684,9 @@
 "home.process.choose_photo" = "MemoMarkで写真を選択";
 "home.process.configure_first" = "先に設定を完了";
 "home.activity.title" = "現在のタスク";
+"home.shareRecovery.title" = "共有した写真の処理が未完了です";
+"home.shareRecovery.count" = "%d 枚の写真が再開を待っています";
+"home.shareRecovery.action" = "処理を再開して進捗を見る";
 "home.activity.progress" = "進捗 %@";
 "home.activity.count.format" = "写真 %d / %d枚";
 "home.activity.count.queued_format" = "写真 %d / %d枚・次に%d件";
@@ -1912,3 +1915,5 @@
 "notification.continued.suspended.body" = "保存確認済み：%d枚。未完了：%d件。MemoMarkで処理を再開するか、今回の処理をキャンセルできます。";
 
 "home.activity.status.interrupted" = "処理が中断されました";
+
+"notification.continued.unconfirmed.body" = "この共有の処理状況を確認できませんでした。MemoMarkを開いて詳細を確認してください。";

@@ -1,10 +1,10 @@
-#if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
+#if os(iOS) && MEMOMARK_SHARE_EXTENSION
 import Foundation
 import ActivityKit
 import os
 
-/// Opt-in signed-device production-path validation. Uses the original media
-/// executor and save receipts. It is not the Release Share scheduling policy.
+/// Executes a durable Share request under the system-granted Continued
+/// Processing lease, using the existing media executor and save receipts.
 @available(iOS 26.0, *)
 @MainActor
 final class ShareContinuedProductionWorker {
@@ -31,7 +31,7 @@ final class ShareContinuedProductionWorker {
                 throw Failure.persistenceBlocked
             }
         }
-        MemoMarkBackgroundProbe.record("extension.production.intakeSuspended.\(requestID)")
+        ShareContinuedProcessingDiagnostics.record("extension.production.intakeSuspended.\(requestID)")
     }
 
     func run(requestID: UUID, presentationOwnerID: UUID? = nil, continuationIdentifier: String? = nil, progress: @escaping (ExecutionSession) -> Void) async throws {
@@ -42,8 +42,8 @@ final class ShareContinuedProductionWorker {
             try await Task.sleep(for: .seconds(1))
         }
         guard let lease = acquiredLease else { throw Failure.ownerUnavailable }
-        MemoMarkBackgroundProbe.record("extension.production.leaseAcquired.\(requestID)", detail: "lease=\(lease.id)")
-        MemoMarkBackgroundProbe.record("extension.production.systemConditions.\(requestID)",
+        ShareContinuedProcessingDiagnostics.record("extension.production.leaseAcquired.\(requestID)", detail: "lease=\(lease.id)")
+        ShareContinuedProcessingDiagnostics.record("extension.production.systemConditions.\(requestID)",
             detail: "thermal=\(ProcessInfo.processInfo.thermalState.rawValue);lowPower=\(ProcessInfo.processInfo.isLowPowerModeEnabled)")
         let presentationID = presentationOwnerID ?? lease.id
         ProcessingPresentationAuthority.renew(leaseID: presentationID, defaults: defaults)
@@ -60,30 +60,32 @@ final class ShareContinuedProductionWorker {
                 ProcessingPresentationAuthority.release(leaseID: presentationID, defaults: defaults)
             }
             _ = arbiter.release(lease)
-            MemoMarkBackgroundProbe.record("extension.production.leaseReleased.\(requestID)", detail: "lease=\(lease.id)")
+            ShareContinuedProcessingDiagnostics.record("extension.production.leaseReleased.\(requestID)", detail: "lease=\(lease.id)")
         }
         // The exclusive execution lease proves another worker cannot still
         // be encoding these process-owned interrupted scratch rasters.
-        try CPUFileRasterExport.cleanupInterruptedRasters(in: FileManager.default.temporaryDirectory
+        try TemporaryRasterScratchCleanup.cleanup(in: FileManager.default.temporaryDirectory
             .appendingPathComponent("MemoMarkExports", isDirectory: true))
-        try CPUFileRasterExport.cleanupInterruptedRasters(inProcessingRoot: FileManager.default.temporaryDirectory
+        try TemporaryRasterScratchCleanup.cleanup(inProcessingRoot: FileManager.default.temporaryDirectory
             .appendingPathComponent("MemoMarkLivePhotoProcessing", isDirectory: true))
         let fallbackActivities = Activity<MemoMarkBackgroundActivityAttributes>.activities
         for activity in fallbackActivities {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
-        MemoMarkBackgroundProbe.record("extension.production.fallbackActivitiesEnded", detail: String(fallbackActivities.count))
+        ShareContinuedProcessingDiagnostics.record("extension.production.fallbackActivitiesEnded", detail: String(fallbackActivities.count))
         let requests = ExternalIntakeRequestStore(defaults: defaults,
             lockURL: MemoMarkSharedContainer.externalIntakeDirectoryURL.appendingPathComponent(".external-intake-requests.lock"))
-        MemoMarkBackgroundProbe.record("extension.production.beforeIntakeRead", detail: "availableMemory=\(os_proc_available_memory())")
+        ShareContinuedProcessingDiagnostics.record("extension.production.beforeIntakeRead", detail: "availableMemory=\(os_proc_available_memory())")
         let request = requests.loadRequestsForProcessing().first(where: { $0.id == requestID })
-        MemoMarkBackgroundProbe.record("extension.production.beforeLedgerBootstrap", detail: "availableMemory=\(os_proc_available_memory())")
+        ShareContinuedProcessingDiagnostics.record("extension.production.beforeLedgerBootstrap", detail: "availableMemory=\(os_proc_available_memory())")
         let bootstrap = BatchQueueDurableLedger.bootstrap(persistence: BatchQueuePersistence())
         guard bootstrap.error == nil else { throw Failure.persistenceBlocked }
-        MemoMarkBackgroundProbe.record("extension.production.ledgerBootstrapped", detail: "availableMemory=\(os_proc_available_memory())")
+        ShareContinuedProcessingDiagnostics.record("extension.production.ledgerBootstrapped", detail: "availableMemory=\(os_proc_available_memory())")
         let ledger = bootstrap.ledger
         let accounting = BatchQueueCommerceAccounting(persistence: MemoMarkCommercePersistence())
-        var commerce = accounting.loadSharedSnapshot(compatibleWith: .currentRuntime)
+        let commerceEnvironment = await MemoMarkCommerceEnvironment.resolveRuntime()
+        try Task.checkCancellation()
+        var commerce = accounting.loadSharedSnapshot(compatibleWith: commerceEnvironment)
         var job: BatchJob
         if let existing = bootstrap.snapshot.jobs.first(where: { $0.intakeRequestID == requestID }) {
             job = existing
@@ -106,15 +108,15 @@ final class ShareContinuedProductionWorker {
             candidate.createdAt = request.receivedAt
             candidate.executionSuspendedAt = request.executionSuspendedAt
             candidate.executionSessionID = request.continuedExecutionSessionID
-            MemoMarkBackgroundProbe.record("extension.production.beforeIdentityCompile", detail: "availableMemory=\(os_proc_available_memory())")
+            ShareContinuedProcessingDiagnostics.record("extension.production.beforeIdentityCompile", detail: "availableMemory=\(os_proc_available_memory())")
             candidate = try await BatchProcessingIdentityCompiler.prepare(candidate)
-            MemoMarkBackgroundProbe.record("extension.production.identityCompiled", detail: "availableMemory=\(os_proc_available_memory())")
+            ShareContinuedProcessingDiagnostics.record("extension.production.identityCompiled", detail: "availableMemory=\(os_proc_available_memory())")
             guard candidate.tasks.allSatisfy({ $0.processingIdentity != nil }) else { throw Failure.admissionRejected }
             guard candidate.tasks.count <= commerce.batchLimit else { throw Failure.admissionRejected }
             let capacity = accounting.admissionCapacity(among: [], current: commerce)
-            MemoMarkBackgroundProbe.record("extension.production.beforeAdmission", detail: "availableMemory=\(os_proc_available_memory())")
+            ShareContinuedProcessingDiagnostics.record("extension.production.beforeAdmission", detail: "availableMemory=\(os_proc_available_memory())")
             let admissionResult = await ledger.admit(candidate, maximumPendingTaskCount: capacity)
-            MemoMarkBackgroundProbe.record("extension.production.admissionReturned", detail: "availableMemory=\(os_proc_available_memory())")
+            ShareContinuedProcessingDiagnostics.record("extension.production.admissionReturned", detail: "availableMemory=\(os_proc_available_memory())")
             switch admissionResult {
             case .committed(let admission, _), .unchanged(let admission, _):
                 guard let admission else { throw Failure.admissionRejected }
@@ -142,7 +144,7 @@ final class ShareContinuedProductionWorker {
         }
         let jobID = job.id
         guard job.executionSuspendedAt == nil else { throw Failure.unfinished }
-        MemoMarkBackgroundProbe.record("extension.production.session.\(requestID)", detail: "session=\(job.executionSessionID ?? job.id)")
+        ShareContinuedProcessingDiagnostics.record("extension.production.session.\(requestID)", detail: "session=\(job.executionSessionID ?? job.id)")
         var lastProgressCounts: (Int, Int)?
         @MainActor func reportProgress(_ job: BatchJob) async {
             // apply/admit already refreshed under the transaction lock. Do
@@ -167,7 +169,7 @@ final class ShareContinuedProductionWorker {
                 pendingIntakeTaskCount: pendingIntakeCount)
             let counts = (session.completedCount, session.totalCount)
             if lastProgressCounts.map({ $0.0 != counts.0 || $0.1 != counts.1 }) ?? true {
-                MemoMarkBackgroundProbe.record("extension.production.progress.\(requestID)",
+                ShareContinuedProcessingDiagnostics.record("extension.production.progress.\(requestID)",
                     detail: "completed=\(session.completedCount) total=\(session.totalCount) units=\(session.completedProgressUnits)/\(session.totalProgressUnits)")
                 lastProgressCounts = counts
             }
@@ -186,11 +188,13 @@ final class ShareContinuedProductionWorker {
                 }
                 await reportProgress(job)
             }, cancellation: { self.stopRequested = true },
-            publishError: { message in MemoMarkBackgroundProbe.record("extension.production.persistenceError", detail: message) })
-        MemoMarkBackgroundProbe.record("extension.production.beforeTaskLoop", detail: "availableMemory=\(os_proc_available_memory())")
+            publishError: { message in ShareContinuedProcessingDiagnostics.record("extension.production.persistenceError", detail: message) })
+        ShareContinuedProcessingDiagnostics.record("extension.production.beforeTaskLoop", detail: "availableMemory=\(os_proc_available_memory())")
         await reportProgress(job)
-        while !Task.isCancelled, !stopRequested,
-              !defaults.bool(forKey: "memomark.processing.executionPaused") {
+        // This Share request has its own system-granted execution owner. A
+        // persisted foreground-queue pause must not silently suppress it and
+        // turn a newly shared batch into a failed Continued Processing task.
+        while !Task.isCancelled, !stopRequested {
             let snapshot = await ledger.refreshedSnapshot()
             guard !snapshot.isPersistenceBlocked else { throw Failure.persistenceBlocked }
             guard let currentJob = snapshot.jobs.first(where: { $0.id == jobID }),
@@ -203,12 +207,12 @@ final class ShareContinuedProductionWorker {
                 route: BatchTaskMemoryPolicy.processingRoute(for: task),
                 totalProgressUnits: budget.requiresExtendedPreviewPreparation ? 6 : 5,
                 startedAt: Date()), runtime: runtime)
-            MemoMarkBackgroundProbe.record("extension.production.taskReturned", detail: "request=\(requestID) task=\(task.id)")
+            ShareContinuedProcessingDiagnostics.record("extension.production.taskReturned", detail: "request=\(requestID) task=\(task.id)")
         }
         if Task.isCancelled {
             let held = await ledger.suspendExecutionSession(job.executionSessionID ?? job.id)
             if case .failure = held { throw Failure.persistenceBlocked }
-            MemoMarkBackgroundProbe.record("extension.production.sessionSuspended.\(requestID)")
+            ShareContinuedProcessingDiagnostics.record("extension.production.sessionSuspended.\(requestID)")
         }
         let snapshot = await ledger.refreshedSnapshot()
         if Task.isCancelled, !snapshot.isPersistenceBlocked,
@@ -220,7 +224,7 @@ final class ShareContinuedProductionWorker {
         }
         if let remaining = snapshot.jobs.first(where: { $0.id == jobID }) {
             let phases = remaining.tasks.map { String(describing: $0.phase) }.joined(separator: ",")
-            MemoMarkBackgroundProbe.record("extension.production.exitState.\(requestID)",
+            ShareContinuedProcessingDiagnostics.record("extension.production.exitState.\(requestID)",
                 detail: "cancelled=\(Task.isCancelled);stop=\(stopRequested);paused=\(defaults.bool(forKey: "memomark.processing.executionPaused"));phases=\(phases)")
         }
         guard !snapshot.isPersistenceBlocked,
@@ -229,7 +233,9 @@ final class ShareContinuedProductionWorker {
         await reportProgress(completed)
         let pendingIntakeRequestIDs: Set<UUID>?
         switch requests.loadRequestsForProcessingResult() {
-        case .success(let pending): pendingIntakeRequestIDs = Set(pending.map(\.id))
+        case .success(let pending):
+            pendingIntakeRequestIDs = ExecutionSessionCompletionNotification.pendingRequestIDs(
+                for: completed.executionSessionID ?? completed.id, requests: pending)
         case .noValue: pendingIntakeRequestIDs = []
         case .decodingFailed: pendingIntakeRequestIDs = nil
         }
@@ -238,7 +244,7 @@ final class ShareContinuedProductionWorker {
             language: MemoMarkLanguage.interfaceStored, pendingIntakeRequestIDs: pendingIntakeRequestIDs) {
             await ShareContinuedCompletionNotification.deliver(message, ledger: ledger, requestID: requestID)
         } else if pendingIntakeRequestIDs == nil || pendingIntakeRequestIDs?.isEmpty == false {
-            MemoMarkBackgroundProbe.record("extension.production.completionDeferred.\(requestID)",
+            ShareContinuedProcessingDiagnostics.record("extension.production.completionDeferred.\(requestID)",
                 detail: "pendingIntakes=\(pendingIntakeRequestIDs?.count ?? -1)")
         }
     }

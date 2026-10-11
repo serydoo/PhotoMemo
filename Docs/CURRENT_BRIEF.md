@@ -1,6 +1,26 @@
 # MemoMark Current Brief
 
-Last updated: 2026-10-07
+Last updated: 2026-10-10
+
+2026-10-11 Share regression repair: ordinary Photos Share again hands off to
+MemoMark so its `ShareCoordinator` resolves the canonical configuration,
+admits the durable request, and presents in-app progress. The Release
+extension-owned Continued Processing route is no longer selected: the recorded
+physical QA failure was `missingCanonicalSnapshot`, because the extension's
+transport snapshot cannot perform the app-owned canonical configuration
+resolution. BGProcessing remains a durable recovery request. Signed Release
+install/launch and focused Share contracts pass. The physical UI test runner
+exited with code 74 before connecting, so automatic real-Photos handoff/progress
+acceptance remains unverified. See
+`Docs/03_Engineering/2026-10-11-share-foreground-handoff-regression.md`.
+
+2026-10-10 Engineering update: the extension-owned Share Continued Processing
+adapter and worker remain implementation/evidence history, with durable
+BGProcessing recovery and lifecycle findings documented in
+`Docs/03_Engineering/2026-10-10-release-share-continued-processing.md` and
+ADR-012. They are not the current ordinary production Share route after the
+2026-10-11 regression repair. Successful completion notifications remain
+visible but silent; interruption notifications remain actionable.
 
 2026-10-07 research execution: use
 `Docs/03_Engineering/2026-10-07-post-2.3.6-research-execution-plan.md` for the

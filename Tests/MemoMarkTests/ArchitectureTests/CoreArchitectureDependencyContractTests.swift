@@ -90,7 +90,8 @@ struct CoreArchitectureDependencyContractTests {
 
         #expect(!rootSource.contains("ExternalPhotoIntakeCenter.shared"))
         #expect(!rootSource.contains("?? .shared"))
-        #expect(rootSource.contains("let externalIntakeCenter:\n        ExternalPhotoIntakeCenter"))
+        #expect(rootSource.contains("var externalIntakeCenter:\n        ExternalPhotoIntakeCenter"))
+        #expect(rootSource.contains("self.externalIntakeCenter =\n            dependencies.externalIntakeCenter"))
         #expect(dependenciesSource.contains("let externalIntakeCenter:\n        ExternalPhotoIntakeCenter"))
         #expect(dependenciesSource.contains("externalIntakeCenter = runtime.environment.externalIntakeCenter"))
     }

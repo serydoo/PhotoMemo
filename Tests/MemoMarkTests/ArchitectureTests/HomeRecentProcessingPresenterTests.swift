@@ -170,6 +170,16 @@ struct HomeRecentProcessingPresenterTests {
         )
     }
 
+    @Test("suspended Share intake remains visible before a durable job exists")
+    func suspendedShareIntakeProjectsAnActionableHomeRecoveryState() {
+        let sessionID = UUID()
+        #expect(HomePendingSharePresenter.projection(itemCount: 0, sessionIDs: []) == nil)
+        let projection = HomePendingSharePresenter.projection(itemCount: 1, sessionIDs: [sessionID])
+        #expect(projection?.itemCount == 1)
+        #expect(projection?.sessionIDs == [sessionID])
+        #expect(HomePendingSharePresenter.projection(itemCount: 3, sessionIDs: [sessionID])?.itemCount == 3)
+    }
+
     @Test("presentation reflects latest snapshot state for home summary")
     func presentationReflectsLatestSnapshotStateForHomeSummary() {
         let snapshot =

@@ -645,6 +645,9 @@
 "home.process.choose_photo" = "App 内选择照片";
 "home.process.configure_first" = "先完成配置";
 "home.activity.title" = "当前任务";
+"home.shareRecovery.title" = "分享处理未完成";
+"home.shareRecovery.count" = "%d 张照片等待继续处理";
+"home.shareRecovery.action" = "继续处理并查看进展";
 "home.activity.progress" = "进度 %@";
 "home.activity.count.format" = "任务 %d / %d 张";
 "home.activity.count.queued_format" = "任务 %d / %d 张 · 后续 %d 个";
@@ -1914,3 +1917,5 @@
 "notification.continued.suspended.body" = "已确认保存 %d 张照片，%d 项尚未完成。打开时光记可继续或取消本轮。";
 
 "home.activity.status.interrupted" = "处理未完成";
+
+"notification.continued.unconfirmed.body" = "无法确认这次分享的处理状态。请打开时光记查看详情。";

@@ -94,6 +94,38 @@ enum ConfigurationPreviewPreferenceKey {
 }
 
 enum ConfigurationPreviewViewportSpec {
+    /// The real output region retained while the surrounding photo scrolls away.
+    static func editingRegionFrame(
+        for style: RecordCardPresentationStyle,
+        orientation: ConfigurationPreviewBackground.Orientation,
+        canvasSize: CGSize,
+        filmMarkText: String,
+        filmMarkConfiguration: FilmMarkConfiguration
+    ) -> CGRect {
+        switch style {
+        case .classicWhite:
+            let barOrientation: CompactInformationBarOrientation = orientation == .landscape ? .landscape : .portrait
+            let height = canvasSize.width * RendererConstants.CompactInformationBar.spec(for: barOrientation).barHeightToWidth
+            return CGRect(x: 0, y: canvasSize.height - height, width: canvasSize.width, height: height)
+        case .glassCard:
+            return GlassCardLayoutSpecification.panelFrame(canvasSize: canvasSize)
+        case .minimal:
+            let layout = MinimalCardLayoutSpecification.layout(for: orientation == .landscape ? .landscape : .portrait)
+            let height = canvasSize.width * layout.barHeightToImageWidth
+            let bottomInset = canvasSize.width * layout.overlayBottomInsetToImageWidth
+            return CGRect(x: 0, y: canvasSize.height - bottomInset - height, width: canvasSize.width, height: height)
+        case .filmMark:
+            return FilmMarkPresentationResolver.resolve(
+                content: FilmMarkContentProjection(primaryOutput: filmMarkText),
+                configuration: filmMarkConfiguration,
+                canvasSize: canvasSize
+            ).layout.effectBounds
+        }
+    }
+
+    static func retainedEditingHeight(canvasHeight: CGFloat, regionMinY: CGFloat, contextPadding: CGFloat) -> CGFloat {
+        min(max(0, canvasHeight), max(0, canvasHeight - regionMinY + contextPadding))
+    }
     static let landscapeFitScale: CGFloat = 0.88
     static let portraitFitScale: CGFloat = 0.88
     static let portraitFitVisibleFraction: CGFloat = 0.5

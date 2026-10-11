@@ -143,17 +143,17 @@ struct BatchQueueCommerceAccounting {
             )
         }
 
-        let completedTaskIDs = Set(
-            jobs.flatMap(\.tasks)
-                .filter {
-                    $0.phase == .completed
-                    && $0.savedAssetIdentifier != nil
-                }
-                .map(\.id)
-        )
+        let completedTasks = jobs.flatMap(\.tasks).filter {
+            $0.phase == .completed && $0.savedAssetIdentifier != nil
+        }
+        let completedTaskIDs = Set(completedTasks.map(\.successfulSaveAccountingID))
+        let legacyAliases = completedTasks.reduce(into: [UUID: UUID]()) { aliases, task in
+            aliases[task.id] = task.successfulSaveAccountingID
+        }
         guard persistence.reconcileSuccessfulSaves(
             taskIDs: completedTaskIDs,
-            environment: snapshot.environment
+            environment: snapshot.environment,
+            replacingLegacyTaskIDs: legacyAliases
         ) else {
             return Outcome(
                 updatedSnapshot: nil,

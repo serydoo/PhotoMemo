@@ -56,93 +56,101 @@ struct EntryNavigationSurface<
     }
 
     var body: some View {
-        switch navigationStyle {
-        case .bottomTabBar:
-            compactNavigation
-        case .floatingRail:
-            floatingRailNavigation
-        case .regularSidebar:
+        if navigationStyle == .regularSidebar {
             regularSidebarNavigation
+        } else {
+            primaryNavigation
         }
     }
 
-    private var compactNavigation: some View {
+    private var primaryTabs: some View {
+        TabView(selection: $selection) {
+            homeContent
+                .toolbar(navigationStyle == .bottomTabBar ? .visible : .hidden, for: .tabBar)
+                .tabItem {
+                    Label(
+                        localized("首页"),
+                        systemImage: MemoMarkSymbol.home.name
+                    )
+                }
+                .tag(EntryTab.home)
+
+            editorContent
+                .toolbar(navigationStyle == .bottomTabBar ? .visible : .hidden, for: .tabBar)
+                .tabItem {
+                    Label(
+                        localized("配置"),
+                        systemImage:
+                            MemoMarkSymbol.configurationCenter.name
+                    )
+                }
+                .tag(EntryTab.editor)
+
+            taskContent
+                .toolbar(navigationStyle == .bottomTabBar ? .visible : .hidden, for: .tabBar)
+                .tabItem {
+                    Label(
+                        localized("进展"),
+                        systemImage: MemoMarkSymbol.task.name
+                    )
+                }
+                .tag(EntryTab.tasks)
+        }
+    }
+
+    private var primaryNavigation: some View {
         NavigationStack {
-            TabView(selection: $selection) {
-                homeContent
-                    .tabItem {
-                        Label(
-                            localized("首页"),
-                            systemImage: MemoMarkSymbol.home.name
-                        )
-                    }
-                    .tag(EntryTab.home)
-
-                editorContent
-                    .tabItem {
-                        Label(
-                            localized("配置"),
-                            systemImage:
-                                MemoMarkSymbol.configurationCenter.name
-                        )
-                    }
-                    .tag(EntryTab.editor)
-
-                taskContent
-                    .tabItem {
-                        Label(
-                            localized("进展"),
-                            systemImage: MemoMarkSymbol.task.name
-                        )
-                    }
-                    .tag(EntryTab.tasks)
+            Group {
+                if selection == .settings || selection == .output {
+                    sidebarDestination
+                } else {
+                    // Rotation changes only chrome. Keep the same TabView and
+                    // hosting controllers so TextKit retains its input owner.
+                    primaryTabs
+                }
             }
-        }
-    }
-
-    private var floatingRailNavigation: some View {
-        NavigationStack {
-            sidebarDestination
                 .environment(\.layoutDirection, contentLayoutDirection)
                 // Apply the inset inside navigation's hosting boundary so the
                 // destination receives the reduced safe content region.
-                .safeAreaInset(edge: .trailing, spacing: ConfigurationUI.innerPanelPadding) {
-                    ScrollView(.vertical) {
-                        VStack(spacing: ConfigurationUI.innerPanelPadding) {
-                            EntryFloatingNavigationRail(selection: $selection)
-                            if let previewControl {
-                                Button(action: previewControl.toggle) {
-                                    Image(systemName: previewControl.isVisible
-                                        ? "eye.slash" : "eye")
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .frame(width: 46, height: 46)
-                                        .foregroundStyle(Color.accentColor)
+                .safeAreaInset(edge: .trailing, spacing: navigationStyle == .floatingRail ? AdaptiveFloatingRailMetrics.contentSpacing : 0) {
+                    if navigationStyle == .floatingRail {
+                        ScrollView(.vertical) {
+                            VStack(spacing: ConfigurationUI.innerPanelPadding) {
+                                EntryFloatingNavigationRail(selection: $selection)
+                                if let previewControl {
+                                    Button(action: previewControl.toggle) {
+                                        Image(systemName: previewControl.isVisible
+                                            ? "eye.slash" : "eye")
+                                            .font(.system(size: 18, weight: .semibold))
+                                            .frame(width: 46, height: 46)
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .background(
+                                        MemoMarkDesignTokens.SurfaceMaterial.contextual,
+                                        in: Circle()
+                                    )
+                                    .accessibilityLabel(localized(previewControl.isVisible
+                                        ? "configuration.preview.collapse"
+                                        : "configuration.preview.expand"))
+                                    .accessibilityValue(localized(previewControl.isVisible
+                                        ? "configuration.preview.visible"
+                                        : "configuration.preview.hidden"))
+                                    .accessibilityIdentifier("configuration.preview.rail-visibility")
                                 }
-                                .buttonStyle(.plain)
-                                .background(
-                                    MemoMarkDesignTokens.SurfaceMaterial.contextual,
-                                    in: Circle()
-                                )
-                                .accessibilityLabel(localized(previewControl.isVisible
-                                    ? "configuration.preview.collapse"
-                                    : "configuration.preview.expand"))
-                                .accessibilityValue(localized(previewControl.isVisible
-                                    ? "configuration.preview.visible"
-                                    : "configuration.preview.hidden"))
-                                .accessibilityIdentifier("configuration.preview.rail-visibility")
-                            }
-                            if let configurationActions {
-                                configurationActions
+                                if let configurationActions {
+                                    configurationActions
+                                }
                             }
                         }
+                            // Normally centered; short keyboard/window regions can
+                            // scroll the actions instead of clipping the last one.
+                            .scrollIndicators(.hidden)
+                            .defaultScrollAnchor(.center, for: .alignment)
+                            .frame(width: AdaptiveFloatingRailMetrics.width)
+                            .padding(.trailing, AdaptiveFloatingRailMetrics.trailingMargin)
+                            .padding(.vertical, 12)
                     }
-                        // Normally centered; short keyboard/window regions can
-                        // scroll the actions instead of clipping the last one.
-                        .scrollIndicators(.hidden)
-                        .defaultScrollAnchor(.center, for: .alignment)
-                        .frame(width: 56)
-                        .padding(.trailing, 10)
-                        .padding(.vertical, 12)
                 }
                 // The rail is physically right; destination content retains
                 // its own semantic reading direction for RTL languages.

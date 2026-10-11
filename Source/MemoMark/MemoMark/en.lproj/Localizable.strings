@@ -684,6 +684,9 @@
 "home.process.choose_photo" = "Choose Photos in MemoMark";
 "home.process.configure_first" = "Finish Configuration First";
 "home.activity.title" = "Current Task";
+"home.shareRecovery.title" = "Shared processing did not finish";
+"home.shareRecovery.count" = "%d photos are waiting to resume";
+"home.shareRecovery.action" = "Resume and view progress";
 "home.activity.progress" = "Progress %@";
 "home.activity.count.format" = "Task %d / %d photos";
 "home.activity.count.queued_format" = "Task %d / %d photos · %d more queued";
@@ -1912,3 +1915,5 @@
 "notification.continued.suspended.body" = "Confirmed photo saves: %d. Unfinished items: %d. Open MemoMark to resume or cancel processing.";
 
 "home.activity.status.interrupted" = "Processing interrupted";
+
+"notification.continued.unconfirmed.body" = "The processing status of this share could not be confirmed. Open MemoMark for details.";

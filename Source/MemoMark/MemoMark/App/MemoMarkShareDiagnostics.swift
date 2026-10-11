@@ -75,6 +75,8 @@ struct MemoMarkShareDiagnosticStage:
         Self(rawValue: "extension.error")
     nonisolated static let extensionErrorUnexpected =
         Self(rawValue: "extension.error.unexpected")
+    nonisolated static let extensionContinuedProcessingFailure =
+        Self(rawValue: "extension.continuedProcessing.failure")
     nonisolated static let extensionHandoffConfirmed =
         Self(rawValue: "extension.handoff.confirmed")
     nonisolated static let extensionHandoffFailed =
@@ -253,6 +255,24 @@ enum MemoMarkShareDiagnostics {
             Array(
                 events.suffix(maxEventCount)
             ),
+            defaults: defaults
+        )
+    }
+
+    /// Persists only the system error identity for a Release Continued
+    /// Processing failure. Error descriptions can contain file paths or media
+    /// details, so they are intentionally excluded from shared diagnostics.
+    nonisolated static func recordContinuedProcessingFailure(
+        _ error: Error,
+        requestID: UUID,
+        defaults: UserDefaults =
+            MemoMarkSharedContainer.sharedUserDefaults
+    ) -> MemoMarkSharedDefaultsWriteResult {
+        let systemError = error as NSError
+        return recordResult(
+            stage: .extensionContinuedProcessingFailure,
+            message: "domain=\(systemError.domain);code=\(systemError.code)",
+            requestID: requestID,
             defaults: defaults
         )
     }

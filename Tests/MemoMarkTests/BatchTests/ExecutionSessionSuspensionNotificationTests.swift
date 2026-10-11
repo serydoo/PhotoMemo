@@ -36,3 +36,41 @@ import Testing
                     .init(sourceURL: URL(fileURLWithPath: "/tmp/b.jpg"), phase: .queued)])
     }
 }
+
+@MainActor extension ExecutionSessionSuspensionNotificationTests {
+    @Test("Failure before admission and terminal failures both have an actionable result", arguments: MemoMarkLanguage.allCases)
+    func failureFallback(language: MemoMarkLanguage) throws {
+        let id = UUID()
+        let unknown = try #require(ExecutionSessionSuspensionNotification.makeFailure(
+            id: id, jobs: [], pendingItemCount: nil, language: language))
+        #expect(unknown.completedCount == 0)
+        #expect(unknown.unfinishedCount == 0)
+        #expect(!unknown.isFinalResult)
+        #expect(!unknown.body.contains("notification."))
+        let admission = try #require(ExecutionSessionSuspensionNotification.makeFailure(
+            id: id, jobs: [], pendingItemCount: 2, language: language))
+        #expect(admission.completedCount == 0)
+        #expect(admission.unfinishedCount == 2)
+        #expect(admission.jobIDs.isEmpty)
+        #expect(!admission.isFinalResult)
+        var job = member()
+        job.executionSuspendedAt = Date()
+        let joined = try #require(ExecutionSessionSuspensionNotification.makeFailure(
+            id: job.id, jobs: [job], pendingItemCount: 2, language: language))
+        #expect(joined.unfinishedCount == 3)
+        #expect(!joined.isFinalResult)
+        job.tasks[2].phase = .failed
+        let failed = try #require(ExecutionSessionSuspensionNotification.makeFailure(
+            id: job.id, jobs: [job], pendingItemCount: 0, language: language))
+        #expect(failed.completedCount == 1)
+        #expect(failed.unfinishedCount == 1)
+        #expect(failed.isFinalResult)
+        #expect(!failed.body.contains("notification."))
+        let unreadablePending = try #require(ExecutionSessionSuspensionNotification.makeFailure(
+            id: job.id, jobs: [job], pendingItemCount: nil, language: language))
+        #expect(unreadablePending.completedCount == 1)
+        #expect(unreadablePending.unfinishedCount == 1)
+        #expect(!unreadablePending.isFinalResult)
+        #expect(unreadablePending.body == unknown.body)
+    }
+}

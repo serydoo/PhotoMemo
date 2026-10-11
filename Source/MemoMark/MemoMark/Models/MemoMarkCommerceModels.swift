@@ -1,4 +1,5 @@
 import Foundation
+import StoreKit
 
 nonisolated enum MemoMarkCommerceEnvironment:
     String,
@@ -42,8 +43,43 @@ nonisolated enum MemoMarkCommerceEnvironment:
         )
     }
 
+    static func resolveRuntime(
+        verifiedEnvironment: @Sendable () async -> MemoMarkCommerceEnvironment? = {
+            do {
+                guard case .verified(let transaction) = try await AppTransaction.shared else { return nil }
+                switch transaction.environment {
+                case .sandbox: return .sandbox
+                case .xcode: return .xcode
+                case .production: return .production
+                default: return nil
+                }
+            } catch {
+                return nil
+            }
+        }
+    ) async -> MemoMarkCommerceEnvironment {
+        // StoreKit 2 can verify distribution even when no legacy receipt file
+        // exists. Never derive this environment from an entitlement cache.
+        await verifiedEnvironment() ?? currentRuntime
+    }
+
     private static var localReceiptURL: URL? {
-        let receiptDirectory = Bundle.main.bundleURL
+        receiptURL(for: Bundle.main.bundleURL)
+    }
+
+    static func receiptURL(for bundleURL: URL) -> URL? {
+        // The App receipt belongs to the containing .app, never its .appex.
+        // Only the system's immediate PlugIns embedding is a valid owner.
+        var receiptOwner = bundleURL
+        if bundleURL.pathExtension == "appex" {
+            let plugins = bundleURL.deletingLastPathComponent()
+            let app = plugins.deletingLastPathComponent()
+            guard plugins.lastPathComponent == "PlugIns", app.pathExtension == "app" else {
+                return nil
+            }
+            receiptOwner = app
+        }
+        let receiptDirectory = receiptOwner
             .appendingPathComponent("_MASReceipt", isDirectory: true)
         for name in ["sandboxReceipt", "receipt"] {
             let candidate = receiptDirectory.appendingPathComponent(name)

@@ -11,6 +11,12 @@ import os
 /// CPU memoryLimit constrains Core Image render tasks, not total process RSS.
 @MainActor
 enum CPUStillImageExportExperiment {
+    static let shareExportOptInKey = "memomark.debug.cpuStillImageExportExperiment.enabled"
+
+    static func isEnabledForShareExport(defaults: UserDefaults) -> Bool {
+        defaults.bool(forKey: shareExportOptInKey)
+    }
+
     static func export(photo: SelectedPhoto, artifact: PresentationArtifact,
                        to url: URL, writer: MetadataPreservingImageWriter,
                        exportDescription: String) throws -> URL {

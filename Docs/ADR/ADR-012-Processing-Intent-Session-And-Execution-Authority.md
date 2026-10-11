@@ -1,7 +1,7 @@
 # ADR-012: Processing intent, session and execution authority
 
-Status: Implementation under verification; production certification open
-Date: 2026-10-07
+Status: Release execution path implemented; production certification open
+Original decision: 2026-10-07; implementation amendment: 2026-10-10
 Owner authorization and pre-implementation decision record:
 `Docs/03_Engineering/2026-10-07-processing-reliability-implementation.md`.
 
@@ -39,9 +39,17 @@ would discard essential recovery evidence.
 - Custom Live Activity follows session identity and counters. Continued owner
   suppresses custom requests/retries and ends tracked activities. A scheduling
   submission alone never acquires execution or presentation authority.
-- DEBUG Continued Processing is an expiring opt-in marker probe. It leaves real
-  durable intake pending and never opens the host or runs the full queue.
-  Only signed Photos-extension/host evidence can authorize full queue hookup.
+- DEBUG Continued Processing remains an expiring opt-in marker probe. It is
+  separate from the Release adapter and never substitutes for production
+  acceptance evidence.
+- Release Share on iOS 26+ submits one Continued Processing task for the active
+  durable continuation session. Overlapping Share admissions join that task
+  through `ExternalIntakeRequestStore`; the callback drains requests serially
+  under the shared execution lease and reports session progress. The existing
+  BGProcessing recovery request is scheduled before Continued submission. If
+  Photos authorization requires the host, or Continued submission fails, the
+  existing host/BGProcessing recovery flow remains active. iOS 18–25 retain
+  their existing BGProcessing and foreground recovery route.
 - Add-only is recognized as creation capability but not admitted to the current
   readback-confirmed processing protocol. Explicit album requires full access;
   limited default destination becomes system library. Background never prompts.
@@ -54,6 +62,8 @@ queue is rewritten merely to adopt names. No Renderer/Layout changes or new UI.
 
 Must prove multi-Share concurrency, different configuration, cancellation,
 stale expiration, recovery, limited/full destinations and static/paired output.
-iOS 18–25 scheduling remains deferred. Available device is iOS 27.2 Beta; that
-cannot certify iOS 26 or the full supported OS matrix. Until signed marker
-handoff passes, Continued Processing is not enabled for production BatchQueue.
+iOS 18–25 immediate background scheduling remains deferred. The current
+physical device runs iOS 27.2 Beta; it cannot certify stable iOS 26 or the full
+supported OS matrix. Release source activation and generic Release compilation
+do not establish physical Photos handoff, cancellation/expiration recovery,
+or production certification.

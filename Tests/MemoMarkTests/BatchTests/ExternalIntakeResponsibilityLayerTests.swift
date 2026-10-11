@@ -739,3 +739,22 @@ private extension ExternalIntakeResponsibilityLayerTests {
         return data as Data
     }
 }
+
+extension ExternalIntakeResponsibilityLayerTests {
+    @Test("System queued ownership survives the running lease TTL without losing later shares")
+    func queuedOwnerSurvivesLeaseTTL() throws {
+        let suite = "QueuedContinuation-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = ExternalIntakeRequestStore(defaults: defaults)
+        let first = UUID(), next = UUID()
+        let now = Date(timeIntervalSince1970: 100)
+        _ = try store.reserveContinuation(requestID: first, identifier: "queued-owner", now: now)
+        #expect(try store.reserveContinuation(requestID: next, identifier: "new-owner",
+            now: now.addingTimeInterval(600), pendingSystemIdentifiers: ["queued-owner"]) == "queued-owner")
+        #expect(try store.nextContinuation(identifier: "queued-owner") == first)
+        #expect(try store.nextContinuation(identifier: "queued-owner") == next)
+        #expect(try store.nextContinuation(identifier: "queued-owner") == nil)
+        #expect(try store.renewContinuation(identifier: "queued-owner") == false)
+    }
+}

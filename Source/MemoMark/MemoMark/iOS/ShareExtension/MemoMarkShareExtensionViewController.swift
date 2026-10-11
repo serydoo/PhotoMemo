@@ -137,6 +137,8 @@ final class MemoMarkShareExtensionViewController:
     private var pendingProbeRequestID: UUID?
 #endif
 
+    private var commerceEnvironmentTask: Task<Void, Never>?
+
     private var viewState: ShareExtensionViewState = .confirming
 
     override func viewDidLoad() {
@@ -149,7 +151,12 @@ final class MemoMarkShareExtensionViewController:
         configureView()
         loadInputItems()
         applyWorkflowSummary()
-        applyConfirmingState()
+        primaryButton.isEnabled = false
+        commerceEnvironmentTask = Task { @MainActor [weak self, intakeService] in
+            await intakeService.refreshCommerceEnvironment()
+            guard !Task.isCancelled, let self else { return }
+            self.applyConfirmingState()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -162,6 +169,7 @@ final class MemoMarkShareExtensionViewController:
     }
 
     override func viewDidDisappear(_ animated: Bool) {
+        commerceEnvironmentTask?.cancel()
         firstPreviewTask?.cancel()
         completionTask?.cancel()
         progressObserver.stopIntakeDiagnosticMonitoring()

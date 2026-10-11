@@ -444,6 +444,31 @@ struct MemoMarkCommercePersistenceTests {
         )
     }
 
+    @Test("Extension distribution follows its enclosing App receipt without crossing environment boundaries")
+    func extensionUsesContainingAppReceipt() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let app = directory.appendingPathComponent("MemoMark.app")
+        let ext = app.appendingPathComponent("PlugIns/Share.appex")
+        let receipts = app.appendingPathComponent("_MASReceipt")
+        try FileManager.default.createDirectory(at: ext, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: receipts, withIntermediateDirectories: true)
+        let sandbox = receipts.appendingPathComponent("sandboxReceipt")
+        try Data().write(to: sandbox)
+        #expect(MemoMarkCommerceEnvironment.receiptURL(for: ext) == sandbox)
+        #expect(MemoMarkCommerceEnvironment.runtime(receiptURL: MemoMarkCommerceEnvironment.receiptURL(for: ext), isDebugBuild: false) == .sandbox)
+        try FileManager.default.removeItem(at: sandbox)
+        let production = receipts.appendingPathComponent("receipt")
+        try Data().write(to: production)
+        #expect(MemoMarkCommerceEnvironment.receiptURL(for: ext) == production)
+        #expect(MemoMarkCommerceEnvironment.runtime(receiptURL: MemoMarkCommerceEnvironment.receiptURL(for: ext), isDebugBuild: false) == .production)
+        try FileManager.default.removeItem(at: production)
+        #expect(MemoMarkCommerceEnvironment.receiptURL(for: ext) == nil)
+        #expect(MemoMarkCommerceEnvironment.runtime(receiptURL: nil, isDebugBuild: false) == .production)
+        try Data().write(to: sandbox)
+        #expect(MemoMarkCommerceEnvironment.receiptURL(for: app.appendingPathComponent("Other/Untrusted.appex")) == nil)
+    }
+
     @Test("legacy Plus snapshot migrates to an explicit access source")
     func legacySnapshotMigratesAccessSource() throws {
         let legacy = LegacySnapshot(

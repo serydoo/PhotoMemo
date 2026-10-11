@@ -12,6 +12,9 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     @Environment(\.verticalSizeClass)
     private var verticalSizeClass
 
+    @Environment(\.horizontalSizeClass)
+    private var horizontalSizeClass
+
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
     }
@@ -34,6 +37,8 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     let subjectSummary: HomeSubjectSummaryProjection
     let subject: MemorySubject?
     let activitySnapshot: MemoMarkBackgroundJobSnapshot?
+    let pendingShareItemCount: Int
+    let pendingShareSessionIDs: [UUID]
     let completedPhotoCount: Int
     /// Resolves the presentation route from each preset's own durable record.
     /// A single global current route would make every row appear identical.
@@ -51,7 +56,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     let isFirstRecorder: Bool
     let onOpenSubject: () -> Void
     let onOpenProcessing: () -> Void
-    let onCancelProcessing: () -> Void
+    let onResumePendingShare: ([UUID]) -> Void
     let onDeleteProcessingRecord: () -> Void
     let onCommitMemoryPresetTitle: () -> Void
     let onOpenWorkflowGuide: () -> Void
@@ -76,30 +81,36 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     private var photoPickerGuidanceRefreshToken = 0
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
-                if verticalSizeClass == .compact {
-                    ConfigurationPageHeader(
-                        localized("home.title"),
-                        subtitle: localized("home.brand.tagline")
-                    )
-                }
-                topHeaderSection
+        GeometryReader { viewport in
+            ScrollView {
+                VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
+                    if verticalSizeClass == .compact {
+                        ConfigurationPageHeader(
+                            localized("home.title"),
+                            subtitle: localized("home.brand.tagline")
+                        )
+                    }
+                    topHeaderSection
 
-                topSummaryCluster
+                    topSummaryCluster
 
-                if dynamicTypeSize.isAccessibilitySize {
-                    processPhotoFooter
+                    if dynamicTypeSize.isAccessibilitySize {
+                        processPhotoFooter
+                    }
                 }
+                .padding(.top, verticalSizeClass == .compact ? 10 : 16)
+                .padding(
+                    .bottom,
+                    dynamicTypeSize.isAccessibilitySize ? 16 : 104
+                )
+                .adaptiveScrollContent(
+                    horizontalPadding: ConfigurationUI.contentColumnPadding,
+                    viewportWidth: viewport.size.width,
+                    trailingReservedWidth: navigationStyle == .floatingRail
+                        ? AdaptiveFloatingRailMetrics.reservedWidth
+                        : 0
+                )
             }
-            .padding(.top, verticalSizeClass == .compact ? 10 : 16)
-            .padding(
-                .bottom,
-                dynamicTypeSize.isAccessibilitySize ? 16 : 104
-            )
-            .adaptiveScrollContent(
-                horizontalPadding: ConfigurationUI.contentColumnPadding
-            )
         }
         .scrollDismissesKeyboard(.interactively)
         .simultaneousGesture(
@@ -134,6 +145,13 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         } message: {
             Text(localized("home.preset.delete_message"))
         }
+    }
+
+    private var navigationStyle: EntryNavigationStyle {
+        AdaptivePageLayout.navigationStyle(
+            hasRegularHorizontalSizeClass: horizontalSizeClass == .regular,
+            hasCompactVerticalSizeClass: verticalSizeClass == .compact
+        )
     }
 
     private var topSummaryCluster: some View {
@@ -391,18 +409,26 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
 
     @ViewBuilder
     private var activitySection: some View {
-        if let projection =
-            HomeActivityPresenter
-            .projection(from: activitySnapshot),
-           HomeActivityPresenter
-            .shouldShow(projection) {
-            HomeActivityCard(
-                projection: projection,
-                onOpenProcessing: onOpenProcessing,
-                isPaused: activitySnapshot?.isPaused ?? false,
-                onCancel: onCancelProcessing,
-                onDeleteRecord: onDeleteProcessingRecord
-            )
+        let pendingShare = HomePendingSharePresenter.projection(
+            itemCount: pendingShareItemCount,
+            sessionIDs: pendingShareSessionIDs
+        )
+        let activity = HomeActivityPresenter.projection(from: activitySnapshot)
+        if pendingShare != nil || (activity.map { HomeActivityPresenter.shouldShow($0) } ?? false) {
+            VStack(alignment: .leading, spacing: ConfigurationUI.innerPanelPadding) {
+                if let pendingShare {
+                    HomePendingShareCard(projection: pendingShare, onResume: onResumePendingShare)
+                }
+                if let activity,
+                   HomeActivityPresenter.shouldShow(activity) {
+                    HomeActivityCard(
+                        projection: activity,
+                        onOpenProcessing: onOpenProcessing,
+                        isPaused: activitySnapshot?.isPaused ?? false,
+                        onDeleteRecord: onDeleteProcessingRecord
+                    )
+                }
+            }
         }
     }
 

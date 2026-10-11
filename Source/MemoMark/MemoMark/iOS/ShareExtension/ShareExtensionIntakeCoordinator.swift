@@ -99,20 +99,16 @@ final class ShareExtensionIntakeCoordinator {
             let hostAppRequiresPhotoAuthorization =
                 MemoMarkBackgroundTaskSubmission
                 .requiresHostAppForPhotoAuthorization
-            guard !backgroundRequestSubmitted
-                    || hostAppRequiresPhotoAuthorization
-            else {
-                return .received(result)
-            }
-
             let fallbackReason =
                 hostAppRequiresPhotoAuthorization
                 ? "Host app requires Apple Photos authorization"
-                : "Background scheduling failed"
+                : backgroundRequestSubmitted
+                    ? "Foreground processing owns configuration resolution and progress"
+                    : "Background scheduling failed; foreground processing is required"
             MemoMarkShareDiagnostics.record(
                 stage: .extensionHandoffRequested,
                 message:
-                    "\(fallbackReason); requesting host app fallback.",
+                    "\(fallbackReason); requesting host app handoff. recoveryScheduled=\(backgroundRequestSubmitted)",
                 requestID: result.requestID
             )
             let fallbackHandoff =

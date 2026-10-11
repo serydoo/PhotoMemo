@@ -589,3 +589,17 @@ struct GlassCardIntegrationTests {
         )
     }
 }
+
+@MainActor extension GlassCardIntegrationTests {
+    @Test("Share CPU experiment requires explicit opt-in; ordinary Debug follows production export")
+    func cpuExperimentRequiresOptIn() throws {
+        let suite = "CPUExportOptIn-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        #expect(!CPUStillImageExportExperiment.isEnabledForShareExport(defaults: defaults))
+        defaults.set(true, forKey: CPUStillImageExportExperiment.shareExportOptInKey)
+        #expect(CPUStillImageExportExperiment.isEnabledForShareExport(defaults: defaults))
+        defaults.set(false, forKey: CPUStillImageExportExperiment.shareExportOptInKey)
+        #expect(!CPUStillImageExportExperiment.isEnabledForShareExport(defaults: defaults))
+    }
+}

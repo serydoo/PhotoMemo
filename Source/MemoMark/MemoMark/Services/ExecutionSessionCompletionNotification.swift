@@ -8,15 +8,24 @@ struct ExecutionSessionCompletionNotification: Equatable {
     let completedCount: Int
     let jobIDs: [UUID]
 
+    /// Legacy unassigned live intake remains conservative; another owner's
+    /// held request cannot prevent this session from reporting its receipts.
+    static func pendingRequestIDs(for id: UUID, requests: [ExternalPhotoIntakeRequest]) -> Set<UUID> {
+        Set(requests.filter {
+            $0.continuedExecutionSessionID == id
+                || ($0.continuedExecutionSessionID == nil && $0.executionSuspendedAt == nil)
+        }.map(\.id))
+    }
+
     @MainActor static func make(id: UUID, jobs: [BatchJob], language: MemoMarkLanguage,
                                pendingIntakeRequestIDs: Set<UUID>? = [],
                                finishedAt: Date = Date()) -> Self? {
         // An accepted Share may still be waiting for this owner's lease.
         // Defer the final summary until durable admission accounts for it.
         // Unreadable intake metadata cannot establish a quiet queue either.
-        guard let pendingIntakeRequestIDs,
-              pendingIntakeRequestIDs.isSubset(of: Set(jobs.compactMap(\.intakeRequestID))) else { return nil }
         let members = jobs.filter { ($0.executionSessionID ?? $0.id) == id && $0.historyDeletedAt == nil }
+        guard let pendingIntakeRequestIDs,
+              pendingIntakeRequestIDs.isSubset(of: Set(members.compactMap(\.intakeRequestID))) else { return nil }
         let tasks = members.flatMap(\.tasks)
         guard !tasks.isEmpty, tasks.allSatisfy({ $0.phase == .completed }),
               members.allSatisfy({ $0.deliverySummary.needsAttentionCount == 0 }),

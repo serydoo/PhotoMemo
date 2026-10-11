@@ -32,6 +32,9 @@ struct MemoMarkConfigurationCenterView: View {
     let refreshExternalIntake:
         () -> Void
 
+    let resumeExternalShareSessions:
+        ([UUID]) -> Void
+
     let previewCoordinator:
         PreviewCoordinator?
 
@@ -68,7 +71,8 @@ struct MemoMarkConfigurationCenterView: View {
     let localConfigurationLibraryCoordinator:
         LocalConfigurationLibraryCoordinator
 
-    let externalIntakeCenter:
+    @ObservedObject
+    var externalIntakeCenter:
         ExternalPhotoIntakeCenter
 
     @StateObject
@@ -517,6 +521,8 @@ struct MemoMarkConfigurationCenterView: View {
             )
         self.refreshExternalIntake =
             dependencies.refreshExternalIntake
+        self.resumeExternalShareSessions =
+            dependencies.resumeExternalShareSessions
         self.previewCoordinator =
             dependencies.previewCoordinator
         self.exportCoordinator =

@@ -12,6 +12,10 @@ final class ExternalPhotoIntakeCenter:
     @Published private(set) var intakePersistenceError:
         MemoMarkSharedDefaultsReadFailure?
 
+    @Published private(set) var pendingShareItemCount = 0
+
+    @Published private(set) var pendingShareSessionIDs: [UUID] = []
+
     @Published private(set) var defaultConfigurationSnapshot:
         BatchConfigurationSnapshot
 
@@ -224,6 +228,24 @@ final class ExternalPhotoIntakeCenter:
             )
         }
 
+        pendingRequests = requests
+        let suspendedShareItemCount = requests.reduce(0) { count, request in
+            guard request.launchSource == .shareExtension,
+                  request.executionSuspendedAt != nil else { return count }
+            return count + request.intakePayloads.count
+        }
+        let suspendedSessionIDs = Array(Set(requests.compactMap { request -> UUID? in
+            guard request.launchSource == .shareExtension,
+                  request.executionSuspendedAt != nil else { return nil }
+            return request.continuedExecutionSessionID ?? request.id
+        })).sorted { $0.uuidString < $1.uuidString }
+        if pendingShareItemCount != suspendedShareItemCount
+            || pendingShareSessionIDs != suspendedSessionIDs {
+            pendingShareItemCount = suspendedShareItemCount
+            pendingShareSessionIDs = suspendedSessionIDs
+            revision = UUID()
+        }
+
         return requests
     }
 
@@ -241,6 +263,16 @@ final class ExternalPhotoIntakeCenter:
         pendingRequests.removeAll {
             requestIDs.contains($0.id)
         }
+        pendingShareItemCount = pendingRequests.reduce(0) { count, request in
+            guard request.launchSource == .shareExtension,
+                  request.executionSuspendedAt != nil else { return count }
+            return count + request.intakePayloads.count
+        }
+        pendingShareSessionIDs = Array(Set(pendingRequests.compactMap { request -> UUID? in
+            guard request.launchSource == .shareExtension,
+                  request.executionSuspendedAt != nil else { return nil }
+            return request.continuedExecutionSessionID ?? request.id
+        })).sorted { $0.uuidString < $1.uuidString }
         revision = UUID()
         return result
     }

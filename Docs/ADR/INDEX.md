@@ -16,4 +16,4 @@
 
 Future ADRs should be appended to this table.
 
-| ADR-012 | Processing Intent, Session And Execution Authority | Implementation under verification | 2026-10-07 | Intent-backed receipts and accounting, ledger-owned session membership, generation leases and evidence-gated Continued Processing marker probe. |
+| ADR-012 | Processing Intent, Session And Execution Authority | Release execution path implemented; production certification open | 2026-10-07 | Intent-backed receipts and accounting, ledger-owned session membership, generation leases, DEBUG marker probe separation and Release Share Continued Processing with BGProcessing recovery. |

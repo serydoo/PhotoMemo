@@ -204,3 +204,51 @@ struct BatchQueueCommerceAccountingTests {
         )
     }
 }
+
+extension BatchQueueCommerceAccountingTests {
+    @Test("startup reconciliation must preserve identity accounting count")
+    @MainActor func identityReconciliationCountsOnce() throws {
+        let suite = "MemoMark.AuditAccounting." + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let accounting = BatchQueueCommerceAccounting(persistence: MemoMarkCommercePersistence(defaults: defaults))
+        var task = completedTask()
+        task.processingIdentity = ProcessingIdentity(sourceDigest: "audit-source", semanticsDigest: "audit-output")
+        let first = try #require(accounting.recordSuccessfulSave(for: task, current: freeSnapshot()).updatedSnapshot)
+        #expect(first.successfulRecordCount == 1)
+        let job = BatchJob(title: "Audit", launchSource: .shareExtension,
+            configuration: BatchConfigurationSnapshot(template: .classicWhite, badge: nil, anchor: nil,
+                shouldWritePhotoDescription: false, photoDescriptionOverride: "", selectedAlbumIdentifier: ""),
+            tasks: [task])
+        let reconciled = accounting.reconcile(completedJobs: [job], current: first)
+        #expect(!reconciled.requiresRecovery)
+        let count = reconciled.updatedSnapshot?.successfulRecordCount ?? first.successfulRecordCount
+        #expect(count == 1)
+    }
+}
+
+extension BatchQueueCommerceAccountingTests {
+    @Test("Recovery removes only proven legacy aliases without changing unrelated usage")
+    @MainActor func recoveryCanonicalizesKnownLegacyAccountingAliases() throws {
+        let suite = "AccountingAliasRecovery." + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let persistence = MemoMarkCommercePersistence(defaults: defaults)
+        let accounting = BatchQueueCommerceAccounting(persistence: persistence)
+        var task = completedTask()
+        task.processingIdentity = ProcessingIdentity(sourceDigest: "alias-source", semanticsDigest: "alias-output")
+        let unrelated = UUID()
+        for id in [task.id, task.successfulSaveAccountingID, unrelated] {
+            #expect(persistence.recordSuccessfulSave(taskID: id, environment: .production))
+        }
+        let job = BatchJob(title: "Recovery", launchSource: .shareExtension,
+            configuration: BatchConfigurationSnapshot(template: .classicWhite, badge: nil, anchor: nil,
+                shouldWritePhotoDescription: false, photoDescriptionOverride: "", selectedAlbumIdentifier: ""), tasks: [task])
+        let first = accounting.reconcile(completedJobs: [job], current: freeSnapshot())
+        #expect(!first.requiresRecovery)
+        #expect(persistence.successfulRecordCount(environment: .production) == 2)
+        #expect(persistence.hasRecordedSuccessfulSave(taskID: unrelated, environment: .production))
+        _ = accounting.reconcile(completedJobs: [job], current: freeSnapshot())
+        #expect(persistence.successfulRecordCount(environment: .production) == 2)
+    }
+}

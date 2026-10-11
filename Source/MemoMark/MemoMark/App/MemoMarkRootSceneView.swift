@@ -147,6 +147,11 @@ struct MemoMarkRootSceneView: View {
                                 .refreshExternalIntakeState()
                         }
                     },
+                    resumeExternalShareSessions: { sessionIDs in
+                        Task { @MainActor in
+                            await runtime.resumeExternalShareSessions(sessionIDs)
+                        }
+                    },
                     notificationDeepLink:
                         pendingNotificationDeepLink,
                     onNotificationDeepLinkHandled: {

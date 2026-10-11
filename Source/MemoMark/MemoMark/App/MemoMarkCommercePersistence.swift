@@ -136,7 +136,8 @@ nonisolated final class MemoMarkCommercePersistence:
     func reconcileSuccessfulSaves(
         taskIDs: Set<UUID>,
         environment:
-            MemoMarkCommerceEnvironment
+            MemoMarkCommerceEnvironment,
+        replacingLegacyTaskIDs aliases: [UUID: UUID] = [:]
     ) -> Bool {
         guard !taskIDs.isEmpty else {
             return true
@@ -150,12 +151,20 @@ nonisolated final class MemoMarkCommercePersistence:
             )
             let previousIDs = defaults.object(forKey: completedKey)
             let previousCount = defaults.object(forKey: countStorageKey)
+            let previousIdentityCount = completedTaskIDs.count
+            completedTaskIDs = Set(completedTaskIDs.map { storedID in
+                guard let legacyID = UUID(uuidString: storedID),
+                      let canonicalID = aliases[legacyID] else { return storedID }
+                return canonicalID.uuidString
+            })
+            // Subtract only duplicates proven by the durable saved-task ledger.
+            let provenDuplicateCount = previousIdentityCount - completedTaskIDs.count
             completedTaskIDs.formUnion(
                 taskIDs.map(\.uuidString)
             )
             let expectedIDs = completedTaskIDs.sorted()
             let expectedCount = max(
-                defaults.integer(forKey: countStorageKey),
+                max(0, defaults.integer(forKey: countStorageKey) - provenDuplicateCount),
                 expectedIDs.count
             )
 

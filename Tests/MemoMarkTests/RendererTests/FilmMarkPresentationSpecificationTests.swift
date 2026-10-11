@@ -162,6 +162,37 @@ struct FilmMarkPresentationSpecificationTests {
         )
     }
 
+    @Test("scrolling editor retains every presentation's complete output region")
+    func scrollingEditorRetainsOutputRegion() {
+        for orientation in ConfigurationPreviewBackground.Orientation.allCases {
+            for style: RecordCardPresentationStyle in [.classicWhite, .glassCard, .minimal, .filmMark] {
+                let width: CGFloat = 1200
+                let ratio = ConfigurationPreviewViewportSpec.canvasAspectRatio(for: style, orientation: orientation)
+                let size = CGSize(width: width, height: width / ratio)
+                let frame = ConfigurationPreviewViewportSpec.editingRegionFrame(
+                    for: style, orientation: orientation, canvasSize: size,
+                    filmMarkText: "2026/10/10 · 1岁4个月", filmMarkConfiguration: .default
+                )
+                let retained = ConfigurationPreviewViewportSpec.retainedEditingHeight(
+                    canvasHeight: size.height, regionMinY: frame.minY, contextPadding: 12
+                )
+                let scrollEnd = size.height - retained
+                #expect(retained > 0 && retained <= size.height)
+                #expect(scrollEnd <= frame.minY)
+                #expect(frame.maxY <= size.height + 0.001)
+                // At the maximum outer scroll offset the full region stays visible.
+                #expect(frame.minY - scrollEnd >= 0)
+                #expect(frame.maxY - scrollEnd <= retained + 0.001)
+            }
+        }
+        #expect(ConfigurationPreviewViewportSpec.retainedEditingHeight(
+            canvasHeight: 200, regionMinY: -50, contextPadding: 12
+        ) == 200)
+        #expect(ConfigurationPreviewViewportSpec.retainedEditingHeight(
+            canvasHeight: 200, regionMinY: 250, contextPadding: 12
+        ) == 0)
+    }
+
     @Test("preview preferences remain app-local UI state")
     func previewPreferencesRemainAppLocalUIState() {
         #expect(

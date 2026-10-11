@@ -285,12 +285,18 @@ final class MemoMarkShareExtensionIntakeService {
     private let commercePersistence:
         MemoMarkCommercePersistence
 
+    private var commerceEnvironment = MemoMarkCommerceEnvironment.currentRuntime
+
+    func refreshCommerceEnvironment() async {
+        commerceEnvironment = await MemoMarkCommerceEnvironment.resolveRuntime()
+    }
+
     var maxSupportedPhotoCount: Int {
         let snapshot =
             commercePersistence
             .loadSharedSnapshot(
                 compatibleWith:
-                    .currentRuntime
+                    commerceEnvironment
             )
         return ShareIntakeCapacityPolicy()
             .maximumSupportedPhotoCount(
@@ -353,6 +359,8 @@ final class MemoMarkShareExtensionIntakeService {
         _ items: [NSExtensionItem]
     ) async throws -> MemoMarkShareExtensionImportResult {
 
+        await refreshCommerceEnvironment()
+        try Task.checkCancellation()
         let requestID = UUID()
 
         let handoffReadiness =
@@ -420,7 +428,7 @@ final class MemoMarkShareExtensionIntakeService {
             commercePersistence
             .loadSharedSnapshot(
                 compatibleWith:
-                    .currentRuntime
+                    commerceEnvironment
             )
         let requestCapacity = requestCapacity(
             from: commerceSnapshot

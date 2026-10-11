@@ -180,14 +180,11 @@ struct ConfigurationProjectionService {
             },
             selectedMemoryPresetID: activeConfigurationID
         )
-        var frozenShareSnapshot: BatchConfigurationSnapshot?
-        if [.filmMark, .glassCard].contains(activeConfiguration.presentation.route) {
-            frozenShareSnapshot = try ProductionConfigurationSnapshotFactory.resolve(
-                reference: .init(configurationID: activeConfigurationID, revision: activeConfiguration.revision),
-                from: aggregate
-            )
-            frozenShareSnapshot?.timeDisplayConfiguration = legacyStore.loadTimeDisplayConfiguration()
-        }
+        var frozenShareSnapshot = try ProductionConfigurationSnapshotFactory.compatibilitySnapshot(
+            reference: .init(configurationID: activeConfigurationID, revision: activeConfiguration.revision),
+            from: aggregate
+        )
+        frozenShareSnapshot.timeDisplayConfiguration = legacyStore.loadTimeDisplayConfiguration()
         return ConfigurationCompatibilityProjection(
             subjectLibrary: subjectLibrary,
             productionConfigurationReference:

@@ -101,6 +101,18 @@ struct HomeActivityPresentationState {
     var isVisible = false
 }
 
+struct HomePendingShareProjection: Equatable {
+    let itemCount: Int
+    let sessionIDs: [UUID]
+}
+
+enum HomePendingSharePresenter {
+    static func projection(itemCount: Int, sessionIDs: [UUID]) -> HomePendingShareProjection? {
+        guard itemCount > 0 else { return nil }
+        return HomePendingShareProjection(itemCount: itemCount, sessionIDs: sessionIDs)
+    }
+}
+
 enum HomeActivityPresenter {
 
     static let completionDisplayDuration: TimeInterval = 10 * 60

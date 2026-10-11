@@ -47,7 +47,9 @@ final class RecordCardExportPipeline {
         )
 #if os(iOS) && DEBUG && MEMOMARK_SHARE_EXTENSION
         MemoMarkBackgroundProbe.record("extension.export.artifactReady")
-        if UTType(filenameExtension: resolvedSaveURL.pathExtension)?.conforms(to: .jpeg) == true {
+        if CPUStillImageExportExperiment.isEnabledForShareExport(
+            defaults: MemoMarkSharedContainer.sharedUserDefaults),
+           UTType(filenameExtension: resolvedSaveURL.pathExtension)?.conforms(to: .jpeg) == true {
             return try CPUStillImageExportExperiment.export(photo: photo, artifact: artifact,
                 to: resolvedSaveURL, writer: imageWriter,
                 exportDescription: CardVariableProvider.exportDescription(from: card))
