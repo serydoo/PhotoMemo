@@ -11,6 +11,23 @@ struct LocalizationResourceParityTests {
         "ko"
     ]
 
+    @Test("subject identity fields and new-object defaults have complete translations")
+    func subjectIdentityFieldsAndDefaultsAreLocalized() throws {
+        let keys = ["对象名称", "昵称", "与我的关系", "专属称呼", "请输入对象名称", "选填",
+                    "subject.default.name", "subject.default.anchor_note", "subject.default.definition",
+                    "accessibility.required_field_format"]
+        for code in languageCodes {
+            let entries = parseResource(try sourceText(
+                "Source/MemoMark/MemoMark/\(code).lproj/Localizable.strings"
+            )).entries
+            for key in keys {
+                let value = try #require(entries[key], "Missing \(code): \(key)")
+                #expect(!value.isEmpty)
+                if code == "en" { #expect(!value.contains("对象")) }
+            }
+        }
+    }
+
     @Test("All four resource files expose the same non-empty keys")
     func allResourceKeysStayInParity() throws {
         let resources = try languageCodes.map { code in

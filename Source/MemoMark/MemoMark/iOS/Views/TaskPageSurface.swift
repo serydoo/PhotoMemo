@@ -21,6 +21,7 @@ struct TaskPageSurface: View {
     let fallbackConfigurationName: String
     let onOpenPhotoLibrary: (TaskPhotoLibraryLink) -> Void
     let onRetryFailedTasks: () -> Void
+    let onClearHistory: () -> Void
     let onDismissKeyboard: () -> Void
 
     private var interfaceLanguage: MemoMarkLanguage {
@@ -65,9 +66,7 @@ struct TaskPageSurface: View {
                 .adaptiveScrollContent(
                     horizontalPadding: ConfigurationUI.contentColumnPadding,
                     viewportWidth: viewport.size.width,
-                    trailingReservedWidth: navigationStyle == .floatingRail
-                        ? AdaptiveFloatingRailMetrics.reservedWidth
-                        : 0
+                    fillsAvailableWidth: verticalSizeClass == .compact
                 )
             }
         }
@@ -584,6 +583,7 @@ struct TaskPageSurface: View {
         TaskRecentHistorySurface(
             rows: presentation.historyRows,
             onOpenPhotoLibrary: onOpenPhotoLibrary,
+            onClearHistory: onClearHistory,
             isSheetPresented: $isRecentTasksSheetPresented
         )
     }

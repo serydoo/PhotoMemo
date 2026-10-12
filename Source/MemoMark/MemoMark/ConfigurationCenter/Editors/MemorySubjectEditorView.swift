@@ -334,7 +334,7 @@ struct MemorySubjectEditorView: View {
                             : expressionSubjectSourceIcon(for: source)
                     )
                     .accessibilityLabel(
-                        "\(source.displayTitle)，\(expressionSubjectSourceValue(for: source) ?? "未填写")"
+                        "\(localizedIdentityText(source.displayTitle)), \(expressionSubjectSourceValue(for: source) ?? localizedIdentityText("未填写"))"
                     )
                 }
                 .disabled(expressionSubjectSourceValue(for: source) == nil)
@@ -374,14 +374,14 @@ struct MemorySubjectEditorView: View {
 
     private var expressionSubjectSelectionTitle: String {
         guard let source = expressionSubjectResolution.source else {
-            return "默认 · 对象名称"
+            return localizedIdentityText("默认 · 对象名称")
         }
 
         if source == .displayName {
-            return "默认 · 对象名称"
+            return localizedIdentityText("默认 · 对象名称")
         }
 
-        return "\(expressionSubjectDisplayValue) · \(source.displayTitle)"
+        return "\(expressionSubjectDisplayValue) · \(localizedIdentityText(source.displayTitle))"
     }
 
     private var compactIdentityFieldsPanel: some View {
@@ -437,7 +437,7 @@ struct MemorySubjectEditorView: View {
             )
             .frame(width: 104, alignment: .leading)
 
-            TextField(placeholder, text: text)
+            TextField(localizedIdentityText(placeholder), text: text)
                 .textFieldStyle(.plain)
                 .font(.body)
                 .focused($focusedField, equals: focus)
@@ -450,7 +450,9 @@ struct MemorySubjectEditorView: View {
                     advanceIdentityFocus(from: focus)
                 }
                 .accessibilityLabel(
-                    isRequired ? "\(title)，必填" : title
+                    isRequired
+                        ? String(format: localizedIdentityText("accessibility.required_field_format"), localizedIdentityText(title))
+                        : localizedIdentityText(title)
                 )
                 .accessibilityIdentifier(
                     identityFieldAccessibilityIdentifier(for: title)
@@ -477,7 +479,7 @@ struct MemorySubjectEditorView: View {
                             key: "accessibility.clear_format",
                             fallback: "Clear %@"
                         ),
-                        title
+                        localizedIdentityText(title)
                     )
                 ))
             }
@@ -487,12 +489,16 @@ struct MemorySubjectEditorView: View {
         .contentShape(Rectangle())
     }
 
+    private func localizedIdentityText(_ key: String) -> String {
+        MemoMarkLanguage.interfaceStored.localized(key: key, fallback: key)
+    }
+
     private func contactFieldPrompt(
         title: String,
         isRequired: Bool
     ) -> some View {
         HStack(spacing: 2) {
-            Text(title)
+            Text(localizedIdentityText(title))
                 .font(.body)
                 .foregroundStyle(.secondary)
 
@@ -525,8 +531,7 @@ struct MemorySubjectEditorView: View {
     }
 
     private var expressionSubjectDisplaySourceTitle: String {
-        expressionSubjectResolution.source?.displayTitle
-        ?? "默认称呼"
+        localizedIdentityText(expressionSubjectResolution.source?.displayTitle ?? "默认称呼")
     }
 
     private var expressionSubjectResolution:
@@ -558,8 +563,8 @@ struct MemorySubjectEditorView: View {
     private func expressionSubjectMenuOptionTitle(
         for source: MemorySubjectExpressionSubjectSource
     ) -> String {
-        let value = expressionSubjectSourceValue(for: source) ?? "未填写"
-        return "\(source.displayTitle)    \(value)"
+        let value = expressionSubjectSourceValue(for: source) ?? localizedIdentityText("未填写")
+        return "\(localizedIdentityText(source.displayTitle))    \(value)"
     }
 
     private func expressionSubjectSourceIcon(

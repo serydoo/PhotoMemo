@@ -6,6 +6,18 @@ import Testing
 @Suite("V1 iOS subject overview presenter")
 struct SubjectOverviewPresenterTests {
 
+    @Test("new subject defaults follow the interface language without rewriting a supplied name")
+    func newSubjectDefaultsFollowLanguage() {
+        let expected = ["新的记忆对象", "New Memory Subject", "新しい思い出の主役", "새로운 추억의 주인공"]
+        for (index, language) in [MemoMarkLanguage.simplifiedChinese, .english, .japanese, .korean].enumerated() {
+            let subject = SubjectLibraryFactory.makeDefaultSubject(referenceDate: .distantPast, language: language)
+            #expect(subject.identity.displayName == expected[index])
+            #expect(subject.primaryTimeAnchor?.anchorType == .birthday)
+            let supplied = SubjectLibraryFactory.makeFirstRunSubject(name: "新的记忆对象", birthday: .distantPast, language: language)
+            #expect(supplied.identity.displayName == "新的记忆对象")
+        }
+    }
+
     @Test("presentation uses the edited object name instead of a stale nickname")
     func presentationUsesEditedObjectNameInsteadOfStaleNickname() {
         let subject =
@@ -692,7 +704,7 @@ struct SubjectOverviewPresenterTests {
         #expect(normalizedField.contains("if !text.wrappedValue.isEmpty"))
         #expect(normalizedField.contains("Image(systemName: \"xmark.circle.fill\")"))
         #expect(normalizedField.contains("accessibility.clear_format"))
-        #expect(normalizedField.contains("isRequired ? \"\\(title)，必填\" : title"))
+        #expect(normalizedField.contains("accessibility.required_field_format"))
         #expect(!normalizedField.contains("configurationFieldChrome"))
         #expect(!panelSource.contains("RoundedRectangle("))
     }

@@ -1629,7 +1629,7 @@
 "filmMark.configuration.details.compact.subtitle" = "フォントを確認し、日付と場所の表示方法を選びます。";
 "configuration.expression.example" = "表現の例";
 "configuration.expression.natural.short" = "自然";
-"configuration.expression.optional_content" = "時間の表現は「カード内容」で任意に追加できます。日付や場所、自分の言葉だけでも使えます。";
+"configuration.expression.tone_guidance" = "設定した時間アンカーをもとに、時間の伝え方を選べます。";
 "filmMark.configuration.content.help" = "写真に表示する言葉や情報を選びます。";
 "filmMark.configuration.position.help" = "写真の文字の位置を選び、微調整します。";
 "filmMark.configuration.anchor.help" = "写真の左下か右下から文字を配置します。";
@@ -1917,3 +1917,31 @@
 "home.activity.status.interrupted" = "処理が中断されました";
 
 "notification.continued.unconfirmed.body" = "この共有の処理状況を確認できませんでした。MemoMarkを開いて詳細を確認してください。";
+
+/* User feedback: identity fields and new subject defaults. */
+"对象名称" = "名前";
+"昵称" = "ニックネーム";
+"与我的关系" = "私との関係";
+"专属称呼" = "特別な呼び名";
+"请输入对象名称" = "名前を入力";
+"选填" = "任意";
+"accessibility.required_field_format" = "%@、必須";
+"subject.default.name" = "新しい思い出の主役";
+"subject.default.anchor_note" = "この人の大切な日を追加してください。";
+"subject.default.definition" = "名前、写真、大切な日を追加します。";
+"subject.default.first_name" = "思い出の主役";
+"subject.default.birthday_note" = "写真を撮ったときの年齢を振り返ります。";
+"subject.default.first_definition" = "この人を中心に写真の時間を振り返ります。";
+"生日" = "誕生日";
+"家人" = "家族";
+"未设置" = "未設定";
+"生日记忆" = "誕生日の思い出";
+"生日回顾" = "誕生日を振り返る";
+
+"task.history.clear" = "終了した記録を消去";
+"task.history.actions" = "記録の操作";
+"task.history.clear.detail" = "終了した処理記録のみを消去します。写真アプリの写真と処理中のタスクは残ります。";
+
+"默认 · 对象名称" = "デフォルト · 名前";
+"默认称呼" = "デフォルトの呼び名";
+"未填写" = "未入力";

@@ -434,6 +434,8 @@ struct ClassicWhiteCardRenderer: View {
             layout: layout
         )
 
+        let landscapeWidths = resolvedLandscapeColumnWidths(width: width, height: height, layout: layout)
+
         return HStack(
             alignment: .center,
             spacing: 0
@@ -443,7 +445,8 @@ struct ClassicWhiteCardRenderer: View {
                 width: width,
                 height: height,
                 layout: layout,
-                portraitGeometry: portraitGeometry
+                portraitGeometry: portraitGeometry,
+                landscapeWidths: landscapeWidths
             )
 
             Spacer(minLength: 0)
@@ -452,7 +455,8 @@ struct ClassicWhiteCardRenderer: View {
                 width: width,
                 height: height,
                 layout: layout,
-                portraitGeometry: portraitGeometry
+                portraitGeometry: portraitGeometry,
+                landscapeWidths: landscapeWidths
             )
         }
         .padding(
@@ -477,7 +481,8 @@ struct ClassicWhiteCardRenderer: View {
         width: CGFloat,
         height: CGFloat,
         layout: ClassicWhiteRenderer.Layout,
-        portraitGeometry: ClassicWhitePortraitResolvedLayout?
+        portraitGeometry: ClassicWhitePortraitResolvedLayout?,
+        landscapeWidths: ClassicWhiteLandscapeColumnWidths?
     ) -> some View {
 
         pinnedColumn(
@@ -538,7 +543,7 @@ struct ClassicWhiteCardRenderer: View {
         .frame(
             width:
                 width
-                * (portraitGeometry?.leftTextWidth ?? layout.leftColumnWidthRatio),
+                * (portraitGeometry?.leftTextWidth ?? landscapeWidths?.left ?? layout.leftColumnWidthRatio),
             alignment: .leading
         )
         .offset(
@@ -554,7 +559,8 @@ struct ClassicWhiteCardRenderer: View {
         width: CGFloat,
         height: CGFloat,
         layout: ClassicWhiteRenderer.Layout,
-        portraitGeometry: ClassicWhitePortraitResolvedLayout?
+        portraitGeometry: ClassicWhitePortraitResolvedLayout?,
+        landscapeWidths: ClassicWhiteLandscapeColumnWidths?
     ) -> some View {
 
         HStack(
@@ -610,13 +616,42 @@ struct ClassicWhiteCardRenderer: View {
             .frame(
                 width:
                     width
-                    * (portraitGeometry?.rightTextWidth ?? layout.rightColumnWidthRatio),
+                    * (portraitGeometry?.rightTextWidth ?? landscapeWidths?.right ?? layout.rightColumnWidthRatio),
                 alignment:
                     layout.rightColumnAlignment == .leading
                     ? .leading
                     : .trailing
             )
         }
+    }
+
+    private func resolvedLandscapeColumnWidths(
+        width: CGFloat,
+        height: CGFloat,
+        layout: ClassicWhiteRenderer.Layout
+    ) -> ClassicWhiteLandscapeColumnWidths? {
+        guard ClassicWhiteRenderer.orientation(for: card.metadata) == .landscape else { return nil }
+        func measure(_ value: String, fontSize: CGFloat, tracking: CGFloat, secondary: Bool = false) -> CGFloat {
+            ClassicWhiteLandscapeLayoutSpecification.measureTextWidth(value,
+                fontSize: fontSize, tracking: tracking, isSecondary: secondary) / max(width, 1)
+        }
+        let leftWidth = max(
+            measure(frameInput.slot0, fontSize: max(16, height * layout.titleFontRatio), tracking: layout.titleTracking),
+            measure(frameInput.slot2, fontSize: max(12, height * layout.bottomFontRatio), tracking: layout.bottomTracking, secondary: true)
+        )
+        let rightWidth = max(
+            measure(frameInput.slot1, fontSize: max(15, height * layout.metadataFontRatio), tracking: layout.metadataTracking),
+            measure(frameInput.slot3, fontSize: max(12, height * layout.bottomFontRatio), tracking: layout.bottomTracking, secondary: true)
+        )
+        let logoClusterWidth = showsLogo ? layout.logoSlotWidthRatio + layout.logoToDividerSpacingRatio
+            + max(ClassicWhiteRenderer.dividerWidth, height * layout.dividerWidthRatio) / max(width, 1)
+            + layout.dividerToTextSpacingRatio : 0
+        return ClassicWhiteLandscapeLayoutSpecification.resolve(
+            measuredLeftWidth: leftWidth, measuredRightWidth: rightWidth,
+            horizontalPadding: layout.horizontalPaddingRatio,
+            preferredLeftWidth: layout.leftColumnWidthRatio,
+            preferredRightWidth: layout.rightColumnWidthRatio,
+            logoClusterWidth: logoClusterWidth)
     }
 
     private func resolvedPortraitGeometry(

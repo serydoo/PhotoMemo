@@ -106,9 +106,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                 .adaptiveScrollContent(
                     horizontalPadding: ConfigurationUI.contentColumnPadding,
                     viewportWidth: viewport.size.width,
-                    trailingReservedWidth: navigationStyle == .floatingRail
-                        ? AdaptiveFloatingRailMetrics.reservedWidth
-                        : 0
+                    fillsAvailableWidth: verticalSizeClass == .compact
                 )
             }
         }

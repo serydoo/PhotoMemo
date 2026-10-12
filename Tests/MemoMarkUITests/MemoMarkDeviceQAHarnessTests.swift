@@ -2505,6 +2505,159 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         add(screenshot)
     }
 
+    func testFeedbackLandscapeBothDirections() throws {
+        XCUIDevice.shared.orientation = .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        launchHostAndWait()
+        var viewportWidths: [String: CGFloat] = [:]
+
+        for (orientation, direction) in [
+            (UIDeviceOrientation.landscapeLeft, "left"),
+            (UIDeviceOrientation.landscapeRight, "right")
+        ] {
+            XCUIDevice.shared.orientation = orientation
+            let rotated = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in self.application.frame.width > self.application.frame.height },
+                object: nil
+            )
+            XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 10), .completed)
+            for (identifier, name) in [("house.fill", "home"), ("slider.horizontal.3", "configuration"), ("checklist", "progress")] {
+                let action = application.buttons[identifier]
+                XCTAssertTrue(action.waitForExistence(timeout: 10))
+                let ready = XCTNSPredicateExpectation(
+                    predicate: NSPredicate { _, _ in action.isHittable }, object: nil
+                )
+                XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
+                if !action.isSelected { action.tap() }
+                XCTAssertTrue(application.scrollViews.firstMatch.waitForExistence(timeout: 10))
+                let edgeGap = application.frame.maxX - action.frame.maxX
+                let contentReady = XCTNSPredicateExpectation(
+                    predicate: NSPredicate { _, _ in
+                        self.application.scrollViews.allElementsBoundByIndex.contains { $0.frame.width > 200 }
+                    }, object: nil
+                )
+                XCTAssertEqual(XCTWaiter.wait(for: [contentReady], timeout: 10), .completed)
+                let viewport = try XCTUnwrap(application.scrollViews.allElementsBoundByIndex.first { $0.frame.width > 200 })
+                if direction == "left" {
+                    viewportWidths[name] = viewport.frame.width
+                } else {
+                    XCTAssertEqual(try XCTUnwrap(viewportWidths[name]) - viewport.frame.width, 50, accuracy: 2)
+                }
+                let geometry = XCTAttachment(string: "direction=\(direction); page=\(name); buttonFrame=\(action.frame); edgeGap=\(edgeGap); contentViewport=\(viewport.frame)")
+                geometry.name = "feedback-\(name)-geometry-\(direction)"
+                geometry.lifetime = .keepAlways
+                add(geometry)
+                let hierarchy = XCTAttachment(string: application.debugDescription)
+                hierarchy.name = "feedback-\(name)-hierarchy-\(direction)"
+                hierarchy.lifetime = .keepAlways
+                add(hierarchy)
+                if orientation == .landscapeLeft {
+                    // The portrait-top camera is on the left in this pose.
+                    // The plain right edge keeps page spacing + rail margin,
+                    // plus the capsule's inset around its 46pt button.
+                    let expectedGap = 12.0 + 10.0 + (56.0 - 46.0) / 2
+                    XCTAssertEqual(edgeGap, expectedGap, accuracy: 2)
+                }
+                attachCurrentScreenshot(named: "feedback-\(name)-landscape-\(direction)")
+
+                if name == "configuration" {
+                    let preview = application.buttons["configuration.preview.rail-visibility"]
+                    XCTAssertTrue(preview.waitForExistence(timeout: 10))
+                    XCTAssertTrue(preview.isHittable)
+                    preview.tap()
+                    attachCurrentScreenshot(named: "feedback-configuration-preview-toggled-\(direction)")
+                    preview.tap()
+                }
+            }
+        }
+        application.terminate()
+        launchHostAndWait()
+        XCTAssertEqual(application.state, .runningForeground)
+        attachCurrentScreenshot(named: "feedback-relaunch")
+    }
+
+    func testFeedbackSingleSaveSurvivesRelaunch() throws {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        launchHostAndWait()
+
+        func openNoteSwitch() throws -> XCUIElement {
+            let configuration = application.buttons["slider.horizontal.3"]
+            XCTAssertTrue(configuration.waitForExistence(timeout: 10))
+            if !configuration.isSelected { configuration.tap() }
+            let preview = application.buttons["configuration.preview.rail-visibility"]
+            if preview.exists && preview.label == "收起预览" { preview.tap() }
+            // Configuration owns an inner option scroller below the outer
+            // retained-preview scroller; target the options, not the rail.
+            let contentScroll = application.scrollViews.element(boundBy: 1)
+            let note = application.switches.matching(
+                NSPredicate(format: "label BEGINSWITH %@", "补充一句话")
+            ).firstMatch
+            if !note.exists {
+                let section = application.buttons.matching(
+                    NSPredicate(format: "label BEGINSWITH %@", "照片说明")
+                ).firstMatch
+                for _ in 0..<8 where !section.exists { contentScroll.swipeUp() }
+                XCTAssertTrue(section.waitForExistence(timeout: 5))
+                revealConfigurationOption(section)
+                section.tap()
+            }
+            for _ in 0..<8 where !note.isHittable {
+                let scroll = contentScroll
+                if note.exists && note.frame.midY < scroll.frame.midY {
+                    scroll.swipeDown()
+                } else {
+                    scroll.swipeUp()
+                }
+            }
+            let hierarchy = XCTAttachment(string: application.debugDescription)
+            hierarchy.name = "feedback-note-switch-before-edit"
+            hierarchy.lifetime = .keepAlways
+            add(hierarchy)
+            XCTAssertTrue(note.waitForExistence(timeout: 5))
+            XCTAssertTrue(note.isHittable)
+            return note
+        }
+
+        func saveOnce() -> Bool {
+            let save = application.buttons["configuration.rail.save"]
+            let enabled = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in save.exists && save.isEnabled && save.isHittable }, object: nil
+            )
+            guard XCTWaiter.wait(for: [enabled], timeout: 10) == .completed else { return false }
+            save.tap()
+            let saved = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in save.label == "已保存" && !save.isEnabled }, object: nil
+            )
+            return XCTWaiter.wait(for: [saved], timeout: 15) == .completed
+        }
+
+        let note = try openNoteSwitch()
+        let original = try XCTUnwrap(note.value as? String)
+        note.tap()
+        let edited = try XCTUnwrap(note.value as? String)
+        let firstSaveSucceeded = saveOnce()
+        attachCurrentScreenshot(named: "feedback-single-save")
+        application.terminate()
+        launchHostAndWait()
+        let restored = try openNoteSwitch()
+        let reloaded = restored.value as? String
+        attachCurrentScreenshot(named: "feedback-saved-setting-after-relaunch")
+
+        // Restore the existing user preference before asserting the outcome.
+        if reloaded != original { restored.tap() }
+        let restorationSucceeded = reloaded == original || saveOnce()
+        application.terminate()
+        launchHostAndWait()
+        let finalValue = try openNoteSwitch().value as? String
+        attachCurrentScreenshot(named: "feedback-original-setting-restored")
+        XCTAssertNotEqual(edited, original)
+        XCTAssertTrue(firstSaveSucceeded, "A single save should settle to durable saved state.")
+        XCTAssertEqual(reloaded, edited, "The edited setting should survive a fresh host launch.")
+        XCTAssertTrue(restorationSucceeded)
+        XCTAssertEqual(finalValue, original, "Restore the existing preference after QA.")
+    }
+
     func testAdaptiveNavigationAndHomeRestoreAfterPhysicalRotation() throws {
         XCUIDevice.shared.orientation = .portrait
         defer { XCUIDevice.shared.orientation = .portrait }

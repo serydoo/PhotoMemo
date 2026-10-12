@@ -9,6 +9,40 @@ import Testing
 @Suite("ClassicWhiteRenderer Layout")
 struct ClassicWhiteRendererLayoutTests {
 
+    @Test("landscape camera parameters borrow unused space without lowering font limits")
+    func landscapeCameraParametersFitMeasuredColumns() {
+        let layout = ClassicWhiteRenderer.layout(for: .landscape)
+        for canvasWidth: CGFloat in [1200, 8064] {
+            let barHeight = canvasWidth / (4.0 / 3.0) * layout.borderToImageHeightRatio
+            let fontSize = max(15, barHeight * layout.metadataFontRatio)
+            let left = ClassicWhiteLandscapeLayoutSpecification.measureTextWidth(
+                " iPhone 17 Pro Max", fontSize: fontSize, tracking: layout.titleTracking) / canvasWidth
+            for parameters in ["24mm f/1.8 1/5s ISO1600", "24mm f/1.78 1/125s ISO12800"] {
+                let right = ClassicWhiteLandscapeLayoutSpecification.measureTextWidth(
+                    parameters, fontSize: fontSize, tracking: layout.metadataTracking) / canvasWidth
+                let reserved = layout.logoSlotWidthRatio + layout.logoToDividerSpacingRatio
+                    + max(ClassicWhiteRenderer.dividerWidth, barHeight * layout.dividerWidthRatio) / canvasWidth
+                    + layout.dividerToTextSpacingRatio
+                let columns = ClassicWhiteLandscapeLayoutSpecification.resolve(
+                    measuredLeftWidth: left, measuredRightWidth: right,
+                    horizontalPadding: layout.horizontalPaddingRatio,
+                    preferredLeftWidth: layout.leftColumnWidthRatio,
+                    preferredRightWidth: layout.rightColumnWidthRatio,
+                    logoClusterWidth: reserved)
+                #expect(columns.right >= right * ClassicWhiteRenderer.primaryMinimumScaleFactor)
+                #expect(columns.left + columns.right + reserved + layout.horizontalPaddingRatio * 2 <= 1)
+            }
+        }
+    }
+
+    @Test("short landscape rows retain the accepted column widths")
+    func shortLandscapeRowsRetainHistoricalWidths() {
+        let widths = ClassicWhiteLandscapeLayoutSpecification.resolve(
+            measuredLeftWidth: 0.2, measuredRightWidth: 0.2, horizontalPadding: 0.033,
+            preferredLeftWidth: 0.42, preferredRightWidth: 0.271, logoClusterWidth: 0.11)
+        #expect(widths == .init(left: 0.42, right: 0.271))
+    }
+
     @Test("Portrait adaptive layout keeps the historical balanced state for full-width groups")
     func portraitAdaptiveLayoutKeepsTheHistoricalBalancedState() {
         let geometry = ClassicWhitePortraitLayoutSpecification.resolve(

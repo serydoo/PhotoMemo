@@ -862,6 +862,272 @@ struct ConfigurationSaveRuntimeCoordinatorTests {
         )
     }
 
+    @Test("a durable receipt advances the save baseline while preserving edits made during save")
+    @MainActor
+    func newerEditsRetainDurableRevisionForNextSave() async throws {
+        let aggregate = try Self.makeAggregate()
+        let configuration = try #require(aggregate.subjects.first?.configurations.first)
+        let session = ConfigurationSession(state: .mock)
+        session.restoreConfigurationLibrary(aggregate)
+        let saveStartGeneration = session.editorGeneration
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
+            from: aggregate,
+            draft: Self.makeAggregateDraft(title: "First save"),
+            configurationID: configuration.id
+        )
+        session.updateSelectedMemoryPresetTitle("Newer edit")
+        let generationAfterEdit = session.editorGeneration
+        let receipt = ConfigurationLibrarySaveReceipt(
+            revision: aggregate.revision + 1,
+            subjectID: try #require(aggregate.activeSubjectID),
+            configurationID: configuration.id,
+            configurationRevision: candidate.configuration.revision,
+            compatibilityProjectionFailure: nil
+        )
+
+        let outcome = session.reconcileConfigurationLibrarySave(
+            candidate: candidate,
+            receipt: receipt,
+            editorGeneration: saveStartGeneration
+        )
+
+        #expect(outcome == .newerEditsPreserved)
+        #expect(session.currentMemoryPresetTitle == "Newer edit")
+        #expect(session.editorGeneration == generationAfterEdit)
+        // The next candidate must start from the revision accepted by durable
+        // storage, or ConfigurationLibraryRepository rejects it as stale.
+        let nextCandidate = try ConfigurationAggregateCandidateBuilder.build(
+            from: try #require(session.state.configurationLibrary),
+            draft: Self.makeAggregateDraft(title: session.currentMemoryPresetTitle),
+            configurationID: configuration.id
+        )
+        #expect(nextCandidate.aggregate.revision == receipt.revision)
+        #expect(nextCandidate.configuration.title == "Newer edit")
+        #expect(nextCandidate.configuration.revision > candidate.configuration.revision)
+    }
+
+    @Test("a successful receipt advances durable baseline without replacing another selected draft", arguments: [false, true])
+    @MainActor
+    func receiptAfterSelectionChangePreservesCurrentDraft(differentSubject: Bool) throws {
+        var aggregate = try Self.makeAggregate()
+        let firstRecord = aggregate.subjects[0]
+        let original = firstRecord.configurations[0]
+        let secondID = UUID(uuidString: "82828282-8282-8282-8282-828282828282")!
+        let second = MemoryConfigurationRecord(
+            id: secondID,
+            title: "Second configuration",
+            revision: original.revision,
+            savedAt: original.savedAt,
+            selectedTimeAnchorID: original.selectedTimeAnchorID,
+            language: original.language,
+            editor: original.editor,
+            presentation: original.presentation,
+            output: original.output
+        )
+        let secondSubject: MemorySubject
+        if differentSubject {
+            let originalSubject = firstRecord.subject
+            secondSubject = MemorySubject(
+                id: UUID(uuidString: "83838383-8383-8383-8383-838383838383")!,
+                identity: originalSubject.identity,
+                relationship: originalSubject.relationship,
+                referenceDate: originalSubject.referenceDate,
+                timeAnchors: originalSubject.timeAnchors,
+                activeTimeAnchorID: originalSubject.activeTimeAnchorID,
+                behavior: originalSubject.behavior,
+                decorations: []
+            )
+            aggregate.subjects.append(.init(
+                subject: secondSubject,
+                configurations: [second],
+                assetManifest: .init(entries: [])
+            ))
+        } else {
+            secondSubject = firstRecord.subject
+            aggregate.subjects[0].configurations.append(second)
+        }
+        let session = ConfigurationSession(state: .mock)
+        session.restoreConfigurationLibrary(aggregate)
+        let generation = session.editorGeneration
+        let candidate = try ConfigurationAggregateCandidateBuilder.build(
+            from: aggregate,
+            draft: Self.makeAggregateDraft(title: "First persisted"),
+            configurationID: original.id
+        )
+        if differentSubject {
+            session.selectSubject(secondSubject)
+        }
+        session.selectMemoryPreset(try #require(session.state.memoryPresets.first { $0.id == secondID }))
+        session.updateSelectedMemoryPresetTitle("Second unsaved draft")
+        let liveDraft = session.selectedMemoryConfiguration
+        let appliedID = session.appliedMemoryPresetID
+        let liveGeneration = session.editorGeneration
+        let receipt = ConfigurationLibrarySaveReceipt(
+            revision: aggregate.revision + 1,
+            subjectID: firstRecord.subject.id,
+            configurationID: original.id,
+            configurationRevision: candidate.configuration.revision,
+            compatibilityProjectionFailure: nil
+        )
+
+        let outcome = session.reconcileConfigurationLibrarySave(
+            candidate: candidate,
+            receipt: receipt,
+            editorGeneration: generation
+        )
+
+        #expect(outcome == .newerEditsPreserved)
+        #expect(session.state.configurationLibrary?.revision == receipt.revision)
+        #expect(session.state.configurationLibrary?.subjects[0].configurations[0].title == "First persisted")
+        #expect(session.state.selectedSubjectID == secondSubject.id)
+        #expect(session.state.selectedMemoryPresetID == secondID)
+        #expect(session.currentMemoryPresetTitle == "Second unsaved draft")
+        #expect(session.selectedMemoryConfiguration == liveDraft)
+        #expect(session.appliedMemoryPresetID == appliedID)
+        #expect(session.editorGeneration == liveGeneration)
+    }
+
+    @Test("an older save receipt cannot downgrade durable baseline or overwrite current draft")
+    @MainActor
+    func olderReceiptCannotDowngradeDurableBaseline() throws {
+        let aggregate = try Self.makeAggregate()
+        let configuration = aggregate.subjects[0].configurations[0]
+        let oldCandidate = try ConfigurationAggregateCandidateBuilder.build(
+            from: aggregate,
+            draft: Self.makeAggregateDraft(title: "Old receipt"),
+            configurationID: configuration.id
+        )
+        var latestAggregate = aggregate
+        latestAggregate.revision += 2
+        latestAggregate.subjects[0].configurations[0].title = "Latest durable"
+        let session = ConfigurationSession(state: .mock)
+        session.restoreConfigurationLibrary(latestAggregate)
+        session.updateSelectedMemoryPresetTitle("Latest draft")
+        let liveDraft = session.selectedMemoryConfiguration
+        let receipt = ConfigurationLibrarySaveReceipt(
+            revision: aggregate.revision + 1,
+            subjectID: aggregate.subjects[0].subject.id,
+            configurationID: configuration.id,
+            configurationRevision: oldCandidate.configuration.revision,
+            compatibilityProjectionFailure: nil
+        )
+
+        let outcome = session.reconcileConfigurationLibrarySave(
+            candidate: oldCandidate,
+            receipt: receipt
+        )
+
+        #expect(outcome == .newerEditsPreserved)
+        #expect(session.state.configurationLibrary == latestAggregate)
+        #expect(session.currentMemoryPresetTitle == "Latest draft")
+        #expect(session.selectedMemoryConfiguration == liveDraft)
+    }
+
+    @Test("album catalogue refresh never lets an older receipt overwrite newer output edits", arguments: [false, true])
+    @MainActor
+    func albumRefreshPreservesEdits(editBeforeReceipt: Bool) async throws {
+        let aggregate = try Self.makeAggregate()
+        let subjectID = try #require(aggregate.activeSubjectID)
+        let configurationID = try #require(aggregate.activeConfigurationID)
+        let session = ConfigurationSession(state: .mock)
+        session.restoreConfigurationLibrary(aggregate)
+        let generation = session.editorGeneration
+        var outputTarget = ConfigurationOutputTarget.applePhotos
+        var selectedAlbum = "user-selected-album"
+        var displayedTitle = "Initial"
+        var events: [String] = []
+        var status = ConfigurationPersistenceStatus.dirty
+        let coordinator = ConfigurationSaveRuntimeCoordinator(
+            applyLegacyRequest: { _ in
+                Issue.record("Unexpected legacy save")
+                return .failure(.init(code: .invalidState, message: "Unexpected legacy save"))
+            },
+            applyAggregateRequest: { candidate, _ in
+                if editBeforeReceipt {
+                    session.updateSelectedMemoryPresetTitle("Newer edit")
+                    displayedTitle = "Newer edit"
+                }
+                return .success(.init(
+                    candidate: candidate,
+                    saveReceipt: .init(
+                        revision: aggregate.revision + 1,
+                        subjectID: subjectID,
+                        configurationID: configurationID,
+                        configurationRevision: candidate.configuration.revision,
+                        compatibilityProjectionFailure: nil
+                    ),
+                    albumSelection: .init(
+                        identifier: "saved-album",
+                        title: "Saved Album",
+                        pickerSelectionIdentifier: "saved-picker-album"
+                    )
+                ))
+            },
+            reloadAlbums: {
+                events.append("reload")
+                await Task.yield()
+                if !editBeforeReceipt {
+                    // A real user edit can happen while an asynchronous
+                    // catalogue refresh is suspended after durable save.
+                    session.updateSelectedMemoryPresetTitle("Newer edit")
+                    displayedTitle = "Newer edit"
+                    outputTarget = .applePhotos
+                    selectedAlbum = "user-selected-album"
+                    status = .dirty
+                }
+            },
+            setOutputTarget: {
+                events.append("output")
+                outputTarget = $0
+            },
+            setSelectedExistingAlbumIdentifier: {
+                events.append("album")
+                selectedAlbum = $0
+            },
+            restoreSubject: { _ in },
+            reconcileConfigurationLibraryWithGeneration: { candidate, receipt, generation in
+                events.append("reconcile")
+                return session.reconcileConfigurationLibrarySave(
+                    candidate: candidate,
+                    receipt: receipt,
+                    editorGeneration: generation
+                )
+            },
+            applySavedConfigurationProjection: {
+                events.append("projection")
+                displayedTitle = $0.title
+            },
+            applySelectedMemoryPreset: {},
+            updateStatus: {
+                events.append("status")
+                status = $0.status
+            }
+        )
+
+        let saved = await coordinator.applyAggregate(
+            configurationLibrary: aggregate,
+            aggregateDraft: Self.makeAggregateDraft(title: "Saved candidate"),
+            availableAlbums: [],
+            editorGeneration: generation
+        )
+
+        #expect(saved)
+        #expect(events.filter { $0 == "reload" }.count == 1)
+        #expect(events.last == "reload")
+        #expect(displayedTitle == "Newer edit")
+        #expect(session.currentMemoryPresetTitle == "Newer edit")
+        #expect(outputTarget == .applePhotos)
+        #expect(selectedAlbum == "user-selected-album")
+        #expect(status == .dirty)
+        if editBeforeReceipt {
+            #expect(!events.contains("output"))
+            #expect(!events.contains("album"))
+            #expect(!events.contains("projection"))
+        } else {
+            #expect(events.contains("projection"))
+        }
+    }
+
     private static func makeRequest(
         subject: MemorySubject?,
         memoryPresets: [MemoryPreset] = [],

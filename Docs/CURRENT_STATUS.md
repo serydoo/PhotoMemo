@@ -1,5 +1,9 @@
 # MemoMark Current Status
 
+## 2026-10-12 — Pre-Home-refinement source checkpoint
+
+Owner authorizes current local code consolidation and GitHub push before Home scheme-two implementation. Version remains 2.3.6 (124), baseline 934da19b. Scope: existing feedback/save/localization/landscape/Classic-fit changes and accepted Time Expression copy. New Home layout is not yet implemented. Exported-index validation and remote synchronization are recorded in Docs/07_Releases/2026-10-12-2.3.6-source-checkpoint-sync-manifest.md. Preserve earlier unstaged history/research/outreach/private assets; no Store/TestFlight mutation.
+
 ## 2026-10-11 — User-authorized source consolidation and GitHub sync
 
 User accepts the current version for their needs and authorizes local consolidation, commit and push. Version stays 2.3.6 (124); four-card physical acceptance remains paused/incomplete. Consolidate the shared software exporter and direct CPU layers, handoff route and terminal activity guard. Legacy landscape branch is already integrated; preserve the older material research branch without overwriting current code. Stage source/test and scoped documentation by explicit allowlist, test the exported index, then push main. No Store/TestFlight actions. Manifest: `Docs/07_Releases/2026-10-11-2.3.6-source-checkpoint-sync-manifest.md`.

@@ -219,7 +219,7 @@ struct HomeConfigurationActionContractTests {
         #expect(subjectSource.contains("systemImage: \"pencil\""))
         #expect(taskSource.contains("TaskRecentHistorySurface("))
         #expect(recentHistorySource.contains("systemImage: \"ellipsis\""))
-        #expect(recentHistorySource.contains("if rows.count > inlineRows.count"))
+        #expect(recentHistorySource.contains("if !rows.isEmpty"))
     }
 
     @Test("home separates blocking failures from non-modal success feedback")

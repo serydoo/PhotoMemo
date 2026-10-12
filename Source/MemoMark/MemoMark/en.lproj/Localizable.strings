@@ -1629,7 +1629,7 @@
 "filmMark.configuration.details.compact.subtitle" = "View the font and choose how dates and places appear.";
 "configuration.expression.example" = "Expression Example";
 "configuration.expression.natural.short" = "Natural";
-"configuration.expression.optional_content" = "Time expressions are optional in Card Content. You can keep just dates, places, or your own words.";
+"configuration.expression.tone_guidance" = "Choose a tone for expressing time around your selected Time Anchor.";
 "filmMark.configuration.content.help" = "Choose the words and information shown on the photo.";
 "filmMark.configuration.position.help" = "Choose where the text appears on the photo and fine-tune its position.";
 "filmMark.configuration.anchor.help" = "Start at the bottom-left or bottom-right of the photo.";
@@ -1917,3 +1917,31 @@
 "home.activity.status.interrupted" = "Processing interrupted";
 
 "notification.continued.unconfirmed.body" = "The processing status of this share could not be confirmed. Open MemoMark for details.";
+
+/* User feedback: identity fields and new subject defaults. */
+"对象名称" = "Name";
+"昵称" = "Nickname";
+"与我的关系" = "Relationship";
+"专属称呼" = "Personal Name";
+"请输入对象名称" = "Enter a name";
+"选填" = "Optional";
+"accessibility.required_field_format" = "%@, required";
+"subject.default.name" = "New Memory Subject";
+"subject.default.anchor_note" = "Add an important date for this person.";
+"subject.default.definition" = "Add a name, photo, and important dates.";
+"subject.default.first_name" = "Memory Subject";
+"subject.default.birthday_note" = "Recall their age when the photo was taken.";
+"subject.default.first_definition" = "Recall the moments around this person.";
+"生日" = "Birthday";
+"家人" = "Family";
+"未设置" = "Not Set";
+"生日记忆" = "Birthday Memory";
+"生日回顾" = "Birthday Memories";
+
+"task.history.clear" = "Clear Finished Records";
+"task.history.actions" = "Record Actions";
+"task.history.clear.detail" = "Only finished processing records will be cleared. Photos in the Photos app and active tasks will be kept.";
+
+"默认 · 对象名称" = "Default · Name";
+"默认称呼" = "Default Name";
+"未填写" = "Not Provided";

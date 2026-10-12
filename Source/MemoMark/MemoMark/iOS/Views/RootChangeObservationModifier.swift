@@ -121,11 +121,12 @@ struct RootChangeObservationModifier: ViewModifier {
                 configurationStatus = .dirty
             }
             .onChange(of: presentationStyle) { _, _ in
+                guard durableProjection?.route != presentationStyle else { return }
                 configurationStatus = .dirty
             }
             .onChange(of: outputTarget) { _, _ in
                 guard shouldTrackOutputChanges else { return }
-                configurationStatus = .dirty
+                markOutputDirtyIfNeeded()
                 if outputTarget == .existingAlbum {
                     Task { await loadAlbumOptions() }
                 }
@@ -154,6 +155,14 @@ struct RootChangeObservationModifier: ViewModifier {
 }
 
 private extension RootChangeObservationModifier {
+    var durableProjection: ConfigurationDraftProjection? {
+        guard let configuration = session.state.configurationLibrary?
+            .subjects.flatMap(\.configurations).first(where: {
+                $0.id == session.state.selectedMemoryPresetID
+            }) else { return nil }
+        return ConfigurationDraftProjection(configuration: configuration)
+    }
+
     var shouldTrackOutputChanges: Bool {
         !isApplyingBootstrapState
         && !isApplyingSavedOutputConfiguration
@@ -161,6 +170,18 @@ private extension RootChangeObservationModifier {
 
     func markOutputDirtyIfNeeded() {
         guard shouldTrackOutputChanges else { return }
+        // SwiftUI observes projection writes after their synchronous restore
+        // flag has cleared. Compare with durable values, rather than ignoring
+        // all changes during save (which would lose genuine user edits).
+        if let projection = durableProjection,
+           outputTarget == projection.outputTarget,
+           mediaOutputMode == projection.mediaOutputMode,
+           (outputTarget != .existingAlbum || selectedAlbumIdentifier == projection.selectedAlbumIdentifier),
+           (outputTarget != .newAlbum || newAlbumName == projection.albumTitle),
+           session.usesCustomMemoryWriteText == projection.usesCustomMemoryWriteText,
+           session.customMemoryWriteText == projection.customMemoryWriteText {
+            return
+        }
         configurationStatus = .dirty
     }
 

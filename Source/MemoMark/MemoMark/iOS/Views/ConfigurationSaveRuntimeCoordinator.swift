@@ -347,15 +347,6 @@ struct ConfigurationSaveRuntimeCoordinator {
             )
             return false
         case .success(let receipt):
-            if let pickerSelectionIdentifier =
-                receipt.albumSelection
-                .pickerSelectionIdentifier {
-                await reloadAlbums()
-                setOutputTarget(.existingAlbum)
-                setSelectedExistingAlbumIdentifier(
-                    pickerSelectionIdentifier
-                )
-            }
             let outcome: ConfigurationPersistenceReconciliationOutcome
             if let editorGeneration,
                let reconcileConfigurationLibraryWithGeneration {
@@ -371,6 +362,10 @@ struct ConfigurationSaveRuntimeCoordinator {
                 ) ?? .newerEditsPreserved
             }
             if outcome == .applied {
+                if let pickerSelectionIdentifier = receipt.albumSelection.pickerSelectionIdentifier {
+                    setOutputTarget(.existingAlbum)
+                    setSelectedExistingAlbumIdentifier(pickerSelectionIdentifier)
+                }
                 applySavedConfigurationProjection(
                     receipt.candidate.configuration
                 )
@@ -398,6 +393,12 @@ struct ConfigurationSaveRuntimeCoordinator {
                 status = .saved
             }
             updateStatus(.init(status: status))
+            // Refresh the catalogue after the receipt fence and projection.
+            // Reload can suspend; it must not create a gap in which a newer
+            // draft is mistaken for the saved candidate or overwritten.
+            if receipt.albumSelection.pickerSelectionIdentifier != nil {
+                await reloadAlbums()
+            }
             return true
         }
     }

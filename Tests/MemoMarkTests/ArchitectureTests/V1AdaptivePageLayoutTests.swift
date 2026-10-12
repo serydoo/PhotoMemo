@@ -5,6 +5,31 @@ import Testing
 @Suite("V1 adaptive page layout")
 struct AdaptivePageLayoutTests {
 
+    @Test("unobstructed landscape edge releases unused inset while preserving ordinary spacing")
+    func unobstructedLandscapeEdgeReleasesOnlyExcessInset() {
+        let expansion = AdaptiveFloatingRailMetrics.trailingEdgeExpansion(systemInset: 62,
+            isUnobstructedLandscapeEdge: true)
+        let expectedExpansion = 62.0 - AdaptiveFloatingRailMetrics.contentSpacing
+        #expect(abs(expansion - expectedExpansion) < 0.001)
+        #expect(AdaptiveFloatingRailMetrics.trailingEdgeExpansion(systemInset: 62,
+            isUnobstructedLandscapeEdge: false) == 0)
+        #expect(AdaptiveFloatingRailMetrics.trailingEdgeExpansion(systemInset: 0,
+            isUnobstructedLandscapeEdge: true) == 0)
+        #expect(AdaptiveFloatingRailMetrics.trailingEdgeExpansion(systemInset: 8,
+            isUnobstructedLandscapeEdge: true) == 0)
+    }
+
+    @Test("compact-height content fills only the safe viewport left by the shell")
+    func compactHeightFillsSafeViewportWithoutDoubleReservation() {
+        #expect(AdaptivePageLayout.scrollContentWidth(viewportWidth: 850, horizontalPadding: 16,
+                                                     fillsAvailableWidth: true) == 818)
+        #expect(AdaptivePageLayout.scrollContentWidth(viewportWidth: 770, horizontalPadding: 16,
+                                                     fillsAvailableWidth: true) == 738)
+        #expect(AdaptivePageLayout.scrollContentWidth(viewportWidth: 850, horizontalPadding: 16) == 720)
+        #expect(AdaptivePageLayout.scrollContentWidth(viewportWidth: 20, horizontalPadding: 16,
+                                                     fillsAvailableWidth: true) == 0)
+    }
+
     @Test("compact width and regular height keeps the bottom tab bar")
     func compactWidthAndRegularHeightKeepsBottomTabBar() {
         #expect(

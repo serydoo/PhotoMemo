@@ -112,19 +112,21 @@ extension MemoMarkConfigurationCenterView {
                 )
         }
 
-        return await configurationApplyRuntimeCoordinator.applyAggregate(
+        let didPersist = await configurationApplyRuntimeCoordinator.applyAggregate(
             configurationLibrary: configurationLibrary,
             aggregateDraft: payload.aggregateDraft,
             configurationID: configurationID,
             availableAlbums: outputDraftState.availableAlbums,
             editorGeneration: session.editorGeneration
         )
+        return didPersist && activeConfigurationStatus.isDurablySaved
     }
 
     @MainActor
     func saveCurrentConfigurationSnapshot()
     async -> BatchConfigurationSnapshot? {
-        guard await applyCurrentConfiguration() else {
+        guard await applyCurrentConfiguration(),
+              activeConfigurationStatus.isProcessingProjectionReady else {
             return nil
         }
 

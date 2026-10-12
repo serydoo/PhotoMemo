@@ -1631,7 +1631,7 @@
 "filmMark.configuration.details.compact.subtitle" = "查看字体，选择日期与地点的显示方式。";
 "configuration.expression.example" = "表达示例";
 "configuration.expression.natural.short" = "自然";
-"configuration.expression.optional_content" = "可在“卡片内容”中选择是否加入时间表达；只保留日期、地点或自己的文字也可以。";
+"configuration.expression.tone_guidance" = "围绕设定的时间锚点，选择不同语气的时间表达。";
 "filmMark.configuration.content.help" = "选择照片上显示的文字和信息。";
 "filmMark.configuration.position.help" = "选择文字在照片中的位置，并微调。";
 "filmMark.configuration.anchor.help" = "从照片左下或右下开始放置文字。";
@@ -1919,3 +1919,31 @@
 "home.activity.status.interrupted" = "处理未完成";
 
 "notification.continued.unconfirmed.body" = "无法确认这次分享的处理状态。请打开时光记查看详情。";
+
+/* User feedback: identity fields and new subject defaults. */
+"对象名称" = "对象名称";
+"昵称" = "昵称";
+"与我的关系" = "与我的关系";
+"专属称呼" = "专属称呼";
+"请输入对象名称" = "请输入对象名称";
+"选填" = "选填";
+"accessibility.required_field_format" = "%@，必填";
+"subject.default.name" = "新的记忆对象";
+"subject.default.anchor_note" = "请补充这个对象最重要的时间锚点。";
+"subject.default.definition" = "在这里补充对象身份、头像与时间锚点。";
+"subject.default.first_name" = "记忆主角";
+"subject.default.birthday_note" = "用来回顾照片拍摄时的年龄。";
+"subject.default.first_definition" = "围绕这个主角回顾照片中的时间。";
+"生日" = "生日";
+"家人" = "家人";
+"未设置" = "未设置";
+"生日记忆" = "生日记忆";
+"生日回顾" = "生日回顾";
+
+"task.history.clear" = "清理已结束记录";
+"task.history.actions" = "记录操作";
+"task.history.clear.detail" = "只清理已结束的处理记录。照片 App 中的照片和正在处理的任务会保留。";
+
+"默认 · 对象名称" = "默认 · 对象名称";
+"默认称呼" = "默认称呼";
+"未填写" = "未填写";

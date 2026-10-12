@@ -759,10 +759,6 @@ struct ConfigurationOptionList: View {
                 .accessibilityLabel(localized("表达方式"))
             }
 
-            ConfigurationControlHelperText(
-                localized("configuration.expression.optional_content")
-            )
-
             if availableMemoryDisplayStyles.contains(where: isMemoryDisplayStyleLocked) {
                 Text(
                     MemoMarkLanguage.interfaceStored.localized(
@@ -882,10 +878,7 @@ struct ConfigurationOptionList: View {
     }
 
     private var memoryDisplaySubtitle: String {
-        String.localizedStringWithFormat(
-            localized("围绕时间锚点，可选择 %lld 种表达方式。"),
-            Int64(availableMemoryDisplayStyles.count)
-        )
+        localized("configuration.expression.tone_guidance")
     }
 
     private var memoryExpressionPreviewLines: [String] {

@@ -1629,7 +1629,7 @@
 "filmMark.configuration.details.compact.subtitle" = "글꼴을 확인하고 날짜와 장소의 표시 방식을 선택합니다.";
 "configuration.expression.example" = "표현 예시";
 "configuration.expression.natural.short" = "자연스럽게";
-"configuration.expression.optional_content" = "시간 표현은 ‘카드 내용’에서 선택적으로 넣을 수 있습니다. 날짜, 장소 또는 직접 쓴 글만 남겨도 됩니다.";
+"configuration.expression.tone_guidance" = "설정한 시간 앵커를 기준으로 시간 표현의 어조를 선택하세요.";
 "filmMark.configuration.content.help" = "사진에 표시할 글과 정보를 선택합니다.";
 "filmMark.configuration.position.help" = "사진에서 글이 놓일 위치를 선택하고 미세 조정합니다.";
 "filmMark.configuration.anchor.help" = "사진의 왼쪽 아래 또는 오른쪽 아래부터 글을 배치합니다.";
@@ -1917,3 +1917,31 @@
 "home.activity.status.interrupted" = "처리가 중단됨";
 
 "notification.continued.unconfirmed.body" = "이 공유의 처리 상태를 확인할 수 없습니다. MemoMark를 열어 자세한 내용을 확인하세요.";
+
+/* User feedback: identity fields and new subject defaults. */
+"对象名称" = "이름";
+"昵称" = "별명";
+"与我的关系" = "나와의 관계";
+"专属称呼" = "특별한 호칭";
+"请输入对象名称" = "이름 입력";
+"选填" = "선택 사항";
+"accessibility.required_field_format" = "%@, 필수";
+"subject.default.name" = "새로운 추억의 주인공";
+"subject.default.anchor_note" = "이 사람의 중요한 날짜를 추가해 주세요.";
+"subject.default.definition" = "이름, 사진, 중요한 날짜를 추가하세요.";
+"subject.default.first_name" = "추억의 주인공";
+"subject.default.birthday_note" = "사진을 찍었을 때의 나이를 돌아봅니다.";
+"subject.default.first_definition" = "이 사람을 중심으로 사진 속 시간을 돌아봅니다.";
+"生日" = "생일";
+"家人" = "가족";
+"未设置" = "설정되지 않음";
+"生日记忆" = "생일 추억";
+"生日回顾" = "생일 돌아보기";
+
+"task.history.clear" = "완료된 기록 지우기";
+"task.history.actions" = "기록 작업";
+"task.history.clear.detail" = "완료된 처리 기록만 지웁니다. 사진 앱의 사진과 진행 중인 작업은 유지됩니다.";
+
+"默认 · 对象名称" = "기본 · 이름";
+"默认称呼" = "기본 호칭";
+"未填写" = "입력되지 않음";

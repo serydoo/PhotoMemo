@@ -139,8 +139,7 @@ struct ConfigurationOptionListContractTests {
         let expressionEnd = try #require(options.range(of: "private var memoryDisplayStyleChoices:"))
         let expressionContent = options[expressionStart.lowerBound..<expressionEnd.lowerBound]
         #expect(expressionContent.contains("ConfigurationControlHelperText(memoryDisplaySubtitle)"), "expression helper")
-        #expect(expressionContent.contains("ConfigurationControlHelperText("), "optional content helper")
-        #expect(expressionContent.contains("configuration.expression.optional_content"), "optional content key")
+        #expect(!expressionContent.contains("configuration.expression.optional_content"), "redundant optional-content helper removed")
 
         let footer = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
@@ -901,7 +900,7 @@ struct ConfigurationOptionListContractTests {
         #expect(optionListSource.contains("Text(memoryDisplaySubtitle)"))
         #expect(
             optionListSource.contains(
-                "围绕时间锚点，可选择 %lld 种表达方式。"
+                "configuration.expression.tone_guidance"
             )
         )
         #expect(
@@ -909,11 +908,7 @@ struct ConfigurationOptionListContractTests {
                 ".accessibilityLabel(localized(\"表达方式\"))"
             )
         )
-        #expect(
-            optionListSource.contains(
-                "Int64(availableMemoryDisplayStyles.count)"
-            )
-        )
+        #expect(!optionListSource.contains("Int64(availableMemoryDisplayStyles.count)"))
         #expect(optionListSource.contains("detail: \"\""))
         #expect(!optionListSource.contains("detail: memoryDisplayDetail"))
         #expect(!optionListSource.contains("showsMemoryDisplayDetail"))
@@ -937,7 +932,8 @@ struct ConfigurationOptionListContractTests {
                 ".accessibilityLabel(localized(\"configuration.expression.example\"))"
             )
         )
-        #expect(optionListSource.contains("configuration.expression.optional_content"))
+        #expect(optionListSource.contains("configuration.expression.tone_guidance"))
+        #expect(!optionListSource.contains("configuration.expression.optional_content"))
         let choicesStart = try #require(optionListSource.range(of: "private var memoryDisplayRow:"))
         let choicesEnd = try #require(optionListSource.range(of: "private var displayedMemoryDisplayStyle:"))
         let choices = optionListSource[choicesStart.lowerBound..<choicesEnd.lowerBound]

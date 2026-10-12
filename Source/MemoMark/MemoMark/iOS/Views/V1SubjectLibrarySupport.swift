@@ -5,18 +5,19 @@ enum SubjectLibraryFactory {
 
     static func makeFirstRunSubject(
         name: String,
-        birthday: Date
+        birthday: Date,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> MemorySubject {
         let trimmedName = name.trimmingCharacters(
             in: .whitespacesAndNewlines
         )
         let resolvedName = trimmedName.isEmpty
-            ? "记忆主角"
+            ? language.localized(key: "subject.default.first_name", fallback: "记忆主角")
             : trimmedName
         let birthdayAnchor = MemorySubject.TimeAnchor(
-            title: "生日",
+            title: language.localized(key: "生日", fallback: "生日"),
             date: birthday,
-            note: "用来回顾照片拍摄时的年龄。",
+            note: language.localized(key: "subject.default.birthday_note", fallback: "用来回顾照片拍摄时的年龄。"),
             anchorType: .birthday,
             expressionStyle: .birthdayNatural
         )
@@ -29,7 +30,7 @@ enum SubjectLibraryFactory {
                 role: "",
                 label: ""
             ),
-            definition: "围绕这个主角回顾照片中的时间。",
+            definition: language.localized(key: "subject.default.first_definition", fallback: "围绕这个主角回顾照片中的时间。"),
             referenceDate: birthday,
             timeAnchors: [birthdayAnchor],
             activeTimeAnchorID: birthdayAnchor.id,
@@ -39,7 +40,7 @@ enum SubjectLibraryFactory {
                 iconStrategy: .autoMatch,
                 badgeStrategy: .fixed,
                 memoryExpression: .init(
-                    title: "生日回顾",
+                    title: language.localized(key: "生日回顾", fallback: "生日回顾"),
                     blocks: []
                 )
             ),
@@ -48,27 +49,28 @@ enum SubjectLibraryFactory {
     }
 
     static func makeDefaultSubject(
-        referenceDate: Date
+        referenceDate: Date,
+        language: MemoMarkLanguage = .interfaceStored
     ) -> MemorySubject {
         let birthdayAnchor =
             MemorySubject.TimeAnchor(
-                title: "生日",
+                title: language.localized(key: "生日", fallback: "生日"),
                 date: referenceDate,
-                note: "请补充这个对象最重要的时间锚点。",
+                note: language.localized(key: "subject.default.anchor_note", fallback: "请补充这个对象最重要的时间锚点。"),
                 anchorType: .birthday,
                 expressionStyle:
                     .defaultStyle(for: .birthday)
             )
         return MemorySubject(
             identity: .init(
-                displayName: "新的记忆对象",
+                displayName: language.localized(key: "subject.default.name", fallback: "新的记忆对象"),
                 shortName: ""
             ),
             relationship: .init(
-                role: "家人",
-                label: "未设置"
+                role: language.localized(key: "家人", fallback: "家人"),
+                label: language.localized(key: "未设置", fallback: "未设置")
             ),
-            definition: "在这里补充对象身份、头像与时间锚点。",
+            definition: language.localized(key: "subject.default.definition", fallback: "在这里补充对象身份、头像与时间锚点。"),
             referenceDate: referenceDate,
             timeAnchors: [birthdayAnchor],
             activeTimeAnchorID: birthdayAnchor.id,
@@ -78,7 +80,7 @@ enum SubjectLibraryFactory {
                 iconStrategy: .autoMatch,
                 badgeStrategy: .fixed,
                 memoryExpression: .init(
-                    title: "生日记忆",
+                    title: language.localized(key: "生日记忆", fallback: "生日记忆"),
                     blocks: []
                 )
             ),

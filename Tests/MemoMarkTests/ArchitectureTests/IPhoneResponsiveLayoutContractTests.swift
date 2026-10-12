@@ -98,7 +98,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(body.contains(".adaptiveScrollContent("))
         #expect(body.contains("GeometryReader { viewport in"))
         #expect(body.contains("viewportWidth: viewport.size.width"))
-        #expect(body.contains("AdaptiveFloatingRailMetrics.reservedWidth"))
+        #expect(body.contains("fillsAvailableWidth: verticalSizeClass == .compact"))
         #expect(!body.contains(".containerRelativeFrame(.horizontal)"))
     }
 
@@ -130,7 +130,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(previewLayout.contains("previewPane(viewportWidth: geometry.size.width)"))
         #expect(previewLayout.contains("adaptiveScrollContent("))
         #expect(previewLayout.contains("viewportWidth: viewportWidth"))
-        #expect(previewLayout.contains("AdaptiveFloatingRailMetrics.reservedWidth"))
+        #expect(previewLayout.contains("fillsAvailableWidth: verticalSizeClass == .compact"))
         #expect(source.contains("if usesCompactLandscapeFullWidthPreview {"))
     }
 
@@ -242,14 +242,14 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(taskSource.contains("adaptiveScrollContent("))
         #expect(taskSource.contains("GeometryReader { viewport in"))
         #expect(taskSource.contains("viewportWidth: viewport.size.width"))
-        #expect(taskSource.contains("AdaptiveFloatingRailMetrics.reservedWidth"))
+        #expect(taskSource.contains("fillsAvailableWidth: verticalSizeClass == .compact"))
 
         let editorSurface = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
         )
         #expect(editorSurface.contains("GeometryReader { viewport in"))
         #expect(editorSurface.contains("viewportWidth: viewport.size.width"))
-        #expect(editorSurface.contains("AdaptiveFloatingRailMetrics.reservedWidth"))
+        #expect(editorSurface.contains("fillsAvailableWidth: verticalSizeClass == .compact"))
     }
 
     @Test("home subject card provides a narrow width fallback")
@@ -1448,7 +1448,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(navigationSource.contains("primaryNavigation"))
         #expect(navigationSource.contains("EntryFloatingNavigationRail(selection: $selection)"))
         #expect(navigationSource.contains("ForEach(EntryTab.primaryNavigationCases)"))
-        #expect(navigationSource.contains(".safeAreaInset(edge: .trailing, spacing: navigationStyle == .floatingRail ? AdaptiveFloatingRailMetrics.contentSpacing : 0)"))
+        #expect(navigationSource.contains("HStack(spacing: navigationStyle == .floatingRail ? AdaptiveFloatingRailMetrics.contentSpacing : 0)"))
         #expect(navigationSource.contains("MemoMarkDesignTokens.SurfaceMaterial.contextual"))
         #expect(!navigationSource.contains("sidebarNavigation(width: 64)"))
         #expect(!navigationSource.contains("EntryCompactSidebar"))
@@ -1460,7 +1460,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!navigationSource.contains(".tag(EntryTab.output)"))
         #expect(navigationSource.contains(".tag(EntryTab.tasks)"))
         #expect(navigationSource.contains("case .settings:"))
-        #expect(!navigationSource.contains("@State"))
+        #expect(navigationSource.contains("@State private var railWindowGeometry: FloatingRailWindowGeometry?"))
+        #expect(!navigationSource.contains("@State private var selection"))
         #expect(!navigationSource.contains("ConfigurationSession"))
         #expect(
             observationSource.contains(
@@ -1473,7 +1474,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(pagesSource.contains("hasCompactVerticalSizeClass:"))
     }
 
-    @Test("landscape floating rail reserves space within the system safe area")
+    @Test("landscape rail preserves obstructed inset and releases only the plain trailing edge")
     func landscapeFloatingRailReservesSafeContentViewport() throws {
         let source = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/AdaptiveNavigationShell.swift"
@@ -1491,7 +1492,7 @@ struct IPhoneResponsiveLayoutContractTests {
 
         #expect(railBody.contains("maxWidth: .infinity"))
         #expect(railBody.contains("maxHeight: .infinity"))
-        #expect(railBody.contains(".safeAreaInset(edge: .trailing, spacing: navigationStyle == .floatingRail ? AdaptiveFloatingRailMetrics.contentSpacing : 0)"))
+        #expect(railBody.contains("HStack(spacing: navigationStyle == .floatingRail ? AdaptiveFloatingRailMetrics.contentSpacing : 0)"))
         let layoutSource = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/AdaptivePageLayout.swift"
         )
@@ -1499,7 +1500,11 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(layoutSource.contains("ConfigurationUI.innerPanelPadding"))
         #expect(layoutSource.contains("width + trailingMargin + contentSpacing"))
         #expect(!railBody.contains(".overlay(alignment: .trailing)"))
-        #expect(!railBody.contains("ignoresSafeArea(.container"))
+        #expect(railBody.contains(".padding(.trailing, railTrailingInset ?? 0)"))
+        #expect(railBody.contains(".ignoresSafeArea(.container, edges: railTrailingInset == nil ? [] : .trailing)"))
+        #expect(railBody.contains("geometry.trailingSafeInset - AdaptiveFloatingRailMetrics.trailingEdgeExpansion"))
+        #expect(source.contains("scene.interfaceOrientation == .landscapeRight"))
+        #expect(source.contains("window.safeAreaInsets.right"))
         #expect(railBody.contains("EntryFloatingNavigationRail(selection: $selection)"))
         #expect(!railBody.contains("HStack(spacing: 0)"))
         #expect(!railBody.contains("sidebarNavigation(width: 64)"))

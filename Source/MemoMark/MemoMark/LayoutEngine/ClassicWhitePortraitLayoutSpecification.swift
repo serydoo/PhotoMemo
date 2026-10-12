@@ -7,6 +7,54 @@ import UIKit
 import AppKit
 #endif
 
+struct ClassicWhiteLandscapeColumnWidths: Equatable {
+    let left: CGFloat
+    let right: CGFloat
+}
+
+/// Long landscape metadata may borrow unused context-column space. The
+/// historical widths remain unchanged when both groups already fit. This
+/// policy is shared by preview, still export and motion information layers.
+enum ClassicWhiteLandscapeLayoutSpecification {
+    static func resolve(
+        measuredLeftWidth: CGFloat,
+        measuredRightWidth: CGFloat,
+        horizontalPadding: CGFloat,
+        preferredLeftWidth: CGFloat,
+        preferredRightWidth: CGFloat,
+        logoClusterWidth: CGFloat
+    ) -> ClassicWhiteLandscapeColumnWidths {
+        guard measuredRightWidth > preferredRightWidth else {
+            return .init(left: preferredLeftWidth, right: preferredRightWidth)
+        }
+        let left = min(preferredLeftWidth, max(0, measuredLeftWidth))
+        let availableRight = max(0, 1 - horizontalPadding * 2 - left
+            - logoClusterWidth - ClassicWhitePortraitLayoutSpecification.minimumGroupGap)
+        return .init(left: left, right: min(availableRight, measuredRightWidth))
+    }
+
+    static func measureTextWidth(
+        _ text: String,
+        fontSize: CGFloat,
+        tracking: CGFloat,
+        isSecondary: Bool = false
+    ) -> CGFloat {
+        let font: CTFont
+        #if canImport(UIKit)
+        font = UIFont.monospacedDigitSystemFont(ofSize: fontSize,
+            weight: isSecondary ? .regular : .semibold) as CTFont
+        #elseif canImport(AppKit)
+        font = NSFont.monospacedDigitSystemFont(ofSize: fontSize,
+            weight: isSecondary ? .regular : .semibold) as CTFont
+        #endif
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [
+            kCTFontAttributeName as NSAttributedString.Key: font,
+            kCTKernAttributeName as NSAttributedString.Key: tracking
+        ]))
+        return max(0, CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil)))
+    }
+}
+
 struct ClassicWhitePortraitResolvedLayout: Equatable {
     let leftTextOriginX: CGFloat
     let leftTextWidth: CGFloat

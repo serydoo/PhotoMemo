@@ -6,6 +6,23 @@ import Testing
 @Suite("V1 iOS time anchor presentation")
 struct TimeAnchorPresentationTests {
 
+    @Test("interface dates use native locale ordering without changing the date")
+    func interfaceDatesFollowLocale() {
+        let date = Date(timeIntervalSince1970: 1_791_806_400)
+        for code in ["zh_CN", "en_US", "ja_JP", "ko_KR", "es_ES", "en_GB"] {
+            let locale = Locale(identifier: code)
+            let reference = DateFormatter()
+            reference.locale = locale
+            reference.calendar = Calendar(identifier: .gregorian)
+            reference.dateStyle = .medium
+            reference.timeStyle = .short
+            #expect(UserFacingDateFormatter.dateTime(date, locale: locale) == reference.string(from: date))
+        }
+        let korean = UserFacingDateFormatter.date(date, locale: Locale(identifier: "ko_KR"))
+        #expect(!korean.contains("年"))
+        #expect(!korean.contains("月"))
+    }
+
     @Test("title follows the current primary anchor instead of the subject name")
     func titleFollowsCurrentPrimaryAnchor() {
         let subject =

@@ -207,6 +207,17 @@ struct ConfigurationPersistenceReconciler {
         let persistedConfigurationID =
             receipt.savedConfigurationID
             ?? receipt.configurationID
+        // A successful receipt advances durable truth independently of the
+        // live draft. Otherwise a preserved newer edit retries against the
+        // previous revision and the repository correctly rejects it as stale.
+        guard receipt.revision >= (editingState.state.configurationLibrary?.revision ?? 0) else {
+            return .newerEditsPreserved
+        }
+        var durableAggregate = candidate.aggregate
+        durableAggregate.revision = receipt.revision
+        editingState.state.configurationLibrary = durableAggregate
+        editingState.processingDefaultMemoryPresetID =
+            durableAggregate.activeConfigurationID
         guard editingState.state.selectedMemoryPresetID
                 == persistedConfigurationID,
               candidate.aggregate.subjects.contains(where: { subject in
@@ -224,9 +235,6 @@ struct ConfigurationPersistenceReconciler {
             return .newerEditsPreserved
         }
 
-        var durableAggregate = candidate.aggregate
-        durableAggregate.revision = receipt.revision
-        editingState.state.configurationLibrary = durableAggregate
         editingState.presentationState.draftMemoryConfiguration =
             candidate.configuration
         editingState.appliedMemoryPresetID = persistedConfigurationID

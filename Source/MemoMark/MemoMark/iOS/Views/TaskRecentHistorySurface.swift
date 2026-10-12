@@ -11,9 +11,12 @@ struct TaskRecentHistorySurface: View {
 
     let rows: [TaskHistoryRowPresentation]
     let onOpenPhotoLibrary: (TaskPhotoLibraryLink) -> Void
+    let onClearHistory: () -> Void
 
     @Binding
     var isSheetPresented: Bool
+
+    @State private var showsClearConfirmation = false
 
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
@@ -43,16 +46,19 @@ struct TaskRecentHistorySurface: View {
 
                 Spacer(minLength: 0)
 
-                if rows.count > inlineRows.count {
-                    ConfigurationCardHeaderIconButton(
-                        systemImage: "ellipsis",
-                        accessibilityLabel: interfaceLanguage.localized(
-                            key: "task.recent.more",
-                            fallback: "查看更多最近保存的回忆"
-                        )
-                    ) {
-                        isSheetPresented = true
+                if !rows.isEmpty {
+                    Menu {
+                        Button(interfaceLanguage.localized(key: "task.recent.more", fallback: "查看更多最近保存的回忆")) {
+                            isSheetPresented = true
+                        }
+                        Button(interfaceLanguage.localized(key: "task.history.clear", fallback: "清理已结束记录"), role: .destructive) {
+                            showsClearConfirmation = true
+                        }
+                    } label: {
+                        ConfigurationCardHeaderIconLabel(systemImage: "ellipsis")
                     }
+                    .accessibilityLabel(interfaceLanguage.localized(key: "task.history.actions", fallback: "记录操作"))
+                    .accessibilityIdentifier("task-history-actions")
                 }
             }
             .padding(.horizontal, 4)
@@ -62,6 +68,17 @@ struct TaskRecentHistorySurface: View {
             } else {
                 groupedHistory
             }
+        }
+        .confirmationDialog(
+            interfaceLanguage.localized(key: "task.history.clear", fallback: "清理已结束记录"),
+            isPresented: $showsClearConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(interfaceLanguage.localized(key: "task.history.clear", fallback: "清理已结束记录"), role: .destructive,
+                   action: onClearHistory)
+        } message: {
+            Text(interfaceLanguage.localized(key: "task.history.clear.detail",
+                fallback: "只清理已结束的处理记录。照片 App 中的照片和正在处理的任务会保留。"))
         }
         .sheet(isPresented: $isSheetPresented) {
             historySheet

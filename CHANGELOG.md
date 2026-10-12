@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.6 (124) Internal Source Checkpoint - 2026-10-12
+
+- Consolidated configuration-save reconciliation, identity/date localization and ended-history cleanup access.
+- Preserved measured landscape safe-area/content width refinements and bounded Classic landscape capture-detail fit.
+- Simplified Time Expression guidance. Home compact header/two-column work starts after this checkpoint.
+- No Store/TestFlight delivery. See [sync manifest](Docs/07_Releases/2026-10-12-2.3.6-source-checkpoint-sync-manifest.md).
+
 ## 2.3.6 (124) Internal Source Checkpoint - 2026-10-11
 
 - Restored conditional Photos Share background continuation with durable intake/recovery and existing permission/system fallback.

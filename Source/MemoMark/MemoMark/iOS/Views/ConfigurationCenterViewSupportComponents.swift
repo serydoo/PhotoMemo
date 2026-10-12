@@ -871,24 +871,7 @@ struct ConfigurationCardHeaderIconButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 32, height: 32)
-                .background(
-                    Circle()
-                        .fill(
-                            Color(
-                                uiColor: .secondarySystemFill
-                            )
-                        )
-                )
-                .overlay(
-                    Circle()
-                        .stroke(ConfigurationUI.faintHairline)
-                )
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
+            ConfigurationCardHeaderIconLabel(systemImage: systemImage)
         }
         .buttonStyle(.plain)
         // Keep the interactive region on the Button itself. Relying only on
@@ -896,6 +879,31 @@ struct ConfigurationCardHeaderIconButton: View {
         // accessory is hosted in a lazily materialized section header.
         .frame(width: 44, height: 44)
         .accessibilityLabel(accessibilityLabel)
+    }
+}
+
+struct ConfigurationCardHeaderIconLabel: View {
+    let systemImage: String
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(Color.accentColor)
+            .frame(width: 32, height: 32)
+            .background(
+                Circle()
+                    .fill(
+                        Color(
+                            uiColor: .secondarySystemFill
+                        )
+                    )
+            )
+            .overlay(
+                Circle()
+                    .stroke(ConfigurationUI.faintHairline)
+            )
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
     }
 }
 

@@ -1,5 +1,6 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
+import UIKit
 
 /// A contextual viewing action, separate from primary destination navigation.
 struct ConfigurationPreviewRailControl {
@@ -17,6 +18,7 @@ struct EntryNavigationSurface<
 
     let navigationStyle: EntryNavigationStyle
     @Environment(\.layoutDirection) private var contentLayoutDirection
+    @State private var railWindowGeometry: FloatingRailWindowGeometry?
     private let previewControl: ConfigurationPreviewRailControl?
     private let configurationActions: ConfigurationActionFooter?
 
@@ -100,62 +102,68 @@ struct EntryNavigationSurface<
 
     private var primaryNavigation: some View {
         NavigationStack {
-            Group {
-                if selection == .settings || selection == .output {
-                    sidebarDestination
-                } else {
-                    // Rotation changes only chrome. Keep the same TabView and
-                    // hosting controllers so TextKit retains its input owner.
-                    primaryTabs
-                }
-            }
-                .environment(\.layoutDirection, contentLayoutDirection)
-                // Apply the inset inside navigation's hosting boundary so the
-                // destination receives the reduced safe content region.
-                .safeAreaInset(edge: .trailing, spacing: navigationStyle == .floatingRail ? AdaptiveFloatingRailMetrics.contentSpacing : 0) {
-                    if navigationStyle == .floatingRail {
-                        ScrollView(.vertical) {
-                            VStack(spacing: ConfigurationUI.innerPanelPadding) {
-                                EntryFloatingNavigationRail(selection: $selection)
-                                if let previewControl {
-                                    Button(action: previewControl.toggle) {
-                                        Image(systemName: previewControl.isVisible
-                                            ? "eye.slash" : "eye")
-                                            .font(.system(size: 18, weight: .semibold))
-                                            .frame(width: 46, height: 46)
-                                            .foregroundStyle(Color.accentColor)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .background(
-                                        MemoMarkDesignTokens.SurfaceMaterial.contextual,
-                                        in: Circle()
-                                    )
-                                    .accessibilityLabel(localized(previewControl.isVisible
-                                        ? "configuration.preview.collapse"
-                                        : "configuration.preview.expand"))
-                                    .accessibilityValue(localized(previewControl.isVisible
-                                        ? "configuration.preview.visible"
-                                        : "configuration.preview.hidden"))
-                                    .accessibilityIdentifier("configuration.preview.rail-visibility")
-                                }
-                                if let configurationActions {
-                                    configurationActions
-                                }
-                            }
-                        }
-                            // Normally centered; short keyboard/window regions can
-                            // scroll the actions instead of clipping the last one.
-                            .scrollIndicators(.hidden)
-                            .defaultScrollAnchor(.center, for: .alignment)
-                            .frame(width: AdaptiveFloatingRailMetrics.width)
-                            .padding(.trailing, AdaptiveFloatingRailMetrics.trailingMargin)
-                            .padding(.vertical, 12)
+            // One shell owns the rail's width. Destinations receive the
+            // remaining safe viewport and must not subtract the rail again.
+            HStack(spacing: navigationStyle == .floatingRail ? AdaptiveFloatingRailMetrics.contentSpacing : 0) {
+                Group {
+                    if selection == .settings || selection == .output {
+                        sidebarDestination
+                    } else {
+                        // Rotation changes only chrome. Keep the same TabView and
+                        // hosting controllers so TextKit retains its input owner.
+                        primaryTabs
                     }
                 }
+                .environment(\.layoutDirection, contentLayoutDirection)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if navigationStyle == .floatingRail {
+                    ScrollView(.vertical) {
+                        VStack(spacing: ConfigurationUI.innerPanelPadding) {
+                            EntryFloatingNavigationRail(selection: $selection)
+                            if let previewControl {
+                                Button(action: previewControl.toggle) {
+                                    Image(systemName: previewControl.isVisible
+                                        ? "eye.slash" : "eye")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .frame(width: 46, height: 46)
+                                        .foregroundStyle(Color.accentColor)
+                                }
+                                .buttonStyle(.plain)
+                                .background(
+                                    MemoMarkDesignTokens.SurfaceMaterial.contextual,
+                                    in: Circle()
+                                )
+                                .accessibilityLabel(localized(previewControl.isVisible
+                                    ? "configuration.preview.collapse"
+                                    : "configuration.preview.expand"))
+                                .accessibilityValue(localized(previewControl.isVisible
+                                    ? "configuration.preview.visible"
+                                    : "configuration.preview.hidden"))
+                                .accessibilityIdentifier("configuration.preview.rail-visibility")
+                            }
+                            if let configurationActions {
+                                configurationActions
+                            }
+                        }
+                    }
+                        // Normally centered; short keyboard/window regions can
+                        // scroll the actions instead of clipping the last one.
+                        .scrollIndicators(.hidden)
+                        .defaultScrollAnchor(.center, for: .alignment)
+                        .frame(width: AdaptiveFloatingRailMetrics.width)
+                        .padding(.trailing, AdaptiveFloatingRailMetrics.trailingMargin)
+                        .padding(.vertical, 12)
+                }
+            }
+            .padding(.trailing, railTrailingInset ?? 0)
+            .ignoresSafeArea(.container, edges: railTrailingInset == nil ? [] : .trailing)
                 // The rail is physically right; destination content retains
                 // its own semantic reading direction for RTL languages.
                 .environment(\.layoutDirection, .leftToRight)
         }
+        .background(FloatingRailWindowGeometryReader { geometry in
+            if railWindowGeometry != geometry { railWindowGeometry = geometry }
+        })
         .frame(
             maxWidth: .infinity,
             maxHeight: .infinity
@@ -163,6 +171,14 @@ struct EntryNavigationSurface<
         .background(
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
+        )
+    }
+
+    private var railTrailingInset: CGFloat? {
+        guard navigationStyle == .floatingRail, let geometry = railWindowGeometry else { return nil }
+        return geometry.trailingSafeInset - AdaptiveFloatingRailMetrics.trailingEdgeExpansion(
+            systemInset: geometry.trailingSafeInset,
+            isUnobstructedLandscapeEdge: geometry.isUnobstructedTrailingEdge
         )
     }
 
@@ -379,6 +395,60 @@ extension EntryTab {
         case .settings:
             return MemoMarkSymbol.settings.name
         }
+    }
+}
+private struct FloatingRailWindowGeometry: Equatable, Sendable {
+    let trailingSafeInset: CGFloat
+    let isUnobstructedTrailingEdge: Bool
+}
+
+/// Read the hosting scene rather than a global screen or physical-device pose.
+/// UIInterfaceOrientation and UIDeviceOrientation use opposite landscape names.
+private struct FloatingRailWindowGeometryReader: UIViewRepresentable {
+    let onChange: (FloatingRailWindowGeometry) -> Void
+
+    func makeUIView(context: Context) -> FloatingRailWindowProbe {
+        let view = FloatingRailWindowProbe()
+        view.isUserInteractionEnabled = false
+        view.onChange = onChange
+        return view
+    }
+
+    func updateUIView(_ view: FloatingRailWindowProbe, context: Context) {
+        view.onChange = onChange
+        view.reportGeometry()
+    }
+}
+
+private final class FloatingRailWindowProbe: UIView {
+    var onChange: ((FloatingRailWindowGeometry) -> Void)?
+    private var lastGeometry: FloatingRailWindowGeometry?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        reportGeometry()
+    }
+
+    override func safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        reportGeometry()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        reportGeometry()
+    }
+
+    func reportGeometry() {
+        guard let window, let scene = window.windowScene else { return }
+        let geometry = FloatingRailWindowGeometry(
+            trailingSafeInset: window.safeAreaInsets.right,
+            isUnobstructedTrailingEdge: scene.interfaceOrientation == .landscapeRight
+        )
+        guard geometry != lastGeometry else { return }
+        lastGeometry = geometry
+        // Do not mutate SwiftUI state during UIKit's layout pass.
+        Task { @MainActor [weak self] in self?.onChange?(geometry) }
     }
 }
 #endif

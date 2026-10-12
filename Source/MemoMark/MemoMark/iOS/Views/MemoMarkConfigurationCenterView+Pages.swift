@@ -486,6 +486,11 @@ extension MemoMarkConfigurationCenterView {
                         )
                 }
             },
+            onClearHistory: {
+                Task { @MainActor in
+                    await backgroundStatusService.clearCompletedHistory()
+                }
+            },
             onDismissKeyboard: dismissKeyboard
         )
     }

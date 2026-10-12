@@ -19,12 +19,11 @@ enum AdaptivePageLayout {
     static func scrollContentWidth(
         viewportWidth: CGFloat,
         horizontalPadding: CGFloat,
-        trailingReservedWidth: CGFloat = 0
+        trailingReservedWidth: CGFloat = 0,
+        fillsAvailableWidth: Bool = false
     ) -> CGFloat {
-        min(
-            maximumReadableContentWidth,
-            max(0, viewportWidth - trailingReservedWidth - horizontalPadding * 2)
-        )
+        let availableWidth = max(0, viewportWidth - trailingReservedWidth - horizontalPadding * 2)
+        return fillsAvailableWidth ? availableWidth : min(maximumReadableContentWidth, availableWidth)
     }
 
     static func navigationStyle(
@@ -74,6 +73,14 @@ enum AdaptiveFloatingRailMetrics {
     static var reservedWidth: CGFloat {
         width + trailingMargin + contentSpacing
     }
+
+    static func trailingEdgeExpansion(
+        systemInset: CGFloat,
+        isUnobstructedLandscapeEdge: Bool
+    ) -> CGFloat {
+        guard isUnobstructedLandscapeEdge else { return 0 }
+        return max(0, systemInset - contentSpacing)
+    }
 }
 
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
@@ -109,7 +116,8 @@ extension View {
     func adaptiveScrollContent(
         horizontalPadding: CGFloat,
         viewportWidth: CGFloat,
-        trailingReservedWidth: CGFloat = 0
+        trailingReservedWidth: CGFloat = 0,
+        fillsAvailableWidth: Bool = false
     ) -> some View {
         let contentViewportWidth = max(
             0,
@@ -120,7 +128,8 @@ extension View {
                 width: AdaptivePageLayout.scrollContentWidth(
                     viewportWidth: viewportWidth,
                     horizontalPadding: horizontalPadding,
-                    trailingReservedWidth: trailingReservedWidth
+                    trailingReservedWidth: trailingReservedWidth,
+                    fillsAvailableWidth: fillsAvailableWidth
                 )
             )
             .frame(

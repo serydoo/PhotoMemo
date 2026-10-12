@@ -173,9 +173,7 @@ struct MemoryCardEditorPageSurface<
             previewPaneCore.adaptiveScrollContent(
                 horizontalPadding: ConfigurationUI.contentColumnPadding,
                 viewportWidth: viewportWidth,
-                trailingReservedWidth: navigationStyle == .floatingRail
-                    ? AdaptiveFloatingRailMetrics.reservedWidth
-                    : 0
+                fillsAvailableWidth: verticalSizeClass == .compact
             )
         }
     }
@@ -233,9 +231,7 @@ struct MemoryCardEditorPageSurface<
                     .adaptiveScrollContent(
                         horizontalPadding: ConfigurationUI.contentColumnPadding,
                         viewportWidth: viewport.size.width,
-                        trailingReservedWidth: navigationStyle == .floatingRail
-                            ? AdaptiveFloatingRailMetrics.reservedWidth
-                            : 0
+                        fillsAvailableWidth: verticalSizeClass == .compact
                     )
                 }
                 .scrollDismissesKeyboard(.interactively)

@@ -139,7 +139,7 @@ the subtitle:
 | --- | --- |
 | `时间锚点` editor | `选择一个时间锚点，让照片拥有时间答案。` |
 | `MemoMark 怎么讲述时间` | `看看时间锚点如何让照片在之前、当天和之后说出不同的话。` |
-| `表达方式` | `围绕时间锚点，可选择 5 种表达方式。` The number comes from the current available styles. |
+| `表达方式` | `围绕设定的时间锚点，选择不同语气的时间表达。` Explain the tone choice without repeating the visible choice count. |
 | `卡片样式` | `选择照片卡片的整体视觉风格。` |
 | `我的预设` | `下一次分享，照片会怎样呈现。` |
 
@@ -191,7 +191,7 @@ they are choosing without knowing the renderer or layout architecture.
 The expression section uses `为年龄、纪念日或倒计时选择合适的语气。` and
 five horizontal choices from the active anchor's existing catalog. The result
 below is `表达示例`, not a promise that it is the authored card's complete text.
-Its quiet scope note is `可在“卡片内容”中选择是否加入时间表达；只保留日期、地点或自己的文字也可以。`
+The helper above the choices is `围绕设定的时间锚点，选择不同语气的时间表达。`. Do not repeat the optional-content explanation below the choices; optional placement belongs to Card Content.
 Selecting a tone must never insert content or rewrite the user's words.
 
 FM configuration descriptions should identify the visible object and effect:

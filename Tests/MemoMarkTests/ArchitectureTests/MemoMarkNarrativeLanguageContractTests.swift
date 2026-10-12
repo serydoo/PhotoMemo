@@ -26,7 +26,7 @@ struct MemoMarkNarrativeLanguageContractTests {
         #expect(optionList.contains("configuration.memory_start.subtitle"))
         #expect(optionList.contains("configuration.expression.title"))
         #expect(optionList.contains("configuration.expression.subtitle"))
-        #expect(optionList.contains("围绕时间锚点，可选择 %lld 种表达方式。"))
+        #expect(optionList.contains("configuration.expression.tone_guidance"))
         #expect(optionList.contains("configuration.card_style.title"))
         #expect(optionList.contains("configuration.card_style.subtitle"))
         #expect(optionList.contains("时间与地点"))

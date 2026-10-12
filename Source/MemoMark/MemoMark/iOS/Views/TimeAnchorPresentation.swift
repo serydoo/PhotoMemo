@@ -4,42 +4,35 @@ import Foundation
 enum UserFacingDateFormatter {
 
     private static func makeFormatter(
-        dateFormat: String
+        dateStyle: DateFormatter.Style,
+        timeStyle: DateFormatter.Style,
+        locale: Locale?
     ) -> DateFormatter {
-
         let formatter = DateFormatter()
-        formatter.locale = MemoMarkLanguage.interfaceStored.locale
+        // UI dates follow the system's region when the interface follows the
+        // system. Explicit interface language choices retain their own locale.
+        formatter.locale = locale ?? (MemoMarkLanguage.interfacePreference == .system
+            ? Locale.current : MemoMarkLanguage.interfaceStored.locale)
         formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.dateFormat = dateFormat
+        formatter.dateStyle = dateStyle
+        formatter.timeStyle = timeStyle
         return formatter
     }
 
-    static func date(_ date: Date) -> String {
-        let format =
-            MemoMarkLanguage.interfaceStored == .english
-            ? "MMM d, yyyy"
-            : "yyyy年M月d日"
-
-        return makeFormatter(dateFormat: format).string(from: date)
+    static func date(_ date: Date, locale: Locale? = nil) -> String {
+        makeFormatter(dateStyle: .medium, timeStyle: .none, locale: locale).string(from: date)
     }
 
-    static func dateTime(_ date: Date) -> String {
-        let format =
-            MemoMarkLanguage.interfaceStored == .english
-            ? "MMM d, yyyy HH:mm"
-            : "yyyy年M月d日 HH:mm"
-
-        return makeFormatter(dateFormat: format).string(from: date)
+    static func dateTime(_ date: Date, locale: Locale? = nil) -> String {
+        makeFormatter(dateStyle: .medium, timeStyle: .short, locale: locale).string(from: date)
     }
 
-    static func compactDateTime(_ date: Date) -> String {
-        let format =
-            MemoMarkLanguage.interfaceStored == .english
-            ? "MMM d HH:mm"
-            : "M月d日 HH:mm"
-
-        return makeFormatter(dateFormat: format).string(from: date)
+    static func compactDateTime(_ date: Date, locale: Locale? = nil) -> String {
+        let formatter = makeFormatter(dateStyle: .none, timeStyle: .none, locale: locale)
+        formatter.setLocalizedDateFormatFromTemplate("MMMdHm")
+        return formatter.string(from: date)
     }
+
 }
 
 enum TimeAnchorPresentation {

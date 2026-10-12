@@ -296,7 +296,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(recentHistory.contains("task.recent.title"))
         #expect(processing.contains("taskStatusPill("))
         #expect(recentHistory.contains("isSheetPresented = true"))
-        #expect(recentHistory.contains("ConfigurationCardHeaderIconButton("))
+        #expect(recentHistory.contains("ConfigurationCardHeaderIconLabel("))
         #expect(recentHistory.contains("systemImage: \"ellipsis\""))
         #expect(recentHistory.contains(".frame(minHeight: 70)"))
         #expect(recentHistory.contains("showsNavigationAccessory: true"))
