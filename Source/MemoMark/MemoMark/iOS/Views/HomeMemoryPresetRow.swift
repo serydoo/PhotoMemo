@@ -17,6 +17,7 @@ struct HomeMemoryPresetRow: View {
     let subjectTitle: String
     let subjectAvatarImagePath: String?
     let isSelected: Bool
+    var usesStackedMetadata = false
     let onSelect: () -> Void
 
     var body: some View {
@@ -69,7 +70,11 @@ struct HomeMemoryPresetRow: View {
     private var horizontalPresetRowContent: some View {
         HStack(alignment: .center, spacing: 12) {
             presetIdentityMark
-            horizontalPresetTextContent
+            if usesStackedMetadata {
+                verticalPresetTextContent
+            } else {
+                horizontalPresetTextContent
+            }
             Spacer(minLength: 8)
             presetSelectionMark
         }

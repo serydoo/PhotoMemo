@@ -262,19 +262,19 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "What's New";
 "settings.version.release_notes_detail" = "See what has changed in MemoMark.";
-"settings.release_notes.header" = "This update adds lifetime unlock and improves Live Photo saving and Memory Card presentation.";
+"settings.release_notes.header" = "Keep everyday actions close, and give each memory room to be revisited.";
 "settings.release_notes.version_format" = "Version %@";
-"settings.release_notes.positioning" = "Keep your words quietly within the photo, with an expression of your own.";
-"settings.release_notes.time_expression.title" = "Choose how you use MemoMark+";
-"settings.release_notes.time_expression.item_one" = "A lifetime unlock option now appears below subscriptions, with purchase and restore support.";
-"settings.release_notes.time_expression.item_two" = "Prices come from the App Store. Manage any existing subscription renewal in Apple subscription settings.";
-"settings.release_notes.configuration.title" = "Clearer Memory Cards";
-"settings.release_notes.configuration.item_one" = "Refined GlassCard text spacing, content arrangement and presentation details.";
-"settings.release_notes.configuration.item_two" = "Refined the configuration preview and bottom controls for more natural viewing and editing.";
-"settings.release_notes.saving.title" = "Save your memories";
-"settings.release_notes.saving.item_one" = "Fixed saving failures for some Live Photos and clarified retry guidance.";
-"settings.release_notes.saving.item_two" = "Photos are still processed locally, keeping the original unchanged and saving a new memory photo.";
-"settings.release_notes.closing" = "Thank you for your feedback as we continue refining the details.";
+"settings.release_notes.positioning" = "This update refines landscape Home and Progress, with clearer time-expression guidance and save states.";
+"settings.release_notes.time_expression.title" = "One time anchor, a different tone";
+"settings.release_notes.time_expression.item_one" = "Shorter guidance helps you choose Natural, Ceremonial, Growth, Warm or Minimal time expressions around your chosen time anchor.";
+"settings.release_notes.time_expression.item_two" = "Examples help you compare wording. Card Content still determines whether time expressions appear on your photo.";
+"settings.release_notes.configuration.title" = "Know when your changes are saved";
+"settings.release_notes.configuration.item_one" = "Improved coordination between configuration edits and save states keeps the current Preset aligned with its saved content.";
+"settings.release_notes.configuration.item_two" = "Refined date and name presentation, along with spacing around landscape headings and controls.";
+"settings.release_notes.saving.title" = "From Photos, back to Photos";
+"settings.release_notes.saving.item_one" = "Improved processing continuation and status presentation after sharing from Apple Photos. Background behavior still depends on the system version, Photos permissions and runtime conditions.";
+"settings.release_notes.saving.item_two" = "Photos stay on your device, with the original unchanged. A new memory photo is saved back to Apple Photos when processing finishes.";
+"settings.release_notes.closing" = "Thank you for sharing the little details of everyday use. May each return to your photos bring the memory back clearly.";
 "settings.navigation.title" = "Settings";
 "settings.interface_preferences.title" = "Interface";
 "settings.appearance.title" = "Appearance";
@@ -1945,3 +1945,15 @@
 "默认 · 对象名称" = "Default · Name";
 "默认称呼" = "Default Name";
 "未填写" = "Not Provided";
+
+"settings.release_notes.home.title" = "Your everyday choices, side by side";
+
+"settings.release_notes.home.item_one" = "On larger iPhones with enough landscape space, your Memory Subject and Presets sit side by side with aligned headings and card tops.";
+
+"settings.release_notes.home.item_two" = "With multiple Presets, scroll the right column independently while its heading and management action stay visible. Portrait and smaller screens keep their familiar layout.";
+
+"settings.release_notes.progress.title" = "Find the memory you just finished";
+
+"settings.release_notes.progress.item_one" = "In supported large-phone landscape layouts, the latest result sits beside recently saved memories, making both easier to revisit.";
+
+"settings.release_notes.progress.item_two" = "Scroll recent saves independently while the heading and actions remain visible.";

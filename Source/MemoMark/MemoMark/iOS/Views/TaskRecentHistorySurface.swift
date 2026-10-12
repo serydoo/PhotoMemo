@@ -12,6 +12,8 @@ struct TaskRecentHistorySurface: View {
     let rows: [TaskHistoryRowPresentation]
     let onOpenPhotoLibrary: (TaskPhotoLibraryLink) -> Void
     let onClearHistory: () -> Void
+    var scrollsIndependently = false
+    var overviewHeaderMinimumHeight: CGFloat? = nil
 
     @Binding
     var isSheetPresented: Bool
@@ -26,8 +28,8 @@ struct TaskRecentHistorySurface: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
+        VStack(alignment: .leading, spacing: scrollsIndependently ? ConfigurationUI.innerPanelPadding : 10) {
+            HStack(alignment: scrollsIndependently ? .top : .firstTextBaseline, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(interfaceLanguage.localized(
                         key: "task.recent.title",
@@ -62,11 +64,22 @@ struct TaskRecentHistorySurface: View {
                 }
             }
             .padding(.horizontal, 4)
+            .alignedTaskOverviewHeader(minimumHeight: overviewHeaderMinimumHeight)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("task-recent-header")
 
-            if rows.isEmpty {
+            if scrollsIndependently {
+                ScrollView(.vertical) {
+                    groupedHistory
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .v1CardChrome()
+                .frame(maxHeight: .infinity)
+                .accessibilityIdentifier("task-history-scroll")
+            } else if rows.isEmpty {
                 emptyState
             } else {
-                groupedHistory
+                groupedHistory.v1CardChrome()
             }
         }
         .confirmationDialog(
@@ -86,11 +99,11 @@ struct TaskRecentHistorySurface: View {
     }
 
     private var inlineRows: [TaskHistoryRowPresentation] {
-        Array(rows.prefix(4))
+        scrollsIndependently ? rows : Array(rows.prefix(4))
     }
 
     private var groupedHistory: some View {
-        VStack(spacing: 0) {
+        LazyVStack(spacing: 0) {
             ForEach(Array(groupedRows.enumerated()), id: \.element.id) { index, group in
                 groupHeader(title: group.title, isFirst: index == 0)
 
@@ -106,7 +119,6 @@ struct TaskRecentHistorySurface: View {
                 }
             }
         }
-        .v1CardChrome()
     }
 
     private var groupedRows: [TaskHistoryGroup] {
@@ -229,6 +241,7 @@ struct TaskRecentHistorySurface: View {
                 historyRowContent(row, showsNavigationAccessory: true)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("task-history-row-\(row.id.uuidString)")
         } else {
             historyRowContent(row, showsNavigationAccessory: false)
         }
@@ -288,5 +301,26 @@ private struct TaskHistoryGroup: Identifiable {
     let id: Date
     let title: String
     let rows: [TaskHistoryRowPresentation]
+}
+struct TaskOverviewHeaderHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+extension View {
+    func alignedTaskOverviewHeader(minimumHeight: CGFloat?) -> some View {
+        self.background {
+            if minimumHeight != nil {
+                GeometryReader { geometry in
+                    Color.clear.preference(key: TaskOverviewHeaderHeightKey.self,
+                        value: geometry.size.height)
+                }
+            }
+        }
+        .frame(minHeight: minimumHeight, alignment: .top)
+    }
 }
 #endif

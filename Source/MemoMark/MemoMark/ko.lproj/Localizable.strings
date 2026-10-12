@@ -262,19 +262,19 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "새로운 기능";
 "settings.version.release_notes_detail" = "MemoMark의 변경 사항을 확인합니다.";
-"settings.release_notes.header" = "평생 잠금 해제를 추가하고 Live Photo 저장과 메모리 카드 표시를 개선했습니다.";
+"settings.release_notes.header" = "자주 쓰는 기능은 가까이, 추억을 돌아보는 순간은 더 여유롭게.";
 "settings.release_notes.version_format" = "버전 %@";
-"settings.release_notes.positioning" = "사진 속에 나만의 말을 조용히 남겨 보세요.";
-"settings.release_notes.time_expression.title" = "나에게 맞는 이용 방식";
-"settings.release_notes.time_expression.item_one" = "구독 아래에 평생 잠금 해제 옵션을 추가했습니다. 구매하거나 받은 권한은 복원할 수 있습니다.";
-"settings.release_notes.time_expression.item_two" = "가격은 App Store에 표시됩니다. 기존 구독의 갱신은 Apple 구독 설정에서 관리하세요.";
-"settings.release_notes.configuration.title" = "더 보기 편한 메모리 카드";
-"settings.release_notes.configuration.item_one" = "GlassCard의 글자 간격, 내용 배치와 표시 세부 사항을 다듬었습니다.";
-"settings.release_notes.configuration.item_two" = "설정 미리보기와 하단 조작을 개선해 보기와 편집을 더 자연스럽게 만들었습니다.";
-"settings.release_notes.saving.title" = "추억 저장";
-"settings.release_notes.saving.item_one" = "일부 Live Photo 저장 실패를 수정하고 재시도 안내를 개선했습니다.";
-"settings.release_notes.saving.item_two" = "사진은 계속 기기에서 처리되며 원본은 변경되지 않고 새로운 추억 사진으로 저장됩니다.";
-"settings.release_notes.closing" = "의견을 보내주셔서 감사합니다. 세부 사항을 계속 다듬겠습니다.";
+"settings.release_notes.positioning" = "가로 화면의 홈과 진행 상황을 정돈하고, 시간 표현 안내와 저장 상태를 더 명확하게 다듬었습니다.";
+"settings.release_notes.time_expression.title" = "같은 시간 기준점, 다른 말투";
+"settings.release_notes.time_expression.item_one" = "안내를 간결하게 다듬어 설정한 시간 기준점을 중심으로 자연스러움, 의식감, 성장, 따뜻함, 미니멀 말투를 고를 수 있습니다.";
+"settings.release_notes.time_expression.item_two" = "표현 예시로 말투를 비교할 수 있습니다. 사진에 시간 표현을 넣을지는 카드 내용에서 결정합니다.";
+"settings.release_notes.configuration.title" = "변경 사항의 저장을 더 명확하게";
+"settings.release_notes.configuration.item_one" = "설정 변경과 저장 상태의 연결을 개선해 현재 프리셋과 저장된 내용이 일치하도록 했습니다.";
+"settings.release_notes.configuration.item_two" = "날짜와 호칭 표시를 다듬고 가로 화면의 제목 및 작업 영역 간격을 정돈했습니다.";
+"settings.release_notes.saving.title" = "사진에서 시작해 다시 사진으로";
+"settings.release_notes.saving.item_one" = "Apple Photos에서 공유한 뒤의 처리 이어가기와 상태 표시를 개선했습니다. 백그라운드 동작은 시스템 버전, 사진 접근 권한, 실행 상태에 따라 달라집니다.";
+"settings.release_notes.saving.item_two" = "사진은 계속 기기에서 처리하며 원본은 변경하지 않습니다. 완료된 새 추억 사진은 Apple Photos에 저장됩니다.";
+"settings.release_notes.closing" = "일상에서 발견한 작은 부분까지 알려 주셔서 감사합니다. 다음에 사진을 열 때도 그 추억이 선명하게 떠오르길 바랍니다.";
 "settings.navigation.title" = "설정";
 "settings.interface_preferences.title" = "인터페이스";
 "settings.appearance.title" = "화면 모양";
@@ -1945,3 +1945,15 @@
 "默认 · 对象名称" = "기본 · 이름";
 "默认称呼" = "기본 호칭";
 "未填写" = "입력되지 않음";
+
+"settings.release_notes.home.title" = "가로 화면에서 나란히 보는 설정";
+
+"settings.release_notes.home.item_one" = "가로 공간이 충분한 큰 iPhone에서는 추억 대상과 프리셋을 나란히 표시하고 제목과 카드 상단을 맞춥니다.";
+
+"settings.release_notes.home.item_two" = "프리셋이 여러 개면 오른쪽에서 따로 위아래로 스크롤할 수 있습니다. 제목과 관리 버튼은 위에 남고, 세로 화면과 작은 화면은 익숙한 배치를 유지합니다.";
+
+"settings.release_notes.progress.title" = "방금 완성한 추억을 더 쉽게 찾기";
+
+"settings.release_notes.progress.item_one" = "지원되는 큰 iPhone의 가로 화면에서 최근 결과와 최근 저장한 추억을 나란히 확인할 수 있습니다.";
+
+"settings.release_notes.progress.item_two" = "최근 저장 목록만 따로 스크롤해도 제목과 작업 버튼은 계속 표시됩니다.";

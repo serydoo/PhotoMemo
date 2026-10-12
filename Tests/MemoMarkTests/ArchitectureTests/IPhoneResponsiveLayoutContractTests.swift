@@ -380,7 +380,8 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
         )
 
-        #expect(source.contains(".frame(width: 70, height: 70)"))
+        #expect(source.contains("var size: CGFloat = 70"))
+        #expect(source.contains(".frame(width: size, height: size)"))
         #expect(source.contains(".frame(width: 44, height: 44)"))
         #expect(source.contains(".font(.body.weight(.bold))"))
         #expect(source.contains(".foregroundStyle(.secondary)"))

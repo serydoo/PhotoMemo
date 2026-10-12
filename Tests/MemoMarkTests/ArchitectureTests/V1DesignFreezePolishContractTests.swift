@@ -22,7 +22,8 @@ struct V1DesignFreezePolishContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift"
         )
 
-        #expect(home.contains(".frame(width: 70, height: 70)"))
+        #expect(home.contains("var size: CGFloat = 70"))
+        #expect(home.contains(".frame(width: size, height: size)"))
         #expect(home.contains(".font(.title2.weight(.bold))"))
         #expect(presetRow.contains("isSelected ? \"checkmark.circle.fill\" : \"circle\""))
         #expect(presetRow.contains("isSelected ? Color.accentColor"))

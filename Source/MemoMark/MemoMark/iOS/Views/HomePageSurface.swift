@@ -15,6 +15,12 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
 
+    @Environment(\.entryWindowWidth)
+    private var entryWindowWidth
+
+    @ScaledMetric(relativeTo: .body)
+    private var minimumOverviewColumnWidth = CompactOverviewLayoutPolicy.minimumColumnWidth
+
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
     }
@@ -80,29 +86,52 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     @State
     private var photoPickerGuidanceRefreshToken = 0
 
+    @State
+    private var overviewHeaderHeight: CGFloat = 44
+
+    @State
+    private var presetContentOrigin: CGFloat = 0
+
     var body: some View {
         GeometryReader { viewport in
+            let contentWidth = AdaptivePageLayout.scrollContentWidth(
+                viewportWidth: viewport.size.width,
+                horizontalPadding: ConfigurationUI.contentColumnPadding,
+                fillsAvailableWidth: verticalSizeClass == .compact
+            )
+            let usesColumns = CompactOverviewLayoutPolicy.usesTwoColumns(
+                contentWidth: contentWidth,
+                windowWidth: entryWindowWidth,
+                minimumColumnWidth: minimumOverviewColumnWidth,
+                columnSpacing: ConfigurationUI.innerPanelPadding,
+                hasCompactHeight: verticalSizeClass == .compact,
+                usesAccessibilityText: dynamicTypeSize.isAccessibilitySize
+            )
             ScrollView {
-                VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
-                    if verticalSizeClass == .compact {
-                        ConfigurationPageHeader(
-                            localized("home.title"),
-                            subtitle: localized("home.brand.tagline")
-                        )
-                    }
-                    topHeaderSection
+                VStack(alignment: .leading, spacing: usesColumns ? 0 : (verticalSizeClass == .compact ? 12 : 16)) {
+                    topHeaderSection(usesColumns: usesColumns)
 
-                    topSummaryCluster
+                    topSummaryCluster(
+                        usesColumns: usesColumns,
+                        presetContentMaximumHeight: max(
+                            ConfigurationUI.minimumInteractiveHeight,
+                            viewport.size.height - presetContentOrigin - ConfigurationUI.innerPanelPadding
+                        )
+                    )
 
                     if dynamicTypeSize.isAccessibilitySize {
                         processPhotoFooter
                     }
                 }
-                .padding(.top, verticalSizeClass == .compact ? 10 : 16)
+                .padding(.top, ConfigurationUI.contentColumnPadding)
                 .padding(
                     .bottom,
                     dynamicTypeSize.isAccessibilitySize ? 16 : 104
                 )
+                .coordinateSpace(name: "home-scroll-content")
+                .onPreferenceChange(HomePresetContentOriginKey.self) { origin in
+                    presetContentOrigin = origin
+                }
                 .adaptiveScrollContent(
                     horizontalPadding: ConfigurationUI.contentColumnPadding,
                     viewportWidth: viewport.size.width,
@@ -152,18 +181,34 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         )
     }
 
-    private var topSummaryCluster: some View {
+    private func topSummaryCluster(usesColumns: Bool, presetContentMaximumHeight: CGFloat) -> some View {
         VStack(spacing: 14) {
             if !hasDismissedApplePhotosGuide {
                 applePhotosEntrySection
             }
 
-            profileSection
-                .background(profileTrackingBackground)
+            let layout = overviewLayout(usesColumns: usesColumns)
+            layout {
+                profileSection(sharedHeaderMinimumHeight: usesColumns ? overviewHeaderHeight : nil)
+                    .background(profileTrackingBackground)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("home-profile-section")
 
-            activitySection
-
-            currentPresetSection
+                VStack(spacing: 14) {
+                    activitySection
+                    currentPresetSection(
+                        usesStackedMetadata: usesColumns,
+                        maximumContentHeight: presetContentMaximumHeight
+                    )
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("home-presets-section")
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .onPreferenceChange(ConfigurationSectionHeaderHeightKey.self) { height in
+                overviewHeaderHeight = max(44, height)
+            }
 
             if shouldShowBeginnerGuidance {
                 workflowReminderCard
@@ -171,6 +216,12 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
 
             photoPickerWorkflowHintTimeline
         }
+    }
+
+    private func overviewLayout(usesColumns: Bool) -> AnyLayout {
+        usesColumns
+            ? AnyLayout(HStackLayout(alignment: .top, spacing: ConfigurationUI.innerPanelPadding))
+            : AnyLayout(VStackLayout(alignment: .leading, spacing: 14))
     }
 
     private var workflowReminderCard: some View {
@@ -431,10 +482,15 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     @ViewBuilder
-    private var topHeaderSection: some View {
+    private func topHeaderSection(usesColumns: Bool) -> some View {
         Group {
             if dynamicTypeSize.isAccessibilitySize {
                 accessibilityTopHeaderSection
+            } else if verticalSizeClass == .compact {
+                ViewThatFits(in: .horizontal) {
+                    landscapeTopHeaderSection
+                    compactLandscapeTopHeaderSection
+                }
             } else {
                 ViewThatFits(in: .horizontal) {
                     regularTopHeaderSection
@@ -443,7 +499,8 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
             }
         }
         .padding(.horizontal, 2)
-        .padding(.vertical, 4)
+        .padding(.top, 4)
+        .padding(.bottom, usesColumns ? 0 : 4)
     }
 
     private var accessibilityTopHeaderSection: some View {
@@ -456,6 +513,30 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
 
             brandIdentity
             adaptiveHeaderFacts
+        }
+    }
+
+    private var landscapeTopHeaderSection: some View {
+        HStack(alignment: .top, spacing: 12) {
+            HomeAppMark(size: HomeAppMark.compactSize)
+            brandIdentity
+                .fixedSize(horizontal: true, vertical: false)
+            Spacer(minLength: 12)
+            adaptiveHeaderFacts
+                .fixedSize(horizontal: true, vertical: false)
+            settingsButton
+        }
+    }
+
+    private var compactLandscapeTopHeaderSection: some View {
+        HStack(alignment: .top, spacing: 12) {
+            HomeAppMark(size: HomeAppMark.compactSize)
+            VStack(alignment: .leading, spacing: 7) {
+                brandIdentity
+                adaptiveHeaderFacts
+            }
+            Spacer(minLength: 0)
+            settingsButton
         }
     }
 
@@ -492,12 +573,10 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         VStack(alignment: .leading, spacing: 7) {
             brandTitle
 
-            if verticalSizeClass != .compact {
-                Text(localized("home.brand.tagline"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text(localized("home.brand.tagline"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -608,10 +687,11 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         )
     }
 
-    private var profileSection: some View {
+    private func profileSection(sharedHeaderMinimumHeight: CGFloat?) -> some View {
         ConfigurationTitledSectionSurface(
             title: "home.profile.title",
-            subtitle: "home.profile.subtitle"
+            subtitle: "home.profile.subtitle",
+            sharedHeaderMinimumHeight: sharedHeaderMinimumHeight
         ) {
             SubjectHomeEntryContent(
                 subjectSummary: subjectSummary,
@@ -661,113 +741,150 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         return anchor.resolvedAnchorType
     }
 
-    private var currentPresetSection: some View {
+    private func currentPresetSection(usesStackedMetadata: Bool, maximumContentHeight: CGFloat) -> some View {
         ConfigurationTitledSectionSurface(
             title: "home.presets.title",
             subtitle: "home.presets.subtitle",
+            sharedHeaderMinimumHeight: usesStackedMetadata ? overviewHeaderHeight : nil,
             trailingAccessory: {
                 presetManagementMenu
             }
         ) {
-            VStack(alignment: .leading, spacing: 10) {
-                if memoryPresets.isEmpty {
-                    HomeEmptyPresetRow()
-                } else {
-                    HomeInsetGroup {
-                        VStack(spacing: 0) {
-                            ForEach(memoryPresets) { preset in
-                                HomeMemoryPresetRow(
-                                    preset: preset,
-                                    borderStyleName:
-                                        borderStyleNameForPreset(preset),
-                                    anchorType: anchorType(for: preset),
-                                    subjectTitle: subjectSummary.title,
-                                    subjectAvatarImagePath:
-                                        subject?.identity.avatarPreviewImagePath
-                                        ?? subject?.identity.avatarImagePath,
-                                    isSelected:
-                                        preset.id == selectedMemoryPresetID,
-                                    onSelect: {
-                                        onSelectMemoryPreset(preset)
-                                    }
-                                )
-
-                                if preset.id != memoryPresets.last?.id {
-                                    HorizontalDivider(
-                                        horizontalInset:
-                                            ConfigurationUI.innerPanelPadding
+            presetContentSurface(
+                scrollsIndependently: usesStackedMetadata && memoryPresets.count > 1,
+                maximumHeight: maximumContentHeight
+            ) {
+                VStack(alignment: .leading, spacing: 10) {
+                    if memoryPresets.isEmpty {
+                        HomeEmptyPresetRow()
+                    } else {
+                        HomeInsetGroup {
+                            VStack(spacing: 0) {
+                                ForEach(memoryPresets) { preset in
+                                    HomeMemoryPresetRow(
+                                        preset: preset,
+                                        borderStyleName:
+                                            borderStyleNameForPreset(preset),
+                                        anchorType: anchorType(for: preset),
+                                        subjectTitle: subjectSummary.title,
+                                        subjectAvatarImagePath:
+                                            subject?.identity.avatarPreviewImagePath
+                                            ?? subject?.identity.avatarImagePath,
+                                        isSelected:
+                                            preset.id == selectedMemoryPresetID,
+                                        usesStackedMetadata: usesStackedMetadata,
+                                        onSelect: {
+                                            onSelectMemoryPreset(preset)
+                                        }
                                     )
+
+                                    if preset.id != memoryPresets.last?.id {
+                                        HorizontalDivider(
+                                            horizontalInset:
+                                                ConfigurationUI.innerPanelPadding
+                                        )
+                                    }
                                 }
+
+                                HorizontalDivider(
+                                    horizontalInset:
+                                        ConfigurationUI.innerPanelPadding
+                                )
+                                HomeNewPresetRow(
+                                    action: onCreateMemoryPreset
+                                )
+                            }
+                        }
+                    }
+
+                    if memoryPresets.isEmpty {
+                        HomeNewPresetRow(action: onCreateMemoryPreset)
+                    }
+
+                    if isEditingMemoryPresetTitle {
+                        HStack(spacing: 8) {
+                            TextField(
+                                localized("home.preset.configuration_name"),
+                                text: memoryPresetTitleDraft
+                            )
+                            .textFieldStyle(.plain)
+                            .font(.subheadline)
+                            .submitLabel(.done)
+                            .focused(memoryPresetTitleFieldFocused)
+                            .configurationFieldChrome(isActive: true)
+                            .onSubmit {
+                                onCommitMemoryPresetTitle()
                             }
 
-                            HorizontalDivider(
-                                horizontalInset:
-                                    ConfigurationUI.innerPanelPadding
+                            Button(localized("common.done")) {
+                                onCommitMemoryPresetTitle()
+                            }
+                            .buttonStyle(.plain)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 12)
+                            .frame(height: 42)
+                            .background(
+                                RoundedRectangle(
+                                    cornerRadius: 12,
+                                    style: .continuous
+                                )
+                                .fill(ConfigurationUI.controlBackground)
                             )
-                            HomeNewPresetRow(
-                                action: onCreateMemoryPreset
+                            .overlay(
+                                RoundedRectangle(
+                                    cornerRadius: 12,
+                                    style: .continuous
+                                )
+                                .stroke(ConfigurationUI.faintHairline)
                             )
+                            .accessibilityLabel(localized("home.preset.done_editing"))
                         }
+                        .padding(.horizontal, 4)
+                        .padding(.top, 2)
                     }
-                }
 
-                if memoryPresets.isEmpty {
-                    HomeNewPresetRow(action: onCreateMemoryPreset)
-                }
-
-                if isEditingMemoryPresetTitle {
-                    HStack(spacing: 8) {
-                        TextField(
-                            localized("home.preset.configuration_name"),
-                            text: memoryPresetTitleDraft
-                        )
-                        .textFieldStyle(.plain)
-                        .font(.subheadline)
-                        .submitLabel(.done)
-                        .focused(memoryPresetTitleFieldFocused)
-                        .configurationFieldChrome(isActive: true)
-                        .onSubmit {
-                            onCommitMemoryPresetTitle()
-                        }
-
-                        Button(localized("common.done")) {
-                            onCommitMemoryPresetTitle()
-                        }
-                        .buttonStyle(.plain)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, 12)
-                        .frame(height: 42)
-                        .background(
-                            RoundedRectangle(
-                                cornerRadius: 12,
-                                style: .continuous
-                            )
-                            .fill(ConfigurationUI.controlBackground)
-                        )
-                        .overlay(
-                            RoundedRectangle(
-                                cornerRadius: 12,
-                                style: .continuous
-                            )
-                            .stroke(ConfigurationUI.faintHairline)
-                        )
-                        .accessibilityLabel(localized("home.preset.done_editing"))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(localized("home.presets.manage_hint"))
+                        Text(localized("home.presets.edit_hint"))
                     }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 4)
                     .padding(.top, 2)
                 }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(localized("home.presets.manage_hint"))
-                    Text(localized("home.presets.edit_hint"))
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 4)
-                .padding(.top, 2)
             }
+            .background {
+                if usesStackedMetadata && memoryPresets.count > 1 {
+                    GeometryReader { geometry in
+                        Color.clear.preference(
+                            key: HomePresetContentOriginKey.self,
+                            value: geometry.frame(in: .named("home-scroll-content")).minY
+                        )
+                    }
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("home-presets-content")
+        }
+    }
+
+    @ViewBuilder
+    private func presetContentSurface<Content: View>(
+        scrollsIndependently: Bool,
+        maximumHeight: CGFloat,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        if scrollsIndependently {
+            ScrollView(.vertical) {
+                content()
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(height: maximumHeight)
+            .accessibilityIdentifier("home-presets-scroll")
+        } else {
+            content()
         }
     }
 
@@ -838,6 +955,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(localized("home.presets.manage"))
+        .accessibilityIdentifier("home-preset-management-menu")
     }
 
     private var selectedPreset: MemoryPreset? {
@@ -1023,15 +1141,17 @@ private struct HomeConfigurationGlyph: View {
 }
 
 private struct HomeAppMark: View {
+    static let compactSize: CGFloat = 48
+    var size: CGFloat = 70
 
     var body: some View {
         Image("HomeAppIcon")
             .resizable()
             .scaledToFill()
-            .frame(width: 70, height: 70)
+            .frame(width: size, height: size)
             .clipShape(
                 RoundedRectangle(
-                    cornerRadius: 18,
+                    cornerRadius: 18 * size / 70,
                     style: .continuous
                 )
             )
@@ -1099,6 +1219,13 @@ private struct HomeWorkflowReminderCard: View {
 
     private func localized(_ key: String) -> String {
         interfaceLanguage.localized(key: key, fallback: key)
+    }
+}
+private struct HomePresetContentOriginKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 #endif

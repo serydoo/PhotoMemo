@@ -1,5 +1,24 @@
 # MemoMark Current Status
 
+## 2026-10-12 — 2.3.7 (131) Cloud upload repair and TestFlight preparation
+
+- Owner authorizes scoped GitHub synchronization and TestFlight delivery. Cloud128/129/130 failed at App Store Connect preparation with90186/90062: approved2.3.6 train closed, marketing version must increase. Archive/export succeeded. Synchronize all targets to2.3.7(131); no signing or media ownership change required.
+- Consolidate accepted Home/Progress landscape refinements and prior main checkpoints, enrich five-section Settings notes in four languages, and add native Cloud WhatToTest files plus four release materials. Exclude older local chronicle/research/outreach/private artifacts.
+- Candidate build/tests/index/privacy/physical and Cloud/processing/beta-group gates remain separately recorded in Docs/07_Releases/2026-10-12-2.3.7-sync-manifest.md. No App Store submission authorized.
+
+## 2026-10-12 — Home paired headers and multi-preset landscape scrolling
+
+- Owner accepts the alignment mockup, then authorizes independently scrolling Home presets consistent with Progress. Home landscape columns share natural header height (minimum44pt) and reclaim existing brand gap/inset rather than pushing the cards down. Visible ellipsis32pt, hit region44pt. Multiple presets use a bounded native ScrollView below the fixed title/menu; one preset, portrait and narrower layouts retain their existing presentation. No durable configuration/media/Share changes.
+- Final PresetScrollFull: 2,123 passed / 1 existing skipped / 0 failed; signed Release physical build and deep signature checks passed. PresetScrollDevice: dedicated Home two-direction alignment and near-edge menu test passed. HeaderDevice first runner security preflight failed and recovered on retry without trust changes. Landscape screenshot attachments are clipped/misoriented; geometry is evidence, not full visual acceptance. Current device has only one visible preset: multi-preset gesture/selection acceptance remains explicitly unverified.
+- Final 2.3.6 (124) installed and normal launch confirmed on paired iPhone17ProMax; no new GitHub push/Store/TestFlight action. Scope/evidence: Docs/03_Engineering/2026-10-12-home-large-landscape-columns.md. Earlier Progress history acceptance gate remains separate.
+
+## 2026-10-12 — Home and completed Progress large-landscape initial acceptance
+
+- Owner accepts the initial layout: compact Home header with normal top breathing room; large-window compact-height Home columns; completed Progress left, recent history right, aligned initial header/card tops and independently scrolling history rows with fixed title/actions. Smaller/portrait/accessibility/non-completed states retain single-column behavior. No processing/media/configuration schema change.
+- Pre-optimization checkpoint 602feed3 was pushed to origin/main after testing the exported index (2,122 passed, 1 existing skip, zero failures; iOS Release passed; 982 Source/Tests files equal). New optimization remains local.
+- Final FullScroll macOS suite: 2,123 passed, 1 existing skip, zero failures; formal signed Release build passed and installed on paired iPhone17ProMax/iOS27.2Beta. Owner supplied two-pose screenshots and gives initial manual acceptance. Final physical automatic test is NOT PASS: rail-settlement timeout prevented reaching independent-history scroll assertions. Small-device/iPad/VoiceOver/full media gates remain distinct. No Store/TestFlight action.
+- Scoped record: Docs/03_Engineering/2026-10-12-home-large-landscape-columns.md. Stop visual expansion until a new observed need or owner direction.
+
 ## 2026-10-12 — Pre-Home-refinement source checkpoint
 
 Owner authorizes current local code consolidation and GitHub push before Home scheme-two implementation. Version remains 2.3.6 (124), baseline 934da19b. Scope: existing feedback/save/localization/landscape/Classic-fit changes and accepted Time Expression copy. New Home layout is not yet implemented. Exported-index validation and remote synchronization are recorded in Docs/07_Releases/2026-10-12-2.3.6-source-checkpoint-sync-manifest.md. Preserve earlier unstaged history/research/outreach/private assets; no Store/TestFlight mutation.

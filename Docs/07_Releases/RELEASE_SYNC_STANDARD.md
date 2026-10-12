@@ -36,7 +36,7 @@
 
 ## 4. 同步前检查顺序
 
-1. 核对所有 App、Extension 与 Test target 的版本和构建号。
+1. 核对所有 App、Extension 与 Test target 的版本和构建号。上传前读取 App Store Connect 最新已批准版本及 Cloud 下一构建号；已批准的 marketing version 通道关闭后，必须提升 marketing version，不能只提高 build。ITMS-90186 / ITMS-90062 应从 TestFlight“构建版本上传 -> 失败”明细定位，不得把 Cloud 的通用准备失败当作源码编译失败。
 2. 核对应用内、App Store、TestFlight 和内部记录的版本、范围与承诺一致。
 3. 运行双语键集合/格式检查、`git diff --check`、聚焦测试、完整测试和对应构建。
 4. 将自动化、安装启动、真机手动路径、StoreKit/App Store Connect 与生产认证证据分开报告。
@@ -108,3 +108,7 @@
 ```
 
 每次同步完成后，回复中必须包含：版本与构建号、提交号、推送分支、验证结果、未完成证据、是否上传 TestFlight、是否提交 App Store，以及对应材料链接。
+
+## 10. Xcode Cloud 测试说明
+
+在项目或 workspace 同级的 `TestFlight/WhatToTest.<LOCALE>.txt` 维护说明，随本轮源码一起提交。四语言说明与版本总表同源，包含可执行测试路径、反馈字段、本地处理/原图保护与测试购买边界，避免私人素材及内部凭证。上传后读回 TestFlight 的“测试内容”，构建/上传成功不等于已加入测试组或通过 Beta App Review。

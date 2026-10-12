@@ -753,6 +753,7 @@ struct ConfigurationTitledSectionSurface<
 
     let title: String
     let subtitle: String?
+    let sharedHeaderMinimumHeight: CGFloat?
 
     @ViewBuilder
     let trailingAccessory: TrailingAccessory
@@ -763,11 +764,13 @@ struct ConfigurationTitledSectionSurface<
     init(
         title: String,
         subtitle: String? = nil,
+        sharedHeaderMinimumHeight: CGFloat? = nil,
         @ViewBuilder trailingAccessory: () -> TrailingAccessory,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.subtitle = subtitle
+        self.sharedHeaderMinimumHeight = sharedHeaderMinimumHeight
         self.trailingAccessory = trailingAccessory()
         self.content = content()
     }
@@ -784,9 +787,20 @@ struct ConfigurationTitledSectionSurface<
 
                 trailingAccessory
             }
+            .background {
+                if sharedHeaderMinimumHeight != nil {
+                    GeometryReader { geometry in
+                        Color.clear.preference(
+                            key: ConfigurationSectionHeaderHeightKey.self,
+                            value: geometry.size.height
+                        )
+                    }
+                }
+            }
             .frame(
                 minHeight:
-                    ConfigurationSectionCardMetrics.cardHeaderMinimumHeight
+                    sharedHeaderMinimumHeight
+                    ?? ConfigurationSectionCardMetrics.cardHeaderMinimumHeight
             )
 
             content
@@ -842,14 +856,24 @@ extension ConfigurationTitledSectionSurface where TrailingAccessory == EmptyView
     init(
         title: String,
         subtitle: String? = nil,
+        sharedHeaderMinimumHeight: CGFloat? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.init(
             title: title,
             subtitle: subtitle,
+            sharedHeaderMinimumHeight: sharedHeaderMinimumHeight,
             trailingAccessory: { EmptyView() },
             content: content
         )
+    }
+}
+
+struct ConfigurationSectionHeaderHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 

@@ -5,6 +5,26 @@ import Testing
 @Suite("V1 adaptive page layout")
 struct AdaptivePageLayoutTests {
 
+    @Test("large landscape columns require both a large window and readable safe columns")
+    func homeColumnsRequireReadableWidth() {
+        for width in [723.0, 773, 834] {
+            #expect(CompactOverviewLayoutPolicy.usesTwoColumns(contentWidth: width, windowWidth: 956,
+                minimumColumnWidth: 350, columnSpacing: 12, hasCompactHeight: true, usesAccessibilityText: false))
+        }
+        for windowWidth in [0.0, 667, 852, 896, 932] {
+            #expect(!CompactOverviewLayoutPolicy.usesTwoColumns(contentWidth: 834, windowWidth: windowWidth,
+                minimumColumnWidth: 350, columnSpacing: 12, hasCompactHeight: true, usesAccessibilityText: false))
+        }
+        #expect(!CompactOverviewLayoutPolicy.usesTwoColumns(contentWidth: 700, windowWidth: 956,
+            minimumColumnWidth: 350, columnSpacing: 12, hasCompactHeight: true, usesAccessibilityText: false))
+        #expect(!CompactOverviewLayoutPolicy.usesTwoColumns(contentWidth: 773, windowWidth: 956,
+            minimumColumnWidth: 400, columnSpacing: 12, hasCompactHeight: true, usesAccessibilityText: false))
+        #expect(!CompactOverviewLayoutPolicy.usesTwoColumns(contentWidth: 834, windowWidth: 956,
+            minimumColumnWidth: 350, columnSpacing: 12, hasCompactHeight: true, usesAccessibilityText: true))
+        #expect(!CompactOverviewLayoutPolicy.usesTwoColumns(contentWidth: 1100, windowWidth: 1200,
+            minimumColumnWidth: 350, columnSpacing: 12, hasCompactHeight: false, usesAccessibilityText: false))
+    }
+
     @Test("unobstructed landscape edge releases unused inset while preserving ordinary spacing")
     func unobstructedLandscapeEdgeReleasesOnlyExcessInset() {
         let expansion = AdaptiveFloatingRailMetrics.trailingEdgeExpansion(systemInset: 62,

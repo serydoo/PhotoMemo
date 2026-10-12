@@ -62,6 +62,28 @@ enum AdaptivePageLayout {
 
 }
 
+/// Compact overview capacity, independent of device model or configuration state.
+/// Compact-height large phones need two readable columns; regular-height/iPad
+/// expansion remains a separate product slice.
+enum CompactOverviewLayoutPolicy {
+    static let minimumColumnWidth: CGFloat = 350
+    static let minimumLargeWindowWidth: CGFloat = 940
+
+    static func usesTwoColumns(
+        contentWidth: CGFloat,
+        windowWidth: CGFloat,
+        minimumColumnWidth: CGFloat,
+        columnSpacing: CGFloat,
+        hasCompactHeight: Bool,
+        usesAccessibilityText: Bool
+    ) -> Bool {
+        hasCompactHeight && !usesAccessibilityText
+            && windowWidth >= minimumLargeWindowWidth
+            && contentWidth.isFinite && minimumColumnWidth > 0
+            && contentWidth >= minimumColumnWidth * 2 + columnSpacing
+    }
+}
+
 enum AdaptiveFloatingRailMetrics {
     static let width: CGFloat = 56
     static let trailingMargin: CGFloat = 10
@@ -85,6 +107,17 @@ enum AdaptiveFloatingRailMetrics {
 
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
+
+private struct EntryWindowWidthKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+extension EnvironmentValues {
+    var entryWindowWidth: CGFloat {
+        get { self[EntryWindowWidthKey.self] }
+        set { self[EntryWindowWidthKey.self] = newValue }
+    }
+}
 
 extension View {
 

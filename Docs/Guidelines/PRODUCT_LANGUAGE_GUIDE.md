@@ -466,3 +466,7 @@ question instead of inventing more explanation.
 卡片编辑主路径将“系统模块”呈现为“系统信息”，插入标记的辅助功能
 标签使用“信息插入位置”，并随界面语言切换。内部 Module 类型、原有
 本地化键及持久化表达式保持不变。
+
+## 2.3.7 release language amendment — 2026-10-12
+
+The current Settings release notes use five concrete narrative sections: landscape Home, recently finished/history, time expression guidance, save confirmation and Photos continuity. Header: `让常用内容更顺手，让每次回看更从容。` State that large-landscape layout depends on available space and background behavior on system/permission/runtime conditions. Preserve the local-processing/original-protection wording. User-facing notes must not contain Cloud errors, Git/test counts or universal reliability claims. Locale resources and the2.3.7 release fact table own the exact text.

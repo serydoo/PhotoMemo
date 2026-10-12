@@ -262,19 +262,19 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "新機能";
 "settings.version.release_notes_detail" = "MemoMarkの変更点を見る";
-"settings.release_notes.header" = "永久アンロックを追加し、Live Photoの保存とメモリーカードの表示を改善しました。";
+"settings.release_notes.header" = "よく使う操作を身近に、思い出をもっとゆっくり振り返れるように。";
 "settings.release_notes.version_format" = "バージョン%@";
-"settings.release_notes.positioning" = "写真の中に、あなたらしい言葉を静かに残せますように。";
-"settings.release_notes.time_expression.title" = "使い方に合う購入方法を";
-"settings.release_notes.time_expression.item_one" = "サブスクリプションの下に永久アンロックを追加しました。購入や取得後の権利は復元できます。";
-"settings.release_notes.time_expression.item_two" = "価格はApp Storeに表示されます。既存のサブスクリプションの更新はAppleの設定で管理してください。";
-"settings.release_notes.configuration.title" = "メモリーカードを見やすく";
-"settings.release_notes.configuration.item_one" = "GlassCardの文字間隔、内容の配置、表示の細部を改善しました。";
-"settings.release_notes.configuration.item_two" = "設定中のプレビューと下部の操作を整え、表示と編集をより自然にしました。";
-"settings.release_notes.saving.title" = "思い出を保存";
-"settings.release_notes.saving.item_one" = "一部のLive Photoの保存失敗を修正し、再試行の案内を改善しました。";
-"settings.release_notes.saving.item_two" = "写真は引き続きデバイス内で処理し、元の写真を変更せず、新しい思い出の写真を保存します。";
-"settings.release_notes.closing" = "フィードバックをありがとうございます。細かな部分を引き続き整えていきます。";
+"settings.release_notes.positioning" = "横向きのホームと進捗を整え、時間表現の案内と保存状態をわかりやすくしました。";
+"settings.release_notes.time_expression.title" = "同じ時間の起点に、違う語り口を";
+"settings.release_notes.time_expression.item_one" = "案内を簡潔にし、設定した時間アンカーをもとに、自然・儀式感・成長・温かさ・ミニマルの語り口を選べます。";
+"settings.release_notes.time_expression.item_two" = "表現例で言い方を比較できます。写真に時間表現を含めるかどうかは、カード内容で決められます。";
+"settings.release_notes.configuration.title" = "変更の保存を、もっと確かめやすく";
+"settings.release_notes.configuration.item_one" = "設定の変更と保存状態の連携を改善し、現在のプリセットと保存済みの内容を揃えます。";
+"settings.release_notes.configuration.item_two" = "日付と呼び名の表示を整え、横向きの見出しや操作周辺の余白を調整しました。";
+"settings.release_notes.saving.title" = "写真から始まり、写真へ戻る";
+"settings.release_notes.saving.item_one" = "Apple Photos から共有した後の処理の引き継ぎと状態表示を改善しました。バックグラウンドの動作は OS バージョン、写真へのアクセス許可、実行状態によって異なります。";
+"settings.release_notes.saving.item_two" = "写真は引き続き端末内で処理し、元の写真を変更しません。完了後、新しい思い出の写真を Apple Photos に保存します。";
+"settings.release_notes.closing" = "日々の使い方の細かな気づきを教えてくださり、ありがとうございます。次に写真を開くときも、思い出が鮮やかによみがえりますように。";
 "settings.navigation.title" = "設定";
 "settings.interface_preferences.title" = "インターフェース";
 "settings.appearance.title" = "外観";
@@ -1945,3 +1945,15 @@
 "默认 · 对象名称" = "デフォルト · 名前";
 "默认称呼" = "デフォルトの呼び名";
 "未填写" = "未入力";
+
+"settings.release_notes.home.title" = "横向きで、いつもの設定を並べて";
+
+"settings.release_notes.home.item_one" = "十分な横幅のある大きな iPhone では、思い出の対象とプリセットを並べ、見出しとカードの上端を揃えます。";
+
+"settings.release_notes.home.item_two" = "複数のプリセットは右側で独立して上下にスクロールできます。見出しと管理ボタンは上に残り、縦向きや小さな画面では従来の配置を保ちます。";
+
+"settings.release_notes.progress.title" = "完成したばかりの思い出を見つけやすく";
+
+"settings.release_notes.progress.item_one" = "対応する大きな iPhone の横向き表示では、直近の結果と最近保存した思い出を並べて確認できます。";
+
+"settings.release_notes.progress.item_two" = "最近の保存一覧だけを上下にスクロールしても、見出しと操作ボタンは表示されたままです。";

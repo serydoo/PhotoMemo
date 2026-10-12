@@ -223,19 +223,19 @@
 "settings.version.copyright" = "© 2026 MemoMark";
 "settings.version.release_notes" = "更新日志";
 "settings.version.release_notes_detail" = "看看时光记最近有哪些变化。";
-"settings.release_notes.header" = "这次更新补上永久解锁入口，并改善 Live Photo 保存与记忆卡片呈现。";
+"settings.release_notes.header" = "让常用内容更顺手，让每次回看更从容。";
 "settings.release_notes.version_format" = "版本 %@";
-"settings.release_notes.positioning" = "让文字安静地留在照片上，让每段回忆保留自己的表达。";
-"settings.release_notes.time_expression.title" = "选择适合你的使用方式";
-"settings.release_notes.time_expression.item_one" = "在订阅下方新增永久解锁选项，购买或领取后可恢复永久权益。";
-"settings.release_notes.time_expression.item_two" = "价格由 App Store 显示；已有订阅的续订仍需在 Apple 订阅设置中管理。";
-"settings.release_notes.configuration.title" = "记忆卡片更清楚";
-"settings.release_notes.configuration.item_one" = "改善玻璃卡片的文字间距、内容排列与呈现细节。";
-"settings.release_notes.configuration.item_two" = "调整配置时的预览与底部操作，让查看和编辑更自然。";
-"settings.release_notes.saving.title" = "安心保存这段回忆";
-"settings.release_notes.saving.item_one" = "修复部分 Live Photo 保存失败的问题，并改善重试提示。";
-"settings.release_notes.saving.item_two" = "照片仍在本地处理，原图保持不变；完成后保存新的记忆照片。";
-"settings.release_notes.closing" = "感谢你的反馈，我们会继续把每处细节打磨得更自然。";
+"settings.release_notes.positioning" = "这次我们整理了横屏首页与进展，也让时间表达和保存状态更清楚。";
+"settings.release_notes.time_expression.title" = "同一个时间起点，换一种语气";
+"settings.release_notes.time_expression.item_one" = "精简时间表达的说明，围绕设定的时间锚点，选择自然、仪式感、成长、温馨或极简语气。";
+"settings.release_notes.time_expression.item_two" = "表达示例继续帮助你比较说法，是否在照片上加入时间表达，由卡片内容决定。";
+"settings.release_notes.configuration.title" = "调整之后，更清楚地确认保存";
+"settings.release_notes.configuration.item_one" = "改善配置修改与保存状态的衔接，让当前预设与已保存内容保持一致。";
+"settings.release_notes.configuration.item_two" = "完善日期和称呼的显示，并收紧横屏顶部与操作区域的间距。";
+"settings.release_notes.saving.title" = "从照片出发，再回到照片";
+"settings.release_notes.saving.item_one" = "改善从 Apple Photos 分享后的处理接续和状态显示；后台体验仍取决于系统版本、照片权限与运行状态。";
+"settings.release_notes.saving.item_two" = "照片继续在本地处理，原图保持不变；完成后的新记忆照片保存回 Apple Photos。";
+"settings.release_notes.closing" = "谢谢你把日常使用中的细节告诉我们。愿下一次打开照片时，那段回忆依然清晰。";
 "settings.navigation.title" = "设置";
 "settings.interface_preferences.title" = "界面";
 "settings.appearance.title" = "外观";
@@ -1947,3 +1947,15 @@
 "默认 · 对象名称" = "默认 · 对象名称";
 "默认称呼" = "默认称呼";
 "未填写" = "未填写";
+
+"settings.release_notes.home.title" = "横屏里，把常用内容放在一起";
+
+"settings.release_notes.home.item_one" = "空间充足的大屏 iPhone 横屏中，记忆对象和我的预设并排呈现，标题与卡片顶部更整齐。";
+
+"settings.release_notes.home.item_two" = "多个预设可以在右侧独立上下滑动，标题和管理入口留在上方；竖屏及较小屏幕保持熟悉的布局。";
+
+"settings.release_notes.progress.title" = "刚完成的回忆，更容易找到";
+
+"settings.release_notes.progress.item_one" = "大屏横屏中，刚刚完成的结果与最近保存并排显示，方便查看新照片与历史记录。";
+
+"settings.release_notes.progress.item_two" = "最近保存列表支持独立上下滑动，标题和操作入口保持可见。";

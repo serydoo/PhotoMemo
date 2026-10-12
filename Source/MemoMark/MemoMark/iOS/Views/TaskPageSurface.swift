@@ -12,6 +12,12 @@ struct TaskPageSurface: View {
     @Environment(\.verticalSizeClass)
     private var verticalSizeClass
 
+    @Environment(\.entryWindowWidth)
+    private var entryWindowWidth
+
+    @ScaledMetric(relativeTo: .body)
+    private var minimumOverviewColumnWidth = CompactOverviewLayoutPolicy.minimumColumnWidth
+
     let header: MemoMarkiOSQueueDiagnosticsHeaderProjection
     let snapshot: MemoMarkBackgroundJobSnapshot?
     let taskOverview: MemoMarkBackgroundTaskOverview
@@ -31,6 +37,8 @@ struct TaskPageSurface: View {
     @State
     private var isRecentTasksSheetPresented = false
 
+    @State private var overviewHeaderHeight: CGFloat = 0
+
     private var presentation:
         TaskPagePresentation {
         TaskPagePresenter
@@ -49,13 +57,48 @@ struct TaskPageSurface: View {
 
     var body: some View {
         GeometryReader { viewport in
+            let contentWidth = AdaptivePageLayout.scrollContentWidth(
+                viewportWidth: viewport.size.width,
+                horizontalPadding: ConfigurationUI.contentColumnPadding,
+                fillsAvailableWidth: verticalSizeClass == .compact
+            )
+            let usesColumns = presentation.currentTask.displayMode == .completed
+                && !presentation.historyRows.isEmpty
+                && CompactOverviewLayoutPolicy.usesTwoColumns(
+                    contentWidth: contentWidth,
+                    windowWidth: entryWindowWidth,
+                    minimumColumnWidth: minimumOverviewColumnWidth,
+                    columnSpacing: ConfigurationUI.innerPanelPadding,
+                    hasCompactHeight: verticalSizeClass == .compact,
+                    usesAccessibilityText: dynamicTypeSize.isAccessibilitySize
+                )
+            let headerMinimumHeight: CGFloat? = usesColumns
+                ? max(ConfigurationUI.minimumInteractiveHeight, overviewHeaderHeight) : nil
+            let contentHeight = max(0, viewport.size.height
+                - ConfigurationUI.contentColumnPadding
+                - AdaptivePageLayout.scrollBottomPadding(for: navigationStyle))
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     pageHeader
-                    currentTaskCard
-                    recentTasksSection
+                    let layout = overviewLayout(usesColumns: usesColumns)
+                    layout {
+                        currentTaskCard(overviewHeaderMinimumHeight: headerMinimumHeight)
+                            .frame(maxWidth: .infinity,
+                                   maxHeight: usesColumns ? .infinity : nil, alignment: .topLeading)
+                        recentTasksSection(usesColumns: usesColumns,
+                                           overviewHeaderMinimumHeight: headerMinimumHeight)
+                            .frame(maxWidth: .infinity,
+                                   maxHeight: usesColumns ? .infinity : nil, alignment: .topLeading)
+                            .accessibilityElement(children: .contain)
+                            .accessibilityIdentifier("task-recent-section")
+                    }
+                    .frame(maxHeight: usesColumns ? .infinity : nil, alignment: .top)
                 }
-                .padding(.top, 10)
+                .frame(height: usesColumns ? contentHeight : nil, alignment: .top)
+                .onPreferenceChange(TaskOverviewHeaderHeightKey.self) { height in
+                    if usesColumns { overviewHeaderHeight = height }
+                }
+                .padding(.top, verticalSizeClass == .compact ? ConfigurationUI.contentColumnPadding : 10)
                 .padding(
                     .bottom,
                     AdaptivePageLayout
@@ -69,6 +112,7 @@ struct TaskPageSurface: View {
                     fillsAvailableWidth: verticalSizeClass == .compact
                 )
             }
+            .scrollBounceBehavior(usesColumns ? .basedOnSize : .automatic)
         }
         .scrollDismissesKeyboard(.interactively)
         .simultaneousGesture(
@@ -83,6 +127,12 @@ struct TaskPageSurface: View {
         )
         .navigationTitle("")
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private func overviewLayout(usesColumns: Bool) -> AnyLayout {
+        usesColumns
+            ? AnyLayout(HStackLayout(alignment: .top, spacing: ConfigurationUI.innerPanelPadding))
+            : AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
     }
 
     private var navigationStyle:
@@ -109,14 +159,14 @@ struct TaskPageSurface: View {
     }
 
     @ViewBuilder
-    private var currentTaskCard: some View {
+    private func currentTaskCard(overviewHeaderMinimumHeight: CGFloat?) -> some View {
         switch presentation.currentTask.displayMode {
         case .waiting:
             waitingTaskCard
         case .processing:
             processingTaskCard
         case .completed:
-            completedResultCard
+            completedResultCard(overviewHeaderMinimumHeight: overviewHeaderMinimumHeight)
         case .needsAttention:
             needsAttentionTaskCard
         }
@@ -196,8 +246,8 @@ struct TaskPageSurface: View {
         .accessibilityIdentifier("task-processing-card")
     }
 
-    private var completedResultCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+    private func completedResultCard(overviewHeaderMinimumHeight: CGFloat?) -> some View {
+        VStack(alignment: .leading, spacing: overviewHeaderMinimumHeight == nil ? 6 : ConfigurationUI.innerPanelPadding) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(
@@ -229,6 +279,7 @@ struct TaskPageSurface: View {
                 )
             }
             .padding(.horizontal, 4)
+            .alignedTaskOverviewHeader(minimumHeight: overviewHeaderMinimumHeight)
 
             VStack(spacing: 0) {
                 completedResultSummary
@@ -241,6 +292,8 @@ struct TaskPageSurface: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .v1CardChrome()
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("task-completed-content")
         }
         .accessibilityIdentifier("task-completed-card")
         .accessibilityValue(presentation.currentTask.jobID?.uuidString ?? "")
@@ -579,11 +632,13 @@ struct TaskPageSurface: View {
             .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
     }
 
-    private var recentTasksSection: some View {
+    private func recentTasksSection(usesColumns: Bool, overviewHeaderMinimumHeight: CGFloat?) -> some View {
         TaskRecentHistorySurface(
             rows: presentation.historyRows,
             onOpenPhotoLibrary: onOpenPhotoLibrary,
             onClearHistory: onClearHistory,
+            scrollsIndependently: usesColumns,
+            overviewHeaderMinimumHeight: overviewHeaderMinimumHeight,
             isSheetPresented: $isRecentTasksSheetPresented
         )
     }

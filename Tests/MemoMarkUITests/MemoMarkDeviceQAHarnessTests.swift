@@ -2505,6 +2505,51 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         add(screenshot)
     }
 
+    func testHomeLandscapeHeaderAlignmentAndMenuHitRegion() throws {
+        XCUIDevice.shared.orientation = .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        launchHostAndWait()
+        for (orientation, direction) in [
+            (UIDeviceOrientation.landscapeLeft, "left"),
+            (UIDeviceOrientation.landscapeRight, "right")
+        ] {
+            XCUIDevice.shared.orientation = orientation
+            let home = application.buttons["house.fill"]
+            XCTAssertTrue(home.waitForExistence(timeout: 10))
+            if !home.isSelected { home.tap() }
+            let subject = application.buttons["subject-home-entry"]
+            let presets = application.descendants(matching: .any)
+                .matching(identifier: "home-presets-content").firstMatch
+            let menu = application.buttons["home-preset-management-menu"]
+            XCTAssertTrue(subject.waitForExistence(timeout: 10))
+            XCTAssertTrue(presets.waitForExistence(timeout: 10))
+            XCTAssertTrue(menu.waitForExistence(timeout: 10))
+            let aligned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                presets.frame.minX > subject.frame.maxX
+                    && abs(presets.frame.minY - subject.frame.minY) <= 1
+                    && menu.isHittable
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [aligned], timeout: 15), .completed)
+            XCTAssertGreaterThanOrEqual(menu.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(menu.frame.height, 44)
+            let geometry = XCTAttachment(string:
+                "subject=\(subject.frame); presets=\(presets.frame); menu=\(menu.frame)")
+            geometry.name = "home-header-alignment-\(direction)"
+            geometry.lifetime = .keepAlways
+            add(geometry)
+            attachCurrentScreenshot(named: "home-aligned-columns-\(direction)")
+            menu.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.1)).tap()
+            let menuVisible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                ["管理预设", "Manage presets", "プリセットを管理", "프리셋 관리"].contains {
+                    self.application.buttons[$0].exists
+                }
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [menuVisible], timeout: 5), .completed)
+            attachCurrentScreenshot(named: "home-menu-edge-tap-\(direction)")
+            subject.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+    }
+
     func testFeedbackLandscapeBothDirections() throws {
         XCUIDevice.shared.orientation = .portrait
         defer { XCUIDevice.shared.orientation = .portrait }
@@ -2530,6 +2575,15 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
                 XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed)
                 if !action.isSelected { action.tap() }
                 XCTAssertTrue(application.scrollViews.firstMatch.waitForExistence(timeout: 10))
+                // A landscape app frame is published before UIKit finishes its
+                // safe-area transition. Wait for the existing rail contract,
+                // rather than measuring the previous pose's intermediate frame.
+                let settledEdgeGap = direction == "left" ? 27.0 : 77.0
+                let railSettled = XCTNSPredicateExpectation(
+                    predicate: NSPredicate { _, _ in
+                        abs(self.application.frame.maxX - action.frame.maxX - settledEdgeGap) <= 2
+                    }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [railSettled], timeout: 10), .completed)
                 let edgeGap = application.frame.maxX - action.frame.maxX
                 let contentReady = XCTNSPredicateExpectation(
                     predicate: NSPredicate { _, _ in
@@ -2560,6 +2614,84 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
                 }
                 attachCurrentScreenshot(named: "feedback-\(name)-landscape-\(direction)")
 
+                if name == "home" {
+                    let subject = application.buttons["subject-home-entry"]
+                    let presets = application.descendants(matching: .any)
+                        .matching(identifier: "home-presets-section").firstMatch
+                    XCTAssertTrue(subject.waitForExistence(timeout: 10))
+                    XCTAssertTrue(presets.waitForExistence(timeout: 10))
+                    XCTAssertGreaterThan(presets.frame.minX, subject.frame.maxX,
+                        "The large landscape overview must show presets beside the subject.")
+                    XCTAssertLessThan(subject.frame.width, viewport.frame.width * 0.6)
+                    let overviewGeometry = XCTAttachment(string: "subject=\(subject.frame); presets=\(presets.frame)")
+                    overviewGeometry.name = "home-columns-geometry-\(direction)"
+                    overviewGeometry.lifetime = .keepAlways
+                    add(overviewGeometry)
+                    let screen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                    screen.name = "home-columns-screen-\(direction)"
+                    screen.lifetime = .keepAlways
+                    add(screen)
+                }
+
+                if name == "progress" {
+                    let completed = application.descendants(matching: .any)
+                        .matching(identifier: "task-completed-card").firstMatch
+                    if completed.exists {
+                        let recent = application.descendants(matching: .any)
+                            .matching(identifier: "task-recent-section").firstMatch
+                        XCTAssertTrue(recent.waitForExistence(timeout: 10))
+                        XCTAssertGreaterThan(recent.frame.minX, completed.frame.maxX,
+                            "Completed result and recent saves must share the large landscape overview.")
+                        let geometry = XCTAttachment(string: "completed=\(completed.frame); recent=\(recent.frame)")
+                        geometry.name = "progress-columns-geometry-\(direction)"
+                        geometry.lifetime = .keepAlways
+                        add(geometry)
+                        let historyScroll = application.scrollViews["task-history-scroll"]
+                        let historyHeader = application.descendants(matching: .any)
+                            .matching(identifier: "task-recent-header").firstMatch
+                        let completedContent = application.descendants(matching: .any)
+                            .matching(identifier: "task-completed-content").firstMatch
+                        XCTAssertTrue(historyScroll.waitForExistence(timeout: 10))
+                        XCTAssertTrue(historyHeader.waitForExistence(timeout: 10))
+                        XCTAssertTrue(completedContent.waitForExistence(timeout: 10))
+                        let aligned = XCTNSPredicateExpectation(
+                            predicate: NSPredicate { _, _ in
+                                abs(completedContent.frame.minY - historyScroll.frame.minY) <= 1
+                            }, object: nil)
+                        XCTAssertEqual(XCTWaiter.wait(for: [aligned], timeout: 10), .completed)
+                        let headerY = historyHeader.frame.minY
+                        let completedY = completed.frame.minY
+                        let firstRow = historyScroll.buttons.matching(NSPredicate(
+                            format: "identifier BEGINSWITH %@", "task-history-row-")).firstMatch
+                        XCTAssertTrue(firstRow.waitForExistence(timeout: 10))
+                        let firstIdentifier = firstRow.identifier
+                        let firstY = firstRow.frame.minY
+                        let before = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                        before.name = "progress-history-before-scroll-\(direction)"
+                        before.lifetime = .keepAlways
+                        add(before)
+                        historyScroll.swipeUp()
+                        XCTAssertEqual(historyHeader.frame.minY, headerY, accuracy: 1)
+                        XCTAssertEqual(completed.frame.minY, completedY, accuracy: 1)
+                        let trackedRow = historyScroll.buttons[firstIdentifier]
+                        XCTAssertTrue(!trackedRow.exists || trackedRow.frame.minY < firstY - 1,
+                            "History records must actually scroll while the headers and completed result stay fixed.")
+                        let after = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                        after.name = "progress-history-after-scroll-\(direction)"
+                        after.lifetime = .keepAlways
+                        add(after)
+                        let scrolling = XCTAttachment(string: "headerY=\(headerY); completedY=\(completedY); contentTop=\(completedContent.frame.minY); historyTop=\(historyScroll.frame.minY); firstRowY=\(firstY); trackedExists=\(trackedRow.exists)")
+                        scrolling.name = "progress-history-scroll-geometry-\(direction)"
+                        scrolling.lifetime = .keepAlways
+                        add(scrolling)
+                        historyScroll.swipeDown()
+                    }
+                    let screen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                    screen.name = "progress-columns-screen-\(direction)"
+                    screen.lifetime = .keepAlways
+                    add(screen)
+                }
+
                 if name == "configuration" {
                     let preview = application.buttons["configuration.preview.rail-visibility"]
                     XCTAssertTrue(preview.waitForExistence(timeout: 10))
@@ -2573,6 +2705,22 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         application.terminate()
         launchHostAndWait()
         XCTAssertEqual(application.state, .runningForeground)
+        XCUIDevice.shared.orientation = .portrait
+        let portraitReady = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in self.application.frame.height > self.application.frame.width }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [portraitReady], timeout: 10), .completed)
+        let home = application.buttons.matching(NSPredicate(
+            format: "identifier == %@ OR label IN %@", "house.fill", ["首页", "Home", "ホーム", "홈"])).firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 10))
+        if !home.isSelected { home.tap() }
+        let subject = application.buttons["subject-home-entry"]
+        let presets = application.descendants(matching: .any)
+            .matching(identifier: "home-presets-section").firstMatch
+        XCTAssertTrue(subject.waitForExistence(timeout: 10))
+        XCTAssertTrue(presets.waitForExistence(timeout: 10))
+        XCTAssertGreaterThan(presets.frame.minY, subject.frame.maxY,
+            "Portrait must preserve the stacked subject and presets.")
+        attachCurrentScreenshot(named: "home-columns-portrait-restored")
         attachCurrentScreenshot(named: "feedback-relaunch")
     }
 

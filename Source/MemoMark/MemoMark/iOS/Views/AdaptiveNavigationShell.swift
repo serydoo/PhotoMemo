@@ -164,6 +164,7 @@ struct EntryNavigationSurface<
         .background(FloatingRailWindowGeometryReader { geometry in
             if railWindowGeometry != geometry { railWindowGeometry = geometry }
         })
+        .environment(\.entryWindowWidth, railWindowGeometry?.windowWidth ?? 0)
         .frame(
             maxWidth: .infinity,
             maxHeight: .infinity
@@ -398,6 +399,7 @@ extension EntryTab {
     }
 }
 private struct FloatingRailWindowGeometry: Equatable, Sendable {
+    let windowWidth: CGFloat
     let trailingSafeInset: CGFloat
     let isUnobstructedTrailingEdge: Bool
 }
@@ -442,6 +444,7 @@ private final class FloatingRailWindowProbe: UIView {
     func reportGeometry() {
         guard let window, let scene = window.windowScene else { return }
         let geometry = FloatingRailWindowGeometry(
+            windowWidth: window.bounds.width,
             trailingSafeInset: window.safeAreaInsets.right,
             isUnobstructedTrailingEdge: scene.interfaceOrientation == .landscapeRight
         )

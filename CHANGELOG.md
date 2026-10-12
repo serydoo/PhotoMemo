@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.7 (131) Landscape And Recording Refinement — 2026-10-12
+
+- Fix App Store Connect upload rejection after approved2.3.6 by opening2.3.7 and synchronizing all target build fields at131.
+- Consolidate accepted large-phone Home/Progress columns, paired heading/card alignment and independent multi-preset/history scrolling; preserve narrower/portrait presentation.
+- Include post2.3.6 configuration-save, localization, time-expression and bounded Share/rendering repairs already checkpointed on main.
+- Refresh five-section in-app notes in four languages and add native Xcode Cloud TestFlight notes with concrete test paths.
+- TestFlight candidate; App Store submission and broader lifecycle certification remain separate. See [sync manifest](Docs/07_Releases/2026-10-12-2.3.7-sync-manifest.md).
+
 ## 2.3.6 (124) Internal Source Checkpoint - 2026-10-12
 
 - Consolidated configuration-save reconciliation, identity/date localization and ended-history cleanup access.

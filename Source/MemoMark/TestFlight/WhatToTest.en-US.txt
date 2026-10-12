@@ -1,0 +1,32 @@
+MemoMark 2.3.7 (131)
+
+Keep everyday actions close, and give each memory room to be revisited.
+
+Your everyday choices, side by side
+• On larger iPhones with enough landscape space, your Memory Subject and Presets sit side by side with aligned headings and card tops.
+• With multiple Presets, scroll the right column independently while its heading and management action stay visible. Portrait and smaller screens keep their familiar layout.
+
+Find the memory you just finished
+• In supported large-phone landscape layouts, the latest result sits beside recently saved memories, making both easier to revisit.
+• Scroll recent saves independently while the heading and actions remain visible.
+
+One time anchor, a different tone
+• Shorter guidance helps you choose Natural, Ceremonial, Growth, Warm or Minimal time expressions around your chosen time anchor.
+• Examples help you compare wording. Card Content still determines whether time expressions appear on your photo.
+
+Know when your changes are saved
+• Improved coordination between configuration edits and save states keeps the current Preset aligned with its saved content.
+• Refined date and name presentation, along with spacing around landscape headings and controls.
+
+From Photos, back to Photos
+• Improved processing continuation and status presentation after sharing from Apple Photos. Background behavior still depends on the system version, Photos permissions and runtime conditions.
+• Photos stay on your device, with the original unchanged. A new memory photo is saved back to Apple Photos when processing finishes.
+
+Please focus on
+1. Rotate a large iPhone in both directions and check heading/card alignment.
+2. With multiple existing Presets, scroll the right column and compare its feel with Progress. Check that the heading, management action and left card stay steady.
+3. Switch Presets, edit and save configuration, then reopen to check saved content and state.
+4. Share JPEG, HEIC and Live Photos from Apple Photos. Check progress and new saved results, including recovery guidance on earlier systems.
+5. Read the in-app release notes in Settings and compare time-expression examples.
+
+Include device, OS, orientation, style, media type and steps in feedback. Redact private content in screenshots; original private photos are not required. TestFlight purchases use the test environment with no real charge; test access does not establish App Store entitlement.

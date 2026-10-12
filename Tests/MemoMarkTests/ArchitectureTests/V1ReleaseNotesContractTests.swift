@@ -36,6 +36,12 @@ struct V1ReleaseNotesContractTests {
             "settings.release_notes.header",
             "settings.release_notes.version_format",
             "settings.release_notes.positioning",
+            "settings.release_notes.home.title",
+            "settings.release_notes.home.item_one",
+            "settings.release_notes.home.item_two",
+            "settings.release_notes.progress.title",
+            "settings.release_notes.progress.item_one",
+            "settings.release_notes.progress.item_two",
             "settings.release_notes.time_expression.title",
             "settings.release_notes.time_expression.item_one",
             "settings.release_notes.time_expression.item_two",
@@ -57,11 +63,28 @@ struct V1ReleaseNotesContractTests {
         #expect(simplifiedChinese.contains("Live Photo"))
         #expect(simplifiedChinese.contains("原图保持不变"))
         #expect(english.contains("GlassCard"))
-        #expect(english.contains("lifetime unlock"))
+        #expect(english.contains("scroll the right column independently"))
         #expect(english.contains("Live Photo"))
         #expect(english.contains("original unchanged"))
         #expect(!simplifiedChinese.contains("完整 macOS 测试回归"))
         #expect(!english.contains("complete macOS test regression"))
+    }
+
+    @Test("Cloud tester notes cover all app languages and the current candidate")
+    func cloudTesterNotesCoverCurrentCandidate() throws {
+        for locale in ["zh-Hans", "en-US", "ja", "ko"] {
+            let notes = try sourceText("Source/MemoMark/TestFlight/WhatToTest.\(locale).txt")
+            #expect(notes.hasPrefix("MemoMark 2.3.7 (131)"))
+            #expect(notes.count < 4000)
+            #expect(notes.contains("Apple Photos"))
+            #expect(!notes.contains("TX-001"))
+            #expect(!notes.contains("BP-001"))
+            #expect(!notes.contains("ITMS-"))
+        }
+        let notes = try sourceText("Source/MemoMark/TestFlight/WhatToTest.zh-Hans.txt")
+        #expect(notes.contains("多个已有预设"))
+        #expect(notes.contains("较早系统"))
+        #expect(notes.contains("无需提供原始私人照片"))
     }
 
     @Test("release build settings reopen the App Store version train")
@@ -73,10 +96,10 @@ struct V1ReleaseNotesContractTests {
             "Source/MemoMark/MemoMarkiOS-Info.plist"
         )
         let releaseManifest = try sourceText(
-            "Docs/07_Releases/2026-10-06-2.3.6-sync-manifest.md"
+            "Docs/07_Releases/2026-10-12-2.3.7-sync-manifest.md"
         )
-        #expect(releaseManifest.contains("Marketing version：`2.3.6`"))
-        #expect(releaseManifest.contains("build：`124`"))
+        #expect(releaseManifest.contains("Marketing version：`2.3.7`"))
+        #expect(releaseManifest.contains("build：`131`"))
 
         #expect(!projectSource.contains("MARKETING_VERSION = 2.0.3;"))
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
@@ -108,8 +131,8 @@ struct V1ReleaseNotesContractTests {
                         .replacingOccurrences(of: ";", with: "")
                 }
         )
-        #expect(marketingVersions == ["2.3.6"])
-        #expect(projectBuilds == ["124"])
+        #expect(marketingVersions == ["2.3.7"])
+        #expect(projectBuilds == ["131"])
         #expect(iOSInfoPlist.contains(
             "<key>ITSAppUsesNonExemptEncryption</key>\n\t<false/>"
         ))
