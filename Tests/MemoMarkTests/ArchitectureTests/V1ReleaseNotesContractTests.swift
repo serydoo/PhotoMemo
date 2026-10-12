@@ -74,7 +74,7 @@ struct V1ReleaseNotesContractTests {
     func cloudTesterNotesCoverCurrentCandidate() throws {
         for locale in ["zh-Hans", "en-US", "ja", "ko"] {
             let notes = try sourceText("Source/MemoMark/TestFlight/WhatToTest.\(locale).txt")
-            #expect(notes.hasPrefix("MemoMark 2.3.7 (131)"))
+            #expect(notes.hasPrefix("MemoMark 2.3.7 (132)"))
             #expect(notes.count < 4000)
             #expect(notes.contains("Apple Photos"))
             #expect(!notes.contains("TX-001"))
@@ -96,10 +96,10 @@ struct V1ReleaseNotesContractTests {
             "Source/MemoMark/MemoMarkiOS-Info.plist"
         )
         let releaseManifest = try sourceText(
-            "Docs/07_Releases/2026-10-12-2.3.7-sync-manifest.md"
+            "Docs/07_Releases/2026-10-12-2.3.7-132-sync-manifest.md"
         )
         #expect(releaseManifest.contains("Marketing version：`2.3.7`"))
-        #expect(releaseManifest.contains("build：`131`"))
+        #expect(releaseManifest.contains("build：`132`"))
 
         #expect(!projectSource.contains("MARKETING_VERSION = 2.0.3;"))
         #expect(!projectSource.contains("CURRENT_PROJECT_VERSION = 75;"))
@@ -132,7 +132,7 @@ struct V1ReleaseNotesContractTests {
                 }
         )
         #expect(marketingVersions == ["2.3.7"])
-        #expect(projectBuilds == ["131"])
+        #expect(projectBuilds == ["132"])
         #expect(iOSInfoPlist.contains(
             "<key>ITSAppUsesNonExemptEncryption</key>\n\t<false/>"
         ))

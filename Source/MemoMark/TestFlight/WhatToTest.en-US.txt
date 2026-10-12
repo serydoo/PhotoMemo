@@ -1,4 +1,4 @@
-MemoMark 2.3.7 (131)
+MemoMark 2.3.7 (132)
 
 Keep everyday actions close, and give each memory room to be revisited.
 
@@ -16,7 +16,7 @@ One time anchor, a different tone
 
 Know when your changes are saved
 • Improved coordination between configuration edits and save states keeps the current Preset aligned with its saved content.
-• Refined date and name presentation, along with spacing around landscape headings and controls.
+• Refined dates and names. In landscape Configuration, the preview control sits above the main navigation, with Save and More below. Main navigation stays in place as you switch pages.
 
 From Photos, back to Photos
 • Improved processing continuation and status presentation after sharing from Apple Photos. Background behavior still depends on the system version, Photos permissions and runtime conditions.

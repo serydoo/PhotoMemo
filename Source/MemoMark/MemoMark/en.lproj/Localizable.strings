@@ -270,7 +270,7 @@
 "settings.release_notes.time_expression.item_two" = "Examples help you compare wording. Card Content still determines whether time expressions appear on your photo.";
 "settings.release_notes.configuration.title" = "Know when your changes are saved";
 "settings.release_notes.configuration.item_one" = "Improved coordination between configuration edits and save states keeps the current Preset aligned with its saved content.";
-"settings.release_notes.configuration.item_two" = "Refined date and name presentation, along with spacing around landscape headings and controls.";
+"settings.release_notes.configuration.item_two" = "Refined dates and names. In landscape Configuration, the preview control sits above the main navigation, with Save and More below. Main navigation stays in place as you switch pages.";
 "settings.release_notes.saving.title" = "From Photos, back to Photos";
 "settings.release_notes.saving.item_one" = "Improved processing continuation and status presentation after sharing from Apple Photos. Background behavior still depends on the system version, Photos permissions and runtime conditions.";
 "settings.release_notes.saving.item_two" = "Photos stay on your device, with the original unchanged. A new memory photo is saved back to Apple Photos when processing finishes.";

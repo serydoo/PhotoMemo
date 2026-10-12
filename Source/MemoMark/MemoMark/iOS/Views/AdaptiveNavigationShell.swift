@@ -117,9 +117,10 @@ struct EntryNavigationSurface<
                 .environment(\.layoutDirection, contentLayoutDirection)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 if navigationStyle == .floatingRail {
-                    ScrollView(.vertical) {
-                        VStack(spacing: ConfigurationUI.innerPanelPadding) {
-                            EntryFloatingNavigationRail(selection: $selection)
+                    // Equal contextual slots keep the primary capsule centered
+                    // independently of which destination contributes actions.
+                    VStack(spacing: ConfigurationUI.innerPanelPadding) {
+                        ScrollView(.vertical) {
                             if let previewControl {
                                 Button(action: previewControl.toggle) {
                                     Image(systemName: previewControl.isVisible
@@ -141,18 +142,26 @@ struct EntryNavigationSurface<
                                     : "configuration.preview.hidden"))
                                 .accessibilityIdentifier("configuration.preview.rail-visibility")
                             }
+                        }
+                        .scrollIndicators(.hidden)
+                        .defaultScrollAnchor(.bottom, for: .alignment)
+                        .frame(minHeight: 0, maxHeight: .infinity)
+
+                        EntryFloatingNavigationRail(selection: $selection)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        ScrollView(.vertical) {
                             if let configurationActions {
                                 configurationActions
                             }
                         }
-                    }
-                        // Normally centered; short keyboard/window regions can
-                        // scroll the actions instead of clipping the last one.
                         .scrollIndicators(.hidden)
-                        .defaultScrollAnchor(.center, for: .alignment)
-                        .frame(width: AdaptiveFloatingRailMetrics.width)
-                        .padding(.trailing, AdaptiveFloatingRailMetrics.trailingMargin)
-                        .padding(.vertical, 12)
+                        .defaultScrollAnchor(.top, for: .alignment)
+                        .frame(minHeight: 0, maxHeight: .infinity)
+                    }
+                    .frame(width: AdaptiveFloatingRailMetrics.width)
+                    .padding(.trailing, AdaptiveFloatingRailMetrics.trailingMargin)
+                    .padding(.vertical, 12)
                 }
             }
             .padding(.trailing, railTrailingInset ?? 0)
@@ -428,6 +437,29 @@ private final class FloatingRailWindowProbe: UIView {
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
+        NotificationCenter.default.removeObserver(
+            self, name: UIDevice.orientationDidChangeNotification, object: nil
+        )
+        if window != nil {
+            // Opposite landscape poses can have identical bounds and insets,
+            // so layout callbacks alone do not cover every scene rotation.
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(sceneGeometryMayHaveChanged),
+                name: UIDevice.orientationDidChangeNotification,
+                object: nil
+            )
+        }
+        reportGeometry()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func sceneGeometryMayHaveChanged() {
+        // The notification only invalidates the probe. Geometry still comes
+        // exclusively from the hosting window scene, never device pose.
         reportGeometry()
     }
 
@@ -442,6 +474,12 @@ private final class FloatingRailWindowProbe: UIView {
     }
 
     func reportGeometry() {
+        // UIKit may still expose the preceding scene orientation during its
+        // layout callbacks. Read and publish together after that pass finishes.
+        Task { @MainActor [weak self] in self?.publishGeometry() }
+    }
+
+    private func publishGeometry() {
         guard let window, let scene = window.windowScene else { return }
         let geometry = FloatingRailWindowGeometry(
             windowWidth: window.bounds.width,
@@ -450,8 +488,7 @@ private final class FloatingRailWindowProbe: UIView {
         )
         guard geometry != lastGeometry else { return }
         lastGeometry = geometry
-        // Do not mutate SwiftUI state during UIKit's layout pass.
-        Task { @MainActor [weak self] in self?.onChange?(geometry) }
+        onChange?(geometry)
     }
 }
 #endif

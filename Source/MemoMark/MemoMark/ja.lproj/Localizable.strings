@@ -270,7 +270,7 @@
 "settings.release_notes.time_expression.item_two" = "表現例で言い方を比較できます。写真に時間表現を含めるかどうかは、カード内容で決められます。";
 "settings.release_notes.configuration.title" = "変更の保存を、もっと確かめやすく";
 "settings.release_notes.configuration.item_one" = "設定の変更と保存状態の連携を改善し、現在のプリセットと保存済みの内容を揃えます。";
-"settings.release_notes.configuration.item_two" = "日付と呼び名の表示を整え、横向きの見出しや操作周辺の余白を調整しました。";
+"settings.release_notes.configuration.item_two" = "日付と呼び名の表示を整えました。横向きの設定画面では、プレビュー操作をメインナビゲーションの上、保存とその他の操作を下に配置し、画面を切り替えてもナビゲーションの位置を保ちます。";
 "settings.release_notes.saving.title" = "写真から始まり、写真へ戻る";
 "settings.release_notes.saving.item_one" = "Apple Photos から共有した後の処理の引き継ぎと状態表示を改善しました。バックグラウンドの動作は OS バージョン、写真へのアクセス許可、実行状態によって異なります。";
 "settings.release_notes.saving.item_two" = "写真は引き続き端末内で処理し、元の写真を変更しません。完了後、新しい思い出の写真を Apple Photos に保存します。";

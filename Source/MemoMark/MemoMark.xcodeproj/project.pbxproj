@@ -1125,7 +1125,7 @@
 				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMark.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1161,7 +1161,7 @@
 				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMark.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1196,7 +1196,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMarkiOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "MemoMarkiOS-Info.plist";
@@ -1237,7 +1237,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMarkiOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "MemoMarkiOS-Info.plist";
@@ -1276,7 +1276,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMarkShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ShareExtension-Info.plist";
@@ -1309,7 +1309,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MemoMark/MemoMarkShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "ShareExtension-Info.plist";
@@ -1342,7 +1342,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "MemoMarkWidgetExtension-Info.plist";
@@ -1375,7 +1375,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "MemoMarkWidgetExtension-Info.plist";
@@ -1409,7 +1409,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
                 MARKETING_VERSION = 2.3.7;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
@@ -1431,7 +1431,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
                 MARKETING_VERSION = 2.3.7;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 27.0;
@@ -1451,7 +1451,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -1474,7 +1474,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 131;
+                CURRENT_PROJECT_VERSION = 132;
 				DEVELOPMENT_TEAM = UK7ZR8G564;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;

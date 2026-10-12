@@ -2505,6 +2505,110 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         add(screenshot)
     }
 
+    func testLandscapePrimaryRailStaysFixedAcrossDestinations() throws {
+        XCUIDevice.shared.orientation = .portrait
+        defer { XCUIDevice.shared.orientation = .portrait }
+        launchHostAndWait()
+        func capture(_ name: String) {
+            let screen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            screen.name = name
+            screen.lifetime = .keepAlways
+            add(screen)
+        }
+        let identifiers = ["house.fill", "slider.horizontal.3", "checklist"]
+        for (orientation, direction) in [
+            (UIDeviceOrientation.landscapeLeft, "left"),
+            (UIDeviceOrientation.landscapeRight, "right")
+        ] {
+            XCUIDevice.shared.orientation = orientation
+            let home = application.buttons[identifiers[0]]
+            XCTAssertTrue(home.waitForExistence(timeout: 10))
+            if !home.isSelected { home.tap() }
+            let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                self.application.frame.width > self.application.frame.height && home.isHittable
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 15), .completed)
+            var previousFrames: [CGRect] = []
+            var stableSince = Date()
+            let rotationSettled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                let frames = identifiers.map { self.application.buttons[$0].frame }
+                if frames != previousFrames {
+                    previousFrames = frames
+                    stableSince = Date()
+                    return false
+                }
+                return Date().timeIntervalSince(stableSince) >= 1
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [rotationSettled], timeout: 10), .completed)
+            let reference = identifiers.map { application.buttons[$0].frame }
+            for (identifier, page) in [(identifiers[1], "configuration"), (identifiers[2], "progress"), (identifiers[0], "home")] {
+                application.buttons[identifier].tap()
+                func assertStable() {
+                    let fixed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                        zip(identifiers, reference).allSatisfy { key, frame in
+                            let current = self.application.buttons[key]
+                            return current.isHittable && abs(current.frame.midY - frame.midY) <= 1
+                                && abs(current.frame.midX - frame.midX) <= 1
+                                && abs(current.frame.height - frame.height) <= 1
+                        }
+                    }, object: nil)
+                    let result = XCTWaiter.wait(for: [fixed], timeout: 10)
+                    let geometry = XCTAttachment(string: "reference=\(reference); current=\(identifiers.map { application.buttons[$0].frame }); page=\(page); direction=\(direction)")
+                    geometry.name = "rail-comparison-\(page)-\(direction)"
+                    geometry.lifetime = .keepAlways
+                    add(geometry)
+                    XCTAssertEqual(result, .completed,
+                        "Primary navigation must retain its position on \(page) / \(direction)")
+                }
+                assertStable()
+                if page == "configuration" {
+                    let preview = application.buttons["configuration.preview.rail-visibility"]
+                    let save = application.buttons["configuration.rail.save"]
+                    XCTAssertTrue(preview.waitForExistence(timeout: 10))
+                    XCTAssertTrue(save.waitForExistence(timeout: 10))
+                    XCTAssertTrue(preview.isHittable)
+                    XCTAssertLessThan(preview.frame.maxY, application.buttons[identifiers[0]].frame.minY)
+                    XCTAssertGreaterThan(save.frame.minY, application.buttons[identifiers[2]].frame.maxY)
+                    let more = application.buttons["更多配置操作"]
+                    XCTAssertTrue(more.waitForExistence(timeout: 10))
+                    XCTAssertTrue(more.isHittable)
+                    XCTAssertGreaterThan(more.frame.minY, save.frame.maxY)
+                    XCTAssertGreaterThanOrEqual(more.frame.height, 44)
+                    more.tap()
+                    let createAction = application.buttons["另存为新配置"]
+                    if !createAction.waitForExistence(timeout: 5) {
+                        // A floating system accessibility control can cover the
+                        // center; exercise a second point inside the same target.
+                        more.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.2)).tap()
+                    }
+                    let menuHierarchy = XCTAttachment(string: application.debugDescription)
+                    menuHierarchy.name = "configuration-more-menu-\(direction)"
+                    menuHierarchy.lifetime = .keepAlways
+                    add(menuHierarchy)
+                    XCTAssertTrue(createAction.waitForExistence(timeout: 5))
+                    // Dismiss outside the native popover, rather than tapping
+                    // a rail button that its presentation may cover.
+                    application.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.05)).tap()
+                    assertStable()
+                    let geometry = XCTAttachment(string: "primary=\(reference); preview=\(preview.frame); save=\(save.frame)")
+                    geometry.name = "rail-geometry-\(direction)"
+                    geometry.lifetime = .keepAlways
+                    add(geometry)
+                    capture("configuration-rail-before-preview-\(direction)")
+                    let originalLabel = preview.label
+                    preview.tap()
+                    assertStable()
+                    XCTAssertNotEqual(preview.label, originalLabel)
+                    capture("configuration-rail-after-preview-\(direction)")
+                    preview.tap()
+                    assertStable()
+                    XCTAssertEqual(preview.label, originalLabel)
+                }
+                capture("stable-rail-\(page)-\(direction)")
+            }
+        }
+    }
+
     func testHomeLandscapeHeaderAlignmentAndMenuHitRegion() throws {
         XCUIDevice.shared.orientation = .portrait
         defer { XCUIDevice.shared.orientation = .portrait }

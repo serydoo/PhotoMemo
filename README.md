@@ -5,7 +5,7 @@
 MemoMark（时光记）是一款为 Apple Photos 设计的本地优先照片记忆工具。
 它不会替代系统相册，也不会修改你的原始照片。MemoMark 读取照片已有的拍摄时间、地点、设备和拍摄信息，再结合你设定的重要日期，为照片生成一份新的记忆版本。
 
-当前源码候选版本：**MemoMark 2.3.7（构建 131）**。以可分发的 2.3.6（124）为基准，整理大屏横屏首页与进展双栏、预设及历史列表滚动、时间表达说明、配置保存与分享处理接续。照片继续本地处理，原图保持不变。详见[更新说明](Docs/07_Releases/2026-10-12-2.3.7-release-notes.md)、[TestFlight 说明](Docs/07_Releases/2026-10-12-2.3.7-testflight-notes.md)和[发布清单](Docs/07_Releases/2026-10-12-2.3.7-sync-manifest.md)。源码同步、Cloud 接收、TestFlight 分发与正式上线分别记录。
+当前源码候选版本：**MemoMark 2.3.7（构建 132）**。以可分发的 2.3.6（124）为基准，整理大屏横屏首页与进展双栏、预设及历史列表滚动、横屏配置侧栏固定主导航、时间表达说明、配置保存与分享处理接续。照片继续本地处理，原图保持不变。详见[更新说明](Docs/07_Releases/2026-10-12-2.3.7-release-notes.md)、[TestFlight 说明](Docs/07_Releases/2026-10-12-2.3.7-testflight-notes.md)和[发布清单](Docs/07_Releases/2026-10-12-2.3.7-132-sync-manifest.md)。源码同步、Cloud 接收、TestFlight 分发与正式上线分别记录。
 
 最新源码检查点（2026-10-12）：整理配置保存、本地化、横屏适配与时间表达文案，版本保持 2.3.6（124）。首页紧凑顶部／双栏优化从此检查点之后开始。见[同步清单](Docs/07_Releases/2026-10-12-2.3.6-source-checkpoint-sync-manifest.md)。本次仅 GitHub 源码同步，不代表商店发布。
 

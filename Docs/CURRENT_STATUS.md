@@ -1,5 +1,10 @@
 # MemoMark Current Status
 
+## 2026-10-12 — 2.3.7 (132) replacement TestFlight candidate and stable Configuration rail
+
+- Owner accepts Configuration landscape preview above fixed primary navigation, save/more below; paired two-pose regression passes all three destinations, preview round trip and more menu. Scene-based inset refresh closes opposite-pose stale geometry. No configuration/media/rendering/lifecycle ownership change.
+- Owner explicitly authorizes withdrawing131 Beta review, build132, scoped GitHub/Cloud/TestFlight replacement. Existing131 heartbeat paused; existing external group/access retained. Full132 evidence and delivery receipts: Docs/07_Releases/2026-10-12-2.3.7-132-sync-manifest.md. Latest owner instruction waives further testing and requests immediate source organization/GitHub sync; interrupted132 test is not a pass. No App Store submission.
+
 ## 2026-10-12 — 2.3.7 (131) Cloud upload repair and TestFlight preparation
 
 - Owner authorizes scoped GitHub synchronization and TestFlight delivery. Cloud128/129/130 failed at App Store Connect preparation with90186/90062: approved2.3.6 train closed, marketing version must increase. Archive/export succeeded. Synchronize all targets to2.3.7(131); no signing or media ownership change required.

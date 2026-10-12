@@ -470,3 +470,5 @@ question instead of inventing more explanation.
 ## 2.3.7 release language amendment — 2026-10-12
 
 The current Settings release notes use five concrete narrative sections: landscape Home, recently finished/history, time expression guidance, save confirmation and Photos continuity. Header: `让常用内容更顺手，让每次回看更从容。` State that large-landscape layout depends on available space and background behavior on system/permission/runtime conditions. Preserve the local-processing/original-protection wording. User-facing notes must not contain Cloud errors, Git/test counts or universal reliability claims. Locale resources and the2.3.7 release fact table own the exact text.
+
+Build132 extends the save-confirmation section with concrete landscape control placement: preview above main navigation, save/more below, stable navigation across pages. Preserve dates/names and all existing sections. Exact four-locale wording remains in resources and the release fact table; no new feature or reliability promise.

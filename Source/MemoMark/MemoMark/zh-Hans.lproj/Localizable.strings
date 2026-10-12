@@ -231,7 +231,7 @@
 "settings.release_notes.time_expression.item_two" = "表达示例继续帮助你比较说法，是否在照片上加入时间表达，由卡片内容决定。";
 "settings.release_notes.configuration.title" = "调整之后，更清楚地确认保存";
 "settings.release_notes.configuration.item_one" = "改善配置修改与保存状态的衔接，让当前预设与已保存内容保持一致。";
-"settings.release_notes.configuration.item_two" = "完善日期和称呼的显示，并收紧横屏顶部与操作区域的间距。";
+"settings.release_notes.configuration.item_two" = "完善日期和称呼的显示；横屏配置页的预览开关放在主导航上方，保存和更多操作放在下方，切换页面时主导航保持原位。";
 "settings.release_notes.saving.title" = "从照片出发，再回到照片";
 "settings.release_notes.saving.item_one" = "改善从 Apple Photos 分享后的处理接续和状态显示；后台体验仍取决于系统版本、照片权限与运行状态。";
 "settings.release_notes.saving.item_two" = "照片继续在本地处理，原图保持不变；完成后的新记忆照片保存回 Apple Photos。";

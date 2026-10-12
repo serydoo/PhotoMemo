@@ -41,7 +41,7 @@ struct ReleaseNotesSheet: View {
                 title: localized("settings.release_notes.configuration.title", fallback: "调整之后，更清楚地确认保存"),
                 bullets: [
                     localized("settings.release_notes.configuration.item_one", fallback: "改善配置修改与保存状态的衔接，让当前预设与已保存内容保持一致。"),
-                    localized("settings.release_notes.configuration.item_two", fallback: "完善日期和称呼的显示，并收紧横屏顶部与操作区域的间距。")
+                    localized("settings.release_notes.configuration.item_two", fallback: "完善日期和称呼的显示；横屏配置页的预览开关放在主导航上方，保存和更多操作放在下方，切换页面时主导航保持原位。")
                 ]
             ),
             ReleaseNoteSection(
