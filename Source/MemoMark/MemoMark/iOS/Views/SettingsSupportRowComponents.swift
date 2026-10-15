@@ -35,6 +35,7 @@ struct SettingsActionRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
+            .contentShape(Rectangle())
 
             if showsDivider {
                 HorizontalDivider(horizontalInset: 12)
@@ -253,6 +254,7 @@ private struct SettingsContentRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
             .padding(.vertical, 12)
+            .contentShape(Rectangle())
 
             if showsDivider {
                 HorizontalDivider(horizontalInset: 12)
@@ -263,6 +265,8 @@ private struct SettingsContentRow: View {
 
 private struct SettingsRowIcon: View {
 
+    @ScaledMetric(relativeTo: .caption) private var iconDimension: CGFloat = 24
+
     let systemImage: String
     let tint: Color
 
@@ -270,7 +274,7 @@ private struct SettingsRowIcon: View {
         Image(systemName: systemImage)
             .font(.caption.weight(.semibold))
             .foregroundStyle(tint)
-            .frame(width: 24, height: 24)
+            .frame(width: iconDimension, height: iconDimension)
             .accessibilityHidden(true)
     }
 }

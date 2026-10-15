@@ -28,6 +28,30 @@ struct LocalizationResourceParityTests {
         }
     }
 
+    @Test("Expression tone interface titles resolve without changing Minimal branding")
+    func expressionToneInterfaceTitlesAreLocalized() throws {
+        let keys = ["ceremonial", "growth", "warm", "minimal", "memory", "motivational", "record"]
+        let expected = [
+            "en": ["Ceremonial", "Growth", "Warm", "Minimal", "Memory", "Motivational", "Record"],
+            "zh-Hans": ["仪式感", "成长", "温馨", "极简", "回忆", "激励", "记录"],
+            "ja": ["記念", "成長", "温かみ", "簡潔", "思い出", "応援", "記録"],
+            "ko": ["기념", "성장", "따뜻함", "간결", "추억", "응원", "기록"]
+        ]
+        for code in languageCodes {
+            let bundle = try #require(Bundle(path: repositoryRoot
+                .appendingPathComponent("Source/MemoMark/MemoMark/\(code).lproj").path))
+            let titles = try #require(expected[code])
+            for (name, title) in zip(keys, titles) {
+                let key = "configuration.expression.title.\(name)"
+                #expect(bundle.localizedString(forKey: key, value: nil, table: "Localizable") == title)
+            }
+            // The same legacy key is also the card-style brand; tone copy uses
+            // dedicated keys so localizing it cannot rename that style.
+            #expect(bundle.localizedString(forKey: "极简", value: nil, table: "Localizable")
+                == (code == "zh-Hans" ? "极简" : "Minimal"))
+        }
+    }
+
     @Test("All four resource files expose the same non-empty keys")
     func allResourceKeysStayInParity() throws {
         let resources = try languageCodes.map { code in
@@ -152,7 +176,7 @@ struct LocalizationResourceParityTests {
             "settings.data_safety.title",
             "settings.privacy.title",
             "settings.feedback.section_title",
-            "settings.community.section_title",
+            "settings.feedback.xiaohongshu.title",
             "settings.feedback.diagnostics.title",
             "settings.feedback.diagnostics.detail",
             "settings.about.title",

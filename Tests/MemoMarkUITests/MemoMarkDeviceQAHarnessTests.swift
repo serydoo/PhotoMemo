@@ -2509,6 +2509,7 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         defer { XCUIDevice.shared.orientation = .portrait }
         launchHostAndWait()
+        dismissWelcomeForAdaptiveNavigationIfNeeded()
         func capture(_ name: String) {
             let screen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             screen.name = name
@@ -2589,6 +2590,16 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
                     // Dismiss outside the native popover, rather than tapping
                     // a rail button that its presentation may cover.
                     application.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.05)).tap()
+                    let menuDismissed = XCTNSPredicateExpectation(
+                        predicate: NSPredicate { _, _ in !createAction.isHittable }, object: nil)
+                    if XCTWaiter.wait(for: [menuDismissed], timeout: 3) != .completed {
+                        // On a cold Simulator the opening menu can still be
+                        // transitioning when the first outside tap arrives.
+                        application.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).tap()
+                        let retryDismissed = XCTNSPredicateExpectation(
+                            predicate: NSPredicate { _, _ in !createAction.isHittable }, object: nil)
+                        XCTAssertEqual(XCTWaiter.wait(for: [retryDismissed], timeout: 5), .completed)
+                    }
                     assertStable()
                     let geometry = XCTAttachment(string: "primary=\(reference); preview=\(preview.frame); save=\(save.frame)")
                     geometry.name = "rail-geometry-\(direction)"
@@ -2758,11 +2769,24 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
                         XCTAssertTrue(historyScroll.waitForExistence(timeout: 10))
                         XCTAssertTrue(historyHeader.waitForExistence(timeout: 10))
                         XCTAssertTrue(completedContent.waitForExistence(timeout: 10))
-                        let aligned = XCTNSPredicateExpectation(
-                            predicate: NSPredicate { _, _ in
-                                abs(completedContent.frame.minY - historyScroll.frame.minY) <= 1
-                            }, object: nil)
-                        XCTAssertEqual(XCTWaiter.wait(for: [aligned], timeout: 10), .completed)
+                        // SwiftUI containment can include invisible spacing in its
+                        // accessibility frame. Check the rendered card surfaces for
+                        // this visual contract, retaining the same 1pt tolerance.
+                        let screenshot = XCUIScreen.main.screenshot()
+                        let image = normalizedDeviceScreenshot(screenshot.image)
+                        let completedTop = try renderedLightCardTop(in: completedContent.frame,
+                            scanStart: historyHeader.frame.maxY, image: image)
+                        let historyTop = try renderedLightCardTop(in: historyScroll.frame,
+                            scanStart: historyHeader.frame.maxY, image: image)
+                        XCTAssertEqual(completedTop, historyTop, accuracy: 1)
+                        let measured = XCTAttachment(string: "renderedCompletedTop=\(completedTop); renderedHistoryTop=\(historyTop); AXCompleted=\(completedContent.frame); AXHistory=\(historyScroll.frame); screenshotSize=\(screenshot.image.size); normalizedSize=\(image.size)")
+                        measured.name = "progress-rendered-alignment-\(direction)"
+                        measured.lifetime = .keepAlways
+                        add(measured)
+                        let rendered = XCTAttachment(image: image)
+                        rendered.name = "progress-rendered-screen-\(direction)"
+                        rendered.lifetime = .keepAlways
+                        add(rendered)
                         let headerY = historyHeader.frame.minY
                         let completedY = completed.frame.minY
                         let firstRow = historyScroll.buttons.matching(NSPredicate(
@@ -2910,10 +2934,129 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         XCTAssertEqual(finalValue, original, "Restore the existing preference after QA.")
     }
 
+    /// A newly created Simulator has no dismissed welcome flow. Prepare only
+    /// the QA profile before running navigation contracts written for configured devices.
+    func testNativeRegionNavigationCanOpenConfiguration() {
+        application.launchArguments.append("--memomark-native-region-probe")
+        launchHostAndWait()
+        dismissWelcomeForAdaptiveNavigationIfNeeded()
+        let picker = application.buttons["entry.native.task-space-picker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 30))
+        let guide = application.buttons["关闭首次使用说明"]
+        if guide.exists && guide.isHittable { guide.tap() }
+        func retainCaptureState() {
+            let ready = expectation(description: "Retain native inner-display capture state")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 8) { ready.fulfill() }
+            wait(for: [ready], timeout: 10)
+        }
+        attachCurrentScreenshot(named: "duo-native-overview")
+        retainCaptureState()
+        picker.tap()
+        let configuration = application.buttons["配置"]
+        XCTAssertTrue(configuration.waitForExistence(timeout: 10))
+        configuration.tap()
+        XCTAssertTrue(application.scrollViews["card-editor-scrolling-preview"].waitForExistence(timeout: 15))
+        attachCurrentScreenshot(named: "duo-native-configuration")
+        retainCaptureState()
+        let viewport = application.scrollViews["card-editor-scrolling-preview"]
+        let preview = application.staticTexts["configuration.preview.production"].firstMatch
+        let anchor = application.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "时间锚点、")).firstMatch
+        XCTAssertTrue(preview.exists && anchor.exists)
+        if viewport.frame.width > viewport.frame.height {
+            XCTAssertGreaterThan(anchor.frame.minX, preview.frame.maxX)
+        } else {
+            XCTAssertGreaterThan(anchor.frame.minY, preview.frame.maxY)
+        }
+        let hierarchy = XCTAttachment(string: application.debugDescription)
+        hierarchy.name = "duo-native-configuration-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+    }
+
+    func testExpressionChoicesRemainReachableInNarrowWindow() throws {
+        application.terminate()
+        application.launch()
+        XCTAssertTrue(application.wait(for: .runningForeground, timeout: 30))
+        dismissWelcomeForAdaptiveNavigationIfNeeded()
+        let window = application.windows.firstMatch
+        XCTAssertTrue(window.waitForExistence(timeout: 15))
+        if window.frame.width > 420, UIDevice.current.userInterfaceIdiom == .pad {
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.99, dy: 0.99))
+                .press(forDuration: 0.3, thenDragTo:
+                    window.coordinate(withNormalizedOffset: CGVector(dx: 0.63, dy: 0.75)))
+        }
+        let narrow = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            window.frame.width > 0 && window.frame.width <= 420
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [narrow], timeout: 15), .completed,
+                       "This check requires a real narrow application window.")
+        let config = application.buttons["配置"]
+        XCTAssertTrue(config.waitForExistence(timeout: 15))
+        config.tap()
+        let selected = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            config.isSelected
+        }, object: nil)
+        let selectionResult = XCTWaiter.wait(for: [selected], timeout: 5)
+        if selectionResult != .completed, UIDevice.current.userInterfaceIdiom == .pad,
+           window.frame.width < UIScreen.main.bounds.width {
+            attachCurrentScreenshot(named: "window-local-AX-tap-not-converted")
+            throw XCTSkip("Window-local Simulator AX coordinates did not activate the requested tab; use native global-coordinate evidence.")
+        }
+        XCTAssertEqual(selectionResult, .completed)
+        let choices = application.descendants(matching: .any)
+            .matching(identifier: "configuration.expression.choices").firstMatch
+        XCTAssertTrue(choices.waitForExistence(timeout: 15))
+        let page = application.scrollViews["card-editor-scrolling-preview"]
+        XCTAssertTrue(page.waitForExistence(timeout: 10))
+        let inner = page.scrollViews.firstMatch
+        let scrollingRegion = inner.exists ? inner : page
+        for _ in 0..<5 where !choices.isHittable || choices.frame.maxY > window.frame.maxY - 160 {
+            scrollingRegion.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+                .press(forDuration: 0.05, thenDragTo:
+                    scrollingRegion.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)))
+        }
+        let titles = ["自然", "仪式感", "成长", "温馨", "极简"]
+        if choices.elementType == .segmentedControl {
+            for title in titles {
+                let option = choices.buttons[title]
+                XCTAssertTrue(option.exists && option.isHittable, "Unreachable expression: \(title)")
+                XCTAssertTrue(window.frame.contains(option.frame), "Clipped expression: \(title)")
+            }
+        } else {
+            XCTAssertTrue(choices.isHittable)
+            choices.tap()
+            for title in titles {
+                let option = application.collectionViews.descendants(matching: .any)
+                    .matching(NSPredicate(format: "label == %@", title)).firstMatch
+                XCTAssertTrue(option.waitForExistence(timeout: 5) && option.isHittable,
+                              "Missing menu expression: \(title)")
+            }
+            attachCurrentScreenshot(named: "narrow-expression-menu-all-choices")
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.02)).tap()
+        }
+        attachCurrentScreenshot(named: "narrow-expression-choice-fit")
+        let hierarchy = XCTAttachment(string: application.debugDescription)
+        hierarchy.name = "narrow-expression-choice-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+    }
+
+    func testPrepareAdaptiveSimulatorProfile() {
+        XCUIDevice.shared.orientation = .portrait
+        launchHostAndWait()
+        // Navigation QA uses the existing default Subject; it does not author
+        // a new object through the separate first-run configuration workflow.
+        dismissWelcomeForAdaptiveNavigationIfNeeded()
+        XCTAssertTrue(application.buttons["subject-home-entry"].waitForExistence(timeout: 20))
+        XCTAssertTrue(application.tabBars.firstMatch.isHittable)
+        attachCurrentScreenshot(named: "adaptive-qa-profile-prepared")
+    }
+
     func testAdaptiveNavigationAndHomeRestoreAfterPhysicalRotation() throws {
         XCUIDevice.shared.orientation = .portrait
         defer { XCUIDevice.shared.orientation = .portrait }
         launchHostAndWait()
+        dismissWelcomeForAdaptiveNavigationIfNeeded()
 
         let home = application.buttons["首页"]
         XCTAssertTrue(home.waitForExistence(timeout: 15))
@@ -2945,12 +3088,29 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         let portraitRestored = XCTNSPredicateExpectation(
             predicate: NSPredicate { _, _ in
                 portraitTabs.isHittable
-                    && !landscapeRailProgress.allElementsBoundByIndex.contains(where: \.isHittable)
+                    // Some Simulator profiles expose the SF Symbol identifier
+                    // on the system tab too. Reject visible rail controls outside
+                    // the restored tab bar, rather than rejecting that identifier.
+                    && !self.application.buttons.matching(identifier: "checklist")
+                        .allElementsBoundByIndex.contains(where: {
+                            $0.isHittable && !portraitTabs.frame.contains($0.frame)
+                        })
                     && abs(portraitViewport.frame.width - homePortraitWidth) < 2
             },
             object: nil
         )
-        XCTAssertEqual(XCTWaiter.wait(for: [portraitRestored], timeout: 10), .completed)
+        let restorationResult = XCTWaiter.wait(for: [portraitRestored], timeout: 10)
+        if restorationResult != .completed {
+            let diagnostic = XCTAttachment(string:
+                "initialWidth=\(homePortraitWidth); restoredViewport=\(portraitViewport.frame); "
+                    + "tabFrame=\(portraitTabs.frame); tabHittable=\(portraitTabs.isHittable); "
+                    + "progressControls=\(application.buttons.matching(identifier: "checklist").allElementsBoundByIndex.map { "\($0.frame), hittable=\($0.isHittable)" })\n"
+                    + application.debugDescription)
+            diagnostic.name = "adaptive-home-portrait-restore-diagnostic"
+            diagnostic.lifetime = .keepAlways
+            add(diagnostic)
+        }
+        XCTAssertEqual(restorationResult, .completed)
         attachCurrentScreenshot(named: "adaptive-home-portrait-restored")
         let hierarchy = XCTAttachment(string: application.debugDescription)
         hierarchy.name = "adaptive-home-portrait-restored-hierarchy"
@@ -2963,27 +3123,44 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
             let tab = application.buttons[tabTitle]
             XCTAssertTrue(tab.waitForExistence(timeout: 10), "Missing (tabTitle) navigation action.")
             if !tab.isSelected { tab.tap() }
-            let viewport = application.scrollViews.firstMatch
-            XCTAssertTrue(viewport.waitForExistence(timeout: 10))
-            let portraitWidth = viewport.frame.width
+            // Rotation changes AX enumeration order: the rail itself contains
+            // narrow ScrollViews. Select the content region, never firstMatch.
+            func contentViewport() -> XCUIElement {
+                if tabTitle == "配置" {
+                    return application.scrollViews["card-editor-scrolling-preview"]
+                }
+                return application.scrollViews.allElementsBoundByIndex
+                    .first(where: { $0.frame.width > 200 }) ?? application.scrollViews.firstMatch
+            }
+            XCTAssertTrue(contentViewport().waitForExistence(timeout: 10))
+            let portraitWidth = contentViewport().frame.width
 
             XCUIDevice.shared.orientation = .landscapeLeft
-            let landscapeTab = application.buttons[tabTitle]
+            let landscapeTab = application.buttons[tabTitle == "配置" ? "slider.horizontal.3" : "checklist"]
             let landscapeReady = XCTNSPredicateExpectation(
                 predicate: NSPredicate { _, _ in
                     landscapeTab.exists && landscapeTab.isHittable
-                        && viewport.frame.width > portraitWidth * 1.35
+                        && contentViewport().frame.width > portraitWidth * 1.35
                 },
                 object: nil
             )
-            XCTAssertEqual(XCTWaiter.wait(for: [landscapeReady], timeout: 10), .completed,
-                           "(tabTitle) should use the wide content viewport in landscape.")
+            let landscapeResult = XCTWaiter.wait(for: [landscapeReady], timeout: 10)
+            if landscapeResult != .completed {
+                let diagnostic = XCTAttachment(string:
+                    "destination=\(tabTitle), portraitWidth=\(portraitWidth), landscapeFrame=\(contentViewport().frame)\n"
+                        + application.debugDescription)
+                diagnostic.name = "adaptive-\(label)-landscape-viewport-diagnostic"
+                diagnostic.lifetime = .keepAlways
+                add(diagnostic)
+            }
+            XCTAssertEqual(landscapeResult, .completed,
+                           "\(tabTitle) should use the wide content viewport in landscape.")
             attachCurrentScreenshot(named: "adaptive-\(label)-landscape")
 
             XCUIDevice.shared.orientation = .portrait
             let restored = XCTNSPredicateExpectation(
                 predicate: NSPredicate { _, _ in
-                    portraitTabs.isHittable && abs(viewport.frame.width - portraitWidth) < 2
+                    portraitTabs.isHittable && abs(contentViewport().frame.width - portraitWidth) < 2
                 },
                 object: nil
             )
@@ -5042,6 +5219,31 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
         editButton.tap()
     }
 
+    private func dismissWelcomeForAdaptiveNavigationIfNeeded() {
+        let later = application.buttons["稍后设置"]
+        if later.waitForExistence(timeout: 3) {
+            later.tap()
+            let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !later.isHittable }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 10), .completed)
+        }
+
+        // First-run setup can present Processing Status after welcome closes.
+        // Dismiss only that identified guidance sheet, without granting access.
+        let processingStatus = application.navigationBars["处理进度"]
+        let photosGuidance = application.staticTexts["允许保存到 Apple Photos"]
+        if processingStatus.waitForExistence(timeout: 3), photosGuidance.exists {
+            let done = processingStatus.buttons["完成"]
+            XCTAssertTrue(done.waitForExistence(timeout: 5))
+            XCTAssertTrue(done.isHittable)
+            done.tap()
+            let dismissed = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in !processingStatus.exists },
+                object: nil
+            )
+            XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 10), .completed)
+        }
+    }
+
     private func completeFirstRunConfigurationIfNeeded() {
         let startButton = application.buttons["开始使用"]
         if startButton.waitForExistence(timeout: 5) {
@@ -5205,6 +5407,47 @@ final class MemoMarkDeviceQAHarnessTests: XCTestCase {
 
         // AppStorage updates the interface language in place. The next
         // localized section lookup provides the settling point.
+    }
+
+    /// Normalize the system screenshot into the app's point coordinate space.
+    private func normalizedDeviceScreenshot(_ image: UIImage) -> UIImage {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: application.frame.size, format: format).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: application.frame.size))
+        }
+    }
+
+    /// This scenario validates the observed light card surface. Fail explicitly
+    /// if that surface cannot be measured; never substitute an AX frame or pass
+    /// an unmeasured screenshot. Five consecutive rows reject isolated glyphs.
+    private func renderedLightCardTop(in frame: CGRect, scanStart: CGFloat, image: UIImage) throws -> CGFloat {
+        let cgImage = try XCTUnwrap(image.cgImage)
+        let width = cgImage.width, height = cgImage.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let found: Int? = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height,
+                bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+            let sampleX = [0.3, 0.5, 0.7].map { Int(frame.minX - application.frame.minX + frame.width * $0) }
+            let start = max(0, Int(scanStart - application.frame.minY))
+            let end = min(height, Int(frame.maxY - application.frame.minY))
+            guard sampleX.allSatisfy({ (0..<width).contains($0) }), start < end else { return nil }
+            var consecutive = 0
+            for y in start..<end {
+                let white = sampleX.allSatisfy { x in
+                    let i = (y * width + x) * 4
+                    let bytes = buffer.bindMemory(to: UInt8.self)
+                    return min(bytes[i], bytes[i + 1], bytes[i + 2]) > 248
+                }
+                consecutive = white ? consecutive + 1 : 0
+                if consecutive == 5 { return y - 4 }
+            }
+            return nil
+        }
+        let top = try XCTUnwrap(found, "Cannot measure the rendered light card surface in \(frame)")
+        return CGFloat(top) + application.frame.minY
     }
 
     private func attachCurrentScreenshot(named name: String) {

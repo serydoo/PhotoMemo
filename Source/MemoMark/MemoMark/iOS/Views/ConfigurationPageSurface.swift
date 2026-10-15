@@ -13,6 +13,9 @@ struct ConfigurationPageSurface<
     private var interfaceLanguagePreferenceRawValue =
         MemoMarkInterfaceLanguagePreference.system.rawValue
 
+    @Environment(\.entryNavigationPresentation)
+    private var navigationPresentation
+
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
 
@@ -102,7 +105,7 @@ struct ConfigurationPageSurface<
         } editorContent: {
             editorContent
         } accessoryContent: {
-            if usesToolbarConfigurationActions || isEditingCardContent || navigationStyle == .floatingRail {
+            if usesToolbarConfigurationActions || isEditingCardContent || navigationStyle == .floatingRail || navigationStyle == .wideTaskSpaces {
                 EmptyView()
             } else {
                 ConfigurationActionFooter(
@@ -118,7 +121,7 @@ struct ConfigurationPageSurface<
             }
         }
         .navigationTitle("")
-        .toolbar(usesToolbarConfigurationActions && !isEditingCardContent ? .visible : .hidden, for: .navigationBar)
+        .toolbar(navigationStyle == .wideTaskSpaces ? .automatic : (usesToolbarConfigurationActions && !isEditingCardContent ? .visible : .hidden), for: .navigationBar)
         .toolbar {
             if usesToolbarConfigurationActions && !isEditingCardContent {
                 ToolbarItemGroup(placement: .topBarTrailing) {
@@ -142,10 +145,10 @@ struct ConfigurationPageSurface<
     }
 
     private var navigationStyle: EntryNavigationStyle {
-        AdaptivePageLayout.navigationStyle(
-            hasRegularHorizontalSizeClass: horizontalSizeClass == .regular,
-            hasCompactVerticalSizeClass: verticalSizeClass == .compact
-        )
+        navigationPresentation ?? NavigationPresentationPolicy.style(for: AdaptivePresentationCapabilities(
+            horizontalSizeClass: horizontalSizeClass,
+            verticalSizeClass: verticalSizeClass
+        ))
     }
 
     private var interfaceLanguage: MemoMarkLanguage {

@@ -8,11 +8,19 @@ struct ConfigurationEditorScrollRequest: Equatable {
     let revision: UUID
 }
 
+private struct WideConfigurationPreviewPaneHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
 struct MemoryCardEditorPageSurface<
     PreviewContent: View,
     EditorContent: View,
     AccessoryContent: View
 >: View {
+
+    @Environment(\.entryNavigationPresentation)
+    private var navigationPresentation
 
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
@@ -20,10 +28,21 @@ struct MemoryCardEditorPageSurface<
     @Environment(\.verticalSizeClass)
     private var verticalSizeClass
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .body)
+    private var minimumWideRegionWidth = WideOverviewLayoutPolicy.minimumRegionWidth
+
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
 
+    @Environment(\.configurationWindowViewport) private var windowViewport
+    @ScaledMetric(relativeTo: .body)
+    private var minimumWideEditorHeight = WideConfigurationRegionPolicy.minimumEditorHeight
+    @ScaledMetric(relativeTo: .body)
+    private var widePreviewChromeHeight = WideConfigurationRegionPolicy.previewChromeHeight
+
     @State private var retainedPreviewHeight: CGFloat = 0
+    @State private var widePreviewPaneHeight: CGFloat = 0
 
     let previewPinProgress: CGFloat
     let editorRevealProgress: CGFloat
@@ -92,20 +111,42 @@ struct MemoryCardEditorPageSurface<
 
     private var adaptiveContent: some View {
         let compact = verticalSizeClass == .compact
-        let usesSplit = !compact && usesSplitConfigurationLayout && isPreviewVisible
-        let layout = usesSplit
-            ? AnyLayout(HStackLayout(alignment: .top, spacing: 0))
-            : AnyLayout(VStackLayout(spacing: 0))
 
         // Keep the same TextKit editor subtree across rotation. A conditional
         // ScrollView wrapper would destroy its selection, IME and undo owner.
         return GeometryReader { geometry in
+            let nativeAllocation = navigationStyle == .wideTaskSpaces
+                ? SystemPresentationRegions.allocation(in: geometry) : nil
+            let usesSplit = nativeAllocation.map { $0.arrangement == .sideBySide } ?? (!compact && usesSplitConfigurationLayout(in: navigationStyle == .wideTaskSpaces ? (windowViewport ?? geometry.size) : geometry.size) && isPreviewVisible)
+            let layout = nativeAllocation.map { AnyLayout(ReservedPresentationRegionLayout(allocation: $0)) } ?? (usesSplit
+                ? AnyLayout(HStackLayout(alignment: .top, spacing: 0))
+                : AnyLayout(VStackLayout(spacing: 0)))
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
                     layout {
-                        previewPane(viewportWidth: geometry.size.width)
+                        previewPane(viewportWidth: nativeAllocation?.primary.width ?? (usesSplit && navigationStyle == .wideTaskSpaces
+                            ? max(0, (geometry.size.width - 0.5) / 2) : geometry.size.width))
+                            .frame(width: nativeAllocation?.primary.width ?? (usesSplit && navigationStyle == .wideTaskSpaces
+                                ? max(0, (geometry.size.width - 0.5) / 2) : nil))
+                            .frame(height: nativeAllocation?.primary.height)
                             .frame(maxWidth: .infinity,
                                    maxHeight: usesSplit ? .infinity : nil, alignment: .top)
+                            .background {
+                                if navigationStyle == .wideTaskSpaces {
+                                    GeometryReader { pane in
+                                        Color.clear.preference(key: WideConfigurationPreviewPaneHeightKey.self,
+                                            value: pane.size.height)
+                                    }
+                                }
+                            }
+                            .environment(\.configurationPreviewMaximumHeight,
+                                navigationStyle == .wideTaskSpaces
+                                    ? WideConfigurationRegionPolicy.previewMaximumHeight(
+                                        viewportHeight: nativeAllocation?.primary.height ?? geometry.size.height,
+                                        arrangement: nativeAllocation != nil || usesSplit ? .sideBySide : .stacked,
+                                        minimumEditorHeight: minimumWideEditorHeight,
+                                        previewChromeHeight: widePreviewChromeHeight)
+                                    : nil)
                             .zIndex(1)
                             .id("card-editor-preview-origin")
 
@@ -116,15 +157,22 @@ struct MemoryCardEditorPageSurface<
                             .accessibilityHidden(true)
 
                         editorPane
-                            .frame(height: compact
+                            .frame(width: nativeAllocation?.secondary.width ?? (usesSplit && navigationStyle == .wideTaskSpaces
+                                ? max(0, (geometry.size.width - 0.5) / 2) : nil))
+                            .frame(height: nativeAllocation?.secondary.height ?? (compact
                                 ? max(0, geometry.size.height - (isPreviewVisible ? retainedPreviewHeight + 10 : 0))
-                                : nil)
+                                : (navigationStyle == .wideTaskSpaces
+                                    ? WideConfigurationRegionPolicy.editorHeight(viewportHeight: geometry.size.height,
+                                        previewPaneHeight: widePreviewPaneHeight,
+                                        arrangement: usesSplit ? .sideBySide : .stacked)
+                                    : nil)))
                             .frame(maxWidth: .infinity, maxHeight: compact ? nil : .infinity)
                             .id("card-editor-scroll-destination")
                     }
-                    .frame(height: compact ? nil : geometry.size.height, alignment: .top)
+                    .frame(height: nativeAllocation != nil || !compact ? geometry.size.height : nil, alignment: .top)
                 }
                 .scrollDismissesKeyboard(.never)
+                .onPreferenceChange(WideConfigurationPreviewPaneHeightKey.self) { widePreviewPaneHeight = $0 }
                 .onPreferenceChange(CardEditorRetainedPreviewHeightKey.self) { retainedPreviewHeight = $0 }
                 .onChange(of: verticalSizeClass) { _, sizeClass in
                     if sizeClass != .compact {
@@ -146,11 +194,14 @@ struct MemoryCardEditorPageSurface<
         }
     }
 
-    private var usesSplitConfigurationLayout: Bool {
-        AdaptivePageLayout.usesRegularWorkspace(
-            hasRegularHorizontalSizeClass: horizontalSizeClass == .regular,
-            hasRegularVerticalSizeClass: verticalSizeClass == .regular
-        )
+    private func usesSplitConfigurationLayout(in viewport: CGSize) -> Bool {
+        let hasPeerCapacity = ConfigurationContentArrangementPolicy.arrangement(for: AdaptivePresentationCapabilities(
+            horizontalSizeClass: horizontalSizeClass,
+            verticalSizeClass: verticalSizeClass
+        )) == .sideBySide
+        guard hasPeerCapacity, !dynamicTypeSize.isAccessibilitySize else { return false }
+        return WideConfigurationLayoutPolicy.arrangement(viewport: viewport,
+            minimumRegionWidth: minimumWideRegionWidth) == .sideBySide
     }
 
     private func previewPane(viewportWidth: CGFloat) -> some View {
@@ -223,10 +274,7 @@ struct MemoryCardEditorPageSurface<
                     .padding(.top, 8)
                     .padding(
                         .bottom,
-                        AdaptivePageLayout
-                            .scrollBottomPadding(
-                                for: navigationStyle
-                            )
+                        NavigationPresentationPolicy.scrollBottomPadding(for: navigationStyle)
                     )
                     .adaptiveScrollContent(
                         horizontalPadding: ConfigurationUI.contentColumnPadding,
@@ -272,12 +320,10 @@ struct MemoryCardEditorPageSurface<
 
     private var navigationStyle:
         EntryNavigationStyle {
-        AdaptivePageLayout.navigationStyle(
-            hasRegularHorizontalSizeClass:
-                horizontalSizeClass == .regular,
-            hasCompactVerticalSizeClass:
-                verticalSizeClass == .compact
-        )
+        navigationPresentation ?? NavigationPresentationPolicy.style(for: AdaptivePresentationCapabilities(
+            horizontalSizeClass: horizontalSizeClass,
+            verticalSizeClass: verticalSizeClass
+        ))
     }
 
 }

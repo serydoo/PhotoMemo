@@ -8,7 +8,16 @@
   <key>ProgramArguments</key>
   <array>
     <string>__TARGET_SCRIPT__</string>
+    <string>prepare</string>
   </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>MEMOMARK_REPO_DIR</key>
+    <string>__REPO_DIR__</string>
+    <key>MEMOMARK_SUPPORT_DIR</key>
+    <string>__SUPPORT_DIR__</string>
+  </dict>
 
   <key>RunAtLoad</key>
   <true/>

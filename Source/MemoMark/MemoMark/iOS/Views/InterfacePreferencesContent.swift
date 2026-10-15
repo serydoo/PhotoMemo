@@ -13,23 +13,15 @@ struct InterfacePreferencesContent: View {
         VStack(alignment: .leading, spacing: 14) {
             preferenceControl(
                 title: localized("settings.appearance.title", fallback: "外观"),
-                description: localized("settings.appearance.description", fallback: "跟随 iPhone 的外观，或始终使用浅色或深色。")
+                description: localized("settings.appearance.description", fallback: "跟随设备外观，或始终使用浅色或深色。")
             ) { appearancePicker }
             HorizontalDivider()
             preferenceControl(
                 title: localized("settings.interface.title", fallback: "界面语言"),
-                description: localized("settings.interface.description", fallback: "控制时光记中支持切换的菜单、设置与处理状态文字；不改变你填写的内容，也不替代配置中的输出语言。")
+                description: localized("settings.interface.description", fallback: "仅影响界面文字；不改变填写内容与照片输出语言。")
             ) { interfaceLanguagePicker }
         }
         .padding(.horizontal, ConfigurationUI.innerPanelPadding)
-    }
-
-    static func summary(
-        language: MemoMarkLanguage,
-        appearance: MemoMarkAppearancePreference,
-        interfaceLanguage: MemoMarkInterfaceLanguagePreference
-    ) -> String {
-        "\(appearanceTitle(appearance, language: language)) · \(interfaceLanguageTitle(interfaceLanguage, language: language))"
     }
 
     @ViewBuilder private var appearancePicker: some View {

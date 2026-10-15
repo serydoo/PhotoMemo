@@ -6,11 +6,17 @@ import UIKit
 
 struct HomePageSurface<ProfileTrackingBackground: View>: View {
 
+    @Environment(\.homePhotoPickerFooterPresentedByContainer)
+    private var footerPresentedByContainer
+
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
     @Environment(\.verticalSizeClass)
     private var verticalSizeClass
+
+    @Environment(\.entryNavigationPresentation)
+    private var navigationPresentation
 
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
@@ -24,6 +30,8 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     private var interfaceLanguage: MemoMarkLanguage {
         .interfaceStored
     }
+
+    @Environment(\.homeSettingsPresentedByContainer) private var settingsPresentedByContainer
 
     @AppStorage("photomemo.v1.applePhotosGuideDismissed")
     private var hasDismissedApplePhotosGuide = false
@@ -119,14 +127,14 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                         )
                     )
 
-                    if dynamicTypeSize.isAccessibilitySize {
+                    if dynamicTypeSize.isAccessibilitySize && !footerPresentedByContainer {
                         processPhotoFooter
                     }
                 }
                 .padding(.top, ConfigurationUI.contentColumnPadding)
                 .padding(
                     .bottom,
-                    dynamicTypeSize.isAccessibilitySize ? 16 : 104
+                    dynamicTypeSize.isAccessibilitySize || footerPresentedByContainer ? 16 : 104
                 )
                 .coordinateSpace(name: "home-scroll-content")
                 .onPreferenceChange(HomePresetContentOriginKey.self) { origin in
@@ -152,9 +160,10 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         )
         .navigationTitle(verticalSizeClass == .compact ? "" : localized("home.title"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(verticalSizeClass == .compact ? .hidden : .automatic, for: .navigationBar)
+        .toolbar(navigationStyle == .wideTaskSpaces ? .automatic
+            : (verticalSizeClass == .compact ? .hidden : .automatic), for: .navigationBar)
         .safeAreaInset(edge: .bottom) {
-            if !dynamicTypeSize.isAccessibilitySize {
+            if !dynamicTypeSize.isAccessibilitySize && !footerPresentedByContainer {
                 processPhotoFooter
             }
         }
@@ -175,10 +184,10 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
     }
 
     private var navigationStyle: EntryNavigationStyle {
-        AdaptivePageLayout.navigationStyle(
-            hasRegularHorizontalSizeClass: horizontalSizeClass == .regular,
-            hasCompactVerticalSizeClass: verticalSizeClass == .compact
-        )
+        navigationPresentation ?? NavigationPresentationPolicy.style(for: AdaptivePresentationCapabilities(
+            horizontalSizeClass: horizontalSizeClass,
+            verticalSizeClass: verticalSizeClass
+        ))
     }
 
     private func topSummaryCluster(usesColumns: Bool, presetContentMaximumHeight: CGFloat) -> some View {
@@ -210,11 +219,13 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                 overviewHeaderHeight = max(44, height)
             }
 
-            if shouldShowBeginnerGuidance {
+            if shouldShowBeginnerGuidance && !suppressesWideBeginnerHints {
                 workflowReminderCard
             }
 
-            photoPickerWorkflowHintTimeline
+            if !suppressesWideBeginnerHints {
+                photoPickerWorkflowHintTimeline
+            }
         }
     }
 
@@ -408,21 +419,6 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
 
     private func dismissApplePhotosGuide() {
         hasDismissedApplePhotosGuide = true
-    }
-
-    private func openPhotoPickerFromHome() {
-        guard onOpenPhotoPicker() else {
-            return
-        }
-
-        photoPickerUseCount = min(
-            photoPickerUseCount + 1,
-            HomePhotoPickerGuidancePolicy.useThreshold
-        )
-        if photoPickerUseCount >= HomePhotoPickerGuidancePolicy.useThreshold,
-           photoPickerGuidanceStartedAt == 0 {
-            photoPickerGuidanceStartedAt = Date().timeIntervalSince1970
-        }
     }
 
     private var nextShareConfigurationText: String {
@@ -624,23 +620,25 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         )
     }
 
-    private var settingsButton: some View {
-        Button(action: onOpenSettings) {
-            Image(systemName: MemoMarkSymbol.settings.name)
-                .font(.body.weight(.bold))
-                .foregroundStyle(.secondary)
-                .frame(width: 44, height: 44)
-                .background(
-                    Circle()
-                        .fill(
-                            Color(
-                                uiColor: .secondarySystemFill
+    @ViewBuilder private var settingsButton: some View {
+        if !settingsPresentedByContainer {
+            Button(action: onOpenSettings) {
+                Image(systemName: MemoMarkSymbol.settings.name)
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        Circle()
+                            .fill(
+                                Color(
+                                    uiColor: .secondarySystemFill
+                                )
                             )
-                        )
-                )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(localized("home.settings.accessibility"))
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(localized("home.settings.accessibility"))
+    }
     }
 
     @ViewBuilder
@@ -844,6 +842,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                         .padding(.top, 2)
                     }
 
+                    if !suppressesWideBeginnerHints {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(localized("home.presets.manage_hint"))
                         Text(localized("home.presets.edit_hint"))
@@ -853,6 +852,7 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 4)
                     .padding(.top, 2)
+                    }
                 }
             }
             .background {
@@ -980,9 +980,56 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         )
     }
 
-    @ViewBuilder
     private var processPhotoFooter: some View {
-        if shouldShowInAppPhotoPicker {
+        HomePhotoPickerFooter(isConfigurationReady: isConfigurationReady,
+            onOpenPhotoPicker: onOpenPhotoPicker)
+    }
+
+    private var suppressesWideBeginnerHints: Bool {
+        navigationStyle == .wideTaskSpaces && hasDismissedApplePhotosGuide
+    }
+
+    private var shouldShowBeginnerGuidance: Bool {
+        HomePhotoPickerGuidancePolicy.shouldShowBeginnerGuidance(
+            useCount: photoPickerUseCount
+        )
+    }
+}
+
+/// Reuses the same admission action and guidance accounting at either footer location.
+struct HomePhotoPickerFooter: View {
+    let isConfigurationReady: Bool
+    let onOpenPhotoPicker: () -> Bool
+    var isRail = false
+
+    @AppStorage("memomark.home.photoPickerUseCount", store: MemoMarkSharedContainer.sharedUserDefaults)
+    private var photoPickerUseCount = 0
+    @AppStorage("memomark.home.photoPickerGuidanceStartedAt", store: MemoMarkSharedContainer.sharedUserDefaults)
+    private var photoPickerGuidanceStartedAt = 0.0
+
+    private func localized(_ key: String) -> String {
+        MemoMarkLanguage.interfaceStored.localized(key: key, fallback: key)
+    }
+    private var shouldShowInAppPhotoPicker: Bool {
+        shouldShowBeginnerGuidance
+    }
+    private var shouldShowBeginnerGuidance: Bool {
+        HomePhotoPickerGuidancePolicy.shouldShowBeginnerGuidance(useCount: photoPickerUseCount)
+    }
+
+    @ViewBuilder var body: some View {
+        if isRail {
+            Button(action: openPhotoPickerFromHome) {
+                Image(systemName: "photo.on.rectangle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 46, height: 46)
+            }
+            .buttonStyle(.plain)
+            .background(MemoMarkDesignTokens.SurfaceMaterial.contextual, in: Circle())
+            .accessibilityLabel(isConfigurationReady
+                ? localized("home.process.choose_photo") : localized("home.process.configure_first"))
+            .accessibilityIdentifier("home.rail.photo-picker")
+        } else if shouldShowInAppPhotoPicker {
             VStack(spacing: 0) {
                 Button(action: openPhotoPickerFromHome) {
                     Label(
@@ -1014,15 +1061,21 @@ struct HomePageSurface<ProfileTrackingBackground: View>: View {
         }
     }
 
-    private var shouldShowInAppPhotoPicker: Bool {
-        shouldShowBeginnerGuidance
+    private func openPhotoPickerFromHome() {
+        guard onOpenPhotoPicker() else {
+            return
+        }
+
+        photoPickerUseCount = min(
+            photoPickerUseCount + 1,
+            HomePhotoPickerGuidancePolicy.useThreshold
+        )
+        if photoPickerUseCount >= HomePhotoPickerGuidancePolicy.useThreshold,
+           photoPickerGuidanceStartedAt == 0 {
+            photoPickerGuidanceStartedAt = Date().timeIntervalSince1970
+        }
     }
 
-    private var shouldShowBeginnerGuidance: Bool {
-        HomePhotoPickerGuidancePolicy.shouldShowBeginnerGuidance(
-            useCount: photoPickerUseCount
-        )
-    }
 }
 
 private struct HomeEmptyPresetRow: View {

@@ -1,0 +1,27 @@
+# Unicode description readback investigation
+
+Engineering Loop, P1 metadata reliability investigation. Evidence: actual writer produces truncated mixed Chinese/numeric EXIF UserComment in PNG/HEIC, while sync/async results match. First bounded scope: direct ImageIO versus production writer across ASCII, pure Chinese, mixed text, emoji, composed accents and longer text; read EXIF/TIFF/IPTC/PNG description fields. Native reuse: ImageIO supported property API. No byte patching or production-policy change before controls. Controlled files only, deleted after test; no Photos or private media. Verification outcome is matrix evidence, not universal format certification.
+
+## Observed matrix and bounded correction
+
+54 rows: production writer EXIF full equality PNG 1/6, HEIC 1/6, JPEG 5/6. Actual writer TIFF/IPTC full equality 6/6 each; PNG description 6/6. Direct String route EXIF equality 1/6 in all formats; direct Unicode Data 0/6. Therefore Data is rejected as a production fix. These routes are controls, not identical metadata dictionaries: actual writer also writes software/dimensions and JPEG patching.
+
+JPEG failing sample is decomposed `Café 365`, read as `Cafe? 365`. Existing patch condition uses canBeConverted(to:.ascii), which does not prove all original scalars are ASCII. Bounded P1 fix: trigger existing JPEG Unicode patch whenever an original scalar exceeds 127. No new byte patcher, container policy or normalization. Matrix supplies pre-fix evidence; assert all six JPEG writer samples preserve exact strings after change. PNG/HEIC EXIF correction remains open; no container binary surgery in this slice.
+
+## Rejected partial fix and current state
+
+Changing only the JPEG patch trigger to scalar >127 failed the decomposed-accent sample again (`/tmp/MemoMarkGlassUnicodeFixed.xcresult`: 9 passed, 1 failed, 1 existing disabled test). Existing patcher explicitly refuses encoded comments exceeding its original dataRange capacity. This is a second constraint; a trigger-only correction cannot be declared sufficient. Reverted precisely the experimental condition; existing nonisolated annotation remains. Removed the newly drafted passing-contract test because current implementation does not satisfy it. Matrix probe remains observational; failure bundle retains attempted correction evidence. No production behavior change in this slice.
+
+Initial 54-row macOS matrix passed (`/tmp/MemoMarkGlassUnicodeMatrix.xcresult`), no runtime warnings. This PASS means controlled files were generated/read and matrix assembled, not Unicode preservation. Analyzer validates 54 unique combinations; raw JSON retained in `$HOME/Documents/Codex/2026-10-01/GlassCardUnicodeDescription/unicode-description-matrix.json`. Research probe copied into target temporarily then byte-checked and removed. Existing TIFF/IPTC/PNG description preservation is limited to these samples. No claim about Photos display, arbitrary locales, full EXIF capacity, or byte-level root cause. Next implementation requires supported metadata API/capacity controls and exact EXIF validation before altering production output.
+
+## Capacity-controlled JPEG correction trial
+
+Engineering Loop P1. Scope limited to JPEG: reserve ImageIO UserComment storage using a non-ASCII placeholder with original UTF-16 length, then overwrite it using the existing in-place Unicode patcher. Actual description stays in TIFF/IPTC. Require patch success before reporting write success; placeholder must never be returned as successful output. ASCII and PNG/HEIC remain unchanged. Reuse existing offset-based patcher; no EXIF segment resizing or movement. Validate exact Unicode scalar readback, other EXIF/GPS fields and unchanged JPEG pixel bytes against normal same-image encoding. Long/unsupported capacity failures must throw writeFailed. Trial is accepted only after tests; otherwise revert exact slice.
+
+## Accepted JPEG result
+
+Capacity reservation trial passed six exact Unicode scalar cases, including decomposed accent/emoji/long Chinese mixed text. Updated matrix retains 54 rows, JPEG writer UserComment 6/6; PNG/HEIC remain 1/6. Result `/tmp/MemoMarkGlassUnicodeCapacity.xcresult`: 10 passed test items, 1 pre-existing disabled test. Final permanent regression + metadata suite `/tmp/MemoMarkJPEGUnicodeFinal.xcresult`: 10 passed test items, 15 passing executions (parameterized regression runs 6 cases), 1 existing disabled manual JPEG case, no runtime warnings. Regression verifies other capture/exposure/GPS fields and actual nonoptional decoded pixel bytes equal same-image ASCII-control JPEG.
+
+Production changes: JPEG non-ASCII comment reserves storage via U+FFFD repeated UTF-16 count; existing in-place patch uses original UTF-16BE bytes and exact count. Patcher returns success; writer throws writeFailed if required patch fails, so reserved text cannot be a successful output. No segment relocation/new EXIF serializer. Pending successful partial files are still owned by existing export caller/transaction; this slice does not introduce independent deletion. PNG/HEIC behavior unchanged. Arbitrarily large EXIF/real maker-note/device Photos paths are not certified by these controlled cases. Permanent test: `Tests/MemoMarkTests/ExportTests/JPEGUnicodeUserCommentRegressionTests.swift`.
+
+MemoMarkiOS generic iphoneos Debug build passed with signing disabled (`/tmp/MemoMarkJPEGUnicodeIOS.log`); no install/Photos validation. `git diff --check` passed. No commit or push.

@@ -1,12 +1,6 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 
-enum SettingsSectionEmphasis {
-    case primary
-    case secondary
-    case system
-}
-
 struct SettingsPageSurface: View {
 
     private struct DiagnosticExportItem:
@@ -16,18 +10,17 @@ struct SettingsPageSurface: View {
         let fileURL: URL
     }
 
+    private enum UsageGuideDestination: Hashable {
+        case expression
+        case story
+        case welcome
+        case workflow
+    }
+
+    @State private var usageGuideDestination: UsageGuideDestination?
+
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
-
-    private enum SettingsSection: Hashable, CaseIterable {
-        case gettingStarted
-        case photoProcessing
-        case dataSafety
-        case feedback
-        case community
-        case interfacePreferences
-        case about
-    }
 
     @Environment(\.openURL) private var openURL
 
@@ -45,56 +38,15 @@ struct SettingsPageSurface: View {
     private var appearancePreferenceRawValue =
         MemoMarkAppearancePreference.system.rawValue
 
-    @AppStorage(
-        "memomark.settings.productCenter.gettingStartedExpanded",
-        store: MemoMarkSharedContainer.sharedUserDefaults
-    )
-    private var isGettingStartedExpanded = true
-
-    @AppStorage(
-        "memomark.settings.productCenter.photoProcessingExpanded",
-        store: MemoMarkSharedContainer.sharedUserDefaults
-    )
-    private var isPhotoProcessingExpanded = false
-
-    @AppStorage(
-        "memomark.settings.productCenter.dataSafetyExpanded",
-        store: MemoMarkSharedContainer.sharedUserDefaults
-    )
-    private var isDataSafetyExpanded = false
-
-    @AppStorage(
-        "memomark.settings.productCenter.feedbackExpanded",
-        store: MemoMarkSharedContainer.sharedUserDefaults
-    )
-    private var isFeedbackExpanded = false
-
-    @AppStorage(
-        "memomark.settings.productCenter.communityExpanded",
-        store: MemoMarkSharedContainer.sharedUserDefaults
-    )
-    private var isCommunityExpanded = false
-
-    @AppStorage(
-        "memomark.settings.productCenter.interfaceLanguageExpanded",
-        store: MemoMarkSharedContainer.sharedUserDefaults
-    )
-    private var isInterfacePreferencesExpanded = false
-
-    @AppStorage(
-        "memomark.settings.productCenter.aboutExpanded",
-        store: MemoMarkSharedContainer.sharedUserDefaults
-    )
-    private var isAboutExpanded = false
+    @State private var showsUsageGuide = false
+    @State private var showsPhotoData = false
+    @State private var showsFeedback = false
 
     @State
     private var showsExpressionGuide = false
 
     @Binding
     var showsWorkflowGuide: Bool
-
-    @State
-    private var showsWelcomeInformation = false
 
     @State
     private var showsWelcomeWorkflowGuide = false
@@ -104,6 +56,9 @@ struct SettingsPageSurface: View {
 
     @State
     private var showsReleaseNotes = false
+
+    @State
+    private var showsAppStoreOpenError = false
 
     @State
     private var diagnosticExportItem:
@@ -134,21 +89,11 @@ struct SettingsPageSurface: View {
             VStack(spacing: ConfigurationSectionCardMetrics.sectionSpacing) {
                 memoMarkPlusSection
 
-                gettingStartedSection
-                VStack(spacing: 0) {
-                    photoProcessingSection
-                    HorizontalDivider(horizontalInset: 16)
-                    dataSafetySection
-                    HorizontalDivider(horizontalInset: 16)
-                    feedbackSection
-                    HorizontalDivider(horizontalInset: 16)
-                    communitySection
-                    HorizontalDivider(horizontalInset: 16)
-                    interfacePreferencesSection
-                    HorizontalDivider(horizontalInset: 16)
-                    aboutSection
-                }
-                .groupedSurface()
+                expressionFeatureSection
+                interfacePreferencesSection
+                usageAndDataSection
+                feedbackSection
+                aboutSection
 
                 Text(
                     localized(
@@ -182,6 +127,15 @@ struct SettingsPageSurface: View {
             )
         )
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $showsUsageGuide) {
+            usageGuidePage
+        }
+        .navigationDestination(isPresented: $showsPhotoData) {
+            photoDataPage
+        }
+        .navigationDestination(isPresented: $showsFeedback) {
+            feedbackPage
+        }
         .navigationDestination(isPresented: $showsExpressionGuide) {
             expressionGuidePage
         }
@@ -196,29 +150,7 @@ struct SettingsPageSurface: View {
             )
         }
         .navigationDestination(isPresented: $showsWorkflowGuide) {
-            WorkflowGuideSurface(
-                steps: WelcomePresentation.workflowSteps(for: interfaceLanguage),
-                language: interfaceLanguage,
-                onClose: nil,
-                embedsNavigationStack: false
-            )
-        }
-        .navigationDestination(isPresented: $showsWelcomeInformation) {
-            WelcomePageSurface(
-                presentation: WelcomePresentation.localized(for: interfaceLanguage),
-                language: interfaceLanguage,
-                onStart: { showsWelcomeInformation = false },
-                onShowWorkflow: { showsWelcomeWorkflowGuide = true },
-                embedsNavigationStack: false
-            )
-            .navigationDestination(isPresented: $showsWelcomeWorkflowGuide) {
-                WorkflowGuideSurface(
-                    steps: WelcomePresentation.workflowSteps(for: interfaceLanguage),
-                    language: interfaceLanguage,
-                    onClose: nil,
-                    embedsNavigationStack: false
-                )
-            }
+            workflowGuidePage
         }
         .sheet(item: $diagnosticExportItem) { item in
             DiagnosticsShareSheet(
@@ -253,28 +185,101 @@ struct SettingsPageSurface: View {
                 diagnosticExportErrorMessage ?? ""
             )
         }
+        .alert(
+            localized("settings.about.store_unavailable.title", fallback: "暂时无法打开 App Store"),
+            isPresented: $showsAppStoreOpenError
+        ) {
+            Button(localized("common.ok", fallback: "好"), role: .cancel) {}
+        } message: {
+            Text(localized("settings.about.store_unavailable.detail", fallback: "请稍后重试，或在 App Store 中搜索 MemoMark。"))
+        }
+    }
+
+    private var expressionFeatureSection: some View {
+        Button {
+            showsExpressionGuide = true
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(localized("settings.structure.expression.title", fallback: "时间锚点，让照片有了前后"))
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Text(localized("settings.structure.expression.detail", fallback: "生日看成长，纪念日看陪伴，未来日期看倒数。"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Text(localized("settings.structure.expression.action", fallback: "看看照片会怎么说"))
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .accessibilityHidden(true)
+                }
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.accentColor)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(ConfigurationUI.innerPanelPadding)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .groupedSurface()
+        .accessibilityIdentifier("settings.expression-feature")
     }
 
     private var interfacePreferencesSection: some View {
-        settingsDisclosureSection(
-            section: .interfacePreferences,
-            title: localized(
-                "settings.interface_preferences.title",
-                fallback: "界面"
-            ),
-            trailingValue: InterfacePreferencesContent.summary(
-                language: interfaceLanguage,
-                appearance: appearancePreferenceBinding.wrappedValue,
-                interfaceLanguage: interfaceLanguageBinding.wrappedValue
-            ),
-            emphasis: .system
-        ) {
+        SettingsSectionSurface(title: localized("settings.structure.preferences.title", fallback: "界面偏好")) {
             InterfacePreferencesContent(
                 language: interfaceLanguage,
                 usesAccessibilityPickerStyle: dynamicTypeSize.isAccessibilitySize,
                 appearance: appearancePreferenceBinding,
                 interfaceLanguage: interfaceLanguageBinding
             )
+            .padding(.vertical, 12)
+        }
+    }
+
+    private var usageAndDataSection: some View {
+        SettingsSectionSurface(title: localized("settings.structure.usage_data.title", fallback: "使用与数据")) {
+            Button { showsUsageGuide = true } label: {
+                SettingsActionRow(
+                    title: localized("settings.structure.usage.title", fallback: "使用指南"),
+                    detail: localized("settings.structure.usage.detail", fallback: "从 Apple Photos 开始，回到相册查看。"),
+                    systemImage: "book.closed", tint: .blue, showsDivider: true
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.usage-guide")
+            Button { showsPhotoData = true } label: {
+                SettingsActionRow(
+                    title: localized("settings.structure.photo_data.title", fallback: "照片与数据"),
+                    detail: localized("settings.structure.photo_data.detail", fallback: "支持的照片、保存方式与本地数据。"),
+                    systemImage: "photo.on.rectangle", tint: .green, showsDivider: false
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.photo-data")
+        }
+    }
+
+    private var feedbackSection: some View {
+        SettingsSectionSurface(title: localized("settings.structure.support.title", fallback: "一起把时光记做好")) {
+            Button { showsFeedback = true } label: {
+                SettingsActionRow(
+                    title: localized("settings.structure.feedback.title", fallback: "问题与建议"),
+                    detail: localized("settings.structure.feedback.detail", fallback: "邮件与小红书私信，都能直接找到开发者。"),
+                    systemImage: "bubble.left.and.bubble.right", tint: .blue, showsDivider: true
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.feedback-contact")
+            Button { openAppStore(.review) } label: {
+                SettingsActionRow(
+                    title: localized("settings.about.rate.title", fallback: "给时光记打个分"),
+                    detail: localized("settings.about.rate.detail", fallback: "去 App Store，聊聊你的使用感受。"),
+                    systemImage: "star", tint: .orange, showsDivider: false
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("settings.rate-app")
         }
     }
 
@@ -487,62 +492,99 @@ struct SettingsPageSurface: View {
         )
     }
 
-    private func settingsDisclosureSection<Content: View>(
-        section: SettingsSection,
-        title: String,
-        trailingValue: String? = nil,
-        emphasis: SettingsSectionEmphasis,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        SettingsDisclosureSection(
-            title: title,
-            trailingValue: trailingValue,
+    private var gettingStartedSection: some View {
+        GettingStartedSupportContent(
             language: interfaceLanguage,
-            emphasis: emphasis,
-            hasStandaloneSurface: section == .gettingStarted,
-            isExpanded: expansionBinding(for: section),
-            content: content
+            onShowAbout: { usageGuideDestination = .story },
+            onShowWelcome: { usageGuideDestination = .welcome },
+            onShowWorkflow: { usageGuideDestination = .workflow },
+            onShowExpressionGuide: { usageGuideDestination = .expression }
+        )
+        .padding(.vertical, 12)
+        .groupedSurface()
+    }
+
+    private var usageGuidePage: some View {
+        settingsDetailPage(title: localized("settings.structure.usage.title", fallback: "使用指南")) {
+            gettingStartedSection
+        }
+        .navigationDestination(item: $usageGuideDestination) { destination in
+            switch destination {
+            case .expression:
+                expressionGuidePage
+            case .story:
+                aboutMemoMarkPage
+            case .welcome:
+                welcomeInformationPage
+            case .workflow:
+                workflowGuidePage
+            }
+        }
+    }
+
+    private var workflowGuidePage: some View {
+        WorkflowGuideSurface(
+            steps: WelcomePresentation.workflowSteps(for: interfaceLanguage),
+            language: interfaceLanguage,
+            onClose: nil,
+            embedsNavigationStack: false
         )
     }
 
-    private func expansionBinding(
-        for section: SettingsSection
-    ) -> Binding<Bool> {
-        switch section {
-        case .gettingStarted:
-            $isGettingStartedExpanded
-        case .photoProcessing:
-            $isPhotoProcessingExpanded
-        case .dataSafety:
-            $isDataSafetyExpanded
-        case .feedback:
-            $isFeedbackExpanded
-        case .community:
-            $isCommunityExpanded
-        case .interfacePreferences:
-            $isInterfacePreferencesExpanded
-        case .about:
-            $isAboutExpanded
+    private var welcomeInformationPage: some View {
+        WelcomePageSurface(
+            presentation: WelcomePresentation.localized(for: interfaceLanguage),
+            language: interfaceLanguage,
+            onStart: { usageGuideDestination = nil },
+            onShowWorkflow: { showsWelcomeWorkflowGuide = true },
+            embedsNavigationStack: false
+        )
+        .navigationDestination(isPresented: $showsWelcomeWorkflowGuide) {
+            workflowGuidePage
         }
     }
 
-    private var gettingStartedSection: some View {
-        settingsDisclosureSection(
-            section: .gettingStarted,
-            title: localized(
-                "settings.getting_started.title",
-                fallback: "开始使用"
-            ),
-            emphasis: .primary
-        ) {
-            GettingStartedSupportContent(
-                language: interfaceLanguage,
-                onShowAbout: { showsAboutMemoMark = true },
-                onShowWelcome: { showsWelcomeInformation = true },
-                onShowWorkflow: { showsWorkflowGuide = true },
-                onShowExpressionGuide: { showsExpressionGuide = true }
-            )
+    private var photoDataPage: some View {
+        settingsDetailPage(title: localized("settings.structure.photo_data.title", fallback: "照片与数据")) {
+            SettingsSectionSurface(title: localized("settings.photo_processing.title", fallback: "照片处理")) {
+                PhotoProcessingSupportContent(
+                    language: interfaceLanguage,
+                    batchLimit: commerceSnapshot.batchLimit
+                )
+            }
+            SettingsSectionSurface(title: localized("settings.data_safety.title", fallback: "数据安全")) {
+                DataSafetySupportContent(language: interfaceLanguage)
+            }
         }
+    }
+
+    private var feedbackPage: some View {
+        settingsDetailPage(title: localized("settings.structure.feedback.title", fallback: "问题与建议")) {
+            FeedbackSupportContent(
+                language: interfaceLanguage,
+                isTestFlightExperienceActive: isTestFlightExperienceActive,
+                isPreparingDiagnosticExport: isPreparingDiagnosticExport,
+                onPrepareDiagnosticExport: prepareDiagnosticExport,
+                onOpenMailFeedback: openMailFeedback
+            )
+            .padding(.vertical, 12)
+            .groupedSurface()
+        }
+    }
+
+    private func settingsDetailPage<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        ScrollView {
+            VStack(spacing: ConfigurationSectionCardMetrics.sectionSpacing, content: content)
+                .padding(.top, 16)
+                .padding(.bottom, 34)
+                .adaptiveScrollContent(horizontalPadding: ConfigurationUI.contentColumnPadding)
+        }
+        .background(ConfigurationUI.appBackground.ignoresSafeArea())
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var aboutMemoMarkPage: some View {
@@ -578,6 +620,7 @@ struct SettingsPageSurface: View {
                     language: interfaceLanguage,
                     onOpenTimeExpression: {
                         showsExpressionGuide = false
+                        usageGuideDestination = nil
                         Task { @MainActor in
                             await Task.yield()
                             onOpenTimeExpression()
@@ -605,56 +648,15 @@ struct SettingsPageSurface: View {
     }
 
     private var aboutSection: some View {
-        settingsDisclosureSection(
-            section: .about,
-            title: localized(
-                "settings.about.title",
-                fallback: "关于"
-            ),
-            trailingValue: compactVersion,
-            emphasis: .system
-        ) {
+        SettingsSectionSurface(title: localized("settings.structure.about.title", fallback: "版本与关于")) {
             AboutSettingsContent(
                 language: interfaceLanguage,
                 compactVersion: compactVersion,
-                onShowReleaseNotes: { showsReleaseNotes = true }
+                onShowReleaseNotes: { showsReleaseNotes = true },
+                onCheckForUpdates: { openAppStore(.updates) },
+                onShowStory: { showsAboutMemoMark = true }
             )
-        }
-    }
-
-    private var photoProcessingSection: some View {
-        settingsDisclosureSection(
-            section: .photoProcessing,
-            title: localized(
-                "settings.photo_processing.title",
-                fallback: "照片处理"
-            ),
-            emphasis: .primary
-        ) {
-            PhotoProcessingSupportContent(
-                language: interfaceLanguage,
-                batchLimit: commerceSnapshot.batchLimit
-            )
-        }
-    }
-
-    private var feedbackSection: some View {
-        settingsDisclosureSection(
-            section: .feedback,
-            title: localized(
-                "settings.feedback.section_title",
-                fallback: "反馈"
-            ),
-            emphasis: .secondary
-        ) {
-            FeedbackSupportContent(
-                language: interfaceLanguage,
-                isTestFlightExperienceActive: isTestFlightExperienceActive,
-                isPreparingDiagnosticExport: isPreparingDiagnosticExport,
-                onPrepareDiagnosticExport: prepareDiagnosticExport,
-                onOpenMailFeedback: openMailFeedback,
-                onOpenGitHubIssues: openGitHubIssues
-            )
+            .padding(.bottom, 12)
         }
     }
 
@@ -692,32 +694,6 @@ struct SettingsPageSurface: View {
         }
     }
 
-    private var communitySection: some View {
-        settingsDisclosureSection(
-            section: .community,
-            title: localized(
-                "settings.community.section_title",
-                fallback: "社区"
-            ),
-            emphasis: .secondary
-        ) {
-            CommunitySupportContent(language: interfaceLanguage)
-        }
-    }
-
-    private var dataSafetySection: some View {
-        settingsDisclosureSection(
-            section: .dataSafety,
-            title: localized(
-                "settings.data_safety.title",
-                fallback: "数据安全"
-            ),
-            emphasis: .secondary
-        ) {
-            DataSafetySupportContent(language: interfaceLanguage)
-        }
-    }
-
     private var compactVersion: String {
         formatted(
             "settings.version.compact_format",
@@ -752,17 +728,10 @@ struct SettingsPageSurface: View {
         ) as? String ?? "—"
     }
 
-    private func openGitHubIssues() {
-        guard let url =
-            URL(
-                string:
-                    "https://github.com/serydoo/MemoMark/issues"
-            )
-        else {
-            return
+    private func openAppStore(_ destination: MemoMarkAppStoreDestination) {
+        openURL(destination.url) { accepted in
+            showsAppStoreOpenError = !accepted
         }
-
-        openURL(url)
     }
 
 }

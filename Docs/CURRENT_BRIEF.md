@@ -1,6 +1,21 @@
 # MemoMark Current Brief
 
-Last updated: 2026-10-11
+Last updated: 2026-10-15
+
+## Latest source checkpoint and synchronization rule
+
+The owner authorizes full-source GitHub synchronization of the latest V5
+Adaptive Presentation and Settings optimizations on 2026-10-15. Source version
+remains2.3.7(132); the historical2.3.6 candidate below is not the current source.
+Business/output/Photos/Share/persistence/Commerce ownership remains frozen.
+See `Docs/07_Releases/2026-10-15-v5-source-checkpoint/sync-manifest.md` and
+`Docs/03_Engineering/2026-10-15-v5-adaptive-presentation-checkpoint.md`.
+Every future sync must follow the complete-source and clean-build standard in
+section11 of `Docs/07_Releases/RELEASE_SYNC_STANDARD.md` and
+`Docs/06_Development/Cloud_Build_From_GitHub.md`. This Git authorization does not
+claim a new distribution version, completed physical acceptance or Store release.
+
+## Historical continuity
 
 Owner accepts the current version for their needs and authorizes a scoped source
 consolidation/commit/GitHub push, retaining2.3.6(124). The four-style physical

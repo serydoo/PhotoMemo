@@ -1,11 +1,50 @@
 # MemoMark Current Status
 
+## 2026-10-16 — 修正旧自动同步与本机定时任务
+
+所有者要求按完整源码标准修正旧脚本。旧30分钟任务已暂停/备份，临时bare远端复现默认执行整树提交及误发布本地诊断；改为默认只prepare，明确sync要求绑定完整候选文件哈希/执行权限及真实fullTests、iosArchive、scriptTests回执。精确literal路径暂存、index导出、hook前后tree与远端基线/readback门禁；不reset/clean/force。16项专项集成测试通过，生产App/Tests输入未因此改变。安装器备份/禁用旧标签，给现代prepare任务明确绑定仓库路径，修正特殊字符路径问题。详见Docs/03_Engineering/2026-10-16-complete-source-autosync.md及scripts/README.md；已安装入口在当前授权环境手动prepare通过，HEAD/index字节一致，完整脚本135通过；真实launchd因macOS桌面目录权限被阻断，回执明确stopped且没有Git变更。旧标签已禁用；本轮手动Git同步按完整候选回执完成，不把任务安装等同定时备份成功。
+
+
+## 2026-10-15 — V5 完整源码 GitHub 同步授权与永久标准
+
+所有者明确要求将包含最新优化的全部 MemoMark 可构建源码同步到 GitHub，并授权本轮暂存、提交、推送。范围包括完整 App/Share/Widget 工程、测试、资源/脚本、V5.1～V5.6 与设置优化工程记录，以及经审查的历史研究源码；不再按 Research/Docs 目录整体排除。业务/输出/Photos/Share/持久化/Commerce 职责冻结，源码版本仍2.3.7(132)。
+
+原始日志、结果包、截图/录屏、签名产物及本机 MCP 连接配置继续保留本地；研究用录屏取帧源码另存 Research/Tools，文档新增的本机路径/设备标识改用公开占位符，脱敏前副本保留。永久规则写入 AGENTS.md 与 RELEASE_SYNC_STANDARD.md 第11节；干净仓库与 Xcode Cloud 构建入口见 Docs/06_Development/Cloud_Build_From_GitHub.md。
+
+先前独立66路径候选 full host2156通过/0失败/1既有跳过，signed iOS Release 与 strict codesign 已通过；本轮扩大范围后的独立测试、归档、index 字节比对及远端 readback 按本轮 sync-manifest 和本地同步回执记录。Git 推送不作为在线构建、真机媒体/外观验收、TestFlight 或 App Store 发布完成的证据。
+
+
+
+## 2026-10-13 — V5.3 Configuration stability and V5.4 desktop convergence
+
+- V5.3 wide preview height budget fixes full portrait-photo expansion pushing Card Content actions below the window. Window scene safe viewport owns arrangement/navigation admission; SwiftUI keyboard-avoiding content geometry owns remaining editor height. Stable AnyLayout/TextKit subtree, phone formulas and business responsibility boundaries retained.
+- V5.3 focused69 passed; latest combined host full2141 passed /1 existing skipped /0 failed. iPad13 software-keyboard focus/portrait-landscape-portrait test executed and passed1. QA startup generated default samples; owner screenshot fixture 图图 /birthday2025-05-26 was reapplied through native UI and classic white saved. Native-keyboard test evidence is clearly marked QA samples rather than the owner fixture.
+- V5.4 adds a stateless Mac Configuration region surface, desktop capacity policy and native Mac Overview/Configuration TabView. Summary/progress reuse current projections; existing session, transactions, Inspector, Undo and popovers retain ownership. First focused55 passed; latest full suite includes the Mac task spaces. Native Mac builds passed. Native Mac screenshot probe failed with ScreenCaptureKit -3811; manual visual acceptance remains unverified.
+- V5.5 isolated native API probe typechecks against installed27.2 SDK with27.1 availability. Existing27.0 Simulator rejects iPhone Duo (CoreSimulator403). Official iOS27.1/24A94232 arm64 runtime imported and Duo QA booted. Standalone native SDK probe observes outer/flat/book/tabletop reserved regions and contextual vertical toolbar edge. Pure reserved-region capacity policy and27.1 reader added (22 focused checks passed); MemoMark consumer/nav/focus integration remains pending. Correct native inner-display screenshots are separate from early inactive outer-screen black frames. No completed Duo-native UI claim.
+- Exact current iPhone17ProMax26.5 Simulator: fixed rail and full three-destination rotation recovery each passed in separate runs. Initial AX firstMatch selected the73pt rail ScrollView instead of866pt content; test now uses existing content/nav identifiers with original width/tolerance contracts. Failure evidence retained; physical final acceptance deferred.
+- New Desktop/MemoMark-V5.3-iPad13-图图-2026-10-13 archive separates review PNGs, failed/process records and native keyboard test attachments. Detailed specs are the2026-10-13 V5.3/V5.4/V5.5 documents. No Git commit/push, TestFlight or Store operation.
+
+
+## 2026-10-13 — V5.2 iPad portrait feedback and screenshot fixture
+
+- Wide Configuration now stacks Preview above Editor in portrait and uses two readable panes in landscape. Wide portrait Overview places the existing photo picker at the shared bottom safe edge. Root wide NavigationStack owns native save/more actions; ordinary iPhone branches and business responsibilities retain existing contracts.
+- Separate 13-inch iPad simulator evidence uses 图图 / birthday / 2025-05-26 with first-use hints dismissed. Screenshots and index live in Desktop/MemoMark-V5.2-iPad13-图图-2026-10-13. Existing earlier screenshot archive retained.
+- Host full suite 2,135 passed / 1 skipped / 0 failed before the final toolbar placement correction; final focused checks: 86 passed / 0 failed / 0 skipped. Exact final signed Release and simulator builds succeeded. Earlier paired iPhone two-test landscape regression passed; exact-final retries failed before runner connection (exit74), so latest physical regression remains unverified. No physical iPad/Duo acceptance or Git/Store synchronization claim.
+- Scope and evidence: Docs/03_Engineering/2026-10-13-v5.2-ipad-overview.md. Dirty worktree preserved with an incremental allowlist.
+
 ## 2026-10-12 — 2.3.7 (132) replacement TestFlight candidate and stable Configuration rail
+
+- 19:21 CST: Cloud132 SUCCESS/source d17bf849, Store processing COMPLETE. Four-language native tester notes verified against source;132 attached to original external group and Beta review submitted with auto-notify. Current Waiting for Review; not yet external Testing.131 not republished. No further tests/push; heartbeat continues quietly.
+
+- Scoped22-file d17bf849 pushed to origin/main and remote read back equal;986 Source/Tests files match exported index. Version2.3.7/build132 across12 settings, four-locales1929 keys. Further132 tests stopped per owner instruction.131 withdrawn/read back Ready to Submit; Cloud132 automatically started from d17bf849; latest Running xcodebuild. Existing heartbeat now follows132 Cloud/processing/Beta delivery. Receipt-only changes stay local.
 
 - Owner accepts Configuration landscape preview above fixed primary navigation, save/more below; paired two-pose regression passes all three destinations, preview round trip and more menu. Scene-based inset refresh closes opposite-pose stale geometry. No configuration/media/rendering/lifecycle ownership change.
 - Owner explicitly authorizes withdrawing131 Beta review, build132, scoped GitHub/Cloud/TestFlight replacement. Existing131 heartbeat paused; existing external group/access retained. Full132 evidence and delivery receipts: Docs/07_Releases/2026-10-12-2.3.7-132-sync-manifest.md. Latest owner instruction waives further testing and requests immediate source organization/GitHub sync; interrupted132 test is not a pass. No App Store submission.
 
 ## 2026-10-12 — 2.3.7 (131) Cloud upload repair and TestFlight preparation
+
+- Delivery receipt: scoped a553ff8f pushed and remote read back;986 Source/Tests files match tested export. Full host suite2,124 passed/1skip/0fail, signed archive2.3.7(131) verified. Cloud131 SUCCESS and Store processing COMPLETE. Four-language native tester notes read back;131 attached to existing287-person external group and Beta review submitted with auto-notify. Current status Waiting for Review, external availability not yet confirmed; heartbeat memomark-2-3-7-testflight follows approval quietly. No App Store submission or extra receipt-only Git push.
+- Physical131 normal launch/Home header-menu check and dedicated notes-label navigation passed. Broad Settings welcome/row-center probes failed; existing blank-area hit-region finding remains tracked. No claim of full Settings, multi-preset/history gesture, older-system/media/accessibility or production-certification acceptance. Final app normal launch restored. Detailed local receipt is in the sync manifest.
 
 - Owner authorizes scoped GitHub synchronization and TestFlight delivery. Cloud128/129/130 failed at App Store Connect preparation with90186/90062: approved2.3.6 train closed, marketing version must increase. Archive/export succeeded. Synchronize all targets to2.3.7(131); no signing or media ownership change required.
 - Consolidate accepted Home/Progress landscape refinements and prior main checkpoints, enrich five-section Settings notes in four languages, and add native Cloud WhatToTest files plus four release materials. Exclude older local chronicle/research/outreach/private artifacts.
@@ -60,6 +99,45 @@ User accepts the current version for their needs and authorizes local consolidat
 - 原生展开截图已确认历史「任务失败」与新任务「39% · 已完成1/5张 · 正在保存到Apple Photos」同屏；AX同步证实生成→保存阶段。处理中进度可见，完成文案仍未独立确认。重复额外输出定位至静态HEIC源（3214×5712，输出3214×6246）；整轮static1 XCTest仍FAIL，原始配置已恢复。build19最终签名Release重建/严格签名/覆盖安装成功，仅移除共享扩展DEBUG中被生产JPEG分支遮蔽的旧实验调用、QA超额输出立即失败；不改变已验收Release处理行为。
 - 保留 mixed dirty 工作树与原件；用户最新授权仅在每轮证据保存后删除指定QA Outputs测试图，输入及非测试照片不删除。无 staging/commit/push、外部发布或照片上传。
 
+
+## 2026-10-11 Share foreground handoff regression repair
+
+- The ordinary Release Share route now always hands the durably persisted
+  request to MemoMark's foreground app, where `ShareCoordinator` resolves the
+  canonical configuration, admits processing, and publishes Home progress.
+  BGProcessing remains a recovery request. Extension-owned Continued
+  Processing was the regression: it completed Share without opening the host
+  app, and its worker had already failed admission on the missing canonical
+  configuration snapshot. Implementation details and scope are recorded in
+  `Docs/03_Engineering/2026-10-11-share-foreground-handoff-regression.md`;
+  `Docs/03_Engineering/2026-10-10-release-share-continued-processing.md` now
+  records the route correction.
+- Focused Share/background contracts passed 3/3; formal Xcode 27.0 generic
+  Release build, strict signing check, paired iPhone 17 Pro Max install, and
+  ordinary app launch passed. The physical Release UI runner exited with code
+  74 before connecting, so it did not run a Photos Share. Automatic foreground
+  handoff and visible progress still require real-Photos device acceptance.
+- No app container or QA album was cleared, no original photo was modified,
+  and no purchase or external release action occurred.
+
+## 2026-10-11 主 App 已购买但 Share 额度拒绝修复
+
+- 设备主 App/shared snapshot 已是 sandbox 永久权益。Extension 曾仅按 appex 内旧式 receipt 判断 distribution，回退 production 后拒绝 sandbox 快照。enclosing App receipt lookup 单独修复仍在真机被免费额度挡住；最终以 StoreKit 2 verified AppTransaction 统一 confirmation、persist admission 和 Continued worker 的环境，不以 snapshot 环境绕过 strict isolation。确认前禁用按钮；离开后取消旧读取任务。
+- 新 regression red→green；最终 full 2,100 passed / 1 existing skipped / 0 failed，signed Release build/strict codesign/覆盖安装/正常启动通过。真机 Release 单 JPEG Share gate 1 passed：新 Photos 输出可解码、拍摄时间保留、原片哈希未变，提交后 host 不前台。Warm background 场景，其他样式/媒体/权限/生产环境矩阵仍开放。
+- 修复包已安装为 2.3.6 (124)，测试后主 App 正常打开，sandbox founderLifetime / isPlus true 保留；没有额度重置、购买、GitHub 或商店 mutation。记录：Docs/03_Engineering/2026-10-11-commerce-extension-environment-repair.md。编辑器旋转/IME/undo 仍按先前审查开放。
+
+## 2026-10-11 发布前逐项修复与未关闭真机验收
+
+- 所有者授权定位并修复审查项。四样式 canonical share transport 与严格 production admission 分离；保存恢复对账统一 processing/save identity，仅归并 durable receipts 证明的旧 task 别名；完成通知按 session 隔离；preadmission/terminal failure 及未知 pending 状态提供真实的恢复通知。成功静音策略统一。OS pending registration 可延续过期 reservation，失权 callback 不得处理，heartbeat 失权取消；Debug CPU export experiment 改为显式 opt-in。
+- 稳定编辑器和主导航容器以减少旋转身份替换；真机第一/第二次回归仍丢失 keyboard focus，不能宣称闭环。第三次诊断因布局分组折叠未进入编辑器，新 harness 已修复进入条件，旋转原生身份/IME/undo 继续待验。
+- 完整 macOS 回归 2,098 passed / 1 existing skipped / 0 failed；其后的未知 pending focused 3 definitions / 9 executions / 0 failed。四语言 1,896 keys 完全一致、无重复、strings lint 通过。正式 signed iOS Release 已构建用于真机；版本仍 2.3.6 (124)，不等价于 Store 原 build。
+- Release 单张 JPEG Photos 验收在提交前被现有免费额度阻挡，所有者自行准备既有沙盒权益；准备期间暂停设备自动化，未重置额度或真实购买。UI/Photos/权限/系统排队与资源压力、生产认证仍开放。保护基线与逐项证据见 Docs/03_Engineering/2026-10-11-pre-release-remediation.md。无 commit/push/商店提交，起始 mixed dirty 工作保留。
+
+## 2026-10-11 当前工作树发布前审查
+
+- 审查 `008e3d6e` 之上的当前本地修改，未改变生产源码/Tests 或执行外部发布。确定问题：经典白/Minimal Share 未发布完整 canonical snapshot、processing identity 保存记账与 task UUID 恢复对账不一致、无关 held intake 阻断新 session 成功提醒、Continued Processing admission/terminal failure 本地通知漏口；旧 host/fallback 成功仍有声音。详细范围、代码位置、风险等级和修复顺序见 `Docs/03_Engineering/2026-10-11-pre-release-audit.md`。
+- 正式 Xcode 27.0 unsigned iOS Release 构建 PASS；临时当前源码镜像的完整 macOS suite 顶层 2,090 passed / 1 skipped / 0 failed，参数执行 2,153 passed，2 条既有 fixture QoS warnings。新增临时审查断言另行失败：经典白/Minimal publication 两个执行、免费计数 1→2、无关旧 suspended intake 导致 completion message nil。完整回归 PASS 不关闭这些新缺陷。
+- 四语各 1,895 个资源键一致；Release extension 无 probe markers；979 Source/Tests 文件在审查结束时与起始 SHA-256 清单一致。仅新增审查记录。旋转 IME/undo 身份、Debug/Release 媒体内存差异、180 秒排队 reservation、当前签名 Release Photos 路径及 stable/older-system 矩阵仍开放；当前候选不建议发布。无新真机安装/Photos 写入、GitHub 同步或商店操作。
 
 ## 2026-10-02 LP-TIME-001 source keyframe timing closure
 
@@ -30031,15 +30109,187 @@ performed by this record.
 在用户授权下，main 工作区接通第四样式、独立四区域模板、统一 preview/artifact、静态导出与既有 Live Photo pipeline 入口、生产及 Share 冻结快照。最终全量回归 1947 通过、1 跳过；模拟器及真机 Debug 构建与签名通过，iPhone 17 Pro Max 已覆盖安装。首次 CLI 启动受锁屏阻止，此后用户确认初步功能测试通过。Release 新样式选择入口暂时关闭；逐项媒体、外观与无障碍验收继续单独记录。详见 `GlassCard-Full-Integration-Delivery-2026-09-30.md`。
 
 
+### 2026-10-01 — GlassCard 下一阶段路线与样式能力契约
+
+后续深入测量：当前 macOS GlassCard Renderer 在均匀白底上主/次文字峰值像素对比 3.250/2.694；中英日韩德法 576 条 fit 测量、192 组跨尺寸比较发现 7 组完整性状态不一致。直接 CTLine 字宽度量证实系统字体随字号的非线性行为；iOS 同类路径的具体表现尚待 UIKit/真机复现。路线先拆出 G2a 同源预览/输出排版，再 G2b 材质定案。研究 probe 3 次有效方法执行通过、无生产改动；详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Appearance-Measurement-2026-10-01.md`。原始 CSV/PNG/日志存于本地 Documents/Codex，不含私人素材；未以研究 probe 代替 Photos/HDR/设备验收。
+
+核对 main `8828dd34` 与独立研究工作区，并读取用户引用的研究对话。确认 GlassCard 固定透明材质已接入生产链路；研究分支部分能力仍为未提交工作区内容，继续逐片吸收。下一阶段按样式能力、固定材质定案、真实 Live Photo 认证、色彩契约、条件式动态材质研究推进，详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Next-Development-Plan-2026-10-01.md`。
+
+本片在 RecordCardPresentationStyle 集中 authorable/processable 能力：Release 新样式选择仍关闭，已注册配置与冻结处理保持兼容，不新增已有配置编辑禁令。macOS Debug 三组聚焦行为测试通过（30 测试、33 参数化执行，0 失败/跳过），iOS Release 无签名构建及 diff 检查通过。额外配置入口源码契约套件因 Desktop 源码读取停顿未完成；未用其证明通过。未运行全量或真机媒体验收，未修改材质/色彩/Photos 路径，未提交/推送/发布。详细日志与证据边界在路线文档中。
+
 ### 2026-09-30 — Minimal / GlassCard 主线源码备份
 
 用户授权将已回流 main 工作区的 Minimal 与 GlassCard 功能基线整理为正式提交并同步 origin/main。提交范围限于功能源码、测试、集成文档及相关状态记录；推广、发布文案、其他研究与 config 未纳入本次提交。沿用此前全量 1947 通过、1 跳过、0 失败及构建证据；用户确认初步功能正常。本轮仅整理提交与同步，没有更改渲染行为或进行 App Store 发布。远端结果另行核对记录。
 
-### 2026-10-02 — GlassCard native material integration
+### 2026-10-01 — GlassCard G2a 预览排版尺寸修复
 
-Native regular dark SwiftUI material now feeds shared output-size preview and still/motion artifacts on iOS/macOS26+, with old-system fixed-alpha fallback. Layout retains panel/corner/frame ownership; existing exporter, metadata, pairing, audio and Photos services remain in use. Release authoring stays closed; existing configurations remain processable. JPEG Unicode export descriptions fixed separately.
+Engineering Loop，限定 P1 预览保真修复：Configuration Center GlassCard 读取横竖校准照片的实际像素尺寸并采用 encoder-safe 输出几何解析文字，再整体缩放显示；默认横向预览统一照片来源。通用 GlassCardCardRenderer 同步采用 card.metadata 的输出尺寸解析 Overlay。Layout、材质、生产 artifact 和持久化不变。新增照片尺寸检查与 45 字符英文边界案例的 macOS 栅格回归：32 项测试 / 35 次执行通过，零失败/跳过；签名 iPhone 17 Pro Max Debug 构建、签名验证与保留数据覆盖安装通过。启动时 CoreDevice 连接中断，设备随后 unavailable，未确认启动。真机外观、VoiceOver、Photos/Live Photo/HDR 验收仍开放；未使用模拟器。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Preview-Parity-G2a-2026-10-01.md`。工作区未提交或推送，保留原有用户修改。
 
-Final Mac regression44 tests/52 parameterized executions passed with no runtime warnings (/tmp/MemoMarkNativeDeliveryRegression.xcresult). Signed iPhone 17 Pro Max build/install/launch passed. Both owner-provided real HEIC+MOV pairs composed at full still size and saved/read back as Live Photos, with matching new identities and one audio track each. Encoded motion2880x3840/3840x2880 follows existing export limits; still4284x5712/4032x3024. Private evidence remains outside Git at /Users/rui/Documents/Codex/2026-10-02/GlassCardNativeRealPairsFull. Manual Photos playback, HDR/P3 and whole-product certification remain open. See Docs/03_Engineering/2026-10-02-glasscard-native-material-delivery.md for scoped decision/review/evidence. No remote push/release implied.
+### 2026-10-01 — GlassCard G2b 固定材质候选筛查
+
+Product Loop，P2 研究：为既有 Overlay 增加带原默认值的内部材质/次文字亮度注入入口，生产默认仍为黑底 alpha 0.42 与次文字 0.78。实际 artifact/compositor 测量 8 组合 × 2 尺寸 × 3 灰阶 × 4 位置，共 192 行；基线复现。0.56/0.96 为本轮采样中较轻的通过 4.5 峰值对比筛查组合，最小实测 5.035；0.62/0.78 为较重对照，最小 4.792。该指标是受控灰阶上界诊断，未认证复杂照片可读性。33 项测试/36 次执行通过，另 1 项校准照片对照 probe 通过；generic iOS unsigned Debug 编译通过。配对 iPhone 17 Pro Max unavailable，未部署此片。横竖本地校准图揭示暗背景加深收益有限，横向 360 宽时文字偏小，需要独立显示尺寸/字体研究。候选未设为正式默认；研究代码保留，临时 probe 已比对移除。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Material-Candidates-G2b-2026-10-01.md`，原始数据/图像在本地 Documents/Codex。未提交或推送，保留原有用户修改。
+
+### 2026-10-01 — GlassCard 同坐标字形/纹理对比与掩膜敏感性
+
+Product Loop，P2 研究，未改生产代码。通过同一 Overlay 的透明字形掩膜，比较文字与无文字合成在相同源坐标的 sRGB 亮度；3 材质 × 2 输出尺寸 × 4 合成纹理 × 4 位置 × 2 掩膜阈值，共 192 行。90% 核心阈值下，0.56/0.96 最小 4.605、0/32 组低于 4.5；0.62/0.78 最小 4.383、12/32 组低于 4.5，故收窄前轮“通过峰值筛查”判断。75% 阈值下优先候选最小 3.740；部分覆盖抗锯齿像素不能机械套用全文字接受门槛。小输出次要行仅有十几个高覆盖像素，需独立显示缩放/字号研究。两个 macOS probe 各实际执行 1 项通过；原始 CSV、摘要和 crops 已本地保存，临时测试副本比对移除。未取得 UIKit/真机、复杂照片、Photos/Live Photo/HDR 证据，候选未设为默认。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Texture-Contrast-G2b-2026-10-01.md`。
+
+### 2026-10-01 — GlassCard 真输出缩放与显示几何测量
+
+Product Loop，P2，仅新增研究工具。按 1080/1920 源画布完成既有 Overlay/artifact 渲染后，以明确的 CoreGraphics high 插值缩放；4 比例 × H/短中文 × 320/360/600 显示宽 × 1x/3x × 4 位置，192 行。360 显示宽下，3:4 主/次字体约 8.649/6.571，16:9 仅 4.865/3.696；1x 八组文字中无 90% alpha 采样的组数分别为 2 与 6，3x 均有采样但逻辑尺寸不增大。高质量采样出现 alpha 过冲，归一值最高约 1.0417，故不能把此指标当精确字形覆盖率。已形成保留几何与扩大横向承载的有边界研究选项，未改 Layout/默认字体/配方。macOS probe 实际执行 1 项通过，build 完成；临时副本比对移除。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Output-Downsampling-2026-10-01.md`；未取得 UIKit/真机/Photos 采样行为证据，未提交或推送。
+
+### 2026-10-01 — GlassCard 横向尺寸候选与内容完整性取舍
+
+Product Loop，P2，默认行为保持的内部 Layout 实验入口：面板高度倍率默认 1，生产调用未改变。2 比例 × 4 倍率 × 中英日韩 × 3 长度 × 4 位置，共 384 fit 行；徽标/分隔线/列空间检查通过。16:9 从 1.0 增至 1.2/1.4/1.778 后，面板 capsule 覆盖约 12.53%→14.99%/17.43%/22.00%，新增溢出位置 4/8/13，未改善原溢出案例。因此拒绝将机械整体增高作为新默认；后续实验需保留水平空间与兼容的字体下限，单独比较垂直承载。横向校准照片四档输出对照已生成。34 项测试/37 次执行通过，generic iOS unsigned Debug build 通过；配对 iPhone 17 Pro Max unavailable，未部署、未真机验收。研究临时副本比对移除。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Landscape-Sizing-2026-10-01.md`。未提交或推送，保留原用户修改。
+
+### 2026-10-01 — GlassCard 保留水平空间的垂直承载研究
+
+Product Loop，P2，仅研究代码。以原 Layout 水平行框、留白、徽标大小和水平位置为基准，增加垂直行框/面板、提高首选字号，并保持绝对最低字号；Renderer 消费明确 resolved 输入。与机械放大在 768 个配对 fit 记录中比较：4:3 溢出固定 30/48、16:9 固定 22/48，候选均未新增溢出；倍率 1 的 geometry/fit 与基线相等，文字未改写。16:9 增高候选有 18 个原可显示位置字号增加超过 0.02 显示单位，但既有溢出未改善、照片 capsule 覆盖仍增加。保留 1.2/1.4 作为后续研究，未接受生产倍率或新的 minimumScale 政策。macOS probe 实际执行 1 项通过、build 完成，分析器的兼容与最低字号断言通过；校准照片对照本地保存，临时副本比对移除。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Vertical-Capacity-2026-10-01.md`。未取得真机/Photos 认证，未提交或推送。
+
+### 2026-10-01 — GlassCard 垂直候选的真输出缩放/亮纹理验证
+
+Product Loop，P2，仅研究文件。固定材质候选 0.56/0.96，比较保留水平空间的 1/1.2/1.4 布局，源输出先合成后按明确 CG high 插值缩放：2 比例 × 2 字形 × 3 显示宽 × 2 密度 × 2 背景 × 4 位置，共 576 行。360 宽下 16:9 的 3x 平均归一 alpha 总量为 33.144/45.823/60.796，支持更大字体保留更多整体笔画；1x 的 90% 阈值计数不单调，不能单独作为阅读标准。3x 各档均有核心采样，但 1.2/1.4 各 2/16 组最低对比略低于 4.5（4.470/4.485），局部 p10 更高，未认证材质。保留中等/较大垂直候选，下一步独立研究有边界的 ROI 背景细节抑制，未采用生产倍率。两个 macOS probe 各执行 1 项通过、build 完成，CSV/缺失指标校验通过；临时副本比对移除。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Vertical-Display-Validation-2026-10-01.md`；未取得 UIKit/真机/Photos/Live Photo 证据，未提交或推送。
+
+### 2026-10-01 — GlassCard 有边界 ROI 模糊与像素保护研究
+
+Product Loop，P2，仅研究代码。固定 16:9/1.4 兼容排版及 0.56/0.96 材质，5 合成源 × 4 Gaussian 半径 × 4 位置，共 80 行；以带 ceil(4r+2) halo 的 sRGB crop 处理，圆角 panel mask 限定回写到新研究图。半径 4.914 下亮棋盘水平亮度差降至原 3.22%、核心最低对比 4.647→5.733；白底完全不改善，梯度基本保持。所有 mask 零覆盖源像素逐字节不变，halo/full-input 参考在面板范围差异为零；本地校准照片经显式 encoder-safe sRGB 归一后也通过边界/halo 对照。裸 crop 1.729–2.161 MiB，不是峰值/性能或 BP-001 证据。两个 macOS probe 各实际执行 1 项通过、build 完成；临时副本比对移除。保留最小候选进一步研究，生产 artifact 仍固定透明 Overlay，未接源响应材质或 Live Photo。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-ROI-Blur-2026-10-01.md`，输出证据本地保存。未提交或推送。
+
+
+### 2026-10-01 — GlassCard 确定性 SDR 亮度压缩与暗部保留
+
+Product Loop，P2，仅研究文件。保持 compatible1.4 布局、panelH×0.025 ROI blur、白字0.96，比较固定黑底0.56与线性sRGB软膝Yout=c×tanh(Y/c)、RGB同比缩放；9源×4候选×4位置共144行。c=0.12最低核心对比5.037（红色控制）、白底5.195；固定对照最低4.647。暗灰32背景平均Y约固定对照3.59倍，底栏外mask零覆盖像素保持相等；代价是中高亮度向平台压缩、亮部层次明显降低。c=0.10/0.12保留研究，0.14最低4.596余量较小，不优先。4096 RGB控制经8位量化最大归一线性色度分量误差0.007319，非感知色相/P3/HDR认证；本地校准照片对照支持较轻视觉重量。2项主probe及1项校准probe实际执行通过，app/test build完成，CSV分析/差异检查通过，临时测试副本比对移除。生产默认/媒体路径未改变；没有新真机、Photos或Live Photo验收。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Luminance-Compression-2026-10-01.md`。未提交或推送，保留原用户修改。
+
+
+### 2026-10-01 — GlassCard 静态 SDR 研究源准入边界
+
+Engineering Loop，P2，仅研究adapter准入代码/测试。实际静态源优先ImageIO方向transform，iOS fallback getter自身直接UIImage.cgImage；现有compositor使用8bit DeviceRGB及aspect-fill，均不足以替代源响应材质的显式源/输出坐标契约。新增只接受已声明up、与画布同尺寸、显式sRGB、8bit/32bit/premultipliedLast且实际alpha全255的研究准入；P3、gray、float、透明、非up/镜像、尺寸和非有限画布返回具体拒绝原因。合法源保持CGImage identity。2项macOS测试实际通过，app/test build完成、差异检查通过；临时副本比对移除。此门不能鉴别原文件HDR/gain-map，也不能证明调用者up声明真实，后续需源准备记录及非对称方向图验证。生产未改，未取得新真机/Photos认证，未提交或推送。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Source-Admission-2026-10-01.md`。
+
+
+### 2026-10-01 — GlassCard ImageIO方向归一、画布映射与SDR研究链路连通
+
+Engineering Loop，P2，生产源码未改。共享研究源准备采用ImageIO EXIF transform，报告encoded/normalized/canvas/drawRect；exact拒绝尺寸不符，centeredAspectFill显式记录裁切。不透明TIFF省略alpha导致初轮2项失败；准备阶段显式标准化RGBA后再严格准入，透明拒绝保留。八方向独立四色角预期全部通过，60×40中心红带填充40×40 drawRect=(-10,0,60,40)符合预期。4项macOS准备/准入回归通过，另1项端到端研究probe通过：EXIF6 384×216→216×384→ROI blur→c=0.12→Overlay/artifact。检查源处理mask外保护、halo及最终尺寸，报告/图/方向CSV本地保存并查看。最终仍使用DeviceRGB，不能认证显式sRGB输出；controlled SDR fixture标签不能替代真实HDR鉴别。app/test build完成，临时4文件比对移除、差异检查通过。无真机/Photos/Live Photo或性能认证，未提交/推送。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Source-Preparation-2026-10-01.md`。
+
+
+### 2026-10-01 — GlassCard 显式sRGB研究最终合成与输出回读
+
+Engineering Loop，P2，研究compositor消费同画布已准入源及artifact，输出8bit sRGB、保留zIndex/opacity，不重复aspect-fill或改变Layout。1080×608、8受控源×4位置共32行，现有DeviceRGB与显式sRGB输出经共同sRGB读取后最大字节差/核心对比差均0；输出空间标签分别DeviceRGB/sRGB，PNG回读sRGB且字节差0，Overlay范围上方源像素差0。c=0.12本尺寸最低核心5.001（红）、最低P10 5.592（绿），非照片/WCAG认证。独立blend/opacity/zIndex/geometry控制通过。1项矩阵probe+2项独立控制实际通过，app/test build完成；分析器/差异检查通过，临时4测试文件比对移除。保留显式sRGB研究基线，生产不改；下一片实际writer/metadata/编码回读。无新真机/Photos/HDR/Live Photo性能证据，未提交/推送。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Final-Compositing-2026-10-01.md`。
+
+
+### 2026-10-01 — GlassCard 实际writer PNG/JPEG/HEIC回读与EXIF色彩继承控制
+
+Engineering Loop，P2，生产不改。同一640×360受控sRGB研究输出经实际MetadataPreservingImageWriter编码ink/backing，3格式×4slot共12行；PNG无损，JPEG/HEIC最大归一RGBA字节差10/8，最低核心对比5.008/5.055，PNG5.242。三格式回读sRGB profile/空间、方向1、尺寸及所列拍摄时间/GPS/曝光/描述；加入时间/GPS/profile断言后通过。6行彩色色彩标签控制确认PNG/JPEG EXIF ColorSpace输出1、HEIC继承来源1/65535，而profile/解码空间均sRGB；没有据此把标签差异判定为像素错色，也没有改全局writer。初轮1项、最终2项macOSprobe实际通过，app/test build完成、分析器/差异检查通过，临时3文件比对移除。输出本地保存，无私人输入或网络，无真机/Photos/HDR/Live Photo或性能认证，未提交/推送。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Writer-Readback-2026-10-01.md`。
+
+
+### 2026-10-01 — GlassCard 共享SDR研究适配器与提取前证据一致性
+
+Engineering Loop，P2，研究实现收敛，无生产变更。提取统一material像素/ROI/soft knee实现，不导入Testing；adapter消费Prepared及resolved plan，圆角从Layout显式传入，输出sRGB并保存研究报告/裸halo控制。luminance probe以薄包装替代6段算法。最终2项macOSprobe实际通过：32行CSV及亮棋盘PNG与前轮证据逐字节相同，adapter与手工组合像素相同；NaN/画布/长文本溢出拒绝，研究输出属性策略仅对sRGB写EXIF color1，实际HEIC回读sRGB/color1及所列时间/GPS保持，P3策略拒绝。app/test build完成、分析器/差异检查通过，临时5文件比对移除；输出本地保存。adapter仍保留全帧参考、中间栅格及MainActor同步处理，非生产性能/内存设计，未加入生产目标，无真机/Photos/HDR/Live Photo认证，未提交/推送。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Shared-Adapter-2026-10-01.md`。
+
+
+### 2026-10-01 — GlassCard 编码回读缩放与JPEG完整栅格控制
+
+Engineering Loop，P2，共享adapter生成1920×1080、compatible1.4、c0.12受控输出，H/短中文、360/600宽、1x/3x、native/PNG/JPEG/HEIC及JPEG0.9/1.0/完整栅格控制共224行。360宽3x最低核心约5.10–5.15，0/8缺核心；逻辑主/次字号仍6.811/5.174，1x有5/8缺核心并记NA。JPEG直接ImageIO图在600宽1x最低4.096且6/8组低于4.5，提高quality未消除；复用同一JPEG先完整1920×1080 sRGB栅格化后最低恢复5.101，3x两路径相同。定位到绘制/采样路径组合而非认证内部原因，拒绝据此加深材质或改默认JPEG质量。最初128行与最终记录完全相等，最终1项macOSprobe实际通过、app/test build/分析器/diff检查完成，临时5文件比对移除。xcresult有1条QoS priority inversion runtime警告，具体调用未定位；研究MainActor同步路径不构成线程/性能认证。生产未变，无新真机/Photos/HDR/Live Photo证据，未提交/推送。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Encoded-Display-2026-10-01.md`。
+
+
+### 2026-10-01 — GlassCard 研究源准备/像素阶段离开MainActor与取消门
+
+Engineering Loop，P2，仅研究。明确nonisolated source/material和Sendable结果，@concurrent prepare/process，不使用detached任务；adapter async入口与同步入口共用验证/UI draw，阶段切换及返回前检查取消，亮度循环逐行检查。最终2项macOSprobe实际通过，源/像素均实测非主线程，异步/同步图与processedSource逐字节相同，预取消源/adapter任务均抛CancellationError；既有HEIC color1/time/GPS及边界回归通过，PNG与前片原件逐字节相等。app/test build/diff通过，临时6文件比对移除，记录本地保存。此小范围runtimeWarnings为空不证明前片完整采样QoS警告已解决；同步CI/ImageIO取消时延、处理中取消/发布竞争、大图内存未认证。最终composition/实际writer仍原边界，生产actor/默认未改，无新真机/Photos/HDR/Live Photo证据，未提交/推送。详见 `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Async-Stages-2026-10-01.md`。
+
+### 2026-10-01 — GlassCard SDR research final-composition isolation
+
+Engineering Loop, research-only P2: immutable Sendable layer snapshot separates MainActor ImageRenderer/PresentationArtifact extraction from concurrent explicit-sRGB CoreGraphics composition. Async adapter now awaits source processing and final composition separately with cancellation checks. Production artifact, writer, material defaults and media routes remain unchanged. macOS focused build/tests: asyncStages + sharedAdapter, 2 passed (`/tmp/MemoMarkGlassCompositionIsolation.xcresult`); worker off-main execution and exact sync/async RGBA equality verified, pre-cancelled composition rejected. Mid-operation latency, real Photos/device behavior and metadata/writer isolation remain unverified. See `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Composition-Isolation-2026-10-01.md`.
+
+### 2026-10-01 — GlassCard SDR research metadata transport snapshot
+
+Engineering Loop, research-only P2. Added immutable Sendable binary-property-list metadata snapshot with unsupported-value rejection and fresh consumer-side decoding. macOS build plus 3 focused tests passed (`/tmp/MemoMarkGlassMetadataSnapshot.xcresult`): capture string/GPS/Date/Data/mixed array retention, isolation from subsequent mutable-container changes, empty input, nested URL rejection and off-main decode. No production writer/media behavior change. Actual writer isolation scan identifies MainActor target default and cleanup/JPEG patcher dependencies; encoding transfer remains a separate bounded implementation. Concurrent input mutation, arbitrary metadata types, encoded-file retention and memory/latency budgets remain unverified. Scoped record: `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Metadata-Snapshot-2026-10-01.md`.
+
+### 2026-10-01 — Actual still-image writer isolation and Unicode readback finding
+
+Engineering Loop, bounded P1 behavior-preserving isolation: stateless MetadataPreservingImageWriter, JPEGExifUserCommentPatcher and ImageIOStillImageMetadataCleanup explicitly nonisolated. Existing production calls remain synchronous; research encoding worker locally creates the same writer with Sendable image/metadata snapshot input. macOS 10 tests passed, 1 pre-existing disabled manual ImageIO case, no runtime warnings (`/tmp/MemoMarkGlassWriterIsolationControls.xcresult`); generic iOS MemoMarkiOS Debug build passed with signing disabled. Verified real PNG/JPEG/HEIC worker off-main execution, dimensions/up orientation/sRGB, capture string/exposure/GPS/modification date, pairing cleanup and pre-cancelled no-file behavior.
+
+New controlled limitation: EXIF UserComment `相伴365天` reads `相伴3` plus four NULs in PNG/HEIC, complete in JPEG. Sync controls reproduce identical values; this is not an isolation regression and must not be represented as full Unicode preservation. Separate P1 reproduction/fix remains open. No throughput, late-cancellation, device/Photos or whole-media certification. Retained records in `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Writer-Isolation-2026-10-01.md`; attachments `$HOME/Documents/Codex/2026-10-01/GlassCardSDRWriterIsolation/`. Temporary research copies removed after byte comparison; no commit/push.
+
+### 2026-10-01 — Unicode output-description matrix and rejected partial JPEG fix
+
+Engineering Loop P1 research: 54 controlled cases (6 texts × PNG/JPEG/HEIC × production writer/direct String/direct Unicode Data). Writer EXIF full string equality: PNG 1/6, HEIC 1/6, JPEG 5/6; writer TIFF/IPTC 6/6 and PNG description 6/6. Direct String EXIF 1/6 all formats, Data 0/6. Exact equality includes NULs and decomposed accents. Initial matrix test/build passed (`/tmp/MemoMarkGlassUnicodeMatrix.xcresult`); not a preservation certification.
+
+JPEG decomposed accent `Café 365` reads `Cafe? 365`. Candidate non-ASCII scalar trigger still failed; existing patcher capacity guard is another constraint. Experimental production condition reverted; no new production behavior remains. Failed attempt retained (`/tmp/MemoMarkGlassUnicodeFixed.xcresult`: 9 pass, 1 fail, 1 pre-existing disabled). Scope/report `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Unicode-Description-2026-10-01.md`; matrix `$HOME/Documents/Codex/2026-10-01/GlassCardUnicodeDescription/`. Correction remains open; no new device/Photos evidence. Temporary test copies removed.
+
+### 2026-10-01 — JPEG Unicode UserComment capacity correction
+
+Engineering Loop P1 bounded production fix: reserve non-ASCII JPEG UserComment storage at ImageIO encoding, then existing in-place UTF-16BE patch replaces placeholder; explicit Unicode scalar trigger and required success avoid falsely successful reserved text. No EXIF segment relocation or PNG/HEIC policy changes. Prior trigger-only failure superseded by capacity-controlled implementation. Six exact Unicode matrix cases now pass (JPEG 6/6 versus prior 5/6); PNG/HEIC remain 1/6.
+
+Permanent JPEGUnicodeUserCommentRegressionTests verifies six strings (decomposed/precomposed accents, Chinese/digits, emoji, ASCII, long text), capture time/exposure/GPS retention and nonoptional decoded pixels equal same-image control. Final macOS suite `/tmp/MemoMarkJPEGUnicodeFinal.xcresult`: 10 passing test items/15 passing executions, 1 existing disabled manual writer test, no runtime warnings. Generic MemoMarkiOS Debug build passed, signing disabled (`/tmp/MemoMarkJPEGUnicodeIOS.log`). Raw fixed matrix `$HOME/Documents/Codex/2026-10-01/GlassCardUnicodeDescription/unicode-description-capacity-fixed.json`. Scoped record `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Unicode-Description-2026-10-01.md`. No physical/Photos, arbitrary maker-note/EXIF-size certification; PNG/HEIC correction remains open. Temporary research copy removed; diff check clean, no commit/push.
+
+### 2026-10-01 — Native metadata routes fail to resolve Unicode UserComment
+
+Engineering Loop P1 research only: tested CGImageDestinationAddImageAndMetadata with matched-property, explicit string and alternate-text EXIF tags (54 rows). All tag sets accepted; exact UserComment equality remains 1/6 in each format/route both image-property and embedded-metadata readback. No production writer migration. Input-type control: NSNumber exposure0.01 read0; rational string1/100 restores0.01, GPS XMP value22,30N restores22.5, capture string unchanged across final matrix. This is experimental API typing evidence, not production-writer loss.
+
+Initial/final macOS build + one observational test each passed, no runtime warnings; final `/tmp/MemoMarkNativeMetadataControls.xcresult`. Analyzer verifies 54 unique combinations and exposure/GPS/capture controls; attachments `$HOME/Documents/Codex/2026-10-01/GlassCardNativeMetadata/`. Scoped record `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Native-Metadata-2026-10-01.md`. Existing JPEG Unicode fix preserved, PNG/HEIC correction open. No production code change or new device/Photos acceptance. Temporary probe removed, no commit/push.
+
+### 2026-10-01 — PNG/HEIC raw EXIF inspection narrows Unicode loss
+
+Engineering Loop P1 research only. Native writer generated 12 controlled fixtures (six strings × PNG/HEIC). Read-only bounded inspector validates PNG chunk CRC and HEIC item iinf/iloc single-extent file references before TIFF UserComment extraction. PNG CRCs valid; HEIC EXIF within mdat. Stored bytes already contain truncated/zero-filled Chinese payload or ASCII question-mark substitution for combining accent. This is output writing/serialization evidence for controlled fixtures, not just readback display; internal encoder root cause remains unproven.
+
+macOS build + fixture probe passed (`/tmp/MemoMarkContainerFixtures.xcresult`), no runtime warnings. Six Python tests pass for valid fixtures and malformed/truncated/CRC/offset rejection. No production changes, container writes, general parser/fuzzing certification or new Photos/device evidence. Retained source/tests/spec under `Research/ExpressionStyles/MinimalMaterialStudy/`, artifacts `$HOME/Documents/Codex/2026-10-01/GlassCardContainerInspection/`. Earlier JPEG correction intact; PNG/HEIC repair open. Temporary test copy removed after byte comparison; no commit/push.
+
+### 2026-10-01 — PNG/HEIC same-size UserComment repair trial
+
+Engineering Loop P1 research only. Generated 24 controlled ordinary/reserved fixtures; 22 copies patched within existing TIFF storage/count (PNG CRC refreshed), 2 ordinary decomposed-accent samples correctly rejected for capacity. All 12 reserved copies succeeded. Exact byte-difference whitelist and same file length verified; no EXIF movement or HEIC extent changes. Four repair controls and six inspector regressions pass.
+
+Native ImageIO final readback passed (`/tmp/MemoMarkContainerRepairReadbackTmp.xcresult`, 1 focused test/no runtime warnings): all 22 exact Unicode strings, unchanged decoded pixels/color space/dimensions/orientation, capture string/exposure and TIFF/IPTC/PNG dictionaries. GPS not covered. First attempt sampled stuck opening Documents manifest before decode; owned test stopped, copied fixtures to /tmp, rerun passed. No internal platform-cause claim. Artifacts `$HOME/Documents/Codex/2026-10-01/GlassCardContainerRepairTrial/`; scoped record `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Container-Repair-Trial-2026-10-01.md`. No production integration or broader HEIC/Photos certification; Swift ownership/alias/bounds controls remain before adoption. Temporary test copies removed; no commit/push.
+
+### 2026-10-01 — Swift PNG research repair with TIFF ownership checks
+
+Engineering Loop P1 research only. Added Sendable value-based Foundation PNG kernel: CRC/bounds before TIFF traversal; tracks reachable IFD tables/external storage, rejects overlapping/aliased ranges and cyclic references; unsupported MakerNote/SubIFD/thumbnail conventions fail closed. Maintains file length and limits modifications to UserComment storage/count/eXIf CRC. Explicit bounded research limits, no filesystem or production dependency.
+
+Final `/tmp/MemoMarkSwiftPNGRepairWire.xcresult`: 7 passing test items/8 executions, no skips/runtime warnings. Eleven controlled outputs exactly match Python references and ImageIO Unicode/capture/exposure readback; one unreserved PNG capacity rejection confirmed. Endian wire bytes and malformed overlap/alias/cycle/offset/CRC/private metadata cases verified. Source/tests/record in `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Swift-PNG-Repair-2026-10-01.md`. HEIC Swift migration and common TIFF extraction remain next; no production integration, broad PNG validation or Photos/device certification. Temporary copies byte-checked/removed; no commit/push.
+
+### 2026-10-01 — Shared Swift TIFF checks and HEIC research repair
+
+Engineering Loop P1 research: extracted PNG TIFF ownership/Unicode patch to GlassCardTIFFResearchRepair; added bounded HEIC meta/iinf/infe/iloc adapter. No production code changes. Final macOS `/tmp/MemoMarkSwiftHEICSharedFinal.xcresult`: 10 passing items/11 executions, no failures/skips/runtime warnings. Eleven PNG + eleven HEIC outputs exactly match prior Python repairs; capacity failures remain explicit. Native HEIC Unicode/capture/exposure and identical decoded pixels verified; PNG existing adversarial/endian controls intact. HEIC controls reject non-file/external/fragmented references, target extent aliases, out-of-bounds/truncated data, bad TIFF offsets and 64-bit overflow.
+
+Research contract remains restrictive (single unprotected Exif extent, method0/reference0, bounded data/tables); no general HEIF, private metadata, fuzzing, device or Photos certification. Updated GlassCard development plan checkpoint distinguishes production baseline, material research, background stages, JPEG fix, research-only PNG/HEIC repair and remaining manual/media gates. Scoped record `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Swift-HEIC-Repair-2026-10-01.md`. Five temporary target copies byte-checked/removed; no commit/push.
+
+
+### 2026-10-01 — Verified research encoding orchestration and scratch ownership
+
+Engineering Loop P1 research only. Added concurrent PNG/HEIC orchestrator combining frozen metadata, explicit EXIF capacity reservation, actual MetadataPreservingImageWriter, shared Swift container repair and native Unicode/sRGB/dimension readback. Publishes Data only; owns a unique scratch child and requires cleanup before successful return. Stage-boundary cancellation, 4096px/4096 UTF-16/16MiB research limits; filesystem cleanup errors surface with best-effort final retry. No production caller/default/media scheduling changes.
+
+Final `/tmp/MemoMarkVerifiedEncodingFinal.xcresult`: 2 passing cases, 12 output controls, two post-encoding insufficient-capacity controls, pre-cancellation and oversized-canvas rejection; scratch ownership checks pass. Oversized-canvas test reproduced missing rejection before fix. Capture/exposure retained in tested outputs. No Photos/device/HDR/Live Photo certification; six temporary target copies byte-checked/removed. Scoped record `Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Encoding-Orchestration-2026-10-01.md`. No commit/push.
+
+
+### 2026-10-01 — Encoding metadata eligibility and full-size HEIC constraint
+
+Engineering Loop P1 research. Native 64x48 PNG/HEIC control readback retains tested capture date/timezone/lens/exposure, GPS, author/keywords; dictionaries equal native projected control except deliberately replaced UserComment. Actual retained MakerApple key1 triggers unsupported MakerNote; research encoder now reuses production pairing cleanup and rejects remaining private MakerApple before scratch creation. Missing-parent regression reproduced late filesystem failure, then early unsupported rejection passed. Final `/tmp/MemoMarkEncodingEligibilityFinal.xcresult`: 4 passing cases, no failures/skips/runtime warnings; prior Unicode/cancellation/cleanup/canvas checks retained.
+
+Separate resource observation `/tmp/MemoMarkEncodingResourcesObserved.xcresult`: 1 passing observation case; 4 PNG outputs and tiny HEIC verified, 3 larger HEIC outputs explicitly rejected. Native 1024/2048/4096 HEIC contains method1 grid in idat while Exif is method0 in mdat; current all-item method0 guard prevents full-size use. Parser left restrictive. Read-only reference inspector and 3 Python checks added; synthetic artifacts in `$HOME/Documents/Codex/2026-10-01/GlassCardEncodingEligibility/`. Single 12MP banded PNG call ~288ms; cumulative macOS process high-water eventually368.5MiB (includes harness/previous/diagnostic calls), not iPhone budget or stage peak. Eligibility record gives full matrix/limits and next method1 range/alias work. Eight temporary target copies removed after comparison; governance/diff checks pass; no production integration or commit/push.
+
+
+### 2026-10-01 — Bounded HEIC grid/idat repair support
+
+Supersedes the immediately preceding full-size grid limitation for controlled native SDR fixtures. Engineering Loop P1 research: permit unprotected grid method1/reference0/single extent/index0 inside unique local meta/idat, with resolved bounds/alias checks; Exif still method0/single mdat extent. Reject unknown/reserved method bits, external/protected/aliased/malformed references; private MakerNote policy unchanged. Red native/synthetic and reserved-bit regressions reproduced old behavior before fixes.
+
+Final `/tmp/MemoMarkHEICGridBackgroundFinal.xcresult`: 16 passing items/17 executions, 0 failures/skips; three native sizes through4096x3072 retain identical decoded pixels, exact Unicode/capture/exposure, file length and byte whitelist; original PNG/HEIC Python reference/adversarial/endian and encoder/metadata controls pass. Heavy verification moved off UI actor, but one User-initiated waiting on Default QoS warning persists in combined test and remains open. Separate `/tmp/MemoMarkEncodingResourcesGridFinal.xcresult`: 1 passing observation test, 8 verified outputs, no runtime warnings; single12MP PNG309.5ms/HEIC95.8ms, cumulative Mac test process HWM308.2MiB (not per-stage/device budget). Synthetic low-entropy fixtures and no timed forced pixel traversal limit inference. Eleven temporary copies byte-checked/removed. Grid scoped record and plan updated; no production integration, Photos/device/HDR/Live Photo certification or commit/push.
+
+
+### 2026-10-01 — High-entropy boundary evidence and native-first scope correction
+
+Research-only high-entropy PNG/HEIC probe completed:1 passing macOS test,0 runtime warnings; five verified outputs and12MP PNG encoded-size rejection with cleaned scratch. Actual PNG control43,811,884 bytes; cap16MiB acts after native encode, bounds downstream reads/repair only.2048PNG~9.975s and cumulative process HWM364.7MiB show prior banded measurements are insufficient; no isolated/device performance or mid-encoding cancellation claim. Six temporary target copies byte-compared/removed; no production changes.
+
+Owner questions whether native Liquid Glass could replace excessive custom complexity. Source confirms glassEffect on preview controls, fixed-alpha GlassCard surface, and old ultraThinMaterial comparator. Revised research priority in GlassCard-Next-Development-Plan: native regular/clear versus current and one simple custom material on same source/layout, then actual saved-output proof, before further EXIF/HEIC/cancellation infrastructure. Preserve existing media contracts; competitor internals/native export are unverified. Native iOS visual/device acceptance not performed. Existing experiments retained, no commit/push.
+
+### 2026-10-02 — Native Liquid Glass exports on paired iPhone
+
+Product Loop P1 scoped feasibility supersedes native-raster uncertainty. Verified wired iPhone17ProMax/iOS27.2, signed exact-device Debug build/signature, overwrite install preserving data, explicit launch-only native material page and surviving process. ImageRenderer exports8 synthetic1080x1440 PNG controls; regular blur/clear optical edge survive actual saved output; dark regular is provisional white-text candidate. Same secondary opacity0.96 isolates material (production remains0.78). No Photos/preset mutation.
+
+Native changing-source video control:30 freshly rendered frames,30fps,1s H.264 MOV,1080x1440; one phone Debug run including raster copy/encoding/finish0.262431292s. AVFoundation readback verifies duration/size/fps and decodes0/14/15/29; dark-transition frame inspected, material follows source. Not paired Live Photo/audio/timed metadata/Photos/HDR/performance certification. Screenshot service unavailable; device-exported pixels inspected, interactive visual acceptance open. Artifacts `$HOME/Documents/Codex/2026-10-02/GlassCardNativePhone/`; delivery record specifies minimum source-dependent artifact adapter and existing media-contract preservation. Existing fixed-alpha production/default remains unchanged, final native main integration incomplete. Temporary macOS probe byte-checked/removed; diff check passes; no commit/push.
+
+### 2026-10-02 — 原生材质视频色彩契约与真实配对真机证据
+
+Engineering follow-up to the bounded native-first GlassCard slice: a same-source synthetic video regression exposed outside-material red differences. Root cause was an AVVideoCompositing responsibility mismatch: canConformColorOfSourceFrames=true combined with disabled CI color management. Delegating SDR source conformance to AVFoundation, consuming source color attachments and rendering BT709 closed the original failed test without relaxing its tolerance. Temporary diagnostics removed. Mac focused regression: 24/24, no runtime warnings (/tmp/MemoMarkNativeVideoManagedRegression.xcresult); asymmetric rotated motion comparison also passed (/tmp/MemoMarkNativeRotation.xcresult).
+
+Signed iPhone 17 Pro Max build/install/launch passed. Two owner-provided HEIC+MOV pairs were composed on the physical phone through LivePhotoPairCompositionService at 1080 short-edge output, retaining one audio track each, normalized orientation and matching nonempty new still/video identities. Pair elapsed times 0.576s and 0.524s are bounded Debug observations, not production performance certification. Original/copy SHA256 agrees for all four resources. Private outputs remain outside Git at $HOME/Documents/Codex/2026-10-02/GlassCardNativeRealPairs1080. No Photos write/manual acceptance occurred in this first run. Shared preview/planner native material integration, full-size and Photos validation remain in progress; no scoped main commit or release claim yet.
+
+Full-resolution continuation: native shared preview/planner integration is active on supported systems, old-system fallback and Release authoring gate retained. Mac integration+video regression passed36 tests39 parameterized executions (/tmp/MemoMarkNativePlannerFinalFixed.xcresult). Physical full-size pair+Photos save/readback passed for both original pairs: still4284x5712/4032x3024; encoded motion2880x3840/3840x2880, one audio track each;2.361s/2.213s including save. New identities match. Main integration review and final scoped verification recorded in Docs/03_Engineering/2026-10-02-glasscard-native-material-delivery.md. Manual Photos playback, HDR/P3 and broader certification remain open.
 
 Final delivery closure: main4392f3e1 native integration, b447f11a Unicode fix,2855fd84 DEBUG harness; Release macOS build passed (/tmp/MemoMarkGlassCardRelease.log). Final signed iOS Debug overwrite-install/signature verification/normal launch passed. Remote push not performed. Manual Photos playback remains owner acceptance.
 
@@ -30049,19 +30299,62 @@ Final delivery closure: main4392f3e1 native integration, b447f11a Unicode fix,28
 
 116本地/tmp源码镜像聚焦28测试／31执行、全量1961通过／1既有跳过（2002通过执行）；有2条既有导出读回QoS警告。首轮原生预览精确像素对照失败，隔离／同组／全量复测通过，保留原断言并添加PNG诊断，记录观察项。iOS Debug签名构建、签名校验及App／Share／Widget包内版本通过；iPhone17ProMax覆盖安装成功，启动被设备锁屏阻止，人工验收未完成。未冻结研究／私人媒体／config／无关Outreach和旧商店草稿保留本地。远端同步结果执行后追加。
 
-116 iOS Release未签名构建及App／Share／Widget包内版本通过。修改的Source／Tests与全量测试镜像哈希一致。首页修复提交6699986；本次发布整理提交与GitHub远端结果在执行后确认。
+116 iOS Release未签名构建及App／Share／Widget包内版本通过。修改的Source／Tests与全量测试镜像哈希一致。
 
 116 GitHub同步已完成：origin/main由8828dd34推进至f93ddfef84473cdd549fca1a9d52bef1b557a719，ls-remote与本地HEAD一致。首页修复6699986和116版本／四语／四套材料均已入库；仅追加同步结果文档。Source／Tests无残留修改，未冻结研究、私人资产、config和无关文档保留。未执行TestFlight上传或App Store提交；116启动仍因锁屏待验证，Release Evidence Open。
+
+
+## 2026-10-02 — Configuration Center preview disclosure (2.3.5 / 116)
+
+Product-owner screenshot observation led to a bounded Product Loop P2 refinement: the Configuration Center title now has a light text/chevron action to hide or show the whole preview. The temporary choice belongs to root presentation state, survives tab changes, defaults to visible on restart, and is overridden only for card-content editing without changing the stored viewing choice. Hidden layout summaries no longer refer to the preview above. Four-language copy, accessibility exclusion and Reduce Motion-aware animation are included.
+
+Focused macOS host regression: 44 passed / 0 failed / 0 skipped (`/tmp/MemoMarkPreviewDisclosureTestsFixed.xcresult`). Signed physical iPhone 17 Pro Max build, strict signature verification, overwrite install and launch passed for 2.3.5 (116). Manual disclosure/editing touch acceptance, VoiceOver, large Dynamic Type, Reduce Motion and iPad visuals remain unverified; screen-control capture was unavailable. No durable configuration, renderer/export/media behavior, version bump, commit or external release action.
+
+Scoped record: `Docs/03_Engineering/2026-10-02-configuration-preview-disclosure.md`.
+
+Follow-up within this pass: IMG_5944–IMG_5947 confirmed the new action but showed the subtitle touching the preview across all styles. Grouped heading text, protected its intrinsic vertical size, aligned the action to the title and reused the 16pt content-spacing token. AnyLayout retains preview identity across wide split/collapsed layouts. Updated the obsolete helper-name source contract. Expanded final regression: 137 passed / 0 failed / 0 skipped (`/tmp/MemoMarkPreviewDisclosureSpacingTests.xcresult`). Final signed device build, strict signature verification, overwrite install and launch passed again; fresh spacing and collapse/editing manual acceptance remains pending.
+
+## 2026-10-03 — 2.3.5 (116) scoped release UI polish
+
+Anchor editing/local-backup UI now uses the existing four-language interface
+lookup, including destructive confirmations, accessibility and guidance.
+Card content says “插入信息”; Module types/keys remain unchanged. MemoMark+
+uses the shared browser-sheet toolbar. Interface language always uses a native
+menu; time-expression segments reserve full equal-label width and fall back to
+menu when space is insufficient. Card-style selection and owner-accepted
+preview collapse/reveal were preserved. Footer accessory migration is deferred
+because it crosses Tab hosting/save-state ownership.
+
+105 focused macOS-host tests passed (0 failed/skipped) from a byte-verified
+current-source temporary copy after the Desktop test host blocked on file open.
+Four dictionaries linted and diff check passed. iOS build, signed build, strict
+signature and paired iPhone 17 Pro Max overwrite install passed; launch was
+blocked by device lock. New control visual/accessibility acceptance is open.
+See `Docs/03_Engineering/2026-10-03-release-ui-polish.md` for scope and evidence.
 
 
 ### 2026-10-03 — MemoMark 2.3.5（122）发布准备与 GitHub 同步
 
 负责人指定正式版 2.3.4 为更新起点，沿用 2.3.5，所有 target 构建号维护为 122。纳入已接受的预览披露、设置导航、四语言和界面优化，以及已有 116 功能修复；未冻结 Research、Outreach 和旧商店草稿留在本地。122 验证和远端回执见 `Docs/07_Releases/2026-10-03-2.3.5-122-sync-manifest.md`。本轮准备 TestFlight，未上传或提交 App Store；真机人工与媒体认证不由构建代替。
 
+119 临时准备由负责人纠正为 122 后验证并推送。最终提交 53b7edd 已与 origin/main 核对一致；1974 测试通过／2017 执行、1 禁用、0 失败；122 签名 Release 归档与包内版本通过。Cloud 122 成功，TestFlight 122 已关联现有 288 人外部群组并提交 Beta 审核，页面为“正在等待审核”，自动通知保留。后续回执本地保留，不另推送触发新 Cloud 构建。
+
+
+## 2026-10-04：2.3.5（122）正式 App Store 审核提交
+
+用户明确授权：用已完成构建 122 发布 2.3.5 正式版，发布内容按当天产品梳理，并覆盖所有现有商店语言。已通过 App Store Connect UI 新建 2.3.5，关联构建 122（7459d838-5f8b-43e3-bd90-e1065b10097a），保存简体中文、美国英语、日语、韩语的副标题、推广文本、固定介绍、关键词与新增内容。四语言共上传 32 张 6.9 英寸 iPhone 截图，逐项读回八张排序；6.5 英寸沿用各语言的 6.9 英寸文件。iPad 保留已有四张真实设备截图，未将 iPhone 图伪装为 iPad。截图外层文字已本地化，截图中的真实应用界面保留中文素材。
+
+采用负责人当天明确修正：GlassCard 已支持上线，四种呈现形式进入商店介绍与新增内容；不再把旧版材料中的 Release authoring 门控作为当前商店文案依据。本次仅商店材料操作，不修改或重新构建应用。122 工程、真机和媒体认证边界仍按各自证据记录，不把审核提交视为功能认证。
+
+Apple UI 确认：2026-10-04 06:22 GMT+8，已提交 1 个项目；正式审核详情显示 iOS App 2.3.5、2.3.5（122）、等待审核。提交 ID：2b9433b0-cdeb-4105-8f23-7d5cc0073bb7。审核后自动发布；立即向所有用户提供更新；保留已有评分。当前尚未审核通过或公开上线。
+
+固定商店文字：Docs/07_Releases/2026-10-04-2.3.5-122-store-copy-four-locales.md。提交记录：Docs/07_Releases/2026-10-04-2.3.5-122-app-store-submission.md。本地回执：$HOME/Desktop/MemoMark_AppStore_第五版_文案优化_2026-10-04/发布回执/。未执行 Git 提交、推送或新 Cloud 构建；保留其他未提交改动。
+
 
 ## 2026-10-06 — GlassCard and configuration UI source checkpoint
 
 Owner authorized GitHub sync of bounded GlassCard layout/material/SDR admission/foreground preparation and configuration preview/accessory work. Version remains 2.3.5 (122). Full unit suite: 1981 passed, 0 failed, 1 existing disabled; 2 QoS warnings remain. Signed iOS build passed; device editor round trip and preview/accessory lifecycle passed. Welcome navigation automated test remains failed pending manual diagnosis. Original P3/HDR is rejected by native backdrop; positive Photos and repeat-export evidence uses SDR fixtures. Peak RSS ~718 MiB and encoded motion downscaling remain open. No TestFlight upload or App Store submission. See [source checkpoint](07_Releases/2026-10-06-glasscard-ui-source-checkpoint.md).
+
 
 ## 2026-10-06 — Lifetime discovery and Live Photo incident repair (local)
 
@@ -30121,6 +30414,153 @@ Owner accepts latest enlarged real product materials and explicitly authorizes s
 
 Current release review preserves StoreKit verified entitlements, serialized purchase operations, paired Live Photo output, durable style identity and original protection. No critical finding remains in the scoped change. Full host xcresult freshly read back1984 passed/0 failed/1 skipped (2028 executions); existing export QoS warnings and broad physical certification remain separately recorded. App/Share/Widget archive all2.3.6(124). Cloud/archive/upload, ASC review and public availability remain independent downstream receipts. Automatic campaign follow-up begins the two-day free window at public availability, then restores mainlandCNY68 and withdraws temporary annual first-year-free.
 
+
+## 2026-10-06 —2.3.6(124) saved Store assets; iPad review blocker
+
+Current owner-authorized Store delivery saved primary title/search creative and ordered eight approved iPhone screenshots; four-language descriptions/promotion/What's New read back, exact124 linked and automatic release selected. Apple Add for Review validation requires13-inch iPad screenshots. Owner explicitly says not to upload iPad display assets. No iPad assets or binary device support changed. Review submission not completed; follow-up automation amended to honor this constraint. Receipt: Docs/07_Releases/2026-10-06-2.3.6-app-store-submission.md. No additional Git push/Cloud build.
+
+### 2026-10-06 — 2.3.6 (124) formally submitted
+
+Owner explicitly continued release after inspecting the iPad compositions. Three privacy-masked real-output/UI compositions uploaded to 13-inch iPad slot; required media validation passed. Final submission confirms exactly 2.3.6 (124), 已提交1个项目 / 正在等待审核, submission 80aa0f3e-88f3-4315-9fbc-8001bff472f9. Automatic release after approval remains selected. Review/public availability and two-day lifetime offer follow-up remain open. Detailed local receipt: Docs/07_Releases/2026-10-06-2.3.6-app-store-submission.md.
+
+
+## 2026-10-07 — Post-2.3.6 combined research execution started
+
+Established source baseline 2.3.6(124), HEAD and live origin/main both06eebcd23b495bb7d7c89ad37924ada16870ee0c. Uncommitted floating-rail UI/test changes remain separate from released source. Combined competitor/content/form evidence and bounded order recorded in Docs/03_Engineering/2026-10-07-post-2.3.6-research-execution-plan.md; existing adaptive plan retained with an execution update. Apple official Duo/API and Photo Liquid Glass public declarations rechecked; competitor output fidelity remains unverified.
+
+Live selected toolchain Xcode27.2(27B5028f)/iPhoneOS27.2 contains27.1 ArrangementView/reservedRegions declarations. Research-only iOS18-target typecheck passed; generic iPhoneOS Debug current-worktree build exit0, log /tmp/MemoMarkResearch236-build.log; existing artifact-guard actor-isolation warnings remain. git diff --check passed. No product source modified, test suite or new signed-device/media acceptance claimed. Released124 already resolves glass against each current video frame; SDR-only admission and per-frame MainActor raster cost become the next measurement scope. Phase1 physical landscape acceptance remains open before shared presentation/iPad/macOS/Duo integration. No commit, push, Store mutation or release/public-availability claim.
+
+
+### 2026-10-07 — A1/G1 focused execution evidence
+
+Host focused89 tests/90 executions passed (0 failed/0 skipped), xcresult /tmp/MemoMarkResearch236Focused.xcresult. Existing synthetic SDR large-output study isolated successfully with exact Swift Testing identifier:1 passed, /tmp/MemoMarkResearch236IsolatedCostCorrected.xcresult. Report tool4 unit tests passed; actual attachment readback records both full-suite and isolated cost measurements with lifetime RSS limitations. Report: Research/ExternalDesignStudies/2026-10-07-GlassCard-SDR-and-Adaptive-Baseline.md. No product Swift changes.
+
+Signed generic iPhoneOS Debug research build exit0, strict signature verification passed, version2.3.6/124 at /tmp/MemoMarkAdaptive236Signed/Build/Products/Debug-iphoneos/MemoMarkiOS.app. Device-target build timed out because iPhone required unlock; capture/app enumeration returned CoreDevice12040 with10003 locked-device cause. User unlock requested asynchronously. No installation/launch/manual acceptance claimed. Phase1 remains open; do not begin structural A2 based on host contracts alone. Governance and diff checks passed; existing compiler warnings retained.
+
+
+### 2026-10-07 — Adaptive research package installed after owner unlock
+
+Owner confirms paired phone unlocked. Signed Debug research package overwrite install and terminate-existing fresh launch succeeded on00008150-000A043136A1401C; installed app readback2.3.6/124, PID2142. Portrait Home screenshot /tmp/MemoMarkAdaptive236-unlocked.png (1320x2868) captured and inspected; existing subject/preset and three bottom destinations visible. No container reset. Device lock blocker resolved; landscape Configuration/keyboard/draft/preview continuity acceptance remains open and owner manipulation requested. Detailed evidence in Research/ExternalDesignStudies/2026-10-07-GlassCard-SDR-and-Adaptive-Baseline.md.
+
+
+### 2026-10-07 — Landscape screenshot findings and bounded redesign research
+
+Owner supplies IMG_6484–IMG_6492 real-phone material and requests research before further UI changes. Verified rail/content proximity across Home/Configuration/Progress and compact-height preview starving Card Content controls; current capture /tmp/MemoMarkAdaptive236-landscape-live.png inspected. Candidate specification: Docs/03_Engineering/2026-10-07-landscape-configuration-observation-and-proposal.md. Proposes shell-owned safe-area reservation for rail in both notch-side orientations, full-card fit alongside scrollable editor when space permits, low-space fallback with one scroll owner, bounded secondary controls and compact save area. Current A1 remains open. No product Swift changed or device acceptance inferred; existing portrait collapse/input/Session/media semantics retained.
+# 2026-10-07 — Landscape rail avoidance increment and Duo source follow-up
+
+Owner accepted use of side space and requested joint ordinary-iPhone/Duo research.
+Reviewed Apple's current adaptive-layout/vertical-bar talks and GitHub examples
+at SHA3b9206e11595e0438e3f4d4d280bc234fe816ef8. Research record:
+Research/ExternalDesignStudies/2026-10-07-Duo-landscape-layout-follow-up.md.
+Arrangement primary-only fallback requires an explicit visible-preview policy;
+toolbarVerticalEdge is a navigation-context readout, not a device detector.
+
+Superseded the earlier full-viewport overlay requirement in the observation
+specification. Changed only the rail host from overlay to trailing safeAreaInset,
+using the existing innerPanelPadding token for content separation; destination
+binding, fixed input geometry and configuration/media contracts remain intact.
+Updated existing source contracts to reflect the accepted avoidance behavior.
+Final focused host tests65 passed/0 failed/0 skipped,
+/tmp/MemoMarkLandscapeRail-inside-navigation.xcresult. Signed MemoMarkiOS generic iPhoneOS
+Debug build passed, /tmp/MemoMarkLandscapeRail237-final-build.log, strict
+codesign verification passed; installed and launched on paired iPhone17ProMax.
+Package remains2.3.6(124); no release/version change, commit or push. Initial
+build invocation used the macOS MemoMark scheme and failed destination selection;
+the corrected MemoMarkiOS invocation is the final evidence.
+
+Physical iteration found an inset outside NavigationStack did not move Home
+content. Moved the same inset inside the navigation host, rebuilt/reinstalled,
+and inspected /tmp/MemoMarkLandscapeRail-inside-navigation.png: landscape Home
+content shifted left and the card clears the rail. The superseding focused host
+run passed65 tests/0 failures. Two landscape directions and card-editor readback
+are requested from the owner; full navigation manual acceptance remains open.
+Preview/editor height starvation,
+secondary-menu widths and native Duo integration remain separate open increments.
+# 2026-10-07 — Landscape preview recovery and contextual actions
+
+Owner reports expanded landscape preview prevents reaching its collapse action
+and leaves no useful editor scroll area; requests preview/save/more near the
+floating rail and denser time-expression details. Decision and acceptance scope:
+Docs/03_Engineering/2026-10-07-landscape-preview-control.md.
+
+Added a separate localized preview action below three primary destinations.
+Root still owns the transient visibility choice; compact-height card inspection
+can now honor collapse, while portrait preserves automatic preview restoration.
+Reused ConfigurationActionFooter callbacks/disabled state/reset-delete alerts in
+a rail presentation; ordinary compact-height configuration hides the bottom
+footer. During card inspection only preview control is supplied, retaining Done.
+The side region scrolls when height is insufficient. Time-expression explanation,
+choices and example use horizontal AnyLayout only in regular-width compact-height
+with ordinary type sizes; portrait/compact-width/accessibility/macOS keep vertical
+composition. No input geometry, session, preset, media or output contract changed.
+
+Test-first compact editing policy compilation failed as expected before its new
+parameter was implemented. Final focused host run69 passed/0 failed/0 skipped,
+/tmp/MemoMarkPreviewControl-complete.xcresult. Signed MemoMarkiOS build exit0,
+/tmp/MemoMarkPreviewControl-complete-build.log, signature verification passed,
+installed/launched paired iPhone17ProMax, still2.3.6(124) Debug research package.
+Post-build edit changed indentation only. Physical expanded/collapsed editor,
+expression section, keyboard, rotations and owner acceptance are requested and
+remain open. Other secondary inspectors retain existing forms until equivalent
+space issues are observed and scoped. Native Duo toolbar mapping remains open.
+No commit/push/Store mutation.
+# 2026-10-07 — Expression example refinement and small-phone acceptance boundary
+
+Inspected owner's live landscape expression section at
+/tmp/MemoMark-expression-current.png: example nearly half-width/top-aligned,
+choices visually crowded. Bounded P2 update centers the horizontal companion
+example vertically, caps its full region at240pt, and gives symmetrical vertical
+padding. Typography, wrapping, sample content and non-landscape composition are
+preserved. Signed iPhoneOS build passed, /tmp/MemoMarkExpressionAlignment-build.log;
+strict signature verified, installed/launched paired iPhone17ProMax. Shared macOS
+build also passed, /tmp/MemoMarkExpressionAlignment-mac-build.log; diff check passed. New expression
+appearance awaits owner's physical readback; no new visual acceptance claimed.
+
+Owner explicitly accepts keeping the current small-phone landscape card-content
+surface with its side preview toggle. Stop further small-phone two-pane changes.
+Duo complete simultaneous preview/editor presentation remains the next wide-form
+scope, with native arrangement and reserved-region validation. Updated both
+landscape specifications to supersede the earlier ordinary-phone split candidate.
+No renderer/input/session/media/schema change, commit/push or release mutation.
+# 2026-10-07 — Consolidated landscape visual consistency pass
+
+Owner requests overall harmony rather than two isolated adjustments and supplies
+IMG_6493/6494/6495 showing centered Home native title versus leading Progress
+header. Scope recorded before edits in landscape-preview-control specification.
+Compact-height Home now reuses ConfigurationPageHeader,10pt top/12pt section
+spacing and hidden native bar like Progress; existing tagline becomes its page
+subtitle without duplication. Brand/badge/facts/settings remain. Physical Home
+readback `/tmp/MemoMarkLandscapeWholePass-home.png` confirms leading heading and
+matching navigation region; Progress/config comparison is requested separately.
+
+Landscape configuration content shares16pt panel edges across anchor/content/logo
+rows, dividers, destination/Photos-description and FilmMark controls. Optional
+inset parameters preserve other hosts/defaults; no global compact-row metric was
+changed. Expression panel fills available width, owns outer padding and centers
+its bounded example with a12pt inter-region gap. Rail Save visible circle36pt,
+icon17pt, touch region46pt; compact-height duplicate header preview action hidden.
+No further small-phone card-editor restructuring; owner accepted existing surface.
+
+Final focused host tests62 passed/0 failed/0 skipped,
+/tmp/MemoMarkLandscapeWholePass.xcresult. Signed iPhoneOS build exit0,
+/tmp/MemoMarkLandscapeWholePass-build.log, strict signature passed and paired
+iPhone17ProMax installed/launched, still2.3.6(124) Debug research package.
+Diff check passed. Full new config/keyboard/rotations/accessibility/native-sheet
+manual acceptance and Duo hardware integration remain open. No Renderer, media,
+input geometry, durable config or workflow changes; no commit/push/release action.
+# 2026-10-07 — Floating navigation icon-only selection
+
+Owner requests removing blue selected tiles near capsule ends. Removed only the
+floating rail selected-background shape; selected icon retains accent color,
+46pt frame, explicit rectangle hit shape and isSelected accessibility trait.
+Signed iPhoneOS build passed (/tmp/MemoMarkRailIconSelection-build.log), strict
+signature passed, installed/launched paired iPhone17ProMax. Diff check passed.
+No navigation/state/output change. Viewed physical landscape capture
+/tmp/MemoMarkRailIconSelection.png: selected Configuration icon is blue with
+no blue tile; capsule ends remain neutral. Scope recorded in
+landscape-preview-control specification. Full manual accessibility acceptance
+remains separate.
+
 # 2026-10-07 — Small-phone landscape accepted source checkpoint
 
 Owner provisionally accepts the small-phone landscape direction and authorizes
@@ -30136,6 +30576,41 @@ open. Version2.3.6(124) unchanged. No renderer/media/schema or Store mutation.
 Unrelated release/Outreach/research/config edits and private assets remain local.
 
 
+### 2026-10-07 — GlassCard / Live Photo social visual research
+
+Product Loop research recorded in Docs/03_Engineering/2026-10-07-glasscard-live-photo-social-visual-research.md. Reviewed 44 existing JPGs and inventoried 40 MP4s; decoded 45 representative frames from nine videos. User-provided authenticated browser enabled three relevant Xiaohongshu original-post reviews with actual photos and visible comments. Clear-material readability, static/motion parity and export cost are the bounded follow-up priorities. Social LIVE badges and product declarations do not certify original pairing, audio, HDR or EXIF. No Swift, persistent schema, Photos asset, release or Store changes in this research slice.
+
+
+### 2026-10-07 — Native Liquid Glass research direction amendment
+
+Owner prioritizes iOS27 native Liquid Glass visual fidelity across all scenes, with material/readability choice belonging to the user; scene-specific or automatic dimming proposals are superseded. Updated social-visual research record with current SDK27.2 API evidence, five isolated comparison candidates and an arm64 iPhoneOS API typecheck (exit0). ZIP84 media entries hash-match the previously inspected corpus. No production source/schema/device-install/Photos changes; true iOS27 visual and motion acceptance remain pending.
+
+
+### 2026-10-07 — Large-window right-side navigation first increment
+
+Owner requests navigation and contextual configuration actions share the right-side arrangement in both orientations. Regular-width routing now reuses the existing floating rail; phone compact portrait policy is retained. Simulator build/install/launch and four-combination standalone policy check passed. iPad Home portrait/landscape screenshots captured; contextual controls, editing continuity, RTL and physical regression remain open. See `Docs/03_Engineering/2026-10-07-ipad-adaptive-observation.md`. No release or GitHub sync in this increment.
+
+Right-rail follow-up: Configuration portrait exposed duplicate legacy top actions; removed duplicates by using navigation-style policy for toolbar/footer/header visibility. Configuration landscape AX verifies one copy of each contextual action; collapse-to-expand toggle verified. Progress screenshots retained for both orientations. Physical-right host direction is isolated from semantic content direction; RTL runtime remains open. Simulator and signed-device builds passed; device delivery is distinct from manual acceptance.
+
+## 2026-10-07 — Processing reliability implementation; physical gate open
+
+Owner-directed processing work preserves the preexisting release/outreach/
+GlassCard/research/config dirty worktree. Added PhotoLibraryCapability,
+versioned ProcessingIdentity with legacy UUID compatibility and retained global
+receipts/accounting, ledger-owned continuous ExecutionSession membership,
+generation-based execution leases, expiration-safe background owner handoff,
+and session-based ActivityKit with Continued-owner suppression. Existing durable
+intake, queue ledger, PhotoKit commit/readback and paired-media contracts remain.
+
+The DEBUG Continued Processing marker probe is opt-in and does not connect the
+full queue until signed Photos Share handoff is observed. Full automated run:
+2,000 tests, 1,999 passed, 1 skipped, no failures. Signed Debug package installed
+in place on the paired iPhone 17 Pro Max (iOS 27.2 Beta); physical launch and
+Photos probe are blocked by device lock, with unlock requested. This does not
+certify V5, iOS 26, the supported OS/permission matrix or immediate completion.
+See the scoped implementation/evidence record and ADR-012. No external release.
+
+
 ## 2026-10-10 — 2.3.6 (124) GitHub source checkpoint
 
 Owner-authorized Engineering Loop source synchronization from 5073d725. Consolidates the prepared processing reliability code, shared extension dependencies, regression tests, ADR-012 and engineering evidence; updates README/CHANGELOG and adds an internal checkpoint material set. Product stage remains V4; V5 in scoped processing documents is not a product-stage transition. Version/build unchanged.
@@ -30147,6 +30622,170 @@ See `Docs/07_Releases/2026-10-10-2.3.6-source-checkpoint-sync-manifest.md` for c
 Checkpoint validation: formal Xcode 27.0 iOS Release build passed. Exact staged-tree export full macOS tests: 2088 passed, 1 skipped, 0 failed; two existing fixture QoS warnings retained. Two desktop-path runs stalled on fixture file operations and were stopped; isolated candidate run passed. Four-language format/key parity and staged whitespace checks passed. Final source fingerprints and sanitized test summary accompany the checkpoint.
 
 
+## 2026-10-10 — GitHub-informed next-stage investment review
+
+Read the referenced GitHub learning conversation, current 008e3d6e source checkpoint and processing certification boundaries. Chat On Steroids Core successfully read local engineering records. Reviewed adaptive source and external SwiftUI/HIG/Duo guidance; documented the regular-height card-editor preview-toggle mismatch as a source-level finding, not new runtime acceptance. Priority: shared capacity/action policy, bounded native Duo adapter, real-config presentation regressions and measured performance; continue fault/recovery certification independently. No production edits, Skill installation, build/test rerun or external sync. See `Docs/03_Engineering/2026-10-10-github-informed-development-investment-review.md`.
+
+
+## 2026-10-10 — Rail editor preview choice
+
+Owner explicitly retains a single preview toggle for both live-result and simplified large-screen editing. Both UI visibility call sites now permit collapse in floating-rail navigation rather than compact height only. Preview/session/input owners unchanged. Focused preview/layout tests final xcresult:12 passed,0 failed,0 skipped; independent source policy checks8 passed. Signed iPhone build/install/launch passed. Large-screen runtime, keyboard capacity, IME/undo and accessibility acceptance remain separate. See `Docs/03_Engineering/2026-10-10-adaptive-preview-visibility-implementation.md`. No external sync.
+
+### 2026-10-10 — 大屏编辑预览高度适配候选
+
+延续已接受右侧悬浮控制与可折叠预览：regular/regular并排预览由宽度强制高度改为接受剩余高度提案，完整画布等比适应；保留compact局部编辑预览和UIKit输入几何，键盘不再自动清除大屏放大选择。专项40通过/0失败/0跳过；签名配对iPhone Debug构建及覆盖安装完成，治理/差异检查通过。大屏键盘、旋转、IME、VoiceOver和Duo真实运行仍待验；未提交/推送。范围及证据见`Docs/03_Engineering/2026-10-10-adaptive-preview-visibility-implementation.md`。
+
+### 2026-10-10 — 回退大屏预览高度适配候选
+
+所有者以IMG_7006拒绝上一片固定高度适配，要求恢复此前可向上滑动预览、为输入与键盘让出空间的方向。已仅回退该片三个文件，保留floatingRail预览展开/折叠修复及既有右侧导航。前述高度适配候选不再有效，测试通过不构成产品接受。重新构建安装证据记入专项记录。
+
+### 2026-10-10 — 按所有者指定基线撤销今日预览优化
+
+所有者确认正常版本为今天优化前，今日三片预览交互与测试改动全部撤销，Source/Tests恢复008e3d6e；此前接受的横屏/大屏导航和后台代码保持。此前今日候选实施记录均为已撤回，不再作为有效产品改动。
+
+### 2026-10-10 — 所有卡片内容编辑的上滑保留结果候选
+
+所有者重新明确并授权：横屏卡片编辑允许整页上滑，原比例保留真实内容区域。按Classic白框、Glass panel、Minimal bar、FilmMark effect范围确定滚动终点，使用同一预览；键盘不再触发此模式的固定2.4局部裁切，输入几何与配置/输出不变。五文件有界改动；专项80通过/0失败/0跳过，签名iPhone构建及覆盖安装通过。触摸/键盘/旋转/IME/VoiceOver待人工验收，未同步GitHub。详见`Docs/03_Engineering/2026-10-10-card-editor-scrolling-preview.md`；此片替代已撤回的今日探索候选。
+
+### 2026-10-10 — 卡片编辑上滑交互暂定接受
+
+物理候选安装启动后，所有者对上滑保留真实结果、键盘下编辑的核验回复「可以，基本这样吧」。本轮核心交互暂定接受，停止视觉微调。专项80通过证据保持；其余样式逐项、极端窗口/旋转IME/undo、国际化和VoiceOver未据此计通过。无提交或GitHub同步。
+
+### 2026-10-10 — 横屏配置中心延伸局部预览滚动候选
+
+按所有者授权将已接受的卡片编辑滚动方式扩展到横屏配置列表。保留真实卡片尾部，原配置列表独立滚动；其它尺寸布局与右侧操作保持，键盘自动定位仍限卡片编辑。签名Debug构建通过，专项127通过/0失败/0跳过，无runtime warnings。物理配置分组/拖动待验，未提交或推送。见同日card-editor-scrolling-preview专项延伸片。
+
+### 2026-10-10 — Release Share Continued Processing 接入
+
+Release Share Extension 现于 iOS 26+ 在 durable intake 和 BGProcessing 恢复请求落地后，按 continuation session 提交一个 Continued Processing task；重叠 Share 通过现有 `ExternalIntakeRequestStore` 合并，再由 Extension callback 串行处理同一 session。现有 durable queue/media/PhotoKit receipt 流水线保持唯一执行 owner；iOS 18–25 保持 BGProcessing/前台恢复。DEBUG 探针保持隔离。共享 scratch 清理只处理本产品 UUID 目录中的普通文件并拒绝符号链接。
+
+证据：新架构契约 RED 后 GREEN；定向 macOS 27 项通过；全量 `MemoMarkTests` 2,090 通过、1 跳过、0 失败。iOS Debug 通用构建通过，正式 Xcode 27.0 iOS Release 通用构建退出 0。Release appex 符号扫描未发现 ContinuedProcessingSpike、MemoMarkBackgroundProbe 或生产探针参数，Info.plist 保留 ContinuedProcessing wildcard。此次未进行设备安装或 Photos 写入。配对 iPhone 当前为 iOS 27.2 Beta；稳定 iOS 26 与旧系统物理验证、Release Photos-only 生命周期、系统过期/资源压力/持久化故障注入仍未完成，因此这是 Release 源码已接入，不是可外部分发的生产认证。详见 `Docs/03_Engineering/2026-10-10-release-share-continued-processing.md` 与 ADR-012。未提交、推送或上传。
+
+### 2026-10-10 — Release Share Continued Processing 真机 QA 结果
+
+所有者解锁后的 iPhone 17 Pro Max、iOS 27.2 Beta：七张图片 Share 用例成功关闭 Share 表单并返回 Photos，但四分钟内八次后台 QA Outputs 只读盘点均为 0/7，测试在独立完成断言失败；本轮未生成 QA 输出，测试请求仍在 App Group 中持久化暂停等待恢复。截图中的 Dynamic Island 没有 MemoMark 活动，通知中心没有本次 Share 通知，设备通知处于静音。DEBUG 诊断确认系统 callback 和共享 production worker 均启动；随后 admission 因 `missingCanonicalSnapshot` 被拒，错误分类为 `admissionRejected`。Share 请求带有 configuration revision 41，但没有 canonical snapshot。这是本次 0/7 的直接原因。该 UI 用例走 DEBUG pipeline probe，不等同于 Release adapter 的真机认证。需修复配置快照供给、处理这条 QA 暂停请求，再进行 Release 路径物理验证。详见 `Docs/03_Engineering/2026-10-10-release-share-continued-processing.md`。
+
+### 2026-10-10 — Share 日常反馈收敛
+
+按所有者确认，普通后台处理不再在 Home 活动卡上提供手动取消入口；状态卡仍可打开任务详情，终态历史删除保留，中断后的恢复路径保留。暂停能力不作为常规 Share 操作显示。iOS Continued Processing 自带的系统停止入口由系统管理，MemoMark 不隐藏。成功通知改为可见、静音投递；暂停/中断通知仍主动提醒。截图显示 iOS Dynamic Island 正在展示两条 MemoMark Continued Processing 失败状态；代码中发现扩展 worker 曾读取持久化的前台队列暂停标记，若该标记残留，新 Share 会跳过处理并失败，现已解除该跨执行 owner 耦合，并在非取消失败后尝试发送可恢复状态通知。具体截图失败因果仍需该设备的运行诊断确认。后续签名 iPhone Debug 构建通过；没有执行新的 Photos Share 实机轮次或测试套件，故失败原因和通知交付未验证。变更范围、边界和验证记录见 `Docs/03_Engineering/2026-10-10-release-share-continued-processing.md`。
+
+### 2026-10-11 — Share 无进展入口与横竖屏首页恢复候选
+
+主程序首页新增对已暂停 Share intake 的恢复投影和明确操作：按持久化 session 恢复处理后打开进展页，不将无 job 的失败请求伪装成活动进度。系统通知是否可见仍以真实授权/投递验证为准。自适应页面改用 live viewport，并从横屏内容区统一扣除右侧 rail 的宽度、边距和间隔；保持 720pt 可读上限、竖屏底部 TabView 以及首页/配置/进展共享策略。Release build 与签名设备 QA build 通过；候选覆盖安装到 iPhone 17 Pro Max。真机首页 portrait→landscape→portrait 截图确认变宽避栏及竖屏恢复。纯宽度策略 probe 通过；XCTest runner 在 bootstrap 前 code 74 退出，host focused XCTest 又卡在 result-record 保存，均未计通过，配置/进展页自动用例未执行；Share照片/通知仍未操作。本轮是本地可审查候选，不代表 2.3.6/124 商店包已改变，也未同步或发布。详细记录见 `Docs/03_Engineering/2026-10-11-pre-release-remediation.md`。
+
+
 ### 2026-10-11 — Four-card Share acceptance paused by product owner
 
 Started the bounded four-style physical Release matrix recorded in `Docs/03_Engineering/2026-10-11-four-card-share-physical-acceptance.md`. Classic White produced 15/15 real outputs with visible text/logo, verified Live Photo pairing and unchanged input identity, then QA Outputs cleanup Passed. Its initial XCTest run had a pre-Share activation-state race and is not the final matrix pass. Minimal attempts and notification-center baseline automation require correction and current-device recheck; FilmMark/GlassCard rounds remain pending. User explicitly paused; no continued device operation or automatic resumption. Resume from current configuration/output inventory, establish a visually confirmed notification baseline, then continue the four-style matrix. Final media contracts unchanged.
+
+
+## 2026-10-12 — V5.1 Adaptive Presentation Foundation
+
+Owner-authorized presentation-only slice from main d17bf849, MemoMark2.3.7(132).
+Scoped spec/plan: `Docs/03_Engineering/2026-10-12-v5.1-adaptive-presentation-foundation.md`.
+Navigation and configuration arrangement now have independent capability-driven
+policies; AdaptivePageLayout retains page geometry. Five iOS callers migrated;
+ordinary phone decisions, native shell identity, rail and preview contracts
+retain their baseline. Business responsibilities and production media paths are
+untouched. No new Overview, wide visual, runtime dependency or deployment change.
+
+Full macOS xcresult: 2,129 passed, 1 existing skip, 0 failures. Signed iOS Debug
+and Release builds passed; Debug2.3.7(132) installed/launched on physical
+iPhone17ProMax/iOS27.2 build24B5099f. Home alignment/menu-hit test passed in both
+landscapes. Rail stability/destinations/Preview collapse-restore/configuration
+actions passed in both landscapes after the owner moved AssistiveTouch away
+from the menu target; the original obstruction failure is retained.
+Extra feedback/history test FAILED at harness line2760: task-completed-content
+is not exposed in the accessibility tree while task-completed-card is present.
+No source/test bypass was made. The relevant content subtree and identifiers
+are unchanged by this slice; attribution needs separate investigation. Full
+keyboard/IME/DynamicType/VoiceOver/RTL/light-dark/portrait visual acceptance,
+iPad/Duo/Mac wide UI and media production certification remain NOT VERIFIED.
+
+Existing644 dirty/untracked files were fingerprinted and preserved; the chronicle
+only appends this entry. No staging, commit, push, Store operation, simulator
+run, photo upload or media mutation was performed by the V5.1 validation.
+Task-local evidence: work/v5.1 under the originating Codex chat directory;
+user-facing scoped patch, spec and verification report are in its outputs/.
+
+
+## 2026-10-13 — V5.1 physical validation follow-up
+
+Owner manually disabled AssistiveTouch and asked to proceed promptly; Settings
+automation stopped and its temporary XCTest file was removed. Completed-card
+outer accessibility ID/value previously propagated to descendants, hiding the
+inner task-completed-content. One native children:.contain boundary now gives
+outer and inner cards distinct identities, without layout or business changes.
+
+The next AX-frame assertion exposed124pt vs136pt, but screen-recording pixels
+showed aligned rendered borders. The UI visual assertion now measures the actual
+light card surfaces at the same1pt tolerance, with explicit measurement failure;
+no numeric offset or production spacing fix. Final signed physical Feedback
+test PASSED in both landscapes: rendered tops137/137pt in each direction; actual
+history scrolling, fixed headers/completed card, Preview toggling,27/77pt rail
+edge gaps and50pt viewport difference, plus portrait return/relaunch passed.
+Rail test independently passed on the same production modifier in the preceding
+run. Original missing-ID and AX-frame failures remain recorded.
+
+Full host suite2129passed/1existing skip/0failed; signed Release build passed.
+Normal Debug2.3.7(132) host relaunch passed on iPhone17ProMax/iOS27.2. Source
+follow-up is exactly one containment modifier; test-helper changes are QA-only.
+No production visual, business owner, media or durable semantics change. Dark
+mode rendered detection and full VoiceOver/keyboard/IME matrices remain separate
+acceptance items. See2026-10-12-v5.1-device-validation-followup.md. No commit/push.
+
+
+## 2026-10-13 时间表达上下布局与既定文案恢复（跨日验证）
+
+- 用户明确要求选择栏与示例统一上下排列、宽裕区域展开宽度、下方说明取消。顶部恢复10月12日已批准短文案，不拼接权益长句；四语言资源保持，保存权益路由与业务职责冻结。
+- 最终iOS Simulator Debug构建通过；重新构建的相关合同66passed/0failed/0skipped。iPad13与普通iPhone17Pro模拟器纵横截图已保存；iPhone顶部说明实际完整单行。Duo运行时及真机仍未视觉通过。
+- scoped spec：`Docs/03_Engineering/2026-10-13-time-expression-stacked-layout.md`；桌面材料`MemoMark-时间表达上下布局-2026-10-13`。现有未提交改动保留，无Git同步或发布操作。
+
+
+## 2026-10-14 — V5 progress reconciliation and V5.6 first cross-surface increment
+
+See `03_Engineering/2026-10-14-v5-overall-progress.md` and `03_Engineering/2026-10-14-v5.6-cross-surface-validation.md`. Current candidate full host: 2145 passed, 0 failed, 1 existing skip; signed Release build and strict signature verification passed. Local iPad13 dark and maximum accessibility font navigation/configuration snapshots recorded. Process-scoped English/Japanese/Korean UI checks exposed missing FilmMark style selector translations; four additive resource entries repair interface fallback only. Post-resource-fix 22 localization tests and all four plist lints passed, simulator Debug and signed Release increment rebuilt successfully. Physical checks remain owner-deferred; Duo migration/Tabletop/outer-rail validation and native Mac manual/window verification remain nonphysical gaps. Do not describe V5 or media release certification as complete. No stage, commit, push, upload or release. Desktop evidence: `$HOME/Desktop/MemoMark-V5-进度与跨界面验证-2026-10-14`.
+
+
+## 2026-10-14 — V5.6 continued native local validation
+
+See `03_Engineering/2026-10-14-v5.6-local-validation-results.md`. Phone17ProMax two navigation tests passed; iPad13 focus/text rotation passed with Keyboard AX height0, so software keyboard avoidance is not proven. Independent fresh iPhone17e preparation and editor focus passed; actual landscape844×390 with162pt Keyboard. Small-phone rotation test corrected system-tab/checklist identifier collision and gained failure geometry diagnostics; latest diagnostic binary passed twice consecutively. Original failures including an unexplained intermediate restore timeout are preserved. QA-only changes; production source/business responsibilities unchanged. Duo27.1 migration/currentXcode failure and alternateXcode boot timeout remain; native Mac capture SCStream-3811 and iPad multiwindow controls remain unverified. Physical checks remain deferred. Desktop materials `$HOME/Desktop/MemoMark-V5.6-本地验证续作-2026-10-14`. No stage/commit/push/upload/release.
+
+
+## 2026-10-15 — V5.6 window/keyboard increment completed
+
+See `2026-10-15-v5.6-window-keyboard-results.md` (under 03_Engineering). Actual iPad375×892 window fit/menu/titlebar fix, JA/KO UI tone labels and Korean FilmMark visibility verified. Final focused host146/0; tone suite86/0 (overlapping); final phone choice1/0, landscape rail1/0; signed Release and strict signature passed. iPad26.4 software keyboard/rotation focus1/0 before final UI fixes. IME, full Stage Manager/Mac/Duo matrix and physical acceptance remain open; native window automated coordinate limitations retained with failures. Desktop evidence: MemoMark-V5.6-窗口与键盘-2026-10-14. No Git/release operation; business ownership frozen.
+
+
+### 2026-10-15 V5.6 Chinese pinyin follow-up
+
+Independent iPad13/iOS26.4 native keyboard: nihao→你好 candidate commit, committed text rotation, active zaijian composition across portrait/landscape/portrait and 再见 commit verified by PNG/AX equality/focus assertions. Production/test source unchanged. Reused focus UI test failed at TextView discovery before rotation; kept as a separate automation reliability gap, not counted passed. Native Mac capture stillSCStream-3811; no new Duo runtime. See `2026-10-15-v5.6-chinese-input-results.md` in03_Engineering; desktop MemoMark-V5.6-中文输入验证-2026-10-15.
+
+
+## 2026-10-15 — iPad card editor column alignment
+
+Owner-observed header/actions stretched to screen edges because header and expanded module library used padding only while fields used readable centered column. Both now reuse existing adaptiveScrollContent; two UI files only, no TextKit/business ownership change. Native iPad portrait titlex16→156, module expansion/landscape/375×892 window captured; owner 图图 scene installed/opened. Debug and signed Release/strict signature passed. Host103 tests canceled (0passed); phone automation interrupted and final phone editor visual remains unverified. Maximum accessibility type exposed separate input text vertical clipping, still open. See03_Engineering/2026-10-15-ipad-card-editor-alignment-results.md and desktop MemoMark-V5.6-iPad编辑对齐-2026-10-15.
+
+
+## 2026-10-15 — Accessible editor line-height increment
+
+One UI file fixes40/52pt fixed-field clipping and stale attributed paragraph/baseline metrics on Dynamic Type change. Final Simulator Debug compiled; native iPad field40→71→40, unchanged four-field values, real marked pinyin across size updates and candidate commit verified. Marked-state typography deferred; original QA text restored. Undo/Redo actual attempts did not change content and remain unresolved with no baseline attribution. Capsule scaling/module category ellipsis, phone/physical/matrix acceptance and final signed Release remain open. See03_Engineering/2026-10-15-accessible-card-editor-height-results.md; desktop MemoMark-V5.6-大字号输入修复-2026-10-15. No business ownership or Git/release operation.
+
+
+## 2026-10-15 — V5.6 Undo/Redo closure and current candidate builds
+
+See03_Engineering/2026-10-15-editor-undo-redo-results.md and2026-10-15-v5-progress-and-next.md. Runtime confirms native UITextView UndoManager already valid. Historical attributed snapshot reintroduced small-font appearance after max-size Undo; final3-line UI increment invalidates display cache and reuses guarded typography refresh. Final native iPad plain/module/Chinese commit Undo+Redo, max-type RED13.5pt→GREEN41.5pt glyph ink in71pt field; ordinary iPhone17e text Undo+Redo and portrait/landscape/portrait content+focus preserved, normal40pt. QA drafts restored;10 read-only evidence assertions pass, not XCTest count. Final Simulator Debug and signed iOS Release pass; strict signature verified, covering prior large-type final Release gap. Current native Mac Debug rebuilt pass; Finder capture succeeds but current MemoMark window stillSCStream-3811, no window certification. Original13-inch iPad26.5 图图 scene installed/opened in foreground local Baguette and final portrait/landscape screenshots archived. Full host/XCTest not rerun; capsule/library a11y readability, VO/RTL/multiwindow, Duo/runtime and owner-deferred physical/media acceptance remain. Original failed harness/assertion records retained; no stage/commit/push/upload/release. Desktop evidence MemoMark-V5.6-撤销重做-2026-10-15.
+
+
+## 2026-10-15 — Settings Store destinations and direct feedback
+
+Owner priority interruption: add manual App Store update/product and write-review destinations, friendly “给时光记打个分”; preserve email, promote XHS direct-message instructions, remove GitHub and whole Community/QQ/Douyin surface. No new feedback backend/runtime dependency/version polling or business responsibility change. Current focused74/0 host pass; same74 rerun after iOS-only scaled icon footprint fix, do not sum. Final SimulatorDebug and signedRelease/strict signature passed. Native iPad13/phone light-dark/orientations and iPad largest type saved; final owner13inch 图图 profile preserved, Settings foreground. Actual Store handoff/failure-alert/physical/VO/RTL acceptance unverified; simulator taps did not expose a verifiable Store page. Separate structure review/prototype highlights existing anchor→phase→expression mechanism, not implemented new root hierarchy. See03_Engineering/2026-10-15-settings-rating-and-updates-results.md and2026-10-15-settings-structure-review.md. Desktop MemoMark-设置评分与更新-2026-10-15. No Git sync/upload/release.
+
+
+## 2026-10-15 V5 source checkpoint preparation and Settings device delivery
+
+Owner requests local code organization and preparation for GitHub synchronization. Base main/origin main d17bf849, candidate2.3.7(132), version/build fields unchanged. Exact public scope66 paths:34 app-presentation,4 localization,20 tests,8 clean public docs. Full CURRENT_STATUS history, local tooling, QA/work outputs, research/private media, signing/device records and unrelated historical release/outreach edits remain local. No staging/commit/push or distribution action.
+
+Settings hierarchy is implemented with time-anchor guide entry, visible native preferences, bounded usage/data/support/about children, full padded row hit regions and usage-local Back context. Working focused143 and disjoint V5 policy83 checks passed.13inch iPad and compact17e native screenshots/AX retained locally; portrait child routes and phone large-text/dark/landscape evidence completed. Additional iPad landscape coordinate automation is not counted as navigation acceptance. Signed2.3.7(132) installed/launched on the paired17ProMax; installed version/build read back. Owner manual media/Store acceptance remains separate.
+
+The isolated HEAD+allowlist candidate passed full host2,156/0failed/1existing disabled ImageIO, formal signed iOS Release and strict signature verification. The first full-suite run retained a stale old-settings-title contract failure; semantic icon coverage was preserved and title/header expectations followed the approved new hierarchy before rerun. Added-text privacy scans and exact-overlay integrity checks passed. Public source checkpoint and authoring drafts are at Docs/07_Releases/2026-10-15-v5-source-checkpoint; engineering scope at Docs/03_Engineering/2026-10-15-v5-adaptive-presentation-checkpoint.md. Final document readback and local preservation receipt are retained in the preparation folder. Physical iPad/Duo, macOS manual windows, old-system media/lifecycle and production certification are not closed by source readiness.

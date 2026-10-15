@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased V5 Presentation Source Checkpoint —2026-10-15
+
+- Separate navigation presentation from content arrangement using live capacity and native capability policies.
+- Add iPad Overview/Configuration and macOS region composition, guarded Duo native-region integration and compact fallbacks.
+- Refine vertical expression examples, card-editor alignment, accessibility, Chinese input and undo/redo.
+- Reorganize Settings around time-anchor guidance, visible interface preferences and bounded usage/data/support/about children; add manual rating/update destinations and remove the unused community entry.
+- Keep business/output/Photos/Share/persistence/Commerce responsibilities frozen. Version fields remain2.3.7(132). Include the full buildable project, reviewed engineering/research source and permanent clean-build synchronization rules. This is a source checkpoint, not a distribution or release claim; see the [manifest](Docs/07_Releases/2026-10-15-v5-source-checkpoint/sync-manifest.md).
+
 ## 2.3.7 (132) Landscape And Recording Refinement — 2026-10-12
 
 - Fix App Store Connect upload rejection after approved2.3.6 by opening2.3.7 and synchronizing all target build fields at132.

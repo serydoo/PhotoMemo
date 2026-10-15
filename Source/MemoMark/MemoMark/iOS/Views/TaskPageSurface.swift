@@ -6,6 +6,9 @@ struct TaskPageSurface: View {
     @Environment(\.dynamicTypeSize)
     private var dynamicTypeSize
 
+    @Environment(\.entryNavigationPresentation)
+    private var navigationPresentation
+
     @Environment(\.horizontalSizeClass)
     private var horizontalSizeClass
 
@@ -76,7 +79,7 @@ struct TaskPageSurface: View {
                 ? max(ConfigurationUI.minimumInteractiveHeight, overviewHeaderHeight) : nil
             let contentHeight = max(0, viewport.size.height
                 - ConfigurationUI.contentColumnPadding
-                - AdaptivePageLayout.scrollBottomPadding(for: navigationStyle))
+                - NavigationPresentationPolicy.scrollBottomPadding(for: navigationStyle))
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     pageHeader
@@ -101,10 +104,7 @@ struct TaskPageSurface: View {
                 .padding(.top, verticalSizeClass == .compact ? ConfigurationUI.contentColumnPadding : 10)
                 .padding(
                     .bottom,
-                    AdaptivePageLayout
-                        .scrollBottomPadding(
-                            for: navigationStyle
-                        )
+                    NavigationPresentationPolicy.scrollBottomPadding(for: navigationStyle)
                 )
                 .adaptiveScrollContent(
                     horizontalPadding: ConfigurationUI.contentColumnPadding,
@@ -126,7 +126,7 @@ struct TaskPageSurface: View {
                 .ignoresSafeArea()
         )
         .navigationTitle("")
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(navigationStyle == .wideTaskSpaces ? .automatic : .hidden, for: .navigationBar)
     }
 
     private func overviewLayout(usesColumns: Bool) -> AnyLayout {
@@ -137,12 +137,10 @@ struct TaskPageSurface: View {
 
     private var navigationStyle:
         EntryNavigationStyle {
-        AdaptivePageLayout.navigationStyle(
-            hasRegularHorizontalSizeClass:
-                horizontalSizeClass == .regular,
-            hasCompactVerticalSizeClass:
-                verticalSizeClass == .compact
-        )
+        navigationPresentation ?? NavigationPresentationPolicy.style(for: AdaptivePresentationCapabilities(
+            horizontalSizeClass: horizontalSizeClass,
+            verticalSizeClass: verticalSizeClass
+        ))
     }
 
     private var pageHeader: some View {
@@ -295,6 +293,7 @@ struct TaskPageSurface: View {
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("task-completed-content")
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("task-completed-card")
         .accessibilityValue(presentation.currentTask.jobID?.uuidString ?? "")
     }

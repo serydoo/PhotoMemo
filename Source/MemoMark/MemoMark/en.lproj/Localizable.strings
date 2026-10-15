@@ -278,12 +278,12 @@
 "settings.navigation.title" = "Settings";
 "settings.interface_preferences.title" = "Interface";
 "settings.appearance.title" = "Appearance";
-"settings.appearance.description" = "Follow your iPhone appearance, or always use Light or Dark.";
+"settings.appearance.description" = "Follow your device appearance, or always use Light or Dark.";
 "settings.appearance.system" = "System";
 "settings.appearance.light" = "Light";
 "settings.appearance.dark" = "Dark";
 "settings.interface.title" = "Interface Language";
-"settings.interface.description" = "Controls MemoMark menus, settings, and processing status text that support interface-language switching. It does not change your text or replace a configuration's output language.";
+"settings.interface.description" = "Changes interface text only, not your content or photo output language.";
 "settings.getting_started.title" = "Getting Started";
 "settings.getting_started.detail" = "Share from Apple Photos to MemoMark, process locally, then return to your library.";
 "settings.overview.title" = "How MemoMark Began";
@@ -443,12 +443,6 @@
 "settings.accessibility.collapsed" = "Collapsed";
 "settings.accessibility.toggle_hint" = "Double-tap to expand or collapse";
 "settings.feedback.section_title" = "Feedback";
-"settings.community.section_title" = "Community";
-"settings.feedback.social.title" = "Xiaohongshu and Douyin";
-"settings.feedback.social.headline" = "Search for MemoMark";
-"settings.feedback.social.detail" = "Reach the developer through the public accounts to share your experience and suggestions.";
-"settings.feedback.qq.title" = "QQ Community";
-"settings.feedback.qq.detail" = "Discuss usage questions, product ideas, and personalization needs.";
 "settings.feedback.testflight.title" = "TestFlight Feedback";
 "settings.feedback.testflight.headline" = "Best for crashes, screenshots, and recordings";
 "settings.feedback.testflight.detail" = "Use the built-in feedback tool when possible so device and crash context can be included.";
@@ -458,9 +452,6 @@
 "settings.feedback.diagnostics.detail" = "Create a troubleshooting report without photos, authored text, or location data.";
 "settings.feedback.diagnostics.error_title" = "Unable to Export Diagnostics";
 "settings.feedback.diagnostics.error_detail" = "The diagnostic file could not be prepared. Reopen MemoMark and try again. (Support ID: %@)";
-"settings.feedback.github.title" = "GitHub Issues";
-"settings.feedback.github.headline" = "Public, reproducible issues";
-"settings.feedback.github.detail" = "Best for consistently reproducible defects and follow-up development discussion.";
 "settings.feedback.closing" = "Tell us about your real experience, any problems you encounter, and the personalization you would like to see.";
 "settings.about.title" = "About";
 "settings.footer.closing" = "May these time-marked memories stay with you in the years ahead.";
@@ -1957,3 +1948,46 @@
 "settings.release_notes.progress.item_one" = "In supported large-phone landscape layouts, the latest result sits beside recently saved memories, making both easier to revisit.";
 
 "settings.release_notes.progress.item_two" = "Scroll recent saves independently while the heading and actions remain visible.";
+
+"navigation.space.overview" = "Overview";
+"navigation.space.switcher" = "Main pages";
+
+"configuration.action.save_as_preset" = "Save as Preset";
+
+"胶片时间" = "FilmMark";
+
+/* Interface-only expression tone titles; preserve shared style-brand keys. */
+"configuration.expression.title.ceremonial" = "Ceremonial";
+"configuration.expression.title.growth" = "Growth";
+"configuration.expression.title.warm" = "Warm";
+"configuration.expression.title.minimal" = "Minimal";
+"configuration.expression.title.memory" = "Memory";
+"configuration.expression.title.motivational" = "Motivational";
+"configuration.expression.title.record" = "Record";
+
+/* Settings: user-initiated App Store and direct feedback destinations. */
+"settings.about.check_updates.title" = "Check for Updates";
+"settings.about.check_updates.detail" = "See available updates on the App Store.";
+"settings.about.rate.title" = "Give MemoMark a Rating";
+"settings.about.rate.detail" = "Share how MemoMark feels to use on the App Store.";
+"settings.about.store_unavailable.title" = "Couldn’t Open the App Store";
+"settings.about.store_unavailable.detail" = "Try again later, or search for MemoMark on the App Store.";
+"settings.feedback.xiaohongshu.title" = "Feedback on Xiaohongshu";
+"settings.feedback.xiaohongshu.headline" = "Search for MemoMark";
+"settings.feedback.xiaohongshu.detail" = "Find the MemoMark account and send a direct message with your questions or ideas.";
+
+/* Settings hierarchy: presentation only. */
+"settings.structure.expression.title" = "A time anchor gives every photo a place in your story";
+"settings.structure.expression.detail" = "Birthdays show growth, anniversaries celebrate time together, and future dates count down.";
+"settings.structure.expression.action" = "See how photos tell the story";
+"settings.structure.preferences.title" = "Interface preferences";
+"settings.structure.usage_data.title" = "Using MemoMark & your data";
+"settings.structure.usage.title" = "User guide";
+"settings.structure.usage.detail" = "Start in Apple Photos, then return to your library.";
+"settings.structure.photo_data.title" = "Photos & data";
+"settings.structure.photo_data.detail" = "Supported photos, saving, and local data.";
+"settings.structure.support.title" = "Help shape MemoMark";
+"settings.structure.feedback.title" = "Questions & suggestions";
+"settings.structure.feedback.detail" = "Reach the developer by email or Xiaohongshu message.";
+"settings.structure.about.title" = "Version & about";
+"settings.structure.story.title" = "The story of MemoMark";

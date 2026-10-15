@@ -18,6 +18,7 @@ struct ConfigurationActionFooter: View {
     let onResetConfiguration: () -> Void
     let onDeleteConfiguration: () -> Void
     var isRail = false
+    var exposesCreatePresetInRail = false
 
     var body: some View {
         configurationActionRow
@@ -66,6 +67,17 @@ struct ConfigurationActionFooter: View {
                     .accessibilityLabel(saveActionTitle)
                     .disabled(isSavingConfiguration || configurationStatus == .saved)
                     .accessibilityIdentifier("configuration.rail.save")
+                    if exposesCreatePresetInRail {
+                        Button(action: onCreateConfiguration) {
+                            Image(systemName: "plus.square")
+                                .font(.system(size: 18, weight: .semibold))
+                                .frame(width: 46, height: 46)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isSavingConfiguration)
+                        .accessibilityLabel(localized("configuration.action.save_as_preset", fallback: "另存为预设"))
+                        .accessibilityIdentifier("configuration.rail.create-preset")
+                    }
                     moreActionsMenu
                         .background(MemoMarkDesignTokens.SurfaceMaterial.contextual, in: Circle())
                 }

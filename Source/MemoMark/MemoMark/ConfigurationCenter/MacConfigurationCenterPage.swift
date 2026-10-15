@@ -112,56 +112,29 @@ struct MacConfigurationCenterPage: View {
     @State
     private var didBootstrapRuntime = false
 
+    @State private var taskSpace = WidePresentationTaskSpace.configuration
+
     var body: some View {
-        GeometryReader { proxy in
-            let availableWidth = max(
-                0,
-                proxy.size.width
-                    - MacConfigurationCenterMetrics.pageHorizontalPadding * 2
-            )
-            let workspaceWidth =
-                MacConfigurationCenterMetrics.workspaceWidth(
-                    for: availableWidth
-                )
-
-            ScrollView {
-                LazyVStack(
-                    alignment: .leading,
-                    spacing: 16,
-                    pinnedViews: [.sectionHeaders]
-                ) {
-                    MacConfigurationCenterHeader(
-                        session: session,
-                        commerceStore: commerceStore,
-                        onOpenSubject: {
-                            isSubjectBrowserPresented = true
-                        },
-                        onOpenPreset: {
-                            isPresetBrowserPresented = true
-                        }
-                    )
-
-                    Section {
-                        configurationSection(workspaceWidth: workspaceWidth)
-                        recentSituationSection
-                    } header: {
-                        // Pin the real preview surface while the lower
-                        // configuration content scrolls. The header owns an
-                        // opaque background so rows never bleed through it.
-                        previewSection(workspaceWidth: workspaceWidth)
-                            .padding(.bottom, 2)
-                            .background(ConfigurationUI.appBackground)
-                            .zIndex(2)
-                    }
-                }
-                .frame(width: workspaceWidth, alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, MacConfigurationCenterMetrics.pageHorizontalPadding)
-                .padding(.vertical, MacConfigurationCenterMetrics.pageVerticalPadding)
+        TabView(selection: $taskSpace) {
+            MacOverviewRegionSurface {
+                summaryHeader
+            } progress: {
+                recentSituationSection
             }
+            .padding(.horizontal, MacConfigurationCenterMetrics.pageHorizontalPadding)
+            .padding(.vertical, MacConfigurationCenterMetrics.pageVerticalPadding)
+            .tabItem { Label(macLocalized("navigation.space.overview", fallback: "Overview"), systemImage: "house") }
+            .tag(WidePresentationTaskSpace.overview)
+
+            configurationRegions
+                .tabItem { Label(macLocalized("配置", fallback: "Configuration"), systemImage: "slider.horizontal.3") }
+                .tag(WidePresentationTaskSpace.configuration)
         }
         .background(ConfigurationUI.appBackground)
-        .navigationTitle(macLocalized("mac.page.title", fallback: "Configuration"))
+
+        .navigationTitle(taskSpace == .overview
+            ? macLocalized("navigation.space.overview", fallback: "Overview")
+            : macLocalized("mac.page.title", fallback: "Configuration"))
         .alert(
             macLocalized("mac.alert.unsaved_subject.title", fallback: "Unsaved Changes"),
             isPresented: $showsUnsavedSubjectSwitchAlert
@@ -239,6 +212,32 @@ struct MacConfigurationCenterPage: View {
                 presentation: .sheet
             )
         }
+    }
+
+    private var summaryHeader: some View {
+        MacConfigurationCenterHeader(session: session, commerceStore: commerceStore,
+            onOpenSubject: {
+                taskSpace = .configuration
+                isSubjectBrowserPresented = true
+            },
+            onOpenPreset: {
+                taskSpace = .configuration
+                isPresetBrowserPresented = true
+            })
+    }
+
+    private var configurationRegions: some View {
+        MacConfigurationRegionSurface {
+            summaryHeader
+        } preview: { width in
+            previewSection(workspaceWidth: width)
+        } editor: { width in
+            configurationSection(workspaceWidth: width)
+        } progress: {
+            EmptyView()
+        }
+        .padding(.horizontal, MacConfigurationCenterMetrics.pageHorizontalPadding)
+        .padding(.vertical, MacConfigurationCenterMetrics.pageVerticalPadding)
     }
 
     private func previewSection(workspaceWidth: CGFloat) -> some View {
@@ -439,25 +438,11 @@ struct MacConfigurationCenterPage: View {
 
 private enum MacConfigurationCenterMetrics {
 
-    // The large-screen shell should use the available canvas as a workspace,
-    // while retaining a small breathing margin around the preview card.
-    static let workspaceWidthRatio: CGFloat = 0.92
-    static let minimumWorkspaceWidth: CGFloat = 880
-    static let maximumWorkspaceWidth: CGFloat = 1500
     static let pageHorizontalPadding: CGFloat = 24
     static let pageVerticalPadding: CGFloat = 20
     static let previewWidthRatio: CGFloat = 0.88
     static let maximumPreviewWidth: CGFloat = 1280
     static let maximumFormWidth: CGFloat = 1120
-
-    static func workspaceWidth(for availableWidth: CGFloat) -> CGFloat {
-        let availableWidth = max(0, availableWidth)
-        let preferredWidth = availableWidth * workspaceWidthRatio
-        return min(
-            availableWidth,
-            max(minimumWorkspaceWidth, min(preferredWidth, maximumWorkspaceWidth))
-        )
-    }
 
     static func previewWidth(for workspaceWidth: CGFloat) -> CGFloat {
         min(workspaceWidth * previewWidthRatio, maximumPreviewWidth)

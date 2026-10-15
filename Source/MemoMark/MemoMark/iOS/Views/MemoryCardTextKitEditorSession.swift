@@ -52,8 +52,9 @@ private struct MemoryCardTextKitUndoSnapshot {
 /// Shared visual metrics for the compact card-content editor.
 ///
 /// The editor keeps a 48pt effective touch area through the row padding,
-/// while the visible field is intentionally a little shorter. Keeping these
-/// values together prevents the caret, TextKit line fragment, and SwiftUI
+/// while the ordinary-size visible field is intentionally a little shorter.
+/// Larger text expands the field to contain its line box. Shared metrics keep
+/// the caret, TextKit line fragment, and SwiftUI
 /// shell from drifting apart as new presentation styles add their own regions.
 enum MemoryCardEditorInputMetrics {
     static let controlHeight: CGFloat = 40
@@ -72,9 +73,17 @@ enum MemoryCardEditorInputMetrics {
     static let moduleAttachmentHeight: CGFloat = 28
 
     static func controlHeight(for dynamicTypeSize: DynamicTypeSize) -> CGFloat {
-        dynamicTypeSize.isAccessibilitySize
+        let minimumHeight = dynamicTypeSize.isAccessibilitySize
             ? accessibilityControlHeight
             : controlHeight
+        let traits = UITraitCollection(
+            preferredContentSizeCategory: UIContentSizeCategory(dynamicTypeSize)
+        )
+        let font = UIFont.preferredFont(forTextStyle: .subheadline, compatibleWith: traits)
+        // Keep the existing 6pt clearance above and below the canonical line
+        // box; a fixed accessibility height can be shorter than the glyphs.
+        let verticalClearance = controlHeight - moduleAttachmentHeight
+        return max(minimumHeight, lineHeight(for: font) + verticalClearance)
     }
 
     /// TextKit's shared line box is the vertical source of truth for both
@@ -153,6 +162,7 @@ final class MemoryCardTextKitEditorSession: NSObject, UITextViewDelegate {
     let onDraftChange: (MemoryCardEditorDraft) -> Void
     let onFocus: () -> Void
     private weak var attachedTextView: UITextView?
+    private var typographyPointSize: CGFloat?
 
     init(
         draft: MemoryCardEditorDraft,
@@ -172,6 +182,7 @@ final class MemoryCardTextKitEditorSession: NSObject, UITextViewDelegate {
         textView.backgroundColor = .clear
         textView.font = .preferredFont(forTextStyle: .subheadline)
         textView.adjustsFontForContentSizeCategory = true
+        typographyPointSize = textView.font?.pointSize
         // The TextKit view calculates its vertical inset after SwiftUI gives
         // it a real height. This centers the empty caret using the natural
         // font line height while still making room for module attachments.
@@ -195,6 +206,42 @@ final class MemoryCardTextKitEditorSession: NSObject, UITextViewDelegate {
         attachedTextView = textView
         MemoryCardTextKitTrace.log("attach", extra: stateDescription(for: textView))
         applyDraft(draft, to: textView, selection: selectedRange)
+    }
+
+    /// Update display metrics in place, preserving text, selection and edit history.
+    func refreshTypographyIfNeeded(in textView: UITextView) {
+        guard !isApplyingExternalState, textView.markedTextRange == nil else { return }
+        let font = UIFont.preferredFont(forTextStyle: .subheadline,
+                                       compatibleWith: textView.traitCollection)
+        guard typographyPointSize != font.pointSize else { return }
+        typographyPointSize = font.pointSize
+        isApplyingExternalState = true
+        defer { isApplyingExternalState = false }
+        let selection = textView.selectedRange
+        let undoManager = textView.undoManager
+        let registersUndo = undoManager?.isUndoRegistrationEnabled == true
+        if registersUndo { undoManager?.disableUndoRegistration() }
+        defer { if registersUndo { undoManager?.enableUndoRegistration() } }
+
+        let storage = textView.textStorage
+        let range = NSRange(location: 0, length: storage.length)
+        var attachments: [(NSRange, NSTextAttachment)] = []
+        storage.enumerateAttribute(.attachment, in: range) { value, range, _ in
+            if let attachment = value as? NSTextAttachment { attachments.append((range, attachment)) }
+        }
+        storage.beginEditing()
+        var attributes = lineBoxAttributes(for: font)
+        attributes[.baselineOffset] = MemoryCardEditorInputMetrics.textBaselineOffset(for: font)
+        storage.addAttributes(attributes, range: range)
+        for (range, attachment) in attachments {
+            attachment.bounds.origin.y = MemoryCardEditorInputMetrics.attachmentBaselineOffset(
+                for: font, attachmentHeight: attachment.bounds.height)
+            storage.removeAttribute(.baselineOffset, range: range)
+        }
+        storage.endEditing()
+        textView.typingAttributes = attributes
+        textView.selectedRange = selection
+        textView.setNeedsLayout()
     }
 
     func setDraftFromOutside(_ nextDraft: MemoryCardEditorDraft, in textView: UITextView) {
@@ -466,6 +513,7 @@ final class MemoryCardTextKitEditorSession: NSObject, UITextViewDelegate {
         guard !isApplyingExternalState,
               textView.markedTextRange == nil else { return }
 
+        refreshTypographyIfNeeded(in: textView)
         ensureTrailingSentinel(in: textView)
         // Normalize committed input before projecting the draft. This repairs
         // any plain-text run UIKit created from attachment-adjacent attributes
@@ -720,6 +768,9 @@ final class MemoryCardTextKitEditorSession: NSObject, UITextViewDelegate {
         draft = projectedDraft(from: textView)
         draftRevision += 1
         isApplyingExternalState = false
+        // History restores content; current view traits own its typography.
+        typographyPointSize = nil
+        refreshTypographyIfNeeded(in: textView)
         emitDraftChangeIfNeeded()
     }
 
@@ -973,6 +1024,9 @@ private struct MemoryCardTextKitSessionRepresentable: UIViewRepresentable {
             session.prepareForDeleteBackward(in: textView)
             return false
         }
+        view.onTypographyChange = { [weak session] view in
+            session?.refreshTypographyIfNeeded(in: view)
+        }
         session.attach(to: view)
         view.accessibilityLabel = accessibilityLabel
         view.accessibilityHint = accessibilityHint
@@ -1021,12 +1075,14 @@ private struct MemoryCardTextKitSessionRepresentable: UIViewRepresentable {
             }
         }
         session.setDraftFromOutside(draft, in: view)
+        session.refreshTypographyIfNeeded(in: view)
     }
 }
 
 private final class MemoryCardTextKitTextView: UITextView {
     var onTrailingTouch: ((UITextView, CGPoint) -> Void)?
     var onDeleteBackward: ((UITextView) -> Bool)?
+    var onTypographyChange: ((UITextView) -> Void)?
     var onCopy: ((UITextView) -> Bool)?
     var onPaste: ((UITextView) -> Bool)?
 
@@ -1056,6 +1112,7 @@ private final class MemoryCardTextKitTextView: UITextView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        onTypographyChange?(self)
         updateVerticalTextAlignment()
     }
 

@@ -10,6 +10,8 @@ struct CardEditorRetainedPreviewHeightKey: PreferenceKey {
 }
 
 struct MemoryCardPreviewSection: View {
+    @Environment(\.configurationPreviewMaximumHeight) private var maximumPreviewHeight
+
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private var usesScrollingPreview: Bool {
@@ -243,6 +245,7 @@ struct MemoryCardPreviewSection: View {
         // must keep the width-derived portrait height instead of shrinking
         // itself to the remaining viewport and making the photo unreadably thin.
         .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: maximumPreviewHeight.map { max(0, $0) * viewportAspectRatio })
         .frame(maxWidth: .infinity)
         .onReceive(NotificationCenter.default.publisher(
             for: UIResponder.keyboardWillShowNotification

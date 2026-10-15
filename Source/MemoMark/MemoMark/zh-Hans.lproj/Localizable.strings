@@ -239,12 +239,12 @@
 "settings.navigation.title" = "设置";
 "settings.interface_preferences.title" = "界面";
 "settings.appearance.title" = "外观";
-"settings.appearance.description" = "跟随 iPhone 的外观，或始终使用浅色或深色。";
+"settings.appearance.description" = "跟随设备外观，或始终使用浅色或深色。";
 "settings.appearance.system" = "跟随系统";
 "settings.appearance.light" = "浅色";
 "settings.appearance.dark" = "深色";
 "settings.interface.title" = "界面语言";
-"settings.interface.description" = "控制时光记中支持切换的菜单、设置与处理状态文字；不改变你填写的内容，也不替代配置中的输出语言。";
+"settings.interface.description" = "仅影响界面文字；不改变填写内容与照片输出语言。";
 "settings.getting_started.title" = "开始使用";
 "settings.getting_started.detail" = "从 Apple Photos 分享给时光记，本地处理后再回到相册查看。";
 "settings.overview.title" = "关于 MemoMark 的诞生";
@@ -404,12 +404,6 @@
 "settings.accessibility.collapsed" = "已收起";
 "settings.accessibility.toggle_hint" = "点击展开或收起";
 "settings.feedback.section_title" = "反馈";
-"settings.community.section_title" = "社区";
-"settings.feedback.social.title" = "小红书、抖音";
-"settings.feedback.social.headline" = "搜索 MemoMark";
-"settings.feedback.social.detail" = "欢迎通过公开账号联系开发者，分享使用体验与建议。";
-"settings.feedback.qq.title" = "QQ 交流群";
-"settings.feedback.qq.detail" = "适合交流使用问题、产品想法与个性化需求。";
 "settings.feedback.testflight.title" = "TestFlight 反馈";
 "settings.feedback.testflight.headline" = "适合闪退、截图和录屏";
 "settings.feedback.testflight.detail" = "优先使用系统内置反馈，方便带上设备和崩溃上下文。";
@@ -419,9 +413,6 @@
 "settings.feedback.diagnostics.detail" = "生成不含照片、文字内容和位置的故障记录，用于定位保存与处理问题。";
 "settings.feedback.diagnostics.error_title" = "无法导出诊断信息";
 "settings.feedback.diagnostics.error_detail" = "诊断文件暂时无法准备，请重新打开 MemoMark 后重试。（故障编号：%@）";
-"settings.feedback.github.title" = "GitHub Issues";
-"settings.feedback.github.headline" = "公开可复现问题";
-"settings.feedback.github.detail" = "适合记录稳定复现的缺陷和后续开发讨论。";
 "settings.feedback.closing" = "欢迎告诉我们你的真实体验、遇到的问题，以及希望加入的个性化能力。";
 "settings.about.title" = "关于";
 "settings.footer.closing" = "愿这些被时间标记的记忆，陪伴未来的你。";
@@ -1959,3 +1950,46 @@
 "settings.release_notes.progress.item_one" = "大屏横屏中，刚刚完成的结果与最近保存并排显示，方便查看新照片与历史记录。";
 
 "settings.release_notes.progress.item_two" = "最近保存列表支持独立上下滑动，标题和操作入口保持可见。";
+
+"navigation.space.overview" = "概览";
+"navigation.space.switcher" = "主要页面";
+
+"configuration.action.save_as_preset" = "另存为预设";
+
+"胶片时间" = "胶片时间";
+
+/* Interface-only expression tone titles; preserve shared style-brand keys. */
+"configuration.expression.title.ceremonial" = "仪式感";
+"configuration.expression.title.growth" = "成长";
+"configuration.expression.title.warm" = "温馨";
+"configuration.expression.title.minimal" = "极简";
+"configuration.expression.title.memory" = "回忆";
+"configuration.expression.title.motivational" = "激励";
+"configuration.expression.title.record" = "记录";
+
+/* Settings: user-initiated App Store and direct feedback destinations. */
+"settings.about.check_updates.title" = "检查更新";
+"settings.about.check_updates.detail" = "在 App Store 查看是否有可用更新。";
+"settings.about.rate.title" = "给时光记打个分";
+"settings.about.rate.detail" = "去 App Store，聊聊你的使用感受。";
+"settings.about.store_unavailable.title" = "暂时无法打开 App Store";
+"settings.about.store_unavailable.detail" = "请稍后重试，或在 App Store 中搜索 MemoMark。";
+"settings.feedback.xiaohongshu.title" = "小红书反馈";
+"settings.feedback.xiaohongshu.headline" = "搜索 MemoMark";
+"settings.feedback.xiaohongshu.detail" = "找到 MemoMark 账号，直接私信反馈问题或建议。";
+
+/* Settings hierarchy: presentation only. */
+"settings.structure.expression.title" = "时间锚点，让照片有了前后";
+"settings.structure.expression.detail" = "生日看成长，纪念日看陪伴，未来日期看倒数。";
+"settings.structure.expression.action" = "看看照片会怎么说";
+"settings.structure.preferences.title" = "界面偏好";
+"settings.structure.usage_data.title" = "使用与数据";
+"settings.structure.usage.title" = "使用指南";
+"settings.structure.usage.detail" = "从 Apple Photos 开始，回到相册查看。";
+"settings.structure.photo_data.title" = "照片与数据";
+"settings.structure.photo_data.detail" = "支持的照片、保存方式与本地数据。";
+"settings.structure.support.title" = "一起把时光记做好";
+"settings.structure.feedback.title" = "问题与建议";
+"settings.structure.feedback.detail" = "邮件与小红书私信，都能直接找到开发者。";
+"settings.structure.about.title" = "版本与关于";
+"settings.structure.story.title" = "时光记的故事";

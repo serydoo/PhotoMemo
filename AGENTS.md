@@ -459,3 +459,24 @@ Preferred targets:
 major engineering events and milestones, not as a general daily dev log.
 
 If the work changes long-term repository rules, update `AGENTS.md` too.
+
+## Complete Source Synchronization Standard
+
+The owner's 2026-10-15 instruction requires every future MemoMark GitHub sync to
+contain the complete latest buildable application: all production source, tests,
+project/workspace configuration, shared schemes, required resources, dependency
+locks when used, and build/CI scripts. A small changed-file list overlays the
+existing full repository; it must never omit a build input or accepted optimization.
+Follow section 11 of `Docs/07_Releases/RELEASE_SYNC_STANDARD.md` and the clean-checkout
+instructions in `Docs/06_Development/Cloud_Build_From_GitHub.md`.
+
+Review engineering specifications, implementation/verification records, and reusable
+research source individually. Do not exclude `Research/` or engineering documents
+as a directory-wide shortcut. Keep experimental code outside production targets;
+publication does not authorize integration or certify an experiment. Preserve raw
+local evidence and document any public redaction. Private photos, credentials,
+local tooling connections, build/signing products and generated logs stay local,
+with explicit exclusions and preservation receipts. Exact staging, clean export,
+full build-input coverage, tested/index byte matching and remote SHA readback are
+required. Preparation, GitHub push, Cloud build, TestFlight, and App Store release
+remain separately evidenced and authorized actions.

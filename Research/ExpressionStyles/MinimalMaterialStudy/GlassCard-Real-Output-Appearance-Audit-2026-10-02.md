@@ -1,4 +1,6 @@
 # GlassCard real-output appearance audit and bounded correction
+> 2026-10-06: The historical fixed53% anchor in this record is superseded by the owner-approved trailing-group contract in `Docs/03_Engineering/2026-10-06-glasscard-trailing-group-layout.md`; other historical evidence retains its original scope.
+
 
 Date: 2026-10-02. Source baseline: main 72e101ed, build 116. Product Loop, P2 geometry correction; preview material mismatch is a separate P1. User requests strict appearance review against historical research, including text starts and mark position/size. No original or private media is copied into Git.
 

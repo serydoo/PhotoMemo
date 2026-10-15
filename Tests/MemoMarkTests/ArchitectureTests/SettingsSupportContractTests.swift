@@ -1,67 +1,8 @@
 import Foundation
 import Testing
 
-@Suite("V1 settings disclosure sections")
-struct SettingsDisclosureContractTests {
-
-    @Test("settings disclosure shell is isolated from settings-owned state")
-    func settingsDisclosureShellIsIsolatedFromSettingsOwnedState() throws {
-        let settingsSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
-        )
-        let disclosureSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
-        )
-
-        #expect(settingsSource.contains("SettingsDisclosureSection("))
-        #expect(!settingsSource.contains("private struct SettingsDisclosureSection"))
-        #expect(disclosureSource.contains("struct SettingsDisclosureSection"))
-        #expect(disclosureSource.contains("@Binding\n    var isExpanded: Bool"))
-        #expect(disclosureSource.contains("dynamicTypeSize.isAccessibilitySize"))
-        #expect(disclosureSource.contains("accessibilityReduceMotion"))
-    }
-
-    @Test("settings persists product-center disclosure state and keeps a tappable chevron")
-    func settingsPersistsProductCenterDisclosureState() throws {
-        let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
-        )
-        let disclosureSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
-        )
-
-        #expect(source.contains("private enum SettingsSection"))
-        #expect(source.contains("@AppStorage("))
-        #expect(source.contains("MemoMarkSharedContainer.sharedUserDefaults"))
-        #expect(source.contains("private var isGettingStartedExpanded = true"))
-        #expect(source.contains("private var isPhotoProcessingExpanded = false"))
-        #expect(source.contains("private var isDataSafetyExpanded = false"))
-        #expect(source.contains("private var isFeedbackExpanded = false"))
-        #expect(source.contains("private var isCommunityExpanded = false"))
-        #expect(source.contains("private var isInterfacePreferencesExpanded = false"))
-        #expect(source.contains("private var isAboutExpanded = false"))
-        #expect(!source.contains("expandedSections: Set<SettingsSection>"))
-        #expect(source.contains("private func settingsDisclosureSection"))
-        #expect(disclosureSource.contains("chevron.right"))
-        #expect(disclosureSource.contains("accessibilityValue"))
-        #expect(disclosureSource.contains("isExpanded.toggle()"))
-    }
-
-    @Test("collapsed settings summaries are readable and included in VoiceOver")
-    func collapsedSettingsSummariesAreReadableAndIncludedInVoiceOver() throws {
-        let disclosureSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
-        )
-
-        #expect(disclosureSource.contains(".foregroundStyle(.primary)"))
-        #expect(
-            disclosureSource.contains(
-                "dynamicTypeSize.isAccessibilitySize ? 3 : 2"
-            )
-        )
-        #expect(disclosureSource.contains("trailingValue + \", \" + state"))
-        #expect(disclosureSource.contains("accessibilityValue(disclosureAccessibilityValue)"))
-    }
+@Suite("Settings support and native controls")
+struct SettingsSupportContractTests {
 
     @Test("settings presents installed version in user-facing fields")
     func settingsPresentsInstalledVersionFields() throws {
@@ -78,7 +19,7 @@ struct SettingsDisclosureContractTests {
             "Source/MemoMark/MemoMark/en.lproj/Localizable.strings"
         )
 
-        #expect(source.contains("settings.about.title"))
+        #expect(source.contains("settings.structure.about.title"))
         #expect(source.contains("settings.version.compact_format"))
         #expect(simplifiedChinese.contains("\"settings.about.title\""))
         #expect(english.contains("\"settings.about.title\""))
@@ -95,98 +36,40 @@ struct SettingsDisclosureContractTests {
         }
     }
 
-    @Test("settings separates formal feedback from community channels")
+    @Test("settings keeps email and direct Xiaohongshu feedback without GitHub")
     func settingsSeparatesFeedbackAndCommunityChannels() throws {
-        let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
-        )
-        let communityContent = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/CommunitySupportContent.swift"
-        )
-        let feedbackContent = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/FeedbackSupportContent.swift"
-        )
-        let simplifiedChinese = try sourceText(
-            "Source/MemoMark/MemoMark/zh-Hans.lproj/Localizable.strings"
-        )
-        let english = try sourceText(
-            "Source/MemoMark/MemoMark/en.lproj/Localizable.strings"
-        )
-
-        let testFlightPosition = try #require(
-            feedbackContent.range(of: "TestFlight 反馈")?.lowerBound
-        )
-        let emailPosition = try #require(
-            feedbackContent.range(of: "邮件反馈")?.lowerBound
-        )
-        let githubPosition = try #require(
-            feedbackContent.range(of: "GitHub Issues")?.lowerBound
-        )
-        let communityStart = try #require(
-            source.range(of: "private var communitySection")?.lowerBound
-        )
-        let qqPosition = try #require(
-            communityContent.range(of: "settings.feedback.qq.title")?.lowerBound
-        )
-        let socialPosition = try #require(
-            communityContent.range(of: "settings.feedback.social.title")?.lowerBound
-        )
-
-        #expect(emailPosition < testFlightPosition)
-        #expect(testFlightPosition < githubPosition)
-        #expect(
-            source.range(of: "private var feedbackSection")!.lowerBound
-                < communityStart
-        )
-        #expect(qqPosition < socialPosition)
-        #expect(source.contains("openMailFeedback()"))
-        #expect(source.contains("openGitHubIssues()"))
+        let source = try sourceText("Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift")
+        let feedback = try sourceText("Source/MemoMark/MemoMark/iOS/Views/FeedbackSupportContent.swift")
+        #expect(feedback.contains("serydoo@gmail.com"))
+        #expect(feedback.contains("onOpenMailFeedback"))
+        #expect(feedback.contains("直接私信反馈问题或建议"))
+        #expect(feedback.contains(".textSelection(.enabled)"))
+        #expect(!feedback.contains("GitHub"))
+        #expect(!source.contains("openGitHubIssues"))
+        #expect(!source.contains("github.com/serydoo/MemoMark/issues"))
         #expect(source.contains("FeedbackSupportContent("))
+        #expect(!source.contains("CommunitySupportContent("))
         #expect(source.contains("isTestFlightExperienceActive: isTestFlightExperienceActive"))
-        #expect(source.contains("isPreparingDiagnosticExport: isPreparingDiagnosticExport"))
         #expect(source.contains("onPrepareDiagnosticExport: prepareDiagnosticExport"))
         #expect(source.contains("onOpenMailFeedback: openMailFeedback"))
-        #expect(source.contains("onOpenGitHubIssues: openGitHubIssues"))
-        #expect(source.contains("private var feedbackSection"))
-        #expect(source.contains("private var communitySection"))
-        #expect(source.contains("CommunitySupportContent("))
-        #expect(communityContent.contains("955680366"))
-        #expect(communityContent.contains(".textSelection(.enabled)"))
+        #expect(!source.contains("communitySection"))
+        #expect(!source.contains("settings.community.section_title"))
 
-        for key in [
-            "settings.feedback.section_title",
-            "settings.community.section_title"
-        ] {
-            #expect(source.contains(key))
-            #expect(simplifiedChinese.contains("\"\(key)\""))
-            #expect(english.contains("\"\(key)\""))
-        }
-
-        for key in [
-            "settings.feedback.testflight.title",
-            "settings.feedback.testflight.headline",
-            "settings.feedback.testflight.detail",
-            "settings.feedback.email.title",
-            "settings.feedback.email.detail",
-            "settings.feedback.github.title",
-            "settings.feedback.github.headline",
-            "settings.feedback.github.detail"
-        ] {
-            #expect(feedbackContent.contains(key))
-            #expect(simplifiedChinese.contains("\"\(key)\""))
-            #expect(english.contains("\"\(key)\""))
-        }
-
-        for key in [
-            "settings.feedback.social.title",
-            "settings.feedback.social.headline",
-            "settings.feedback.social.detail",
-            "settings.feedback.qq.title",
-            "settings.feedback.qq.detail"
-        ] {
-            #expect(communityContent.contains(key))
-            #expect(simplifiedChinese.contains("\"\(key)\""))
-            #expect(english.contains("\"\(key)\""))
+        let email = try #require(feedback.range(of: "settings.feedback.email.title")?.lowerBound)
+        let social = try #require(feedback.range(of: "settings.feedback.xiaohongshu.title")?.lowerBound)
+        let diagnostics = try #require(feedback.range(of: "settings.feedback.diagnostics.title")?.lowerBound)
+        #expect(email < social)
+        #expect(social < diagnostics)
+        #expect(feedback.contains("if isTestFlightExperienceActive"))
+        #expect(feedback.contains(".disabled(isPreparingDiagnosticExport)"))
+        for locale in ["zh-Hans", "en", "ja", "ko"] {
+            let resources = try sourceText("Source/MemoMark/MemoMark/\(locale).lproj/Localizable.strings")
+            for key in ["settings.feedback.email.title", "settings.feedback.xiaohongshu.title",
+                        "settings.feedback.xiaohongshu.headline", "settings.feedback.xiaohongshu.detail",
+                        "settings.feedback.diagnostics.title", "settings.feedback.testflight.title"] {
+                #expect(feedback.contains(key))
+                #expect(resources.contains("\"\(key)\""))
+            }
         }
     }
 
@@ -218,41 +101,12 @@ struct SettingsDisclosureContractTests {
     @Test("settings disclosure headings use text without decorative icons")
     func settingsDisclosureHeadingsAreTextOnly() throws {
         let disclosureSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsSectionSurface.swift"
         )
 
         #expect(!disclosureSource.contains("CompactHeadingIcon"))
         #expect(!disclosureSource.contains("let systemImage"))
         #expect(!disclosureSource.contains("let tint"))
-    }
-
-    @Test("settings orders product-center content from beginning to reference")
-    func settingsUsesProductCenterSectionOrder() throws {
-        let source = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
-        )
-        let bodyStart = try #require(
-            source.range(of: "var body: some View")?.lowerBound
-        )
-        let bodyEnd = try #require(
-            source.range(of: "private var interfacePreferencesSection")?.lowerBound
-        )
-        let body = source[bodyStart..<bodyEnd]
-        let orderedSections = [
-            "memoMarkPlusSection",
-            "gettingStartedSection",
-            "photoProcessingSection",
-            "dataSafetySection",
-            "feedbackSection",
-            "communitySection",
-            "interfacePreferencesSection",
-            "aboutSection"
-        ]
-        let positions = try orderedSections.map { section in
-            try #require(body.range(of: section)?.lowerBound)
-        }
-
-        #expect(positions == positions.sorted())
     }
 
     @Test("settings modules and expanded content share compact spacing")
@@ -268,7 +122,7 @@ struct SettingsDisclosureContractTests {
         )
         let body = source[bodyStart..<bodyEnd]
         let disclosure = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsSectionSurface.swift"
         )
         let memoMarkPlusCard = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/MemoMarkPlusSettingsCard.swift"
@@ -276,7 +130,7 @@ struct SettingsDisclosureContractTests {
 
         #expect(body.contains("VStack(spacing: ConfigurationSectionCardMetrics.sectionSpacing)"))
         #expect(!body.contains(".padding(.top, 18)"))
-        #expect(disclosure.contains("spacing: ConfigurationSectionCardMetrics.headerContentSpacing"))
+        #expect(disclosure.contains("VStack(alignment: .leading, spacing: 8)"))
         #expect(source.contains("MemoMarkPlusSettingsCard("))
         #expect(memoMarkPlusCard.contains("private var memoMarkPlusStatusRow"))
         #expect(memoMarkPlusCard.contains("private var memoMarkPlusBenefitsLabel"))
@@ -323,12 +177,12 @@ struct SettingsDisclosureContractTests {
         #expect(source.contains("InterfacePreferencesContent("))
         #expect(source.contains("appearancePreferenceBinding"))
         #expect(source.contains("interfaceLanguageBinding"))
-        #expect(source.contains("InterfacePreferencesContent.summary("))
+        #expect(!source.contains("InterfacePreferencesContent.summary("))
         #expect(preferencesContent.contains("MemoMarkAppearancePreference.allCases"))
         #expect(preferencesContent.components(separatedBy: ".pickerStyle(.segmented)").count - 1 >= 1)
         #expect(preferencesContent.components(separatedBy: ".pickerStyle(.menu)").count - 1 >= 2)
 
-        #expect(source.contains("settings.interface_preferences.title"))
+        #expect(source.contains("settings.structure.preferences.title"))
 
         for key in [
             "settings.appearance.title",
@@ -356,7 +210,7 @@ struct SettingsDisclosureContractTests {
 
         #expect(settingsSource.contains("var showsWorkflowGuide: Bool"))
         #expect(settingsSource.contains("isPresented: $showsWorkflowGuide"))
-        #expect(settingsSource.contains("showsWorkflowGuide = true"))
+        #expect(settingsSource.contains("usageGuideDestination = .workflow"))
         #expect(settingsSource.contains(".navigationDestination(isPresented: $showsWorkflowGuide)"))
         #expect(settingsSource.contains("embedsNavigationStack: false"))
         #expect(!settingsSource.contains(".sheet(isPresented: $showsWorkflowGuide)"))
@@ -386,15 +240,11 @@ struct SettingsDisclosureContractTests {
         let settingsPageKeys = [
             "settings.navigation.title",
             "settings.interface.description",
-            "settings.getting_started.title",
+            "settings.structure.usage.title",
             "settings.photo_processing.title",
             "settings.data_safety.title",
-            "settings.feedback.section_title",
-            "settings.community.section_title"
-        ]
-        let disclosureKeys = [
-            "settings.accessibility.expanded",
-            "settings.accessibility.collapsed"
+            "settings.structure.feedback.title",
+            "settings.about.store_unavailable.detail"
         ]
         let tutorialKeys = [
             "welcome.workflow.title",
@@ -412,15 +262,6 @@ struct SettingsDisclosureContractTests {
             #expect(english.contains("\"\(key)\""))
         }
 
-        let disclosureSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
-        )
-        for key in disclosureKeys {
-            #expect(disclosureSource.contains(key))
-            #expect(simplifiedChinese.contains("\"\(key)\""))
-            #expect(english.contains("\"\(key)\""))
-        }
-
         for key in tutorialKeys {
             #expect(welcomeSource.contains(key))
             #expect(simplifiedChinese.contains("\"\(key)\""))
@@ -429,7 +270,7 @@ struct SettingsDisclosureContractTests {
 
         #expect(
             preferencesSource.contains(
-                "控制时光记中支持切换的菜单、设置与处理状态文字"
+                "仅影响界面文字；不改变填写内容与照片输出语言"
             )
         )
         #expect(!settingsSource.contains("菜单、设置、帮助与处理状态文字"))
@@ -474,6 +315,14 @@ struct SettingsDisclosureContractTests {
         #expect(aboutContent.contains("settings.version.release_notes"))
         #expect(source.contains("showsReleaseNotes = true"))
         #expect(source.contains("ReleaseNotesSheet("))
+        #expect(source.contains("onCheckForUpdates: { openAppStore(.updates) }"))
+        #expect(source.contains("Button { openAppStore(.review) } label:"))
+        #expect(aboutContent.contains("settings.about.check_updates.title"))
+        #expect(source.contains("settings.about.rate.title"))
+        #expect(aboutContent.contains("settings.check-updates"))
+        #expect(source.contains("settings.rate-app"))
+        #expect(!source.contains("requestReview"))
+        #expect(source.contains("showsAppStoreOpenError = !accepted"))
     }
 
     @Test("settings distinguishes reading chevrons from action links")
@@ -500,12 +349,12 @@ struct SettingsDisclosureContractTests {
         let linkRowSource = supportRows[linkRowStart..<contentRowStart]
         let contentRowSource = supportRows[contentRowStart..<rowIconStart]
         let disclosureSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsSectionSurface.swift"
         )
 
         #expect(actionRowSource.contains(".foregroundStyle(.tertiary)"))
         #expect(linkRowSource.contains("accessory: \"chevron.right\""))
-        #expect(disclosureSource.contains(".foregroundStyle(.tertiary)"))
+        #expect(disclosureSource.contains("accessibilityAddTraits(.isHeader)"))
         #expect(contentRowSource.contains(".foregroundStyle(.secondary)"))
         #expect(!contentRowSource.contains(".foregroundStyle(Color.accentColor)"))
         #expect(source.contains("private var memoMarkPlusStatus"))

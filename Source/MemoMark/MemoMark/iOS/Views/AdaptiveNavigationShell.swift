@@ -17,6 +17,12 @@ struct EntryNavigationSurface<
 >: View {
 
     let navigationStyle: EntryNavigationStyle
+    private let usesNativeRegionNavigation: Bool
+    private let usesNativeCompactRail: Bool
+    private let reservesCompactTopBar: Bool
+    private let onOpenSettingsFromRail: (() -> Void)?
+    private let overviewArrangement: OverviewContentArrangement?
+    private let overviewFooter: HomePhotoPickerFooter?
     @Environment(\.layoutDirection) private var contentLayoutDirection
     @State private var railWindowGeometry: FloatingRailWindowGeometry?
     private let previewControl: ConfigurationPreviewRailControl?
@@ -38,6 +44,12 @@ struct EntryNavigationSurface<
     init(
         navigationStyle: EntryNavigationStyle,
         selection: Binding<EntryTab>,
+        usesNativeRegionNavigation: Bool = false,
+        usesNativeCompactRail: Bool = false,
+        reservesCompactTopBar: Bool = false,
+        onOpenSettingsFromRail: (() -> Void)? = nil,
+        overviewArrangement: OverviewContentArrangement? = nil,
+        overviewFooter: HomePhotoPickerFooter? = nil,
         previewControl: ConfigurationPreviewRailControl? = nil,
         configurationActions: ConfigurationActionFooter? = nil,
         @ViewBuilder homeContent: () -> HomeContent,
@@ -47,6 +59,12 @@ struct EntryNavigationSurface<
         @ViewBuilder settingsContent: () -> SettingsContent
     ) {
         self.navigationStyle = navigationStyle
+        self.usesNativeRegionNavigation = usesNativeRegionNavigation
+        self.usesNativeCompactRail = usesNativeCompactRail
+        self.reservesCompactTopBar = reservesCompactTopBar
+        self.onOpenSettingsFromRail = onOpenSettingsFromRail
+        self.overviewArrangement = overviewArrangement
+        self.overviewFooter = overviewFooter
         self.previewControl = previewControl
         self.configurationActions = configurationActions
         _selection = selection
@@ -66,7 +84,7 @@ struct EntryNavigationSurface<
     }
 
     private var primaryTabs: some View {
-        TabView(selection: $selection) {
+        TabView(selection: primaryTabSelection) {
             homeContent
                 .toolbar(navigationStyle == .bottomTabBar ? .visible : .hidden, for: .tabBar)
                 .tabItem {
@@ -102,10 +120,29 @@ struct EntryNavigationSurface<
 
     private var primaryNavigation: some View {
         NavigationStack {
+            VStack(spacing: 0) {
+                if navigationStyle == .wideTaskSpaces, !usesNativeRegionNavigation,
+                   WideTaskSpaceProjection.space(for: selection) != nil {
+                    wideTaskSpaceSwitcher
+                } else if navigationStyle == .wideTaskSpaces, !usesNativeRegionNavigation {
+                    HStack {
+                        Button { selection = .home } label: {
+                            Label(localized("首页"), systemImage: "chevron.backward")
+                        }
+                        .padding(12)
+                        Spacer()
+                    }
+                    .environment(\.layoutDirection, contentLayoutDirection)
+                }
             // One shell owns the rail's width. Destinations receive the
             // remaining safe viewport and must not subtract the rail again.
             HStack(spacing: navigationStyle == .floatingRail ? AdaptiveFloatingRailMetrics.contentSpacing : 0) {
-                Group {
+                OverviewPageSurface(
+                    arrangement: navigationStyle == .wideTaskSpaces
+                        && WideTaskSpaceProjection.space(for: selection) == .overview
+                        ? overviewArrangement : nil,
+                    retainsProgress: navigationStyle == .wideTaskSpaces
+                ) {
                     if selection == .settings || selection == .output {
                         sidebarDestination
                     } else {
@@ -113,7 +150,12 @@ struct EntryNavigationSurface<
                         // hosting controllers so TextKit retains its input owner.
                         primaryTabs
                     }
+                } progressContent: {
+                    taskContent
                 }
+                .environment(\.homePhotoPickerFooterPresentedByContainer,
+                    usesSharedOverviewFooter || (usesNativeCompactRail && selection == .home))
+                .environment(\.homeSettingsPresentedByContainer, usesNativeCompactRail)
                 .environment(\.layoutDirection, contentLayoutDirection)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 if navigationStyle == .floatingRail {
@@ -121,7 +163,17 @@ struct EntryNavigationSurface<
                     // independently of which destination contributes actions.
                     VStack(spacing: ConfigurationUI.innerPanelPadding) {
                         ScrollView(.vertical) {
-                            if let previewControl {
+                            if usesNativeCompactRail, selection == .home, let onOpenSettingsFromRail {
+                                Button(action: onOpenSettingsFromRail) {
+                                    Image(systemName: MemoMarkSymbol.settings.name)
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .frame(width: 46, height: 46)
+                                }
+                                .buttonStyle(.plain)
+                                .background(MemoMarkDesignTokens.SurfaceMaterial.contextual, in: Circle())
+                                .accessibilityLabel(localized("home.settings.accessibility"))
+                                .accessibilityIdentifier("home.rail.settings")
+                            } else if let previewControl {
                                 Button(action: previewControl.toggle) {
                                     Image(systemName: previewControl.isVisible
                                         ? "eye.slash" : "eye")
@@ -153,6 +205,9 @@ struct EntryNavigationSurface<
                         ScrollView(.vertical) {
                             if let configurationActions {
                                 configurationActions
+                            } else if usesNativeCompactRail, selection == .home, let footer = overviewFooter {
+                                HomePhotoPickerFooter(isConfigurationReady: footer.isConfigurationReady,
+                                    onOpenPhotoPicker: footer.onOpenPhotoPicker, isRail: true)
                             }
                         }
                         .scrollIndicators(.hidden)
@@ -169,11 +224,40 @@ struct EntryNavigationSurface<
                 // The rail is physically right; destination content retains
                 // its own semantic reading direction for RTL languages.
                 .environment(\.layoutDirection, .leftToRight)
+            }
+        .toolbar(usesNativeCompactRail ? .hidden
+            : (reservesCompactTopBar || (navigationStyle == .wideTaskSpaces && configurationActions != nil) ? .visible : .automatic),
+                 for: .navigationBar)
+        .toolbar {
+            if navigationStyle == .wideTaskSpaces, usesNativeRegionNavigation {
+                ToolbarItem(placement: .topBarLeading) {
+                    nativeTaskSpacePicker
+                }
+            }
+            if navigationStyle == .wideTaskSpaces, let actions = configurationActions {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    ConfigurationActionToolbar(
+                        configurationStatus: actions.configurationStatus,
+                        isSavingConfiguration: actions.isSavingConfiguration,
+                        isSelectedProcessingDefault: actions.isSelectedProcessingDefault,
+                        onSaveCurrentConfiguration: actions.onSaveCurrentConfiguration,
+                        onSetAsProcessingDefault: actions.onSetAsProcessingDefault,
+                        onCreateConfiguration: actions.onCreateConfiguration,
+                        onResetConfiguration: actions.onResetConfiguration,
+                        onDeleteConfiguration: actions.onDeleteConfiguration
+                    )
+                }
+            }
+        }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if usesSharedOverviewFooter { overviewFooter }
         }
         .background(FloatingRailWindowGeometryReader { geometry in
             if railWindowGeometry != geometry { railWindowGeometry = geometry }
         })
         .environment(\.entryWindowWidth, railWindowGeometry?.windowWidth ?? 0)
+        .environment(\.entryNavigationPresentation, navigationStyle)
         .frame(
             maxWidth: .infinity,
             maxHeight: .infinity
@@ -182,6 +266,52 @@ struct EntryNavigationSurface<
             ConfigurationUI.appBackground
                 .ignoresSafeArea()
         )
+    }
+
+    private var usesSharedOverviewFooter: Bool {
+        navigationStyle == .wideTaskSpaces && overviewArrangement == .vertical
+            && WideTaskSpaceProjection.space(for: selection) == .overview
+    }
+
+    private var primaryTabSelection: Binding<EntryTab> {
+        guard navigationStyle == .wideTaskSpaces else { return $selection }
+        return Binding(
+            get: { WideTaskSpaceProjection.primaryTab(for: selection, usesWidePresentation: true) },
+            set: { selection = $0 }
+        )
+    }
+
+    private var nativeTaskSpacePicker: some View {
+        Picker(localized("navigation.space.switcher"), selection: Binding(
+            get: { WideTaskSpaceProjection.space(for: selection) ?? .overview },
+            set: { selection = WideTaskSpaceProjection.destination(for: $0) }
+        )) {
+            Text(localized("navigation.space.overview")).tag(WidePresentationTaskSpace.overview)
+            Text(localized("配置")).tag(WidePresentationTaskSpace.configuration)
+        }
+        .pickerStyle(.menu)
+        .accessibilityIdentifier("entry.native.task-space-picker")
+    }
+
+    private var wideTaskSpaceSwitcher: some View {
+        Picker(
+            MemoMarkLanguage.interfaceStored.localized(key: "navigation.space.switcher", fallback: "主要页面"),
+            selection: Binding(
+                get: { WideTaskSpaceProjection.space(for: selection) ?? .overview },
+                set: { selection = WideTaskSpaceProjection.destination(for: $0) }
+            )
+        ) {
+            Text(MemoMarkLanguage.interfaceStored.localized(key: "navigation.space.overview", fallback: "概览"))
+                .tag(WidePresentationTaskSpace.overview)
+            Text(localized("配置"))
+                .tag(WidePresentationTaskSpace.configuration)
+        }
+        .pickerStyle(.segmented)
+        .frame(maxWidth: 320)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .accessibilityIdentifier("entry.wide.task-space-switcher")
+        .environment(\.layoutDirection, contentLayoutDirection)
     }
 
     private var railTrailingInset: CGFloat? {

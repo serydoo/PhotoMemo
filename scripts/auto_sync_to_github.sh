@@ -1,46 +1,8 @@
 #!/bin/zsh
-
+# Scheduled invocations only prepare a plan. Publishing requires explicit sync inputs.
 set -euo pipefail
-
-REPO_DIR="${MEMOMARK_REPO_DIR:-${PHOTOMEMO_REPO_DIR:-/Users/rui/Desktop/PhotoMemo}}"
-# Keep the existing support directory so an installed launch agent retains
-# its logs and runtime state across this repository naming migration.
+SCRIPT_DIR="${0:A:h}"
+REPO_DIR="${MEMOMARK_REPO_DIR:-${PHOTOMEMO_REPO_DIR:-${SCRIPT_DIR:h}}}"
 SUPPORT_DIR="${MEMOMARK_SUPPORT_DIR:-${PHOTOMEMO_SUPPORT_DIR:-$HOME/Library/Application Support/PhotoMemo}}"
-LOG_DIR="$SUPPORT_DIR/AutoSync"
-LOG_FILE="$LOG_DIR/auto-sync.log"
-
-mkdir -p "$LOG_DIR"
-cd "$LOG_DIR"
-
-exec >>"$LOG_FILE" 2>&1
-
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Auto sync started"
-
-export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-
-if [[ ! -d "$REPO_DIR/.git" ]]; then
-  echo "Repository not found: $REPO_DIR"
-  exit 1
-fi
-
-CURRENT_BRANCH="$(git -C "$REPO_DIR" branch --show-current)"
-
-if [[ -z "$CURRENT_BRANCH" ]]; then
-  echo "No current branch, skip."
-  exit 0
-fi
-
-git -C "$REPO_DIR" add -A
-
-git -C "$REPO_DIR" reset --quiet -- ':(glob)**/*.xcuserstate' ':(glob)**/xcuserdata/**' || true
-
-if git -C "$REPO_DIR" diff --cached --quiet; then
-  echo "No staged changes, skip."
-  exit 0
-fi
-
-STAMP="$(date '+%Y-%m-%d %H:%M:%S')"
-git -C "$REPO_DIR" commit -m "chore: auto sync ${STAMP}"
-git -C "$REPO_DIR" push origin "$CURRENT_BRANCH"
-
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Auto sync finished"
+exec /usr/bin/env python3 "$SCRIPT_DIR/memomark_source_sync.py" \
+  --repo "$REPO_DIR" --output "$SUPPORT_DIR/AutoSync/latest-plan-or-sync.json" "$@"

@@ -278,12 +278,12 @@
 "settings.navigation.title" = "設定";
 "settings.interface_preferences.title" = "インターフェース";
 "settings.appearance.title" = "外観";
-"settings.appearance.description" = "iPhoneの外観に合わせるか、ライトまたはダークを選べます。";
+"settings.appearance.description" = "端末の外観に合わせるか、常にライトまたはダークを使用します。";
 "settings.appearance.system" = "システム";
 "settings.appearance.light" = "ライト";
 "settings.appearance.dark" = "ダーク";
 "settings.interface.title" = "インターフェース言語";
-"settings.interface.description" = "MemoMarkのメニュー、設定、処理状況の表示言語を切り替えます。入力した文章や設定の出力言語は変更しません。";
+"settings.interface.description" = "表示の文章のみを変更します。入力内容や写真の出力言語は変わりません。";
 "settings.getting_started.title" = "はじめに";
 "settings.getting_started.detail" = "Apple PhotosからMemoMarkへ共有し、このデバイスで処理したあと、ライブラリに戻ります。";
 "settings.overview.title" = "MemoMarkの誕生";
@@ -443,12 +443,6 @@
 "settings.accessibility.collapsed" = "折りたたみ済み";
 "settings.accessibility.toggle_hint" = "ダブルタップで展開または折りたたみ";
 "settings.feedback.section_title" = "フィードバック";
-"settings.community.section_title" = "コミュニティ";
-"settings.feedback.social.title" = "小紅書と抖音";
-"settings.feedback.social.headline" = "MemoMarkを検索";
-"settings.feedback.social.detail" = "公開アカウントから開発者に体験や提案を届けられます。";
-"settings.feedback.qq.title" = "QQコミュニティ";
-"settings.feedback.qq.detail" = "使い方の質問、製品のアイデア、カスタマイズの希望を話し合えます。";
 "settings.feedback.testflight.title" = "TestFlightフィードバック";
 "settings.feedback.testflight.headline" = "クラッシュ、スクリーンショット、録画におすすめ";
 "settings.feedback.testflight.detail" = "可能な場合は内蔵のフィードバック機能を使うと、デバイスとクラッシュの情報を含められます。";
@@ -458,9 +452,6 @@
 "settings.feedback.diagnostics.detail" = "写真、入力した文章、位置情報を含まないトラブルシューティング記録を作成します。";
 "settings.feedback.diagnostics.error_title" = "診断情報を書き出せません";
 "settings.feedback.diagnostics.error_detail" = "診断ファイルを準備できませんでした。MemoMarkを開き直して、もう一度お試しください。（サポートID: %@）";
-"settings.feedback.github.title" = "GitHub Issues";
-"settings.feedback.github.headline" = "再現手順を共有できる問題";
-"settings.feedback.github.detail" = "一貫して再現できる不具合や、開発に関する継続的な相談に適しています。";
 "settings.feedback.closing" = "実際の使用感や気になる点、追加してほしいパーソナライズについて教えてください。";
 "settings.about.title" = "MemoMarkについて";
 "settings.footer.closing" = "時間に刻まれた思い出が、これからの日々にも寄り添いますように。";
@@ -1957,3 +1948,46 @@
 "settings.release_notes.progress.item_one" = "対応する大きな iPhone の横向き表示では、直近の結果と最近保存した思い出を並べて確認できます。";
 
 "settings.release_notes.progress.item_two" = "最近の保存一覧だけを上下にスクロールしても、見出しと操作ボタンは表示されたままです。";
+
+"navigation.space.overview" = "概要";
+"navigation.space.switcher" = "メインページ";
+
+"configuration.action.save_as_preset" = "プリセットとして保存";
+
+"胶片时间" = "FilmMark";
+
+/* Interface-only expression tone titles; preserve shared style-brand keys. */
+"configuration.expression.title.ceremonial" = "記念";
+"configuration.expression.title.growth" = "成長";
+"configuration.expression.title.warm" = "温かみ";
+"configuration.expression.title.minimal" = "簡潔";
+"configuration.expression.title.memory" = "思い出";
+"configuration.expression.title.motivational" = "応援";
+"configuration.expression.title.record" = "記録";
+
+/* Settings: user-initiated App Store and direct feedback destinations. */
+"settings.about.check_updates.title" = "アップデートを確認";
+"settings.about.check_updates.detail" = "App Storeで利用可能なアップデートを確認します。";
+"settings.about.rate.title" = "MemoMarkを評価する";
+"settings.about.rate.detail" = "App Storeで使ってみた感想を聞かせてください。";
+"settings.about.store_unavailable.title" = "App Storeを開けませんでした";
+"settings.about.store_unavailable.detail" = "しばらくしてから再試行するか、App StoreでMemoMarkを検索してください。";
+"settings.feedback.xiaohongshu.title" = "小紅書でフィードバック";
+"settings.feedback.xiaohongshu.headline" = "MemoMarkを検索";
+"settings.feedback.xiaohongshu.detail" = "MemoMarkのアカウントに、質問やアイデアをダイレクトメッセージでお送りください。";
+
+/* Settings hierarchy: presentation only. */
+"settings.structure.expression.title" = "時間の基準日が、写真に前後の物語を";
+"settings.structure.expression.detail" = "誕生日は成長を、記念日は共に歩んだ時間を、未来の日付はカウントダウンを。";
+"settings.structure.expression.action" = "写真の言葉を見てみる";
+"settings.structure.preferences.title" = "表示の設定";
+"settings.structure.usage_data.title" = "使い方とデータ";
+"settings.structure.usage.title" = "使い方ガイド";
+"settings.structure.usage.detail" = "Apple Photosから始めて、写真ライブラリで確認。";
+"settings.structure.photo_data.title" = "写真とデータ";
+"settings.structure.photo_data.detail" = "対応する写真、保存方法、端末内のデータ。";
+"settings.structure.support.title" = "MemoMarkを一緒に育てる";
+"settings.structure.feedback.title" = "質問とご提案";
+"settings.structure.feedback.detail" = "メールや小紅書のメッセージで開発者に直接連絡できます。";
+"settings.structure.about.title" = "バージョンとアプリについて";
+"settings.structure.story.title" = "MemoMarkの物語";

@@ -58,7 +58,9 @@ struct MemoryCardRegionEditorCluster: View {
                 )
                 .transition(.opacity.combined(with: .move(edge: .top)))
                 .frame(height: ModuleLibrarySurface.height(for: dynamicTypeSize))
-                .padding(.horizontal, ConfigurationUI.contentColumnPadding)
+                .adaptiveScrollContent(
+                    horizontalPadding: ConfigurationUI.contentColumnPadding
+                )
                 .padding(.top, 8)
                 .zIndex(1)
             }

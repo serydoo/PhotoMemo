@@ -4,7 +4,7 @@
 
 MemoMark is a local-first memory tool designed for Apple Photos. It does not replace the system library and never edits the original photo. It reads capture time, location, device and other available photo facts, combines them with dates you define, and creates a new memory version of the photo.
 
-Current source candidate: **MemoMark 2.3.5 (build 116)**. This round refines Minimal long text and Home presets, and integrates shared native GlassCard preview, still and Live Photo development paths. Release authoring remains gated; HDR/wide-color and broader device acceptance remain open. Processing stays local and originals unchanged. See the [release notes](Docs/07_Releases/2026-10-02-2.3.5-release-notes.md) and [sync manifest](Docs/07_Releases/2026-10-02-2.3.5-sync-manifest.md). Existing commerce and historical entitlements remain unchanged. See the [appearance and physical verification checkpoint](Docs/03_Engineering/2026-10-02-glasscard-appearance-verification-closure.md): Photos save, resource readback and local decode pass; timed keyframe preservation issue LP-TIME-001 is fixed and verified through two physical-device Photos resource readbacks; see the [closure record](Docs/03_Engineering/2026-10-02-live-photo-keyframe-time-closure.md).
+Current source candidate: **MemoMark 2.3.7 (build 132)**. The full V5 source checkpoint authorized for GitHub synchronization on 2026-10-15 adds capability-driven navigation/content arrangement, iPad/macOS presentation regions, editor refinements and a clearer Settings hierarchy on the existing business architecture. Photo processing remains local and originals unchanged. See the [source checkpoint manifest](Docs/07_Releases/2026-10-15-v5-source-checkpoint/sync-manifest.md), [engineering scope](Docs/03_Engineering/2026-10-15-v5-adaptive-presentation-checkpoint.md), and [release-note draft](Docs/07_Releases/2026-10-15-v5-source-checkpoint/2.3.7-132-release-notes.md). The full project, tests, engineering records and reviewed research source are included; see [clean/Cloud build instructions](Docs/06_Development/Cloud_Build_From_GitHub.md). GitHub synchronization, online build, physical acceptance, TestFlight and App Store release are distinct states. No new distribution build or public release is claimed here.
 
 The everyday flow is intentionally small:
 
@@ -24,7 +24,7 @@ Internally, the project keeps photo facts, memory calculation, expression, layou
 Photo -> Metadata -> Memory Engine -> Expression -> Layout -> Renderer -> Export
 ```
 
-MemoMark is an independent Apple-native project built with Swift, SwiftUI and PhotoKit. It is currently in the V4 Expression Style System research and refinement stage. Reliability, Live Photo/media handling, accessibility, localization and device validation remain ongoing work; research notes should not be read as production-certification claims.
+MemoMark is an independent Apple-native project built with Swift, SwiftUI and PhotoKit. The current V5 source work refines adaptive presentation while preserving the established business and output responsibilities. Reliability, Live Photo/media handling, accessibility, localization and device validation remain ongoing work; research notes should not be read as production-certification claims.
 
 See the [Chinese README](README.md) for the full product story and the repository documentation under `Docs/` for engineering history.
 

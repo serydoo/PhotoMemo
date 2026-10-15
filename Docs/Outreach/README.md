@@ -4,6 +4,10 @@
 
 当前发布草稿：[`2026-08-26-MemoMark-2.2.2-XHS.md`](2026-08-26-MemoMark-2.2.2-XHS.md)。
 
+小红书推荐流需求发现与低频触达规范：[`XHS_OUTREACH_MECHANISM.md`](XHS_OUTREACH_MECHANISM.md)。
+
+2026-09-19 SEO 发布候选稿：[`2026-09-19-MemoMark-SEO-发布稿.md`](2026-09-19-MemoMark-SEO-发布稿.md)。
+
 ## 使用顺序
 
 1. 先读 [`OUTREACH_MATERIALS_SPEC.md`](OUTREACH_MATERIALS_SPEC.md)，确认范围和事实边界。

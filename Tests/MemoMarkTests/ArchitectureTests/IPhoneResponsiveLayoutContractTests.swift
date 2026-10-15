@@ -5,6 +5,19 @@ import Testing
 @Suite("iPhone responsive layout contract")
 struct IPhoneResponsiveLayoutContractTests {
 
+    @Test("page geometry does not own navigation or configuration arrangement")
+    func pageGeometryDoesNotOwnPresentationPolicies() throws {
+        let geometry = try sourceText("Source/MemoMark/MemoMark/iOS/Views/AdaptivePageLayout.swift")
+        #expect(!geometry.contains("EntryNavigationStyle"))
+        #expect(!geometry.contains("navigationStyle"))
+        #expect(!geometry.contains("usesRegularWorkspace"))
+        #expect(!geometry.contains("ConfigurationContentArrangement"))
+        let foundation = try sourceText("Source/MemoMark/MemoMark/iOS/Views/AdaptivePresentationFoundation.swift")
+        for dependency in ["ConfigurationSession", "MemoryEngine", "PhotoKit", "StoreKit", "UserDefaults", "UIScreen", "UIDevice"] {
+            #expect(!foundation.contains(dependency))
+        }
+    }
+
     @Test("root delegates system presentation and runtime coordination")
     func rootDelegatesSystemPresentationAndRuntimeCoordination() throws {
         let root = try sourceText(
@@ -56,7 +69,7 @@ struct IPhoneResponsiveLayoutContractTests {
         let sidebarStart = try #require(source.range(of: "private var regularSidebarNavigation"))
         let tabs = String(source[tabsStart.lowerBound..<navigationStart.lowerBound])
         let navigation = String(source[navigationStart.lowerBound..<sidebarStart.lowerBound])
-        #expect(tabs.contains("TabView(selection: $selection)"))
+        #expect(tabs.contains("TabView(selection: primaryTabSelection)"))
         #expect(tabs.components(separatedBy: ".toolbar(navigationStyle == .bottomTabBar ? .visible : .hidden, for: .tabBar)").count - 1 == 3)
         #expect(!navigation.contains(".toolbar(navigationStyle == .bottomTabBar ? .visible : .hidden, for: .tabBar)"))
         #expect(navigation.contains("if navigationStyle == .floatingRail"))
@@ -127,7 +140,9 @@ struct IPhoneResponsiveLayoutContractTests {
             source[adaptiveContent.lowerBound..<compactPreview.lowerBound]
         )
 
-        #expect(previewLayout.contains("previewPane(viewportWidth: geometry.size.width)"))
+        #expect(previewLayout.contains("previewPane(viewportWidth: nativeAllocation?.primary.width ?? (usesSplit && navigationStyle == .wideTaskSpaces"))
+        #expect(previewLayout.contains(": geometry.size.width)"))
+        #expect(previewLayout.contains("(geometry.size.width - 0.5) / 2"))
         #expect(previewLayout.contains("adaptiveScrollContent("))
         #expect(previewLayout.contains("viewportWidth: viewportWidth"))
         #expect(previewLayout.contains("fillsAvailableWidth: verticalSizeClass == .compact"))
@@ -307,7 +322,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(!actions.contains("height: CompactBottomActionMetrics.height"))
     }
 
-    @Test("home preset rows and settings disclosures preserve readable content")
+    @Test("home preset rows and settings sections preserve readable content")
     func compactRowsProvideVerticalFallbacks() throws {
         let home = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
@@ -316,15 +331,15 @@ struct IPhoneResponsiveLayoutContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/HomeMemoryPresetRow.swift"
         )
         let settings = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsSectionSurface.swift"
         )
 
         #expect(home.contains("HomeMemoryPresetRow("))
         #expect(presetRow.contains("private var adaptivePresetRowContent"))
         #expect(presetRow.contains("private var verticalPresetRowContent"))
         #expect(presetRow.contains("dynamicTypeSize.isAccessibilitySize"))
-        #expect(settings.contains("private var adaptiveDisclosureHeader"))
-        #expect(settings.contains("private var verticalDisclosureHeader"))
+        #expect(settings.contains(".fixedSize(horizontal: false, vertical: true)"))
+        #expect(!settings.contains("lineLimit"))
     }
 
     @Test("processing pipeline and anchor editor avoid fixed compact geometry")
@@ -462,7 +477,8 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(editor.contains("AnyLayout(HStackLayout(alignment: .top, spacing: 0))"))
         #expect(editor.contains("usesSplitConfigurationLayout"))
         #expect(editor.contains("horizontalSizeClass == .regular"))
-        #expect(editor.contains("verticalSizeClass == .regular"))
+        #expect(editor.contains("ConfigurationContentArrangementPolicy.arrangement(for:"))
+        #expect(editor.contains("verticalSizeClass: verticalSizeClass"))
         #expect(editor.contains("previewPane"))
         #expect(editor.contains("editorScrollView"))
         #expect(!editor.contains("availableWidth * 0.46"))
@@ -1443,7 +1459,7 @@ struct IPhoneResponsiveLayoutContractTests {
         #expect(navigationSource.contains("struct EntryNavigationSurface<"))
         #expect(navigationSource.contains("@Binding\n    var selection: EntryTab"))
         #expect(navigationSource.contains("let navigationStyle: EntryNavigationStyle"))
-        #expect(navigationSource.contains("TabView(selection: $selection)"))
+        #expect(navigationSource.contains("TabView(selection: primaryTabSelection)"))
         #expect(!navigationSource.contains("tabViewBottomAccessory"))
         #expect(!navigationSource.contains("tabBarMinimizeBehavior"))
         #expect(navigationSource.contains("primaryNavigation"))
@@ -1471,8 +1487,9 @@ struct IPhoneResponsiveLayoutContractTests {
         )
         #expect(pagesSource.contains("EntryNavigationSurface("))
         #expect(rootSource.contains("@Environment(\\.verticalSizeClass)"))
-        #expect(pagesSource.contains("navigationStyle: entryNavigationStyle"))
-        #expect(pagesSource.contains("hasCompactVerticalSizeClass:"))
+        #expect(pagesSource.contains("wideArrangement == nil && !nativeWide ? entryNavigationStyle : .wideTaskSpaces"))
+        #expect(pagesSource.contains("NavigationPresentationPolicy.style(for:"))
+        #expect(pagesSource.contains("verticalSizeClass: verticalSizeClass"))
     }
 
     @Test("landscape rail preserves obstructed inset and releases only the plain trailing edge")

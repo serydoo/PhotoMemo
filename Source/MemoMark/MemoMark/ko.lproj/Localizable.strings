@@ -278,12 +278,12 @@
 "settings.navigation.title" = "설정";
 "settings.interface_preferences.title" = "인터페이스";
 "settings.appearance.title" = "화면 모양";
-"settings.appearance.description" = "iPhone의 화면 모양을 따르거나 라이트 또는 다크를 선택합니다.";
+"settings.appearance.description" = "기기의 화면 모드를 따르거나 항상 라이트 또는 다크 모드를 사용합니다.";
 "settings.appearance.system" = "시스템 설정";
 "settings.appearance.light" = "라이트";
 "settings.appearance.dark" = "다크";
 "settings.interface.title" = "인터페이스 언어";
-"settings.interface.description" = "MemoMark의 메뉴, 설정, 처리 상태에 사용할 인터페이스 언어를 바꿉니다. 입력한 글이나 설정의 출력 언어는 바꾸지 않습니다.";
+"settings.interface.description" = "화면의 글만 바뀌며, 입력한 내용과 사진 출력 언어는 바뀌지 않습니다.";
 "settings.getting_started.title" = "시작하기";
 "settings.getting_started.detail" = "Apple Photos에서 MemoMark로 공유하고, 이 기기에서 처리한 다음 사진 보관함으로 돌아갑니다.";
 "settings.overview.title" = "MemoMark의 시작";
@@ -443,12 +443,6 @@
 "settings.accessibility.collapsed" = "축소됨";
 "settings.accessibility.toggle_hint" = "두 번 탭하여 확장하거나 축소";
 "settings.feedback.section_title" = "피드백";
-"settings.community.section_title" = "커뮤니티";
-"settings.feedback.social.title" = "샤오홍슈 및 더우인";
-"settings.feedback.social.headline" = "MemoMark 검색";
-"settings.feedback.social.detail" = "공개 계정을 통해 개발자에게 사용 경험과 제안을 전할 수 있습니다.";
-"settings.feedback.qq.title" = "QQ 커뮤니티";
-"settings.feedback.qq.detail" = "사용 질문, 제품 아이디어, 개인화 요구를 함께 이야기할 수 있습니다.";
 "settings.feedback.testflight.title" = "TestFlight 피드백";
 "settings.feedback.testflight.headline" = "충돌, 스크린샷, 화면 기록에 적합";
 "settings.feedback.testflight.detail" = "가능하면 내장 피드백 도구를 사용하면 기기와 충돌 정보를 함께 보낼 수 있습니다.";
@@ -458,9 +452,6 @@
 "settings.feedback.diagnostics.detail" = "사진, 입력한 글, 위치 정보를 포함하지 않는 문제 해결 기록을 만듭니다.";
 "settings.feedback.diagnostics.error_title" = "진단 정보 내보내기 실패";
 "settings.feedback.diagnostics.error_detail" = "진단 파일을 준비하지 못했습니다. MemoMark를 다시 열고 시도해 주세요. (지원 ID: %@)";
-"settings.feedback.github.title" = "GitHub Issues";
-"settings.feedback.github.headline" = "재현 가능한 공개 문제";
-"settings.feedback.github.detail" = "일관되게 재현되는 오류와 후속 개발 논의에 적합합니다.";
 "settings.feedback.closing" = "실제 사용 경험과 문제점, 원하는 개인화 기능을 알려 주세요.";
 "settings.about.title" = "MemoMark 정보";
 "settings.footer.closing" = "시간이 새긴 추억이 앞으로의 날들에도 함께하기를 바랍니다.";
@@ -1957,3 +1948,46 @@
 "settings.release_notes.progress.item_one" = "지원되는 큰 iPhone의 가로 화면에서 최근 결과와 최근 저장한 추억을 나란히 확인할 수 있습니다.";
 
 "settings.release_notes.progress.item_two" = "최근 저장 목록만 따로 스크롤해도 제목과 작업 버튼은 계속 표시됩니다.";
+
+"navigation.space.overview" = "개요";
+"navigation.space.switcher" = "주요 페이지";
+
+"configuration.action.save_as_preset" = "프리셋으로 저장";
+
+"胶片时间" = "FilmMark";
+
+/* Interface-only expression tone titles; preserve shared style-brand keys. */
+"configuration.expression.title.ceremonial" = "기념";
+"configuration.expression.title.growth" = "성장";
+"configuration.expression.title.warm" = "따뜻함";
+"configuration.expression.title.minimal" = "간결";
+"configuration.expression.title.memory" = "추억";
+"configuration.expression.title.motivational" = "응원";
+"configuration.expression.title.record" = "기록";
+
+/* Settings: user-initiated App Store and direct feedback destinations. */
+"settings.about.check_updates.title" = "업데이트 확인";
+"settings.about.check_updates.detail" = "App Store에서 업데이트가 있는지 확인하세요.";
+"settings.about.rate.title" = "MemoMark에 별점 남기기";
+"settings.about.rate.detail" = "App Store에서 사용 소감을 들려주세요.";
+"settings.about.store_unavailable.title" = "App Store를 열 수 없음";
+"settings.about.store_unavailable.detail" = "나중에 다시 시도하거나 App Store에서 MemoMark를 검색하세요.";
+"settings.feedback.xiaohongshu.title" = "샤오홍슈로 의견 보내기";
+"settings.feedback.xiaohongshu.headline" = "MemoMark 검색";
+"settings.feedback.xiaohongshu.detail" = "MemoMark 계정을 찾아 질문이나 아이디어를 다이렉트 메시지로 보내 주세요.";
+
+/* Settings hierarchy: presentation only. */
+"settings.structure.expression.title" = "시간 기준점이 사진에 전후의 이야기를 더해요";
+"settings.structure.expression.detail" = "생일은 성장을, 기념일은 함께한 시간을, 미래 날짜는 남은 날을 보여줘요.";
+"settings.structure.expression.action" = "사진이 들려주는 이야기 보기";
+"settings.structure.preferences.title" = "화면 환경설정";
+"settings.structure.usage_data.title" = "사용 방법과 데이터";
+"settings.structure.usage.title" = "사용 가이드";
+"settings.structure.usage.detail" = "Apple Photos에서 시작하고 사진 보관함에서 확인하세요.";
+"settings.structure.photo_data.title" = "사진과 데이터";
+"settings.structure.photo_data.detail" = "지원하는 사진, 저장 방식, 기기 내 데이터.";
+"settings.structure.support.title" = "MemoMark를 함께 만들어요";
+"settings.structure.feedback.title" = "질문과 제안";
+"settings.structure.feedback.detail" = "이메일이나 샤오홍슈 메시지로 개발자에게 직접 연락하세요.";
+"settings.structure.about.title" = "버전 및 앱 정보";
+"settings.structure.story.title" = "MemoMark 이야기";

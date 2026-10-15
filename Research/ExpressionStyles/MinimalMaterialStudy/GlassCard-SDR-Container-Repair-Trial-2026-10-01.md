@@ -1,0 +1,15 @@
+# Controlled PNG/HEIC in-place repair trial
+
+Engineering Loop P1 research only. Source: validated read-only container inspector and observed writer payload truncation. Controlled files only; preserve originals, generate separate repaired copies. Patch existing TIFF UserComment storage and count, PNG eXIf CRC; do not move metadata, change file size, alter HEIC extents or image data. Fail closed on insufficient capacity/unsupported storage. Test both ordinary and reserved-storage fixtures (reserved with source properties, empty exportDescription, original description fields retained). This is an experiment, not a production adapter or generic metadata preservation guarantee.
+
+Verification: exact string scalar readback via actual ImageIO, unchanged pixel bytes, capture/exposure, unchanged bytes outside allowed ranges, length/CRC/extent invariants, malformed/capacity failures. No Photos/private files or global parser migration.
+
+## Verified controlled outcome
+
+24 inputs (six strings × PNG/HEIC × ordinary/reserved capacity). In-place patch succeeded for 22 copies; ordinary decomposed-accent PNG/HEIC rejected for insufficient capacity. All 12 reserved-storage copies succeeded. Every modified file has original length; all differences constrained to UserComment storage/count and PNG eXIf CRC. HEIC extents unchanged. CRC/TIFF/raw-header/count reinspection passed.
+
+Native ImageIO readback `/tmp/MemoMarkContainerRepairReadbackTmp.xcresult` passed one focused test, no runtime warnings: 22 exact Unicode scalar matches, 22 identical nonoptional decoded pixel byte comparisons, same decoded color space, dimensions64×48/up orientation, capture string/exposure0.01, same TIFF/IPTC/PNG metadata dictionaries. GPS not exercised in this fixture slice. Four Python repair tests passed (12 reserved inputs/boundary checks, insufficient capacity, bad CRC, unsupported format); six inspector regressions passed after adding location offsets. Initial Swift fixture source naming collision fixed before successful build (`/tmp/MemoMarkContainerReservedFixed.xcresult`).
+
+First readback run hung opening Documents manifest: sample `/tmp/MemoMarkContainerRepairSample.txt` identifies Foundation Data file open at test line9 before ImageIO. Only owned test processes stopped; controlled inputs copied to /tmp and second run passed. This does not establish the underlying filesystem/TCC cause. Retained readback source expects `/tmp/GlassCardContainerRepairTrial`; recreate from retained artifact directory before running. Interrupted bundle is not a pass.
+
+Sources and files retained in `$HOME/Documents/Codex/2026-10-01/GlassCardContainerRepairTrial/` (originals/repaired/manifests/readback). Temporary target copies byte-checked and removed. No production integration, arbitrary HEIC/maker-note support, alias/overlap/fuzzing certification, live Photos/device evidence or scheduling change. Next slice needs Swift adapter with explicit ownership and adversarial field-overlap/reference controls before production use.

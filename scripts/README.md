@@ -4,7 +4,8 @@ This folder contains local automation helpers.
 
 Current scripts:
 
-- `auto_sync_to_github.sh`
+- `auto_sync_to_github.sh` - defaults to a read-only full-source plan; explicit validated sync is required for commit/push.
+- `memomark_source_sync.py` - exact source coverage, privacy/missing-input checks, validated-candidate/index matching, guarded commit and remote SHA readback.
 - `validate_codex_governance.py` - checks the compact Codex routing entry,
   project Skill boundaries, physical-device evidence rule, and explicit release
   authorization contract.
@@ -95,3 +96,55 @@ Keep `export_options_v1_testing.plist` for local/debugging exports. It uses
 `method = debugging`, which is not the TestFlight upload path.
 
 V2 note: the target structure names this bucket `Scripts`, but the existing repository uses lowercase `scripts`. Keep the current folder name unless a dedicated rename migration is planned.
+
+## Complete-source sync (2026-10-16)
+
+The installed launch agent runs prepare every1800 seconds. It updates a local
+plan in the existing Application Support/PhotoMemo/AutoSync directory, without
+staging, committing or pushing. Source, tests, project/shared schemes, resources,
+scripts, engineering documents and research source are considered together.
+Raw local evidence/signing/private configuration stays local. Unknown or ignored
+build inputs and generated-directory source without a published identical copy
+block explicit sync for review. Review the plan's blocked and retained entries;
+a saved plan is not a passed build or published checkpoint.
+
+```sh
+scripts/auto_sync_to_github.sh prepare
+scripts/auto_sync_to_github.sh sync \
+  --candidate /tmp/ReviewedCompleteSource \
+  --receipt /tmp/ReviewedValidationReceipt.json \
+  --message-file /tmp/ReviewedCommitMessage.txt
+```
+
+The receipt must bind base/branch and the full files map from the reviewed plan,
+not only its changed paths. Each file entry has sha256 and executable fields.
+checks.fullTests, checks.iosArchive and checks.scriptTests each require exit=0 and
+an evidence path to a nonempty local result/summary file. Populate these from
+actual commands on that exact complete candidate; this is a local execution
+receipt contract, not cryptographic certification. New edits require refreshed
+coverage and appropriate verification. See the cloud-build guide and release
+sync standard. No receipt override or skip-validation flag exists.
+
+Explicit sync requires an initially empty index and an unchanged remote baseline.
+It stages literal exact paths, checks whitespace, exports the full index, compares
+content and executable modes, and rejects a commit hook changing the validated
+tree before push. Failure preserves the index or local commit for review; it does
+not clean/reset or force-push. Do not run a second publisher or manually edit the
+index concurrently. Scheduled and manual CLI runs share a checkout-level lock.
+These gates do not substitute for human authorization of the sync command or for
+private-material review. TestFlight/App Store actions remain separate.
+
+Install/update the local prepare task with scripts/install_autosync.sh. It copies the runner and Python helper into Application Support and backs
+up their previous copies and plists, disables the legacy label, and installs the modern
+prepare-only task with explicit repository/support-directory environment values.
+It preserves existing logs, source and local evidence. No fixed developer path
+is embedded in the tracked scripts. MEMOMARK_REPO_DIR and MEMOMARK_SUPPORT_DIR
+can override local checkout/support paths.
+
+macOS may deny a launch agent access to a Desktop checkout even when an interactive
+authorized terminal can read it. Such a task writes status=stopped with the system
+error; installation alone is not a successful inventory or GitHub backup. Do not
+bypass that permission or claim the scheduled run succeeded. The explicit manual
+workflow remains usable from an authorized environment; verify the task separately
+after the owner grants appropriate system access. Prepare also disables optional
+Git index refresh so read-only inventory preserves index bytes.

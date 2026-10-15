@@ -938,6 +938,9 @@ struct ConfigurationOptionListContractTests {
         let choicesEnd = try #require(optionListSource.range(of: "private var displayedMemoryDisplayStyle:"))
         let choices = optionListSource[choicesStart.lowerBound..<choicesEnd.lowerBound]
         #expect(!choices.contains("Menu {"))
+        // A horizontal scrolling wrapper gives the inner fit probe unlimited
+        // width and can hide expression choices in real narrow iPad windows.
+        #expect(!choices.contains("ScrollView(.horizontal)"))
         #expect(choices.contains("pendingMemoryDisplayStyle = style"))
         #expect(choices.contains("selectedMemoryDisplayStyle.wrappedValue = style"))
         #expect(!optionListSource.contains("horizontalTrailingWidth: 112"))
@@ -1608,7 +1611,7 @@ struct ConfigurationOptionListContractTests {
         #expect(page.contains("EmptyView()"))
         #expect(
             page.contains(
-                ".toolbar(usesToolbarConfigurationActions && !isEditingCardContent ? .visible : .hidden"
+                "usesToolbarConfigurationActions && !isEditingCardContent ? .visible : .hidden"
             )
         )
         #expect(toolbar.contains("Menu"))

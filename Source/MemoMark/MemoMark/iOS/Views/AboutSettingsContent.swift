@@ -1,12 +1,13 @@
 #if os(iOS) && !MEMOMARK_SHARE_EXTENSION
 import SwiftUI
 
-/// Presents Settings' read-only About content and delegates release-note
-/// presentation to the page that owns its sheet state.
+/// Presents installed-version information and delegates support actions to Settings.
 struct AboutSettingsContent: View {
     let language: MemoMarkLanguage
     let compactVersion: String
     let onShowReleaseNotes: () -> Void
+    let onCheckForUpdates: () -> Void
+    let onShowStory: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -15,16 +16,38 @@ struct AboutSettingsContent: View {
                     title: localized("settings.version.row_title", fallback: "版本"),
                     compactVersion: compactVersion
                 )
+                Button(action: onCheckForUpdates) {
+                    SettingsActionRow(
+                        title: localized("settings.about.check_updates.title", fallback: "检查更新"),
+                        detail: localized("settings.about.check_updates.detail", fallback: "在 App Store 查看是否有可用更新。"),
+                        systemImage: "arrow.triangle.2.circlepath",
+                        tint: .blue,
+                        showsDivider: true
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("settings.check-updates")
                 Button(action: onShowReleaseNotes) {
                     SettingsActionRow(
                         title: localized("settings.version.release_notes", fallback: "更新日志"),
                         detail: localized("settings.version.release_notes_detail", fallback: "看看时光记最近有哪些变化。"),
                         systemImage: "doc.text.fill",
                         tint: .blue,
+                        showsDivider: true
+                    )
+                }
+                .buttonStyle(.plain)
+                Button(action: onShowStory) {
+                    SettingsActionRow(
+                        title: localized("settings.structure.story.title", fallback: "时光记的故事"),
+                        detail: localized("settings.overview.action_detail", fallback: "了解 MemoMark 为什么从一段人生里的时间开始。"),
+                        systemImage: "book",
+                        tint: .purple,
                         showsDivider: false
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("settings.about-story")
             }
             .background(Color.clear)
 
@@ -40,7 +63,7 @@ struct AboutSettingsContent: View {
     }
 }
 
-/// Displays the narrative shown by the existing About MemoMark sheet.
+/// Displays the existing MemoMark story in the Settings navigation hierarchy.
 struct AboutMemoMarkNarrativeContent: View {
     let language: MemoMarkLanguage
 

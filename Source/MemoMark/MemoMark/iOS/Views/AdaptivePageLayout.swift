@@ -1,11 +1,5 @@
 import CoreGraphics
 
-enum EntryNavigationStyle {
-    case bottomTabBar
-    case floatingRail
-    case regularSidebar
-}
-
 enum ConfigurationPreviewWidthPolicy: Equatable {
     case readable
     case fullWidthInCompactLandscape
@@ -25,41 +19,6 @@ enum AdaptivePageLayout {
         let availableWidth = max(0, viewportWidth - trailingReservedWidth - horizontalPadding * 2)
         return fillsAvailableWidth ? availableWidth : min(maximumReadableContentWidth, availableWidth)
     }
-
-    static func navigationStyle(
-        hasRegularHorizontalSizeClass: Bool,
-        hasCompactVerticalSizeClass: Bool
-    ) -> EntryNavigationStyle {
-        if hasCompactVerticalSizeClass {
-            return .floatingRail
-        }
-
-        if hasRegularHorizontalSizeClass {
-            // Large windows share the same right-side controls in either pose.
-            return .floatingRail
-        }
-
-        return .bottomTabBar
-    }
-
-    static func usesRegularWorkspace(
-        hasRegularHorizontalSizeClass: Bool,
-        hasRegularVerticalSizeClass: Bool
-    ) -> Bool {
-        hasRegularHorizontalSizeClass && hasRegularVerticalSizeClass
-    }
-
-    static func scrollBottomPadding(
-        for navigationStyle: EntryNavigationStyle
-    ) -> CGFloat {
-        switch navigationStyle {
-        case .bottomTabBar:
-            return 96
-        case .floatingRail, .regularSidebar:
-            return 26
-        }
-    }
-
 }
 
 /// Compact overview capacity, independent of device model or configuration state.

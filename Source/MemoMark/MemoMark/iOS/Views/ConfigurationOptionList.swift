@@ -443,13 +443,11 @@ struct ConfigurationOptionList: View {
             memoryExpressionSectionHeader
 
             if disclosureState.isExpanded(for: .memoryExpression) {
-                memoryExpressionLayout {
+                VStack(alignment: .leading, spacing: 0) {
                     memoryDisplayRow
                         .frame(maxWidth: .infinity, alignment: .leading)
                     memoryExpressionPreview
                 }
-                .padding(.horizontal, usesHorizontalMemoryExpressionLayout ? ConfigurationUI.contentColumnPadding : 0)
-                .padding(.vertical, usesHorizontalMemoryExpressionLayout ? ConfigurationSectionCardMetrics.cardVerticalPadding : 0)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(
@@ -749,35 +747,10 @@ struct ConfigurationOptionList: View {
             if !availableMemoryDisplayStyles.isEmpty {
                 ConfigurationControlHelperText(memoryDisplaySubtitle)
 
-                ViewThatFits(in: .horizontal) {
-                    memoryDisplayStyleChoices
-                    ScrollView(.horizontal) {
-                        memoryDisplayStyleChoices
-                    }
-                    .scrollIndicators(.hidden)
-                }
-                .accessibilityLabel(localized("表达方式"))
-            }
-
-            if availableMemoryDisplayStyles.contains(where: isMemoryDisplayStyleLocked) {
-                Text(
-                    MemoMarkLanguage.interfaceStored.localized(
-                        key: "commerce.expression.preview_note",
-                        fallback: "其他表达方式可先预览；保存此选择需 MemoMark+ 权益。"
-                    )
-                )
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+                memoryDisplayStyleChoices
             }
         }
-        .padding(usesHorizontalMemoryExpressionLayout ? 0 : panelContentHorizontalInset)
-    }
-
-    private var memoryExpressionLayout: AnyLayout {
-        usesHorizontalMemoryExpressionLayout
-            ? AnyLayout(HStackLayout(alignment: .center, spacing: ConfigurationUI.innerPanelPadding))
-            : AnyLayout(VStackLayout(spacing: 0))
+        .padding(panelContentHorizontalInset)
     }
 
     private var usesCompactHeightPanelLayout: Bool {
@@ -794,13 +767,11 @@ struct ConfigurationOptionList: View {
             : CompactInformationRowMetrics.horizontalPadding
     }
 
-    private var usesHorizontalMemoryExpressionLayout: Bool {
+    private var memoryDisplayChoiceMaximumWidth: CGFloat? {
         #if os(iOS)
-        horizontalSizeClass == .regular
-            && verticalSizeClass == .compact
-            && !dynamicTypeSize.isAccessibilitySize
+        horizontalSizeClass == .regular ? .infinity : nil
         #else
-        false
+        .infinity
         #endif
     }
 
@@ -827,6 +798,9 @@ struct ConfigurationOptionList: View {
                     .fixedSize(horizontal: true, vertical: false)
                     .frame(minHeight: 44)
                     .hidden()
+                    // Keep the intrinsic fit requirement, then expand the visible
+                    // picker within a roomy content region rather than the screen.
+                    .frame(maxWidth: memoryDisplayChoiceMaximumWidth, alignment: .leading)
                     .overlay {
                         memoryDisplayPicker.pickerStyle(.segmented)
                     }
@@ -838,7 +812,7 @@ struct ConfigurationOptionList: View {
         }
         .tint(.accentColor)
         .accessibilityLabel(localized("表达方式"))
-        .accessibilityValue(localized(displayedMemoryDisplayStyle.displayTitle))
+        .accessibilityValue(localizedMemoryDisplayTitle(displayedMemoryDisplayStyle.displayTitle))
     }
 
     private var memoryDisplayPicker: some View {
@@ -862,11 +836,28 @@ struct ConfigurationOptionList: View {
                     .tag(style)
             }
         }
+        .accessibilityIdentifier("configuration.expression.choices")
     }
 
     private func memoryDisplayChoiceTitle(_ style: MemoryAnchorExpressionStyle) -> String {
-        localized(style.displayTitle == "自然（默认）"
-            ? "configuration.expression.natural.short" : style.displayTitle)
+        style.displayTitle == "自然（默认）"
+            ? localized("configuration.expression.natural.short")
+            : localizedMemoryDisplayTitle(style.displayTitle)
+    }
+
+    private func localizedMemoryDisplayTitle(_ title: String) -> String {
+        let key: String
+        switch title {
+        case "仪式感": key = "configuration.expression.title.ceremonial"
+        case "成长": key = "configuration.expression.title.growth"
+        case "温馨": key = "configuration.expression.title.warm"
+        case "极简": key = "configuration.expression.title.minimal"
+        case "回忆": key = "configuration.expression.title.memory"
+        case "激励": key = "configuration.expression.title.motivational"
+        case "记录": key = "configuration.expression.title.record"
+        default: return localized(title)
+        }
+        return localized(key)
     }
 
     private var displayedMemoryDisplayStyle: MemoryAnchorExpressionStyle {
@@ -874,7 +865,7 @@ struct ConfigurationOptionList: View {
     }
 
     private var displayedMemoryDisplayValue: String {
-        pendingMemoryDisplayStyle?.displayTitle ?? memoryDisplayValue
+        localizedMemoryDisplayTitle(pendingMemoryDisplayStyle?.displayTitle ?? memoryDisplayValue)
     }
 
     private var memoryDisplaySubtitle: String {
@@ -922,12 +913,8 @@ struct ConfigurationOptionList: View {
             )
             .stroke(ConfigurationUI.faintHairline)
         )
-        .padding(.horizontal, usesHorizontalMemoryExpressionLayout ? 0 : panelContentHorizontalInset)
-        .padding(.bottom, usesHorizontalMemoryExpressionLayout ? 0 : 12)
-        .frame(
-            maxWidth: usesHorizontalMemoryExpressionLayout ? 240 : .infinity,
-            alignment: .leading
-        )
+        .padding(.horizontal, panelContentHorizontalInset)
+        .padding(.bottom, 12)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(localized("configuration.expression.example"))
         .accessibilityValue(memoryExpressionPreviewLines.joined(separator: "，"))

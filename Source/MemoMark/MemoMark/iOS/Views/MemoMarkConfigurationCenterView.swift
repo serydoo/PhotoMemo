@@ -21,6 +21,12 @@ struct MemoMarkConfigurationCenterView: View {
     @Environment(\.verticalSizeClass)
     var verticalSizeClass
 
+    @Environment(\.dynamicTypeSize)
+    var adaptiveDynamicTypeSize
+
+    @ScaledMetric(relativeTo: .body)
+    var minimumWideOverviewRegionWidth = WideOverviewLayoutPolicy.minimumRegionWidth
+
     @ObservedObject
     var backgroundStatusService:
         MemoMarkBackgroundStatusService
@@ -77,6 +83,9 @@ struct MemoMarkConfigurationCenterView: View {
 
     @StateObject
     var session = ConfigurationSession()
+
+    @State var adaptiveWindowViewport: CGSize?
+    @State var nativeVerticalToolbarAvailable = false
 
     @State
     var editorDraftState = ConfigurationEditorDraftState()

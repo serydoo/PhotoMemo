@@ -7,7 +7,9 @@ MemoMark（时光记）是一款为 Apple Photos 设计的本地优先照片记�
 
 当前源码候选版本：**MemoMark 2.3.7（构建 132）**。以可分发的 2.3.6（124）为基准，整理大屏横屏首页与进展双栏、预设及历史列表滚动、横屏配置侧栏固定主导航、时间表达说明、配置保存与分享处理接续。照片继续本地处理，原图保持不变。详见[更新说明](Docs/07_Releases/2026-10-12-2.3.7-release-notes.md)、[TestFlight 说明](Docs/07_Releases/2026-10-12-2.3.7-testflight-notes.md)和[发布清单](Docs/07_Releases/2026-10-12-2.3.7-132-sync-manifest.md)。源码同步、Cloud 接收、TestFlight 分发与正式上线分别记录。
 
-最新源码检查点（2026-10-12）：整理配置保存、本地化、横屏适配与时间表达文案，版本保持 2.3.6（124）。首页紧凑顶部／双栏优化从此检查点之后开始。见[同步清单](Docs/07_Releases/2026-10-12-2.3.6-source-checkpoint-sync-manifest.md)。本次仅 GitHub 源码同步，不代表商店发布。
+本轮 V5 完整源码同步（2026-10-15）：基于当前 main 的能力驱动自适应呈现、iPad/Mac区域布局、编辑体验与设置层级整理，版本仍为2.3.7（132）。业务与照片输出架构冻结；同步包含完整工程、最新优化、测试、工程记录与经审查的研究源码；从干净仓库构建见[云端构建说明](Docs/06_Development/Cloud_Build_From_GitHub.md)。源码、在线构建、真机验收和商店发布分别记录。详见[检查点与范围](Docs/07_Releases/2026-10-15-v5-source-checkpoint/sync-manifest.md)及[工程说明](Docs/03_Engineering/2026-10-15-v5-adaptive-presentation-checkpoint.md)。
+
+此前源码检查点（2026-10-12）：整理配置保存、本地化、横屏适配与时间表达文案，版本保持 2.3.6（124）。首页紧凑顶部／双栏优化从此检查点之后开始。见[同步清单](Docs/07_Releases/2026-10-12-2.3.6-source-checkpoint-sync-manifest.md)。本次仅 GitHub 源码同步，不代表商店发布。
 
 最新工程检查点（2026-10-11）：整理 Share 后台接续、真实渲染内容与历史持续活动修复，版本保持 2.3.6（124）。已取得当前 Beta 真机经典白卡片整批结果证据，四种卡片的完整验收仍待继续。见[源码同步清单](Docs/07_Releases/2026-10-11-2.3.6-source-checkpoint-sync-manifest.md)。该检查点不代表新商店版本或完整生产认证。
 

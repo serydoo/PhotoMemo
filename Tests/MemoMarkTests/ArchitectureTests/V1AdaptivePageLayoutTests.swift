@@ -53,11 +53,10 @@ struct AdaptivePageLayoutTests {
     @Test("compact width and regular height keeps the bottom tab bar")
     func compactWidthAndRegularHeightKeepsBottomTabBar() {
         #expect(
-            AdaptivePageLayout
-                .navigationStyle(
-                    hasRegularHorizontalSizeClass: false,
-                    hasCompactVerticalSizeClass: false
-                )
+            NavigationPresentationPolicy.style(for: AdaptivePresentationCapabilities(
+                    horizontal: .compact,
+                    vertical: .regular
+                ))
             == .bottomTabBar
         )
     }
@@ -65,11 +64,10 @@ struct AdaptivePageLayoutTests {
     @Test("regular width and compact height uses a floating rail")
     func regularWidthAndCompactHeightUsesFloatingRail() {
         #expect(
-            AdaptivePageLayout
-                .navigationStyle(
-                    hasRegularHorizontalSizeClass: true,
-                    hasCompactVerticalSizeClass: true
-                )
+            NavigationPresentationPolicy.style(for: AdaptivePresentationCapabilities(
+                    horizontal: .regular,
+                    vertical: .compact
+                ))
             == .floatingRail
         )
     }
@@ -77,11 +75,10 @@ struct AdaptivePageLayoutTests {
     @Test("regular width and regular height keeps the right-side floating rail")
     func regularWidthAndRegularHeightUsesFloatingRail() {
         #expect(
-            AdaptivePageLayout
-                .navigationStyle(
-                    hasRegularHorizontalSizeClass: true,
-                    hasCompactVerticalSizeClass: false
-                )
+            NavigationPresentationPolicy.style(for: AdaptivePresentationCapabilities(
+                    horizontal: .regular,
+                    vertical: .regular
+                ))
             == .floatingRail
         )
     }
@@ -89,11 +86,10 @@ struct AdaptivePageLayoutTests {
     @Test("compact width and compact height uses a floating rail")
     func compactWidthAndCompactHeightUsesFloatingRail() {
         #expect(
-            AdaptivePageLayout
-                .navigationStyle(
-                    hasRegularHorizontalSizeClass: false,
-                    hasCompactVerticalSizeClass: true
-                )
+            NavigationPresentationPolicy.style(for: AdaptivePresentationCapabilities(
+                    horizontal: .compact,
+                    vertical: .compact
+                ))
             == .floatingRail
         )
     }
@@ -101,8 +97,7 @@ struct AdaptivePageLayoutTests {
     @Test("bottom tab bar keeps scroll content clear of navigation")
     func bottomTabBarUsesExpandedBottomPadding() {
         #expect(
-            AdaptivePageLayout
-                .scrollBottomPadding(
+            NavigationPresentationPolicy.scrollBottomPadding(
                     for: .bottomTabBar
                 )
             == 96
@@ -112,40 +107,38 @@ struct AdaptivePageLayoutTests {
     @Test("side presentations avoid unnecessary bottom whitespace")
     func sidePresentationsUseStandardBottomPadding() {
         #expect(
-            AdaptivePageLayout
-                .scrollBottomPadding(
+            NavigationPresentationPolicy.scrollBottomPadding(
                     for: .floatingRail
                 )
             == 26
         )
         #expect(
-            AdaptivePageLayout
-                .scrollBottomPadding(
+            NavigationPresentationPolicy.scrollBottomPadding(
                     for: .regularSidebar
                 )
             == 26
         )
     }
 
-    @Test("regular workspace requires regular width and height")
-    func regularWorkspaceRequiresRegularWidthAndHeight() {
+    @Test("side-by-side configuration requires regular width and height")
+    func sideBySideConfigurationRequiresRegularWidthAndHeight() {
         #expect(
-            AdaptivePageLayout.usesRegularWorkspace(
-                hasRegularHorizontalSizeClass: true,
-                hasRegularVerticalSizeClass: true
-            )
+            ConfigurationContentArrangementPolicy.arrangement(for: AdaptivePresentationCapabilities(
+                horizontal: .regular,
+                vertical: .regular
+            )) == .sideBySide
         )
         #expect(
-            !AdaptivePageLayout.usesRegularWorkspace(
-                hasRegularHorizontalSizeClass: false,
-                hasRegularVerticalSizeClass: true
-            )
+            ConfigurationContentArrangementPolicy.arrangement(for: AdaptivePresentationCapabilities(
+                horizontal: .compact,
+                vertical: .regular
+            )) != .sideBySide
         )
         #expect(
-            !AdaptivePageLayout.usesRegularWorkspace(
-                hasRegularHorizontalSizeClass: true,
-                hasRegularVerticalSizeClass: false
-            )
+            ConfigurationContentArrangementPolicy.arrangement(for: AdaptivePresentationCapabilities(
+                horizontal: .regular,
+                vertical: .compact
+            )) != .sideBySide
         )
     }
 }

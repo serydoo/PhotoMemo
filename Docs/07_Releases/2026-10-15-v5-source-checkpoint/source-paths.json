@@ -1,0 +1,914 @@
+{
+  "base": "d17bf849f1c3ff0e51488d1f4bc36e2cfca1727c",
+  "changedPaths": 227,
+  "entries": [
+    {
+      "status": " M",
+      "path": "AGENTS.md"
+    },
+    {
+      "status": " M",
+      "path": "CHANGELOG.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-10-github-informed-development-investment-review.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-12-v5.1-adaptive-presentation-foundation.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-12-v5.1-device-validation-followup.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-13-time-expression-stacked-layout.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-13-v5.2-ipad-overview.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-13-v5.3-ipad-configuration.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-13-v5.4-macos-regions.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-13-v5.5-duo-native-readiness.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-13-v5.5-native-region-integration.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-14-v5-overall-progress.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-14-v5.6-cross-surface-validation.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-14-v5.6-local-validation-continuation.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-14-v5.6-local-validation-results.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-14-v5.6-window-keyboard-validation.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-accessible-card-editor-height-results.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-accessible-card-editor-height.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-editor-undo-redo-results.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-editor-undo-redo.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-ipad-card-editor-alignment-results.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-ipad-card-editor-alignment.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-settings-hierarchy-implementation.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-settings-rating-and-updates-results.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-settings-rating-and-updates.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-settings-structure-review.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-v5-adaptive-presentation-checkpoint.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-v5-progress-and-next.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-v5.6-chinese-input-results.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-15-v5.6-window-keyboard-results.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/03_Engineering/2026-10-16-complete-source-autosync.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/06_Development/Cloud_Build_From_GitHub.md"
+    },
+    {
+      "status": " M",
+      "path": "Docs/07_Releases/2026-09-27-2.3.4-app-store-whats-new.md"
+    },
+    {
+      "status": " M",
+      "path": "Docs/07_Releases/2026-10-03-2.3.5-122-sync-manifest.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-04-2.3.5-122-app-store-submission.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-04-2.3.5-122-store-copy-four-locales.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-04-app-store-expression-materials.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-04-app-store-metadata-research.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-05-national-day-annual-free-offer.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-06-2.3.6-app-store-submission.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-06-app-store-growth-and-visual-plan.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-06-incident-repair-release-draft.md"
+    },
+    {
+      "status": " M",
+      "path": "Docs/07_Releases/2026-10-12-2.3.7-132-sync-manifest.md"
+    },
+    {
+      "status": " M",
+      "path": "Docs/07_Releases/2026-10-12-2.3.7-sync-manifest.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-15-v5-source-checkpoint/2.3.7-132-app-store-whats-new.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-15-v5-source-checkpoint/2.3.7-132-release-notes.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-15-v5-source-checkpoint/2.3.7-132-testflight-notes.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-15-v5-source-checkpoint/source-paths.json"
+    },
+    {
+      "status": "??",
+      "path": "Docs/07_Releases/2026-10-15-v5-source-checkpoint/sync-manifest.md"
+    },
+    {
+      "status": " M",
+      "path": "Docs/07_Releases/RELEASE_SYNC_STANDARD.md"
+    },
+    {
+      "status": " M",
+      "path": "Docs/CURRENT_BRIEF.md"
+    },
+    {
+      "status": " M",
+      "path": "Docs/CURRENT_STATUS.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/Outreach/2026-09-19-MemoMark-SEO-发布稿.md"
+    },
+    {
+      "status": " M",
+      "path": "Docs/Outreach/PRODUCT_POSITIONING.md"
+    },
+    {
+      "status": " M",
+      "path": "Docs/Outreach/README.md"
+    },
+    {
+      "status": "??",
+      "path": "Docs/Outreach/XHS_OUTREACH_MECHANISM.md"
+    },
+    {
+      "status": " M",
+      "path": "README.md"
+    },
+    {
+      "status": " M",
+      "path": "README_EN.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Appearance-Measurement-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Landscape-Sizing-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Material-Candidates-G2b-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Native-First-Delivery-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Native-Material-Integration-2026-10-02.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Next-Development-Plan-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Output-Downsampling-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Preview-Parity-G2a-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-ROI-Blur-2026-10-01.md"
+    },
+    {
+      "status": " M",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Real-Output-Appearance-Audit-2026-10-02.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Async-Stages-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Composition-Isolation-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Container-Inspection-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Container-Repair-Trial-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Encoded-Display-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Encoding-Eligibility-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Encoding-Orchestration-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Final-Compositing-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-HEIC-Grid-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-High-Entropy-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Luminance-Compression-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Metadata-Snapshot-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Native-Metadata-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Shared-Adapter-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Source-Admission-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Source-Preparation-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Swift-HEIC-Repair-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Swift-PNG-Repair-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Unicode-Description-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Writer-Isolation-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-SDR-Writer-Readback-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Texture-Contrast-G2b-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Vertical-Capacity-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCard-Vertical-Display-Validation-2026-10-01.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardAppearanceMeasurementProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardContainerFixtureProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardContainerRepairReadbackProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardEncodingEligibilityProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardEncodingResourceProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardHEICGridProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardHEICResearchRepair.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardHighEntropyProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardLandscapeSizingProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardMaterialCandidateProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardNativeMetadataProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardNativeMotionReadback.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardNativeRasterProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardOutputDownsamplingProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardPNGResearchRepair.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardROIBlurProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRCompositorProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDREncodingIsolationProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRLuminanceProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRMetadataSnapshotProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRPreparationProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRResearchAdapter.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRResearchCompositor.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRResearchEncodingWorker.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRResearchMaterial.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRResearchMetadataSnapshot.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRResearchSource.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRResearchVerifiedEncoder.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRResearchWorker.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSDRSourceAdmissionProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSwiftHEICRepairProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardSwiftPNGRepairProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardTIFFResearchRepair.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardTextureContrastProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardUnicodeDescriptionProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardVerifiedEncodingProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardVerticalCapacityProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/GlassCardVerticalDisplayProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/LOCAL_RESEARCH_TOOLS.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_appearance.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_candidates.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_downsampling.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_encoded_display.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_final_sdr.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_native_metadata.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_roi.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_sdr.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_sizing.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_textures.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_unicode.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_vertical_capacity.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_vertical_display.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/analyze_glasscard_writer.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/inspect_glasscard_containers.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/inspect_glasscard_heic_references.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/repair_glasscard_fixture_metadata.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/test_glasscard_container_inspector.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/test_glasscard_fixture_repair.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExpressionStyles/MinimalMaterialStudy/test_glasscard_heic_references.py"
+    },
+    {
+      "status": "??",
+      "path": "Research/ExternalDesignStudies/2026-09-23-Apple-Featured-App-Design-Study-01.md"
+    },
+    {
+      "status": " M",
+      "path": "Research/README.md"
+    },
+    {
+      "status": " M",
+      "path": "Research/ResearchHistory.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/Tools/README.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/Tools/extract-screen-frame.swift"
+    },
+    {
+      "status": "??",
+      "path": "Research/VisualPrototypes/ClassicWhitePortraitLayoutAlignment-2026-09-24.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/VisualPrototypes/ConfigurationPreviewArrowSwitching-2026-09-24.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/VisualPrototypes/ConfigurationPreviewProductionIntegration-2026-09-24.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/VisualPrototypes/ConfigurationPreviewReview-2026-09-23.html"
+    },
+    {
+      "status": "??",
+      "path": "Research/VisualPrototypes/MemoMark-Cross-Surface-Visual-Review-2026-09-26.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/VisualPrototypes/MidAutumnSharedPreviewBackgrounds-2026-09-24.md"
+    },
+    {
+      "status": "??",
+      "path": "Research/VisualPrototypes/NativeConfigurationPreviewReview-2026-09-23.md"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/DesktopConfigurationRegionPolicy.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/MacConfigurationCenterPage.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/MacConfigurationRegionSurface.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/ConfigurationCenter/MacOverviewRegionSurface.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/Views/MemoMarkAppStoreDestination.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/en.lproj/Localizable.strings"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/AboutSettingsContent.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/AdaptiveNavigationShell.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/AdaptivePageLayout.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/AdaptivePresentationFoundation.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/AdaptiveWindowViewportReader.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/CardContentInspectorSurface.swift"
+    },
+    {
+      "status": " D",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/CommunitySupportContent.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/ConfigurationActionFooter.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/ConfigurationOptionList.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/ConfigurationPageSurface.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/FeedbackSupportContent.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/HomePageSurface.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/InterfacePreferencesContent.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView+Pages.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/MemoMarkConfigurationCenterView.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/MemoryCardEditorPageSurface.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/MemoryCardPreviewSection.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/MemoryCardRegionEditorCluster.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/MemoryCardTextKitEditorSession.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/NativeRegionValidationProbe.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/NativeVerticalToolbarCapabilityReader.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/OverviewPageSurface.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/ReservedPresentationRegionPolicy.swift"
+    },
+    {
+      "status": " D",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/SettingsSectionSurface.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/SettingsSupportRowComponents.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/TaskPageSurface.swift"
+    },
+    {
+      "status": "??",
+      "path": "Source/MemoMark/MemoMark/iOS/Views/WideOverviewLayoutPolicy.swift"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/ja.lproj/Localizable.strings"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/ko.lproj/Localizable.strings"
+    },
+    {
+      "status": " M",
+      "path": "Source/MemoMark/MemoMark/zh-Hans.lproj/Localizable.strings"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/ActiveLocalizationUsageAuditTests.swift"
+    },
+    {
+      "status": "??",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/AdaptivePresentationFoundationTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/AppleNativeProductSurfaceContractTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/ConfigurationOptionListContractTests.swift"
+    },
+    {
+      "status": "??",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/DesktopConfigurationRegionPolicyTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/IPhoneResponsiveLayoutContractTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/LocalizationResourceParityTests.swift"
+    },
+    {
+      "status": "??",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/MemoMarkAppStoreDestinationTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/MemoMarkCommerceUIContractTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/MemoMarkNarrativeLanguageContractTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/MemoMarkSymbolCatalogContractTests.swift"
+    },
+    {
+      "status": "??",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/NativeCompactNavigationPolicyTests.swift"
+    },
+    {
+      "status": "??",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/ReservedPresentationRegionPolicyTests.swift"
+    },
+    {
+      "status": " D",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/SettingsDisclosureContractTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/SettingsExpressionGuideContractTests.swift"
+    },
+    {
+      "status": "??",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/SettingsPresentationContractTests.swift"
+    },
+    {
+      "status": "??",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/SettingsSupportContractTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/V1AdaptivePageLayoutTests.swift"
+    },
+    {
+      "status": "??",
+      "path": "Tests/MemoMarkTests/ArchitectureTests/WideOverviewLayoutPolicyTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "Tests/MemoMarkUITests/MemoMarkDeviceQAHarnessTests.swift"
+    },
+    {
+      "status": " M",
+      "path": "scripts/README.md"
+    },
+    {
+      "status": " M",
+      "path": "scripts/auto_sync_to_github.sh"
+    },
+    {
+      "status": " M",
+      "path": "scripts/com.serydoo.memomark.autosync.plist"
+    },
+    {
+      "status": " M",
+      "path": "scripts/install_autosync.sh"
+    },
+    {
+      "status": "??",
+      "path": "scripts/memomark_source_sync.py"
+    },
+    {
+      "status": "??",
+      "path": "scripts/tests/test_memomark_source_sync.py"
+    }
+  ]
+}

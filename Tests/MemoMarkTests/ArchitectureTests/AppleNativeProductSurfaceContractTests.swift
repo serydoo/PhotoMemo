@@ -382,7 +382,7 @@ struct AppleNativeProductSurfaceContractTests {
         )
 
         let disclosureSource = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsSectionSurface.swift"
         )
         let supportRows = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/SettingsSupportRowComponents.swift"
@@ -394,7 +394,7 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(feedback.contains("SettingsLinkRow("))
         #expect(supportRows.contains(".foregroundStyle(.secondary)"))
         #expect(!supportRows.contains(".foregroundStyle(Color.accentColor)"))
-        #expect(disclosureSource.contains(".foregroundStyle(.tertiary)"))
+        #expect(disclosureSource.contains(".foregroundStyle(.secondary)"))
     }
 
     @Test("subject and module surfaces resolve active interface copy")
@@ -437,7 +437,7 @@ struct AppleNativeProductSurfaceContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
         )
         let disclosure = try sourceText(
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsSectionSurface.swift"
         )
 
         #expect(overview.contains("subject.overview.identity.title"))
@@ -456,12 +456,12 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(editor.contains("private var identityOverviewFieldsGroup"))
         #expect(editor.contains("HorizontalDivider(horizontalInset: 12)"))
         #expect(editor.contains(".groupedSurface()"))
-        #expect(settings.contains("case interfacePreferences"))
-        #expect(settings.contains("section: .interfacePreferences"))
-        #expect(settings.contains("trailingValue: InterfacePreferencesContent.summary("))
-        #expect(disclosure.contains("private var adaptiveDisclosureHeader"))
-        #expect(disclosure.contains("private var verticalDisclosureHeader"))
-        #expect(disclosure.contains("if let trailingValue,"))
+        #expect(settings.contains("private var interfacePreferencesSection"))
+        #expect(settings.contains("InterfacePreferencesContent("))
+        #expect(!settings.contains("isInterfacePreferencesExpanded"))
+        #expect(disclosure.contains("accessibilityAddTraits(.isHeader)"))
+        #expect(disclosure.contains(".fixedSize(horizontal: false, vertical: true)"))
+        #expect(!disclosure.contains("lineLimit"))
     }
 
     @Test("Application surfaces are semantic while fixed output previews stay light")
@@ -588,16 +588,16 @@ struct AppleNativeProductSurfaceContractTests {
         #expect(settings.contains("memoMarkPlusSection"))
     }
 
-    @Test("settings opens getting started first and keeps secondary sections collapsed")
-    func settingsStartsGettingStartedAndCollapsesSecondarySections() throws {
+    @Test("settings prioritizes expression and visible preferences with secondary navigation")
+    func settingsPrioritizesExpressionAndVisiblePreferences() throws {
         let source = try sourceText(
             "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
         )
 
-        #expect(source.contains("private var isGettingStartedExpanded = true"))
-        #expect(source.contains("private var isPhotoProcessingExpanded = false"))
-        #expect(source.contains("private var isDataSafetyExpanded = false"))
-        #expect(source.contains("private var isAboutExpanded = false"))
+        #expect(source.contains("expressionFeatureSection"))
+        #expect(source.contains("interfacePreferencesSection"))
+        #expect(source.contains(".navigationDestination(isPresented: $showsPhotoData)"))
+        #expect(!source.contains("productCenter.gettingStartedExpanded"))
         #expect(source.contains("MemoMarkSharedContainer.sharedUserDefaults"))
         #expect(source.contains("private var memoMarkPlusSection"))
         #expect(!source.contains("private func settingsTonalIcon"))
@@ -614,8 +614,7 @@ struct AppleNativeProductSurfaceContractTests {
         let paths = [
             "Source/MemoMark/MemoMark/ConfigurationCenter/MemoryCard/InteractiveMemoryCard.swift",
             "Source/MemoMark/MemoMark/ConfigurationCenter/MemoryCard/InteractiveMemoryCardConfigurationComponentDock.swift",
-            "Source/MemoMark/MemoMark/ConfigurationCenter/MemoryCard/InteractiveMemoryCardCompactPreview.swift",
-            "Source/MemoMark/MemoMark/iOS/Views/SettingsDisclosureSection.swift"
+            "Source/MemoMark/MemoMark/ConfigurationCenter/MemoryCard/InteractiveMemoryCardCompactPreview.swift"
         ]
 
         for path in paths {

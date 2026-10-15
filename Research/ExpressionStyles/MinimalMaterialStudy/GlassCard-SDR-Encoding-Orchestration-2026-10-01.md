@@ -1,0 +1,13 @@
+# SDR encoding orchestration research
+
+Engineering Loop, P1 research reliability slice. Existing isolated encoding returns a caller-owned URL even when cancellation arrives after synchronous ImageIO encoding. PNG/HEIC Unicode repair is proven separately but has no complete request-to-verified-output owner.
+
+Bounded plan: frozen metadata enters a concurrent research worker; reserve EXIF capacity explicitly, invoke the actual production writer, repair through the shared bounded Swift kernels, verify native ImageIO Unicode readback, and return immutable Data. A unique internal temporary directory belongs to the worker and is removed on success, failure or cancellation. PNG/HEIC only, sRGB 8-bit controlled sources, description at most 4096 UTF-16 units, encoded data at most 16 MiB. Native ImageIO synchronous work is cancellable only at stage boundaries. No production caller, defaults, media scheduling, Photos save-back or Layout ownership change.
+
+Verification: six Unicode/ASCII descriptions across two formats, capture/exposure preservation, background execution and scratch-directory cleanup; an unreserved decomposed-accent control must fail after encoding and leave no scratch file; pre-cancellation must leave no scratch file. macOS native research tests only; physical-device Photos, HDR/P3 and Live Photo certification remain open.
+
+## Verified result
+
+Final macOS build/test `/tmp/MemoMarkVerifiedEncodingFinal.xcresult`: two passing test cases, no failures/skips. Twelve PNG/HEIC outputs verified exact Unicode scalars, sRGB and dimensions inside the worker; tests additionally verify capture time/exposure and no remaining scratch children. Two unreserved decomposed-accent controls fail with insufficientCapacity after actual encoding and clean their scratch directories. Pre-cancel leaves no scratch directory. A 4097px-wide control first failed the expected rejection (`/tmp/MemoMarkVerifiedEncodingBoundsRed.xcresult`), then passed after enforcing 4096px per dimension.
+
+Review closure: successful return requires successful removal; failure cleanup also surfaces filesystem errors, with defer making a final best-effort retry if removal fails. OS permission/storage errors can still prevent deletion; no guarantee against externally denied cleanup. Synchronous ImageIO cannot be interrupted internally. Output is immutable Data, so filesystem dates are not published. Existing shared repair tests establish byte-range/pixel fidelity; this slice did not rerun that separate matrix or general metadata/Photos certification. Six temporary test-target copies byte-compared and removed. No production integration, commit or push.

@@ -34,6 +34,8 @@ struct ActiveLocalizationUsageAuditTests {
         "Source/MemoMark/MemoMark/iOS/Views/ReleaseNotesSheet.swift",
         "Source/MemoMark/MemoMark/iOS/Views/SettingsExpressionGuide.swift",
         "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/AboutSettingsContent.swift",
+        "Source/MemoMark/MemoMark/iOS/Views/FeedbackSupportContent.swift",
         "Source/MemoMark/MemoMark/iOS/Views/SubjectConfigurationFlow.swift",
         "Source/MemoMark/MemoMark/iOS/Views/SubjectOverviewSheetSurface.swift",
         "Source/MemoMark/MemoMark/iOS/Views/SubjectAnchorDetailSection.swift",
@@ -59,7 +61,6 @@ struct ActiveLocalizationUsageAuditTests {
     private let intentionalEnglishKeys: Set<String> = [
         "common.ok",
         "commerce.title",
-        "settings.feedback.github.title",
         "settings.version.compact_format",
         "settings.version.copyright",
         "home.apple_photos.brand",

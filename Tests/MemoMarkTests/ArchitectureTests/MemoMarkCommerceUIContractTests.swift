@@ -484,7 +484,9 @@ struct MemoMarkCommerceUIContractTests {
         )
 
         #expect(optionSource.contains("pendingMemoryDisplayStyle"))
-        #expect(optionSource.contains("commerce.expression.preview_note"))
+        // The owner keeps one concise helper above the choices. Saving still
+        // validates pending expression entitlements through the existing action.
+        #expect(!optionSource.contains("commerce.expression.preview_note"))
         #expect(!optionSource.contains("showsCommercePurchase = true"))
         #expect(pagesSource.contains("pendingMemoryDisplayStyleBinding"))
         #expect(actionsSource.contains("requestCommerceForPendingExpressionStyle"))

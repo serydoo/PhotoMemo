@@ -174,7 +174,7 @@ struct SettingsExpressionGuideContractTests {
             "settings.overview.paragraph_three",
             "settings.getting_started.detail",
             "settings.privacy.local_processing.title",
-            "settings.feedback.section_title"
+            "settings.structure.feedback.title"
         ] {
             #expect(source.contains(key))
         }

@@ -33,7 +33,9 @@ struct CardContentInspectorSurface<EditorContent: View>: View {
                     }
                 }
             }
-            .padding(.horizontal, ConfigurationUI.contentColumnPadding)
+            .adaptiveScrollContent(
+                horizontalPadding: ConfigurationUI.contentColumnPadding
+            )
             .padding(.vertical, 8)
 
             editorContent

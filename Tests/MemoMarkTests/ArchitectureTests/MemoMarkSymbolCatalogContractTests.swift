@@ -70,7 +70,7 @@ struct MemoMarkSymbolCatalogContractTests {
         #expect(source.contains("CompactInformationRowMetrics.iconCornerRadius"))
     }
 
-    @Test("approved headings and entries keep their semantic icons outside text-only settings disclosures")
+    @Test("approved headings and entries keep their semantic icons outside text-only settings sections")
     func approvedHeadingsAndEntriesKeepTheirSemanticIcons() throws {
         let expectations = [
             (["iOS/Views/HomePageSurface.swift"], "home.presets.title", "MemoMarkSymbol.configuration.name"),
@@ -101,9 +101,14 @@ struct MemoMarkSymbolCatalogContractTests {
             "Source/MemoMark/MemoMark/iOS/Views/SettingsPageSurface.swift"
         )
         #expect(!settingsSource.contains("CompactHeadingIcon"))
-        #expect(settingsSource.contains("settings.getting_started.title"))
+        #expect(settingsSource.contains("settings.structure.usage.title"))
         #expect(settingsSource.contains("settings.guide.expression.title"))
-        #expect(settingsSource.contains("settings.feedback.section_title"))
+        #expect(settingsSource.contains("settings.structure.feedback.title"))
+        let settingsSectionSource = try sourceText(
+            "Source/MemoMark/MemoMark/iOS/Views/SettingsSectionSurface.swift"
+        )
+        #expect(settingsSectionSource.contains("accessibilityAddTraits(.isHeader)"))
+        #expect(!settingsSectionSource.contains("Image(systemName:"))
     }
 
     @Test("existing configuration rows use the same iconography vocabulary")

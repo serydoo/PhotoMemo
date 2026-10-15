@@ -5,46 +5,103 @@ import PhotosUI
 extension MemoMarkConfigurationCenterView {
     @ViewBuilder
     var rootNavigation: some View {
-        EntryNavigationSurface(
-            navigationStyle: entryNavigationStyle,
-            selection: entryBinding(\.selectedTab),
-            previewControl: entryFlowState.selectedTab == .editor
-                ? ConfigurationPreviewRailControl(
-                    isVisible: rootPresentationState.previewVisibility.isVisible(
-                        isEditingCardContent: rootPresentationState.isCardContentInspectorPresented,
-                        allowsCollapseDuringEditing: verticalSizeClass == .compact
-                    ),
-                    toggle: {
-                        dismissKeyboard()
-                        rootPresentationState.previewVisibility.isCollapsed.toggle()
-                    }
-                )
-                : nil,
-            configurationActions: entryFlowState.selectedTab == .editor
-                && !rootPresentationState.isCardContentInspectorPresented
-                ? ConfigurationActionFooter(
-                    configurationStatus: activeConfigurationStatus,
-                    isSavingConfiguration: isSavingConfiguration,
-                    isSelectedProcessingDefault: session.selectedMemoryPresetIsProcessingDefault,
-                    onSaveCurrentConfiguration: { performConfigurationLibraryAction(.saveCurrent) },
-                    onSetAsProcessingDefault: { performConfigurationLibraryAction(.setAsProcessingDefault) },
-                    onCreateConfiguration: { performConfigurationLibraryAction(.create) },
-                    onResetConfiguration: { performConfigurationLibraryAction(.reset) },
-                    onDeleteConfiguration: deleteCurrentConfiguration,
-                    isRail: true
-                )
-                : nil
-        ) {
-            homePage
-        } editorContent: {
-            editorPage
-        } outputContent: {
-            outputPage
-        } taskContent: {
-            tasksPage
-        } settingsContent: {
-            settingsPage
+        GeometryReader { viewport in
+            let wideArrangement = WideOverviewLayoutPolicy.arrangement(
+                viewport: adaptiveWindowViewport ?? viewport.size,
+                hasRegularHorizontalSizeClass: horizontalSizeClass == .regular,
+                hasRegularVerticalSizeClass: verticalSizeClass == .regular,
+                usesAccessibilityText: adaptiveDynamicTypeSize.isAccessibilitySize,
+                minimumRegionWidth: minimumWideOverviewRegionWidth
+            )
+            let nativeWide = SystemPresentationRegions.supportsNativeWidePresentation(in: viewport,
+                windowViewport: adaptiveWindowViewport)
+            let nativeArrangement = SystemPresentationRegions.allocation(in: viewport)
+            let nativeCompactRail = NativeCompactNavigationPolicy.usesFixedRail(
+                hasVerticalToolbar: nativeVerticalToolbarAvailable || NativeCompactRailValidation.isEnabled,
+                isPhone: UIDevice.current.userInterfaceIdiom == .phone,
+                viewport: adaptiveWindowViewport ?? viewport.size,
+                usesWidePresentation: nativeWide || wideArrangement != nil)
+            EntryNavigationSurface(
+                navigationStyle: nativeCompactRail ? .floatingRail
+                    : (wideArrangement == nil && !nativeWide ? entryNavigationStyle : .wideTaskSpaces),
+                selection: entryBinding(\.selectedTab),
+                usesNativeRegionNavigation: nativeWide,
+                usesNativeCompactRail: nativeCompactRail,
+                reservesCompactTopBar: UIDevice.current.userInterfaceIdiom == .pad
+                    && wideArrangement == nil && !nativeWide,
+                onOpenSettingsFromRail: {
+                    entryNavigationState.openSettings(presentation: entryPresentation)
+                },
+                overviewArrangement: nativeWide
+                    ? ((nativeArrangement?.arrangement ?? WideConfigurationLayoutPolicy.arrangement(
+                        viewport: adaptiveWindowViewport ?? viewport.size)) == .stacked ? .vertical : .horizontal)
+                    : wideArrangement,
+                overviewFooter: HomePhotoPickerFooter(
+                    isConfigurationReady: hasSavedConfigurationForSelectedSubject,
+                    onOpenPhotoPicker: beginPhotoProcessingFlow
+                ),
+                previewControl: entryFlowState.selectedTab == .editor
+                    ? ConfigurationPreviewRailControl(
+                        isVisible: rootPresentationState.previewVisibility.isVisible(
+                            isEditingCardContent: rootPresentationState.isCardContentInspectorPresented,
+                            allowsCollapseDuringEditing: verticalSizeClass == .compact
+                        ),
+                        toggle: {
+                            dismissKeyboard()
+                            rootPresentationState.previewVisibility.isCollapsed.toggle()
+                        }
+                    )
+                    : nil,
+                configurationActions: entryFlowState.selectedTab == .editor
+                    && !rootPresentationState.isCardContentInspectorPresented
+                    ? ConfigurationActionFooter(
+                        configurationStatus: activeConfigurationStatus,
+                        isSavingConfiguration: isSavingConfiguration,
+                        isSelectedProcessingDefault: session.selectedMemoryPresetIsProcessingDefault,
+                        onSaveCurrentConfiguration: { performConfigurationLibraryAction(.saveCurrent) },
+                        onSetAsProcessingDefault: { performConfigurationLibraryAction(.setAsProcessingDefault) },
+                        onCreateConfiguration: { performConfigurationLibraryAction(.create) },
+                        onResetConfiguration: { performConfigurationLibraryAction(.reset) },
+                        onDeleteConfiguration: deleteCurrentConfiguration,
+                        isRail: true,
+                        exposesCreatePresetInRail: nativeCompactRail
+                    )
+                    : nil
+            ) {
+                homePage
+            } editorContent: {
+                editorPage
+            } outputContent: {
+                outputPage
+            } taskContent: {
+                tasksPage
+            } settingsContent: {
+                settingsPage
+            }
+            .environment(\.configurationWindowViewport, adaptiveWindowViewport)
+            #if DEBUG
+            .onAppear {
+                NativeRegionValidationProbe.record(NativeRegionValidationProbe.snapshot(viewport, window: adaptiveWindowViewport,
+                    verticalToolbar: nativeVerticalToolbarAvailable))
+            }
+            .onChange(of: NativeRegionValidationProbe.snapshot(viewport, window: adaptiveWindowViewport,
+                    verticalToolbar: nativeVerticalToolbarAvailable)) { _, value in
+                NativeRegionValidationProbe.record(value)
+            }
+            #endif
         }
+        .background {
+            if #available(iOS 27.1, *) {
+                NativeVerticalToolbarCapabilityReader { available in
+                    if nativeVerticalToolbarAvailable != available {
+                        nativeVerticalToolbarAvailable = available
+                    }
+                }
+            }
+        }
+        .background(AdaptiveWindowViewportReader { size in
+            if adaptiveWindowViewport != size { adaptiveWindowViewport = size }
+        })
     }
 
     var settingsPage: some View {
@@ -95,20 +152,17 @@ extension MemoMarkConfigurationCenterView {
         switch entryNavigationStyle {
         case .bottomTabBar:
             return .compact
-        case .floatingRail, .regularSidebar:
+        case .floatingRail, .regularSidebar, .wideTaskSpaces:
             return .regular
         }
     }
 
     var entryNavigationStyle:
         EntryNavigationStyle {
-        AdaptivePageLayout
-            .navigationStyle(
-                hasRegularHorizontalSizeClass:
-                    horizontalSizeClass == .regular,
-                hasCompactVerticalSizeClass:
-                    verticalSizeClass == .compact
-            )
+        NavigationPresentationPolicy.style(for: AdaptivePresentationCapabilities(
+            horizontalSizeClass: horizontalSizeClass,
+            verticalSizeClass: verticalSizeClass
+        ))
     }
 
     var homePage: some View {
